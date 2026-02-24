@@ -1,124 +1,215 @@
-# E-MAS-KAPOR (Sistem Informasi Manajemen Kapor)
+# E-MAS-KAPOR
 
-![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
-![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
-![Alpine.js](https://img.shields.io/badge/Alpine.js-8BC0D0?style=for-the-badge&logo=alpine.js&logoColor=white)
+Sistem Informasi Manajemen Kapor berbasis Laravel untuk pendataan personel, pengelolaan item kapor, dan rekap ukuran per satuan kerja.
 
-E-MAS-KAPOR adalah sebuah sistem informasi manajemen berbasis web untuk pengelolaan administrasi, rekapitulasi, dan pendataan barang / perlengkapan (Kapor) secara digital. Aplikasi ini dikembangkan untuk memberikan kemudahan bagi instansi/organisasi dalam melakukan tracking pengajuan, manajemen user (Personil & Admin Satker), serta mengoptimalkan operasional secara terpusat.
+## Ringkasnya
 
-Arsitektur aplikasi ini dibangun di atas [Laravel](https://laravel.com), sebuah framework PHP yang elegan, untuk memastikan keamanan, skalabilitas, dan kemudahan _maintenance_.
-
-## Fitur Utama
-
-- **Manajemen Pengguna Terpusat (RBAC)**: Role Based Access Control untuk Superadmin, Admin, Admin Satker, dan Personil.
-- **Pendataan Kapor**: Pengelolaan data spesifikasi ukuran Kapor untuk tiap personil.
-- **Audit Logging**: Perekaman aktivitas sistem secara *real-time* untuk keamanan.
-- **Import/Export Data Format Excel/CSV**: Kemudahan pendaftaran user secara massal melalui *spreadsheet*.
-- **Desain Modern**: Antarmuka yang ramah pengguna menggunakan perpaduan antara framework front-end minimalis dan CSS.
+- Framework: Laravel 12 (PHP 8.2+)
+- UI: Blade + Vite + Tailwind CSS v4
+- Auth: login dengan `nrp_nip` + password
+- Role utama: `superadmin`, `admin`, `admin_satker`, `personil`
+- RBAC: `spatie/laravel-permission`
+- Import/Export: Maatwebsite Excel + DomPDF
+- Audit trail: `app/Services/AuditLogger.php`
 
 ---
 
-## Prasyarat Lingkungan
+## Daftar Isi
 
-Sebelum menjalankan proyek ini, pastikan sistem Anda memiliki lingkungan berikut:
-- **PHP** versi 8.2 atau lebih baru
-- **Composer** (untuk dependensi backend)
-- **Node.js** & **npm** (untuk proses build aset frontend)
-- **Database Server** (MySQL / PostgreSQL / SQLite)
+1. [Prasyarat](#prasyarat)
+2. [Quick Start Lokal](#quick-start-lokal)
+3. [Akun Demo](#akun-demo)
+4. [Perintah Harian](#perintah-harian)
+5. [Testing (Termasuk Single Test)](#testing-termasuk-single-test)
+6. [Peta Repositori](#peta-repositori)
+7. [Arsitektur & Alur Data](#arsitektur--alur-data)
+8. [Konvensi & Kualitas Kode](#konvensi--kualitas-kode)
+9. [Laravel Boost (Opsional)](#laravel-boost-opsional)
+10. [Troubleshooting Cepat](#troubleshooting-cepat)
 
 ---
 
-## 🚀 Cara Instalasi & Menjalankan Aplikasi
+## Prasyarat
 
-Ikuti panduan ini untuk melakukan pengaturan E-MAS-KAPOR di lingkungan lokal (Local Development).
+Pastikan environment lokal memiliki:
 
-### 1. Kloning Repository
+- PHP 8.2+
+- Composer
+- Node.js + npm
+- Database: MySQL/MariaDB atau SQLite
 
-```bash
-git clone https://github.com/msaririzki/E-MAS-KAPOR.git
-cd E-MAS-KAPOR
-```
+---
 
-### 2. Konfigurasi Lingkungan (.env)
-
-Salin fail konfigurasi *environment* bawaan dan sesuaikan dengan database Anda.
+## Quick Start Lokal
 
 ```bash
-# Windows
-copy .env.example .env
-
-# Linux / Mac
-cp .env.example .env
-```
-
-Buka fail `.env` dan atur koneksi basis data Anda, contoh (jika menggunakan MySQL):
-```ini
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=db_kapor
-DB_USERNAME=root
-DB_PASSWORD=
-```
-*(Catatan: Aplikasi ini dapat dijalankan menggunakan SQLite secara default untuk testing).*
-
-### 3. Instalasi Dependensi
-
-Jalankan perintah berikut untuk mengunduh modul PHP dan Node.
-
-```bash
-# Install PHP Dependencies
 composer install
-
-# Install Javascript / CSS Dependencies
 npm install
-```
-
-### 4. Build Aset Frontend
-
-*Compile* seluruh aset *development* (Vite/Tailwind/CSS) ke spesifikasi produksi.
-
-```bash
-npm run build
-```
-
-*(Untuk development secara aktif berjalan, gunakan `npm run dev` di terminal terpisah).*
-
-### 5. Generate Application Key dan Migrasi Database
-
-```bash
-# Generate encryption key
+cp .env.example .env
 php artisan key:generate
-
-# Migrasi dan Seeding referensi awal (Termasuk akun Demo)
 php artisan migrate --seed
-```
-
-### 6. Jalankan Server Development
-
-```bash
+npm run build
 php artisan serve
 ```
 
-Aplikasi sekarang dapat diakses secara lokal pada **`http://localhost:8000`**.
+Buka aplikasi di `http://127.0.0.1:8000`.
+
+### Opsi development all-in-one
+
+```bash
+composer dev
+```
+
+Perintah ini menjalankan server Laravel + queue listener + Vite secara bersamaan.
 
 ---
 
-## Kredensial Akun Bawaan (Demo)
+## Akun Demo
 
-Bila Anda menjalankan _Seeding_ diatas (`--seed`), Anda bisa login menggunakan akun demo berikut:
+Setelah `php artisan migrate --seed`, gunakan akun berikut untuk login:
 
-| Akun | NRP/NIP | Password | Keterangan |
-| :--- | :--- | :--- | :--- |
-| **Super Admin** | `SA001` | `password` | Kendali penuh aplikasi |
-| **Admin** | `ADM001` | `password` | Admin tingkat atas |
-| **Admin Satker** | `AS001` | `password` | Pengelola unit Polresta Mataram |
-| **User / Personil** | `87654321` | `password` | Akun personil (Polri) |
+| Role         | NRP/NIP    | Password   |
+| ------------ | ---------- | ---------- |
+| Superadmin   | `SA001`    | `password` |
+| Admin        | `ADM001`   | `password` |
+| Admin Satker | `AS001`    | `password` |
+| Personil     | `87654321` | `password` |
 
-*(Silakan segera ubah kata sandi ini untuk lingkungan produksi).*
+Gunakan hanya untuk dev/lokal dan ganti password untuk environment non-lokal.
 
 ---
 
-## Perizinan dan Lisensi
+## Perintah Harian
 
-Dikembangkan dengan framework [Laravel](https://laravel.com) yang berlisensi MIT. Pastikan Anda mengatur kredensial Anda dan `.env` sebelum aplikasi dipublikasikan sepenuhnya.
+### Build dan assets
+
+```bash
+npm run dev
+npm run build
+```
+
+### Lint / format
+
+```bash
+./vendor/bin/pint --test
+./vendor/bin/pint
+```
+
+Catatan: lint JavaScript (ESLint) belum dikonfigurasi di repo ini.
+
+### Cleanup cache Laravel
+
+```bash
+php artisan optimize:clear
+```
+
+---
+
+## Testing (Termasuk Single Test)
+
+### Jalankan semua test
+
+```bash
+composer test
+# atau
+php artisan test
+```
+
+### Jalankan test paralel
+
+```bash
+php artisan test --parallel
+```
+
+### Jalankan satu file test
+
+```bash
+php artisan test tests/Feature/ExampleTest.php
+```
+
+### Jalankan satu class test
+
+```bash
+php artisan test --filter=Tests\\Feature\\ExampleTest
+```
+
+### Jalankan satu method test
+
+```bash
+php artisan test --filter=test_the_application_returns_a_successful_response
+```
+
+### Kombinasi file + method
+
+```bash
+php artisan test tests/Feature/ExampleTest.php --filter=test_the_application_returns_a_successful_response
+```
+
+---
+
+## Peta Repositori
+
+Struktur yang paling sering disentuh:
+
+- `app/Http/Controllers/` -> controller untuk auth, dashboard, admin CRUD, settings.
+- `app/Http/Middleware/` -> pembatas role/satker/system lock.
+- `app/Http/Requests/` -> Form Request (sudah dipakai sebagian).
+- `app/Models/` -> relasi, casts, scopes domain utama.
+- `app/Imports/` dan `app/Exports/` -> impor/ekspor Excel + rekap.
+- `app/Services/AuditLogger.php` -> helper audit log terpusat.
+- `routes/web.php` -> semua route web aplikasi.
+- `resources/views/` -> Blade template tiap role/module.
+- `database/migrations/` -> definisi skema.
+- `database/seeders/` -> role, data referensi, akun demo.
+- `tests/` -> unit/feature tests.
+
+---
+
+## Arsitektur & Alur Data
+
+### Modul inti
+
+1. **Master data**: Satker, Rank, Item Kapor, Setting tahun anggaran.
+2. **Manajemen user/personel**: sinkronisasi `users` <-> `personnels`.
+3. **Pengisian ukuran kapor**: saat ini dominan di `personnels.kapor_sizes` (JSON).
+4. **Rekap/laporan**: export Excel/PDF berdasarkan kategori item dan satker.
+5. **Audit log**: aksi kritis dicatat ke `audit_logs`.
+
+### Akses berbasis role (ringkas)
+
+- `superadmin`: pengaturan global (tahun anggaran, lock sistem), akses penuh.
+- `admin`: kelola data global tanpa otoritas setting tertinggi.
+- `admin_satker`: akses terbatas satker sendiri (scoped).
+- `personil`: input dan lihat data kapor pribadi.
+
+### Middleware penting
+
+- `satker.scope`: enforce scope satker untuk admin satker.
+- `system.lock`: blok pengisian data ketika sistem dikunci.
+- `role:*` (Spatie): pembatas akses route berbasis role.
+
+---
+
+## Konvensi & Kualitas Kode
+
+Ringkasan praktis (detail lengkap ada di `AGENTS.md`):
+
+- Gunakan style Laravel + PSR-12, format dengan Pint.
+- Tetap gunakan 4 spasi, LF, UTF-8 sesuai `.editorconfig`.
+- Utamakan type hints + return types di method baru/yang diubah.
+- Gunakan Form Request untuk validasi yang kompleks.
+- Bungkus operasi multi-tabel dalam transaksi DB.
+- Pertahankan flash message `success/error/warning` untuk UX konsisten.
+- Untuk aksi admin/destruktif, teruskan audit logging via `AuditLogger::log(...)`.
+- Jangan commit `.env` dan rahasia lainnya.
+
+---
+
+## Troubleshooting Cepat
+
+- Jika perubahan route/view tidak terbaca: jalankan `php artisan optimize:clear`.
+- Jika test gagal karena state: cek `.env.testing`/config database testing.
+- Jika role/permission terasa tidak sinkron: reseed lokal dan cek cache permission.
+- Jika front-end tidak update: restart `npm run dev` atau rebuild dengan `npm run build`.
+
+---
