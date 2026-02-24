@@ -145,6 +145,7 @@
         .sidebar-footer {
             padding: 12px 14px;
             border-top: 1px solid rgba(255,255,255,.06);
+            display: none; /* Hidden: use top-right profile dropdown instead */
         }
         .sidebar-user {
             display: flex; align-items: center; gap: 10px;
