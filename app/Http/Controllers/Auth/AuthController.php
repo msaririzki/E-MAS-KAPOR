@@ -34,9 +34,9 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt([
-        'nrp_nip' => $credentials['nrp_nip'],
-        'password' => $credentials['password'],
-        'is_active' => true,
+            'nrp_nip' => $credentials['nrp_nip'],
+            'password' => $credentials['password'],
+            'is_active' => true,
         ], $request->boolean('remember'))) {
             $request->session()->regenerate();
 

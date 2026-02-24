@@ -13,7 +13,7 @@ class KaporItemController extends Controller
         $query = KaporItem::withCount('sizes')->orderBy('category')->orderBy('item_name');
 
         if ($request->filled('search')) {
-            $query->where('item_name', 'LIKE', '%' . $request->search . '%');
+            $query->where('item_name', 'LIKE', '%'.$request->search.'%');
         }
 
         if ($request->filled('category')) {
@@ -28,7 +28,7 @@ class KaporItemController extends Controller
             'Tutup_Kepala' => 'Tutup Kepala',
             'Tutup_Badan' => 'Tutup Badan',
             'Tutup_Kaki' => 'Tutup Kaki',
-            'Atribut' => 'Atribut'
+            'Atribut' => 'Atribut',
         ];
 
         // Simple Stats
@@ -70,7 +70,7 @@ class KaporItemController extends Controller
             'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut',
             'description' => 'nullable|string',
             'gender_specific' => 'nullable|in:L,P',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
         ]);
 
         if ($request->has('is_active')) {

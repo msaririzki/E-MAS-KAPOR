@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\Request;
 
 class UserStatusController extends Controller
 {
@@ -16,7 +15,7 @@ class UserStatusController extends Controller
         }
 
         $user->update([
-            'is_active' => !$user->is_active
+            'is_active' => ! $user->is_active,
         ]);
 
         $status = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';

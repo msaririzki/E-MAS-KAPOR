@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\KaporItem;
-use App\Models\KaporSubmission;
 use App\Models\Personnel;
 use App\Models\Satker;
 use App\Models\Setting;
@@ -71,12 +70,12 @@ class DashboardController extends Controller
         $satkerStats = Satker::query()
             ->selectRaw('satkers.*, (satkers.polri_count + satkers.pns_count) as total_personnel')
             ->withCount(['personnels as submitted_count' => function ($q) {
-            // Check if kapor_sizes is not null
-            $q->whereNotNull('kapor_sizes');
-        }])
+                // Check if kapor_sizes is not null
+                $q->whereNotNull('kapor_sizes');
+            }])
             ->where(function ($query) use ($poldaId) {
-            $query->whereNull('parent_id')->orWhere('parent_id', $poldaId);
-        })
+                $query->whereNull('parent_id')->orWhere('parent_id', $poldaId);
+            })
             ->orderBy('sort_order')
             ->get();
 
@@ -147,7 +146,7 @@ class DashboardController extends Controller
 
         if ($personnel) {
             $kaporSizes = $personnel->kapor_sizes ?? [];
-            $hasSubmitted = !empty($kaporSizes);
+            $hasSubmitted = ! empty($kaporSizes);
         }
 
         return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'fiscalYear'));

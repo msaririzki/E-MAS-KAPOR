@@ -2,25 +2,21 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\PersonnelTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Imports\PersonnelImport;
+use App\Models\KaporItem;
 use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
-use App\Models\User;
 use App\Models\Setting;
+use App\Models\User;
+use App\Services\AuditLogger;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use App\Services\AuditLogger;
-use Spatie\Permission\Models\Role;
-
-use App\Models\KaporItem;
-use App\Models\KaporSubmission;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\PersonnelTemplateExport;
-use App\Imports\PersonnelImport;
-use Barryvdh\DomPDF\Facade\Pdf;
-use App\Exports\TutupKepalaExport;
 
 class PersonnelController extends Controller
 {
@@ -32,25 +28,20 @@ class PersonnelController extends Controller
 
         if ($sort === 'recent_edit') {
             $query->latest('updated_at');
-        }
-        elseif ($sort === 'full_name') {
+        } elseif ($sort === 'full_name') {
             $query->orderBy('full_name', $direction);
-        }
-        elseif ($sort === 'rank') {
+        } elseif ($sort === 'rank') {
             $query->leftJoin('ranks', 'personnels.rank_id', '=', 'ranks.id')
                 ->select('personnels.*')
                 ->orderBy('ranks.sort_order', $direction === 'asc' ? 'asc' : 'desc')
                 ->orderBy('personnels.full_name', 'asc');
-        }
-        elseif ($sort === 'satker') {
+        } elseif ($sort === 'satker') {
             $query->leftJoin('satkers', 'personnels.satker_id', '=', 'satkers.id')
                 ->select('personnels.*')
                 ->orderBy('satkers.name', $direction);
-        }
-        elseif ($sort === 'jabatan') {
+        } elseif ($sort === 'jabatan') {
             $query->orderBy('jabatan', $direction);
-        }
-        else {
+        } else {
             $query->latest('created_at');
         }
 
@@ -74,9 +65,9 @@ class PersonnelController extends Controller
                 $q->where('full_name', 'LIKE', "%{$search}%")
                     ->orWhere('nrp', 'LIKE', "%{$search}%")
                     ->orWhereHas('rank', function ($rq) use ($search) {
-                    $rq->where('name', 'LIKE', "%{$search}%");
-                }
-                )
+                        $rq->where('name', 'LIKE', "%{$search}%");
+                    }
+                    )
                     ->orWhere('jabatan', 'LIKE', "%{$search}%")
                     ->orWhere('bagian', 'LIKE', "%{$search}%")
                     ->orWhere('keterangan', 'LIKE', "%{$search}%");
@@ -147,10 +138,10 @@ class PersonnelController extends Controller
 
             return redirect()->route('admin.personnel.index')->with('success', 'Data personil dan ukuran berhasil ditambahkan.');
 
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal menambahkan personil: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal menambahkan personil: '.$e->getMessage());
         }
     }
 
@@ -162,17 +153,17 @@ class PersonnelController extends Controller
 
         try {
             $personnel->update(['kapor_sizes' => $validated['kapor_sizes']]);
+
             return redirect()->back()->with('success', 'Data ukuran berhasil disimpan.');
-        }
-        catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyimpan ukuran: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menyimpan ukuran: '.$e->getMessage());
         }
     }
 
     public function update(Request $request, Personnel $personnel)
     {
         $validated = $request->validate([
-            'nrp' => 'required|string|unique:personnels,nrp,' . $personnel->id,
+            'nrp' => 'required|string|unique:personnels,nrp,'.$personnel->id,
             'full_name' => 'required|string|max:255',
             'rank_id' => 'required|exists:ranks,id',
             'satker_id' => 'required|exists:satkers,id',
@@ -204,11 +195,12 @@ class PersonnelController extends Controller
             }
 
             DB::commit();
+
             return redirect()->back()->with('success', 'Data personil dan akun berhasil diperbarui.');
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal memperbarui: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal memperbarui: '.$e->getMessage());
         }
     }
 
@@ -222,11 +214,12 @@ class PersonnelController extends Controller
             $personnel->delete();
 
             DB::commit();
+
             return redirect()->back()->with('success', 'Personil dan akun terkait berhasil dihapus.');
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal menghapus: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal menghapus: '.$e->getMessage());
         }
     }
 
@@ -239,36 +232,149 @@ class PersonnelController extends Controller
     }
 
     /**
-     * Import personnel from Excel/CSV.
+     * Import personnel — hanya baca file, simpan preview ke session, redirect ke halaman preview.
      */
     public function import(Request $request)
     {
         set_time_limit(0);
+        ini_set('memory_limit', '512M');
 
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:5120',
-            'satker_id' => 'required|exists:satkers,id'
+            'file' => 'required|mimes:xlsx,xls,csv|max:51200', // max 50MB
+            'satker_id' => 'required|exists:satkers,id',
         ]);
 
         try {
             $import = new PersonnelImport($request->satker_id);
-            Excel::import($import, $request->file('file'));
+            $collection = Excel::toCollection($import, $request->file('file'));
 
-            $results = $import->getResults();
+            // Gabungkan semua sheet menjadi satu koleksi baris data
+            $dataRows = collect();
+            foreach ($collection as $sheetIndex => $sheetRows) {
+                // $sheetRows sudah dipotong 10 baris pertama oleh WithStartRow(11) di Import class
+                // Jangan dislice(10) lagi karena akan menghilangkan 10 data pertama di tiap sheet!
+                $dataRows = $dataRows->concat($sheetRows);
+            }
+
+            $preview = $import->generatePreview($dataRows);
+
+            // Hitung total status
+            $totalOk = collect($preview)->where('status', 'ok')->count();
+            $totalCorrected = collect($preview)->where('status', 'corrected')->count();
+            $totalError = collect($preview)->where('status', 'error')->count();
+
+            // Simpan ke session
+            session([
+                'import_preview' => $preview,
+                'import_satker_id' => $request->satker_id,
+                'import_stats' => [
+                    'ok' => $totalOk,
+                    'corrected' => $totalCorrected,
+                    'error' => $totalError,
+                    'total' => count($preview),
+                ],
+            ]);
+
+            AuditLogger::log('Preview Import Personil', 'Manajemen Personil', null, null, null, 'info', "Preview: {$totalOk} siap, {$totalCorrected} dikoreksi, {$totalError} error");
+
+            return redirect()->route('admin.personnel.import-preview');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memproses file: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Tampilkan halaman preview hasil parsing file Excel.
+     */
+    public function importPreview()
+    {
+        $preview = session('import_preview');
+        $satkerId = session('import_satker_id');
+        $stats = session('import_stats');
+
+        if (! $preview || ! $satkerId) {
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview sudah kadaluwarsa. Silakan upload ulang file.');
+        }
+
+        $satker = Satker::find($satkerId);
+        $ranks = Rank::orderBy('sort_order')->get();
+
+        return view('admin.personnel.import_preview', compact('preview', 'satker', 'stats', 'ranks'));
+    }
+
+    /**
+     * Konfirmasi import: baca data dari SESSION, merge rank_overrides dari form.
+     * Tidak mengandalkan form POST untuk semua data (menghindari batas max_input_vars).
+     */
+    public function importConfirm(Request $request)
+    {
+        set_time_limit(0);
+
+        $satkerId = session('import_satker_id');
+        $preview = session('import_preview');
+
+        if (! $satkerId || ! $preview) {
+            return redirect()->route('admin.personnel.index')
+                ->with('error', 'Sesi preview sudah kadaluwarsa. Silakan upload ulang file.');
+        }
+
+        // Ambil koreksi rank_id manual dari form (hanya baris yang diedit)
+        // Format: rank_overrides[index] = rank_id
+        $rankOverrides = $request->input('rank_overrides', []);
+
+        // Terapkan override ke data preview dari session
+        foreach ($rankOverrides as $index => $rankId) {
+            if (isset($preview[$index]) && $rankId !== '' && $rankId !== null) {
+                $preview[$index]['rank_id'] = $rankId;
+            }
+        }
+
+        // Validasi: pastikan tidak ada baris error yang rank_id-nya masih kosong
+        $missing = [];
+        foreach ($preview as $i => $row) {
+            if ($row['status'] === 'error' && empty($row['rank_id'])) {
+                $missing[] = ($row['full_name'] ?? "Baris #{$i}");
+            }
+        }
+
+        if (! empty($missing)) {
+            return redirect()->back()
+                ->with('error', 'Masih ada '.count($missing).' baris yang belum dipilih pangkatnya: '.implode(', ', array_slice($missing, 0, 5)));
+        }
+
+        try {
+            $importer = new PersonnelImport($satkerId);
+            $results = $importer->saveFromPreviewData($preview, $satkerId);
+
             $successCount = $results['success_count'];
             $errorCount = $results['error_count'];
             $errors = $results['errors'];
 
-            AuditLogger::log('Import Personil Excel', 'Manajemen Personil', null, null, null, 'success', "Berhasil: {$successCount}. Gagal: {$errorCount}");
+            // Hapus session setelah selesai
+            session()->forget(['import_preview', 'import_satker_id', 'import_stats']);
+
+            AuditLogger::log('Konfirmasi Import Personil', 'Manajemen Personil', null, null, null, 'success', "Berhasil: {$successCount}. Gagal: {$errorCount}");
 
             if ($errorCount > 0) {
-                return redirect()->back()->with('warning', "Berhasil mengimpor {$successCount} data. Gagal: {$errorCount}. Contoh error: " . implode(', ', array_slice($errors, 0, 3)));
+                return redirect()->route('admin.personnel.index')
+                    ->with('warning', "Berhasil mengimpor {$successCount} data. Gagal: {$errorCount}.");
             }
-            return redirect()->back()->with('success', "Berhasil mengimpor {$successCount} data personil.");
+
+            return redirect()->route('admin.personnel.index')
+                ->with('success', "Berhasil mengimpor {$successCount} data personil.");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menyimpan data: '.$e->getMessage());
         }
-        catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memproses file: ' . $e->getMessage());
-        }
+    }
+
+    /**
+     * Batalkan proses import: bersihkan session dan redirect ke halaman personel.
+     */
+    public function importCancel()
+    {
+        session()->forget(['import_preview', 'import_satker_id', 'import_stats']);
+
+        return redirect()->route('admin.personnel.index')->with('info', 'Proses import dibatalkan.');
     }
 
     /**
@@ -284,7 +390,7 @@ class PersonnelController extends Controller
         $category = $request->query('category');
         $item = $request->query('item');
 
-        $fileName = 'Rekap_' . $category . '_' . ($item ? $item . '_' : '') . 'Polda_NTB_' . date('Y') . '.xlsx';
+        $fileName = 'Rekap_'.$category.'_'.($item ? $item.'_' : '').'Polda_NTB_'.date('Y').'.xlsx';
 
         return Excel::download(new \App\Exports\KaporRekapExport($category, $item), $fileName);
     }
@@ -298,6 +404,10 @@ class PersonnelController extends Controller
      */
     public function printSatker(Request $request)
     {
+        // Pastikan cukup waktu dan memori untuk data besar
+        set_time_limit(0);
+        ini_set('memory_limit', '512M');
+
         $request->validate([
             'satker_id' => 'required|exists:satkers,id',
             'fiscal_year' => 'nullable|string',
@@ -311,23 +421,29 @@ class PersonnelController extends Controller
         }])
             ->where('satker_id', $satker->id)
             ->where('is_active', true)
+            ->orderBy('id')
             ->get();
 
-        // Sort by Rank sort_order, then by Name
+        // Sort: berdasarkan rank sort_order lalu nama
         $personnels = $personnels->sort(function ($a, $b) {
             $rankA = $a->rank->sort_order ?? 999;
             $rankB = $b->rank->sort_order ?? 999;
 
-            if ($rankA != $rankB) {
-                return $rankA <=> $rankB;
-            }
-
-            return strcasecmp($a->full_name, $b->full_name);
-        });
+            return $rankA !== $rankB ? ($rankA <=> $rankB) : strcasecmp($a->full_name, $b->full_name);
+        })->values();
 
         $kaporItems = KaporItem::where('is_active', true)->orderBy('id')->get();
 
-        $pdf = Pdf::loadView('admin.reports.personnel_satker_pdf', [
+        $options = [
+            'dpi' => 72,        // Turunkan DPI untuk performa
+            'defaultFont' => 'Arial',
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => false,
+            'isFontSubsettingEnabled' => false,     // Nonaktifkan subsetting untuk performa
+            'chroot' => realpath(base_path()),
+        ];
+
+        $pdf = Pdf::setOptions($options)->loadView('admin.reports.personnel_satker_pdf', [
             'satker' => $satker,
             'fiscalYear' => $fiscalYear,
             'personnels' => $personnels,
@@ -341,17 +457,13 @@ class PersonnelController extends Controller
 
         $pdf->setPaper('a4', 'landscape');
 
-        $filename = "Data_Kapor_{$satker->name}_{$fiscalYear}.pdf";
+        $filename = "Data_Personel_{$satker->name}_{$fiscalYear}.pdf";
 
         if ($request->has('download')) {
             return $pdf->download($filename);
         }
 
-        return $pdf->stream("Preview_Laporan", [
-            'Attachment' => 0,
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => "inline; filename=\"Preview_Laporan\"",
-        ]);
+        return $pdf->stream($filename);
     }
 
     /**
@@ -361,7 +473,7 @@ class PersonnelController extends Controller
     {
         $request->validate([
             'satker_id' => 'required|exists:satkers,id',
-            'confirm_text' => 'required|string'
+            'confirm_text' => 'required|string',
         ]);
 
         if (strtoupper($request->confirm_text) !== 'HAPUS') {
@@ -392,9 +504,8 @@ class PersonnelController extends Controller
             });
 
             return redirect()->back()->with('success', "Berhasil menghapus seluruh data personil dari Satker {$satker->name}.");
-        }
-        catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus data: '.$e->getMessage());
         }
     }
 }

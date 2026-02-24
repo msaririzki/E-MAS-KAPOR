@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Satker;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use App\Services\AuditLogger;
 
 class SatkerController extends Controller
 {
@@ -31,6 +31,7 @@ class SatkerController extends Controller
         if (auth()->user()->hasRole('superadmin')) {
             return 'superadmin.satkers.index';
         }
+
         return 'admin.satkers.index';
     }
 
@@ -53,7 +54,7 @@ class SatkerController extends Controller
         $baseCode = $code;
         $counter = 1;
         while (Satker::where('code', $code)->exists()) {
-            $code = $baseCode . '-' . $counter;
+            $code = $baseCode.'-'.$counter;
             $counter++;
         }
 
@@ -82,8 +83,8 @@ class SatkerController extends Controller
             'pns_count' => 'nullable|integer|min:0',
         ]);
 
-        // Keep existing code unless name changes significantly? 
-        // For simplicity, let's keep the old code to avoid link breakage if any, 
+        // Keep existing code unless name changes significantly?
+        // For simplicity, let's keep the old code to avoid link breakage if any,
         // but we can update it if you want. Usually slug is only generated at creation.
 
         $satker->update($validated);

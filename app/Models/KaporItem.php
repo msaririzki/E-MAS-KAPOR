@@ -56,26 +56,26 @@ class KaporItem extends Model
     {
         return $query
             ->where(function ($q) use ($personnel) {
-            // Gender filter: null means all genders
-            $q->whereNull('gender_specific')
-                ->orWhere('gender_specific', $personnel->gender);
-        })
+                // Gender filter: null means all genders
+                $q->whereNull('gender_specific')
+                    ->orWhere('gender_specific', $personnel->gender);
+            })
             ->where(function ($q) use ($personnel) {
-            // Rank category filter: null means all categories
-            $q->whereNull('rank_categories')
-                ->orWhereJsonContains('rank_categories', $personnel->rank->category);
-        })
+                // Rank category filter: null means all categories
+                $q->whereNull('rank_categories')
+                    ->orWhereJsonContains('rank_categories', $personnel->rank->category);
+            })
             ->where(function ($q) use ($personnel) {
-            // Unit keyword filter: null means all units
-            $q->whereNull('unit_keywords')
-                ->orWhere(function ($sq) use ($personnel) {
-                $satkerName = $personnel->satker->name;
-                // Check if any keyword matches the satker name
-                $sq->whereRaw('JSON_SEARCH(unit_keywords, "one", ?) IS NOT NULL', [
-                    '%' . $satkerName . '%',
-                ]);
-            }
-            );
-        });
+                // Unit keyword filter: null means all units
+                $q->whereNull('unit_keywords')
+                    ->orWhere(function ($sq) use ($personnel) {
+                        $satkerName = $personnel->satker->name;
+                        // Check if any keyword matches the satker name
+                        $sq->whereRaw('JSON_SEARCH(unit_keywords, "one", ?) IS NOT NULL', [
+                            '%'.$satkerName.'%',
+                        ]);
+                    }
+                    );
+            });
     }
 }

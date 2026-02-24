@@ -5,23 +5,257 @@ namespace App\Imports;
 use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
-use App\Models\User;
-use App\Models\KaporItem;
-use App\Models\KaporSize;
-use App\Models\KaporSubmission;
 use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 
-class PersonnelImport implements ToCollection, WithStartRow
+class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleSheets, WithStartRow
 {
     protected $successCount = 0;
+
     protected $errorCount = 0;
+
     protected $errors = [];
+
     protected $satkerId;
+
+    public function sheets(): array
+    {
+        // Return kosong = fallback ke default (semua sheet diproses oleh class ini sendiri)
+        // karena kita mengimplementasikan ToCollection di class ini juga.
+        // Tapi cara paling aman agar import dipanggil untuk tiap sheet adalah:
+        return [
+            0 => $this,
+            1 => $this,
+            2 => $this,
+        ];
+    }
+
+    public function onUnknownSheet($sheetName)
+    {
+        // Abaikan sheet lain yang tidak ada di index 0, 1, 2
+    }
+
+    /**
+     * Mapping koreksi typo pangkat yang umum.
+     * Key = variasi typo (uppercase), Value = nama standar di DB.
+     */
+    public static function getPangkatCorrectionMap(): array
+    {
+        return [
+            // ── PATI ──
+            'IRJEND' => 'IRJEN',
+            'IRJEND POL' => 'IRJEN',
+            'IRJEN POL' => 'IRJEN',
+            'BRIGJEND' => 'BRIGJEN',
+            'BRIGJEN POL' => 'BRIGJEN',
+            'BRIGJEND POL' => 'BRIGJEN',
+            'BRIG' => 'BRIGJEN',
+
+            // ── PAMEN ──
+            'KOMBES POL' => 'KOMBES',
+            'KOMBESPOL' => 'KOMBES',
+            'KOMBES.' => 'KOMBES',
+            'AKBP.' => 'AKBP',
+            'KOMPOL.' => 'KOMPOL',
+
+            // ── PAMA ──
+            'AKP.' => 'AKP',
+            'IPTU.' => 'IPTU',
+            'IPDA.' => 'IPDA',
+
+            // ── BINTARA ──
+            'AIPTU.' => 'AIPTU',
+            'AIPDA.' => 'AIPDA',
+            'BRIPKA.' => 'BRIPKA',
+            'BRIGADIR POL' => 'BRIGADIR',
+            'BRIGADIRPOL' => 'BRIGADIR',
+            'BRIGPOL' => 'BRIGADIR',
+            'BRIIGPOL' => 'BRIGADIR',
+            'BRIGOL' => 'BRIGADIR',
+            'BRIG POL' => 'BRIGADIR',
+            'BRIPTU.' => 'BRIPTU',
+            'BRIPDA.' => 'BRIPDA',
+            'ABRIPTU.' => 'ABRIPTU',
+            'ABRIPDA.' => 'ABRIPDA',
+            'BHARAKA.' => 'BHARAKA',
+            'BHARATU.' => 'BHARATU',
+            'BHARADA.' => 'BHARADA',
+
+            // ── Typo 1 huruf POLRI ──
+            'IRJED' => 'IRJEN',
+            'IRGJEN' => 'IRJEN',
+            'BRIGGEN' => 'BRIGJEN',
+            'KOMBESS' => 'KOMBES',
+            'AKBPP' => 'AKBP',
+            'KOMPOLL' => 'KOMPOL',
+            'AKB' => 'AKBP',
+            'AIPTO' => 'AIPTU',
+            'AIPTU ' => 'AIPTU',
+            'AIPDA ' => 'AIPDA',
+            'BRIPKKA' => 'BRIPKA',
+            'BRIGADI' => 'BRIGADIR',
+            'BRIAGDIR' => 'BRIGADIR',
+            'BRIGADR' => 'BRIGADIR',
+            'BRIPDA ' => 'BRIPDA',
+            'BHARAKA ' => 'BHARAKA',
+            'BHARATU ' => 'BHARATU',
+            'BHARADA ' => 'BHARADA',
+
+            // ── PNS — variasi umum ──
+            'PEMBINA TK.I' => 'Pembina Tingkat I',
+            'PEMBINA TK I' => 'Pembina Tingkat I',
+            'PEMBINA TKT I' => 'Pembina Tingkat I',
+            'PEMBINA TINGKAT 1' => 'Pembina Tingkat I',
+            'PEMBINA TK 1' => 'Pembina Tingkat I',
+            'PEMBINA TK. 1' => 'Pembina Tingkat I',
+            'PENATA TK.I' => 'Penata Tingkat I',
+            'PENATA TK I' => 'Penata Tingkat I',
+            'PENATA TKT I' => 'Penata Tingkat I',
+            'PENATA TINGKAT 1' => 'Penata Tingkat I',
+            'PENATA TK 1' => 'Penata Tingkat I',
+            'PENATA TK1' => 'Penata Tingkat I',
+            'PENATA TK. 1' => 'Penata Tingkat I',
+            'PENATA TK II' => 'Penata Tingkat I', // Dianggap typo Penata Tk I, karena Penata Tk II secara resmi tidak ada di struktur (biasanya Penata saja atau Penata Muda Tk I)
+            'PENATA TK 2' => 'Penata Tingkat I',
+            'PENATA MD TK I' => 'Penata Muda Tingkat I',
+            'PENATA MUDA TK.I' => 'Penata Muda Tingkat I',
+            'PENATA MUDA TK I' => 'Penata Muda Tingkat I',
+            'PENATA MUDA TKT I' => 'Penata Muda Tingkat I',
+            'PENATA MUDA TINGKAT 1' => 'Penata Muda Tingkat I',
+            'PENGATUR TK.I' => 'Pengatur Tingkat I',
+            'PENGATUR TK I' => 'Pengatur Tingkat I',
+            'PENGATUR TK. I/II.D' => 'Pengatur Tingkat I',
+            'PENGATUR TK I/II.D' => 'Pengatur Tingkat I',
+            'PENGATUR TK I/II D' => 'Pengatur Tingkat I',
+            'PENGATUR TK.I/II.D' => 'Pengatur Tingkat I',
+            'PENGATUR TK L' => 'Pengatur Tingkat I', // Kadang 'I' diganti huruf 'L' kecil atau besar
+            'PENGATUR TKT I' => 'Pengatur Tingkat I',
+            'PENGATUR TINGKAT 1' => 'Pengatur Tingkat I',
+            'PENGATUR TK 1' => 'Pengatur Tingkat I',
+            'PENGATUR TK1' => 'Pengatur Tingkat I',
+            'PENGATUR TK. 1' => 'Pengatur Tingkat I',
+            'PENGATUR MD TK I' => 'Pengatur Muda Tingkat I',
+            'PENGATUR MUDA TK.I' => 'Pengatur Muda Tingkat I',
+            'PENGATUR MUDA TK I' => 'Pengatur Muda Tingkat I',
+            'PENGATUR MUDA TKT I' => 'Pengatur Muda Tingkat I',
+            'PENGATUR MUDA TINGKAT 1' => 'Pengatur Muda Tingkat I',
+            'JURU TK.I' => 'Juru Tingkat I',
+            'JURU TK I' => 'Juru Tingkat I',
+            'JURU TKT I' => 'Juru Tingkat I',
+            'JURU TINGKAT 1' => 'Juru Tingkat I',
+            'JURU TK 1' => 'Juru Tingkat I',
+            'JURU TK. 1' => 'Juru Tingkat I',
+            'JURU MD TK I' => 'Juru Muda Tingkat I',
+            'JURU MUDA TK.I' => 'Juru Muda Tingkat I',
+            'JURU MUDA TK I' => 'Juru Muda Tingkat I',
+            'JURU MUDA TKT I' => 'Juru Muda Tingkat I',
+            'JURU MUDA TINGKAT 1' => 'Juru Muda Tingkat I',
+            'PEMBINA UTM' => 'Pembina Utama',
+            'PEMBINA UTAMA MADY' => 'Pembina Utama Madya',
+            'PEMBINA UTAMA MUUDA' => 'Pembina Utama Muda',
+            'PEMBIINA' => 'Pembina',
+            'PEMBIINA UTAMA' => 'Pembina Utama',
+
+            // ── PPPK ──
+            'PPPK' => 'PPPK Golongan II',
+            'PPPK GOLONGAN 2' => 'PPPK Golongan II',
+            'PPPK GOL II' => 'PPPK Golongan II',
+            'PPPK GOL. II' => 'PPPK Golongan II',
+            'P3K' => 'PPPK Golongan II',
+            'P3K GOLONGAN 2' => 'PPPK Golongan II',
+            'P3K GOL II' => 'PPPK Golongan II',
+            'P3K GOL. II' => 'PPPK Golongan II',
+        ];
+    }
+
+    /**
+     * Mencari pangkat yang cocok dari daftar pangkat dengan logika:
+     * 1. Exact match (uppercase)
+     * 2. Cek correction map (typo map)
+     * 3. Similar text match (jika Levenshtein distance ≤ 2)
+     *
+     * Return: ['rank' => Rank|null, 'corrected' => bool, 'original' => string, 'corrected_to' => string|null]
+     */
+    public static function findRankWithCorrection(string $rankName, Collection $ranks, string $golongan = ''): array
+    {
+        $upperInput = strtoupper(trim($rankName));
+
+        // --- KHUSUS PPPK ---
+        // Jika pangkat yang dimasukkan adalah "PPPK" atau "P3K" murni (tanpa embel-embel golongan di pangkatnya)
+        $cleanInput = trim($upperInput, '.');
+        if ($cleanInput === 'PPPK' || $cleanInput === 'P3K') {
+            $golKey = strtoupper(trim($golongan));
+            $golMap = [
+                '1' => 'I',   'I' => 'I',
+                '2' => 'II',  'II' => 'II',
+                '3' => 'III', 'III' => 'III',
+                '4' => 'IV',  'IV' => 'IV',
+                '5' => 'V',   'V' => 'V',
+                '6' => 'VI',  'VI' => 'VI',
+                '7' => 'VII', 'VII' => 'VII',
+                '8' => 'VIII', 'VIII' => 'VIII',
+                '9' => 'IX',  'IX' => 'IX',
+                '10' => 'X',   'X' => 'X',
+            ];
+            // Jika ada info golongan, rubah tulisan PPPK menjadi PPPK GOL. X untuk dicari di kamus
+            if (isset($golMap[$golKey])) {
+                $upperInput = 'PPPK GOLONGAN '.$golMap[$golKey];
+            } else {
+                // Fallback default PPPK jika golongannya kosong / tidak dikenali
+                $upperInput = 'PPPK GOLONGAN II';
+            }
+        }
+
+        $correctionMap = self::getPangkatCorrectionMap();
+
+        // 1. Exact match
+        $rank = $ranks->get($upperInput);
+        if ($rank) {
+            return ['rank' => $rank, 'corrected' => false, 'original' => $rankName, 'corrected_to' => null];
+        }
+
+        // 2. Cek di correction map
+        if (isset($correctionMap[$upperInput])) {
+            $correctedName = $correctionMap[$upperInput];
+            $rank = $ranks->get(strtoupper($correctedName));
+            // Coba case-insensitive juga untuk PNS
+            if (! $rank) {
+                foreach ($ranks as $key => $r) {
+                    if (strtolower($key) === strtolower($correctedName)) {
+                        $rank = $r;
+                        break;
+                    }
+                }
+            }
+            if ($rank) {
+                return ['rank' => $rank, 'corrected' => true, 'original' => $rankName, 'corrected_to' => $rank->name];
+            }
+        }
+
+        // 3. Levenshtein / similar_text match terhadap semua pangkat
+        $bestMatch = null;
+        $bestDistance = PHP_INT_MAX;
+        foreach ($ranks as $key => $r) {
+            $dist = levenshtein($upperInput, strtoupper($key));
+            if ($dist < $bestDistance) {
+                $bestDistance = $dist;
+                $bestMatch = $r;
+            }
+        }
+
+        if ($bestDistance <= 2 && $bestMatch) {
+            return ['rank' => $bestMatch, 'corrected' => true, 'original' => $rankName, 'corrected_to' => $bestMatch->name];
+        }
+
+        return ['rank' => null, 'corrected' => false, 'original' => $rankName, 'corrected_to' => null];
+    }
 
     public function __construct($satkerId = null)
     {
@@ -36,84 +270,350 @@ class PersonnelImport implements ToCollection, WithStartRow
         return 11;
     }
 
-    public function collection(Collection $rows)
+    /**
+     * Parse rows menjadi array preview data (TANPA menyimpan ke DB).
+     * Digunakan untuk menampilkan preview sebelum konfirmasi import.
+     */
+    public function generatePreview(Collection $rows): array
     {
-        $ranks = Rank::all()->keyBy(fn($r) => strtoupper($r->name));
-        $satkers = Satker::all()->keyBy(fn($s) => strtoupper($s->name));
-        $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
-
-        // Logical mapping of items to column indexes
-        $itemMapping = [
-            8 => 9, // Col I: TUTUP KEPALA (Item ID 9)
-            9 => 1, // Col J: KEMEJA (Item ID 1)
-            10 => 2, // Col K: CELANA / ROK (Item ID 2)
-            11 => 3, // Col L: T.SHIRT / OLAHRAGA (Item ID 3)
-            12 => 5, // Col M: SEPATU DINAS (Item ID 5)
-            13 => 6, // Col N: SEPATU OLAHRAGA (Item ID 6)
-            14 => 4, // Col O: JAKET (Item ID 4)
-            15 => 7, // Col P: SABUK (Item ID 7)
-            16 => 8, // Col Q: JILBAB (Item ID 8)
-        ];
-
-        // Cache all sizes for performance
-        $allSizes = KaporSize::all()->groupBy('kapor_item_id');
+        $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
+        $preview = [];
 
         foreach ($rows as $rowIndex => $row) {
-            // Ensure row is an array
             if ($row instanceof Collection) {
                 $row = $row->toArray();
             }
 
-            // Values mapped by index
-            $fullName = trim($row[1] ?? '');
-            $rankName = strtoupper(trim($row[2] ?? ''));
+            // Bersihkan tanda bintang (*) dan normalisasi enter/spasi ganda (karena sering ada \n di dalam cell Excel)
+            $fullNameRtn = str_replace('*', '', $row[1] ?? '');
+            $fullName = trim(preg_replace('/\s+/', ' ', $fullNameRtn));
+
+            $rankInputRtn = str_replace('*', '', $row[2] ?? '');
+            $rankInput = trim(preg_replace('/\s+/', ' ', $rankInputRtn));
+
             $golongan = trim($row[3] ?? '');
             $nrp = trim($row[4] ?? '');
             $jabatan = trim($row[5] ?? '');
             $bagian = trim($row[6] ?? '');
-            $genderChar = strtoupper(trim($row[7] ?? '')); // P or W or L or P
+            $genderRaw = strtoupper(trim($row[7] ?? ''));
+            $keterangan = trim($row[17] ?? '');
+
+            // Jika Nama atau PANGKAT kosong, dipastikan baris tidak valid/kosong/rekap
+            // Personel asli (Polri/PNS) pasti menaruh jabatan atau pangkat di kolom pangkat (C)
+            if (empty($fullName) || empty($rankInput)) {
+                continue;
+            }
+
+            // --- FILTER BARIS KOTOR / REKAPITULASI ---
+            $nameLower = strtolower($fullName);
+
+            // 1. Abaikan baris jika Nama diawali '=' (rumus excel) atau adalah string "jumlah"/"total"
+            if (str_starts_with($fullName, '=')) {
+                continue;
+            }
+            // Cegah false positive, misal ada orang bernama "Total", hanya tolak bila namanya persis "JUMLAH" atau "TOTAL"
+            if ($nameLower === 'jumlah' || $nameLower === 'total') {
+                continue;
+            }
+
+            // 2. Abaikan baris jika Nama SANGAT PENDEK / berupa angka (seperti baris rekap -> Nama "14", "15", "K")
+            // Nama personel asli umumnya >= 2 huruf dan tidak cuma terdiri dari angka.
+            if (strlen($fullName) < 2 || is_numeric(str_replace([' ', '.', ','], '', $fullName))) {
+                continue;
+            }
+
+            // 3. Pengecekan NRP/NIP
+            if (empty($nrp)) {
+                // Jika NRP kosong tapi Nama valid, generate NIP dummy agar tetap masuk database
+                // Berguna untuk pegawai PPPK / PNS yang belum masuk NIP di file excel
+                $nrp = 'NONIP-'.strtoupper(substr(md5($fullName.$rowIndex), 0, 8));
+            } else {
+                $nrpLower = strtolower($nrp);
+                // Abaikan jika NRP/NIP berisi kata rekapan atau rumus
+                if (str_starts_with($nrp, '=')) {
+                    continue;
+                }
+                if ($nrpLower === 'jumlah' || $nrpLower === 'total') {
+                    continue;
+                }
+
+                // Abaikan jika NRP berupa angka float (misal "15.5") atau terlampau pendek (< 5 karakter)
+                // Filter is_numeric($nrp) dihapus untuk berjaga-jaga NIP mengandung karakter aneh tapi valid
+                if (strlen($nrp) < 4) {
+                    continue;
+                }
+            }
+
+            // Gender: P di Excel → L (Laki-laki), W di Excel → P (Perempuan)
+            $gender = ($genderRaw === 'W') ? 'P' : 'L';
+
+            // Koreksi pangkat (sekarang menyertakan golongan untuk PPPK)
+            $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan);
+
+            // Ukuran kapor (kolom I-Q, index 8-16)
+            $sizes = [
+                'topi' => trim($row[8] ?? ''),
+                'kemeja' => trim($row[9] ?? ''),
+                'celana' => trim($row[10] ?? ''),
+                'olahraga' => trim($row[11] ?? ''),
+                'sepatu_dinas' => trim($row[12] ?? ''),
+                'sepatu_olahraga' => trim($row[13] ?? ''),
+                'jaket' => trim($row[14] ?? ''),
+                'sabuk' => trim($row[15] ?? ''),
+                'jilbab' => trim($row[16] ?? ''),
+            ];
+
+            $status = 'ok';
+            if (! $rankResult['rank']) {
+                $status = 'error'; // pangkat tidak dikenali
+            } elseif ($rankResult['corrected']) {
+                $status = 'corrected'; // pangkat dikoreksi otomatis
+            }
+
+            $preview[] = [
+                'row_num' => $rowIndex + 11, // baris di Excel
+                'full_name' => $fullName,
+                'rank_input' => $rankInput, // input asli dari Excel
+                'rank_corrected' => $rankResult['corrected_to'], // null jika tidak dikoreksi
+                'rank_id' => $rankResult['rank']?->id,
+                'rank_name' => $rankResult['rank']?->name,
+                'golongan' => $golongan,
+                'nrp' => $nrp,
+                'jabatan' => $jabatan,
+                'bagian' => $bagian,
+                'gender' => $gender,
+                'gender_raw' => $genderRaw,
+                'keterangan' => $keterangan,
+                'sizes' => $sizes,
+                'status' => $status, // 'ok' | 'corrected' | 'error'
+            ];
+        }
+
+        return $preview;
+    }
+
+    /**
+     * Simpan data dari preview — aman (Eloquent) + cepat (satu transaksi, pre-load, bcrypt cost rendah).
+     */
+    public function saveFromPreviewData(array $rows, int $satkerId): array
+    {
+        set_time_limit(0);
+        ini_set('memory_limit', '512M');
+
+        $satker = Satker::findOrFail($satkerId);
+        $successCount = 0;
+        $errorCount = 0;
+        $errors = [];
+        $sizeMapping = ['topi', 'kemeja', 'celana', 'olahraga', 'sepatu_dinas', 'sepatu_olahraga', 'jaket', 'sabuk', 'jilbab'];
+
+        // ── Pre-load sekali agar tidak ada N+1 query ─────────────────────────
+        $ranksById = Rank::all()->keyBy('id');
+        $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
+        $existingPersonnel = Personnel::whereIn('nrp', $allNrp)->get()->keyBy('nrp');
+        $existingUsers = User::whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
+
+        // ── Satu transaksi besar untuk semua insert/update ───────────────────
+        DB::transaction(function () use (
+            $rows, $satker, $ranksById, $existingPersonnel, $existingUsers,
+            $sizeMapping, &$successCount, &$errorCount, &$errors
+        ) {
+            foreach ($rows as $idx => $data) {
+                $nrp = trim($data['nrp'] ?? '');
+                $fullName = trim($data['full_name'] ?? '');
+                $rankId = (int) ($data['rank_id'] ?? 0);
+                $gender = $data['gender'] ?? 'L';
+                $jabatan = trim($data['jabatan'] ?? '');
+                $bagian = trim($data['bagian'] ?? '');
+                $golongan = trim($data['golongan'] ?? '');
+                $keterangan = trim($data['keterangan'] ?? '');
+                $sizes = $data['sizes'] ?? [];
+
+                if (empty($nrp) || empty($fullName) || ! $rankId) {
+                    $errorCount++;
+                    $errors[] = "Baris {$idx}: Data tidak lengkap (NRP: {$nrp}).";
+
+                    continue;
+                }
+
+                $rank = $ranksById->get($rankId);
+                if (! $rank) {
+                    $errorCount++;
+                    $errors[] = "Baris {$idx}: Pangkat ID={$rankId} tidak ditemukan (NRP: {$nrp}).";
+
+                    continue;
+                }
+
+                try {
+                    $personnel = $existingPersonnel->get($nrp);
+
+                    if (! $personnel) {
+                        // ── User baru: bcrypt cost=4 (10× lebih cepat, password bisa diubah nanti) ──
+                        $user = $existingUsers->get($nrp);
+                        if (! $user) {
+                            $user = User::create([
+                                'name' => $fullName,
+                                'nrp_nip' => $nrp,
+                                'password' => password_hash($nrp, PASSWORD_BCRYPT, ['cost' => 4]),
+                                'satker_id' => $satker->id,
+                                'is_active' => true,
+                            ]);
+                            $user->assignRole('personil');
+                            $existingUsers->put($nrp, $user);
+                        }
+
+                        $personnel = Personnel::create([
+                            'user_id' => $user->id,
+                            'nrp' => $nrp,
+                            'full_name' => $fullName,
+                            'rank_id' => $rank->id,
+                            'satker_id' => $satker->id,
+                            'jabatan' => $jabatan,
+                            'bagian' => $bagian,
+                            'personnel_type' => $rank->category === 'PNS' ? 'PNS' : 'Polri',
+                            'gender' => $gender,
+                            'golongan' => $golongan,
+                            'keterangan' => $keterangan,
+                            'is_active' => true,
+                        ]);
+                        $existingPersonnel->put($nrp, $personnel);
+                    } else {
+                        // ── Update personel yang sudah ada ──
+                        $personnel->update([
+                            'full_name' => $fullName,
+                            'rank_id' => $rank->id,
+                            'satker_id' => $satker->id,
+                            'jabatan' => $jabatan,
+                            'bagian' => $bagian,
+                            'golongan' => $golongan,
+                            'keterangan' => $keterangan,
+                            'gender' => $gender,
+                        ]);
+                    }
+
+                    // Simpan ukuran kapor
+                    $kaporSizes = is_array($personnel->kapor_sizes) ? $personnel->kapor_sizes : [];
+                    foreach ($sizeMapping as $key) {
+                        $val = trim($sizes[$key] ?? '');
+                        if (! empty($val) && $val !== '-' && $val !== '0') {
+                            $kaporSizes[$key] = $val;
+                        }
+                    }
+                    $personnel->kapor_sizes = $kaporSizes;
+                    $personnel->save();
+
+                    $successCount++;
+                } catch (\Exception $e) {
+                    $errorCount++;
+                    $errors[] = "Baris {$idx} (NRP: {$nrp}): ".$e->getMessage();
+                }
+            }
+        });
+
+        self::recalculateSatkerCount($satkerId);
+
+        return [
+            'success_count' => $successCount,
+            'error_count' => $errorCount,
+            'errors' => $errors,
+        ];
+    }
+
+    /**
+     * Helper: build kapor_sizes JSON string dari data existing + data baru.
+     */
+    private function buildKaporSizes(array $existing, array $newSizes, array $mapping): string
+    {
+        $result = $existing;
+        foreach ($mapping as $key) {
+            $val = trim($newSizes[$key] ?? '');
+            if (! empty($val) && $val !== '-' && $val !== '0') {
+                $result[$key] = $val;
+            }
+        }
+
+        return json_encode($result);
+    }
+
+    /**
+     * Hitung ulang jumlah Polri dan PNS pada satker setelah import.
+     */
+    public static function recalculateSatkerCount(int $satkerId): void
+    {
+        $polriCount = Personnel::where('satker_id', $satkerId)
+            ->where('personnel_type', 'Polri')
+            ->where('is_active', true)
+            ->count();
+
+        $pnsCount = Personnel::where('satker_id', $satkerId)
+            ->where('personnel_type', 'PNS')
+            ->where('is_active', true)
+            ->count();
+
+        Satker::where('id', $satkerId)->update([
+            'polri_count' => $polriCount,
+            'pns_count' => $pnsCount,
+        ]);
+    }
+
+    /**
+     * ToCollection — dipanggil oleh Maatwebsite Excel saat import langsung.
+     * (Dipertahankan untuk kompatibilitas, tapi alur utama kini via preview)
+     */
+    public function collection(Collection $rows)
+    {
+        // Alur lama dipertahankan sebagai fallback
+        $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
+        $satker = Satker::find($this->satkerId) ?? Satker::first();
+        $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
+
+        $sizeMapping = [
+            8 => 'topi',
+            9 => 'kemeja',
+            10 => 'celana',
+            11 => 'olahraga',
+            12 => 'sepatu_dinas',
+            13 => 'sepatu_olahraga',
+            14 => 'jaket',
+            15 => 'sabuk',
+            16 => 'jilbab',
+        ];
+
+        foreach ($rows as $rowIndex => $row) {
+            if ($row instanceof Collection) {
+                $row = $row->toArray();
+            }
+
+            $fullName = trim($row[1] ?? '');
+            $rankInput = trim($row[2] ?? '');
+            $golongan = trim($row[3] ?? '');
+            $nrp = trim($row[4] ?? '');
+            $jabatan = trim($row[5] ?? '');
+            $bagian = trim($row[6] ?? '');
+            $genderRaw = strtoupper(trim($row[7] ?? ''));
             $keterangan = trim($row[17] ?? '');
 
             if (empty($nrp) || empty($fullName)) {
                 continue;
             }
 
-            // Map Gender: P -> L (Pria), W -> P (Wanita)
-            $gender = ($genderChar === 'W' || $genderChar === 'P') ? ($genderChar === 'W' ? 'P' : 'L') : 'L';
-            if ($genderChar === 'P' && $row[1] == 'DEDE RUHIAT') { // Handle specific P/W ambiguity if needed, but standard is P=Pria, W=Wanita in image
-                // In the image, 'P' is used for Men (Dede Ruhiat is P). 'W' for Women.
-                $gender = 'L';
-            }
-            if ($genderChar === 'W')
-                $gender = 'P';
-            else if ($genderChar === 'P')
-                $gender = 'L';
+            // Gender: P di Excel → L (Laki-laki), W di Excel → P (Perempuan)
+            $gender = ($genderRaw === 'W') ? 'P' : 'L';
 
-            $rank = $ranks->get($rankName);
-            if (!$rank) {
-                // Try partial match if exact fails
-                foreach ($ranks as $name => $r) {
-                    if (strpos($rankName, $name) !== false || strpos($name, $rankName) !== false) {
-                        $rank = $r;
-                        break;
-                    }
-                }
-            }
+            $rankResult = self::findRankWithCorrection($rankInput, $ranks);
+            $rank = $rankResult['rank'];
 
-            if (!$rank) {
+            if (! $rank) {
                 $this->errorCount++;
-                $this->errors[] = "Baris " . ($rowIndex + 11) . " (NRP: {$nrp}): Pangkat '{$rankName}' tidak ditemukan.";
+                $this->errors[] = 'Baris '.($rowIndex + 11)." (NRP: {$nrp}): Pangkat '{$rankInput}' tidak ditemukan.";
+
                 continue;
             }
 
-            // Use the Satker ID provided in constructor
-            $satker = Satker::find($this->satkerId) ?? Satker::first();
-
             try {
-                DB::transaction(function () use ($row, $nrp, $fullName, $rank, $satker, $jabatan, $bagian, $gender, $golongan, $keterangan, $itemMapping, $allSizes, $fiscalYear) {
+                DB::transaction(function () use ($row, $nrp, $fullName, $rank, $satker, $jabatan, $bagian, $gender, $golongan, $keterangan, $sizeMapping) {
                     $personnel = Personnel::where('nrp', $nrp)->first();
 
-                    if (!$personnel) {
+                    if (! $personnel) {
                         $user = User::create([
                             'name' => $fullName,
                             'nrp_nip' => $nrp,
@@ -137,8 +637,7 @@ class PersonnelImport implements ToCollection, WithStartRow
                             'keterangan' => $keterangan,
                             'is_active' => true,
                         ]);
-                    }
-                    else {
+                    } else {
                         $personnel->update([
                             'full_name' => $fullName,
                             'rank_id' => $rank->id,
@@ -147,42 +646,29 @@ class PersonnelImport implements ToCollection, WithStartRow
                             'bagian' => $bagian,
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
+                            'gender' => $gender,
                         ]);
                     }
 
-                    // Process Kapor Sizes based on column mapping keys
-                    // Dictionary mapping column index to kapor_sizes key
-                    $sizeMapping = [
-                        8 => 'topi', // Col I: TUTUP KEPALA
-                        9 => 'kemeja', // Col J: KEMEJA
-                        10 => 'celana', // Col K: CELANA / ROK
-                        11 => 'olahraga', // Col L: T.SHIRT / OLAHRAGA
-                        12 => 'sepatu_dinas', // Col M: SEPATU DINAS
-                        13 => 'sepatu_olahraga', // Col N: SEPATU OLAHRAGA
-                        14 => 'jaket', // Col O: JAKET
-                        15 => 'sabuk', // Col P: SABUK
-                        16 => 'jilbab', // Col Q: JILBAB
-                    ];
-
                     $kaporSizes = $personnel->kapor_sizes ?? [];
-
                     foreach ($sizeMapping as $colIndex => $key) {
                         $sizeVal = trim($row[$colIndex] ?? '');
-                        if (!empty($sizeVal) && $sizeVal !== '-' && $sizeVal !== '0') {
+                        if (! empty($sizeVal) && $sizeVal !== '-' && $sizeVal !== '0') {
                             $kaporSizes[$key] = $sizeVal;
                         }
                     }
-
-                    // Save decoupled sizes
                     $personnel->kapor_sizes = $kaporSizes;
                     $personnel->save();
                 });
                 $this->successCount++;
-            }
-            catch (\Exception $e) {
+            } catch (\Exception $e) {
                 $this->errorCount++;
-                $this->errors[] = "Baris " . ($rowIndex + 11) . " (NRP: {$nrp}): " . $e->getMessage();
+                $this->errors[] = 'Baris '.($rowIndex + 11)." (NRP: {$nrp}): ".$e->getMessage();
             }
+        }
+
+        if ($this->satkerId) {
+            self::recalculateSatkerCount($this->satkerId);
         }
     }
 

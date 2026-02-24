@@ -2,28 +2,31 @@
 
 namespace App\Exports;
 
-use App\Models\Satker;
 use App\Models\KaporItem;
-use App\Models\KaporSize;
+use App\Models\Satker;
 use App\Models\Setting;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Events\AfterSheet;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class TutupKepalaExport implements FromCollection, WithHeadings, WithStyles, WithEvents, ShouldAutoSize
+class TutupKepalaExport implements FromCollection, ShouldAutoSize, WithEvents, WithHeadings, WithStyles
 {
     protected $fiscalYear;
+
     protected $items;
+
     protected $sizesMap;
+
     protected $totalColumns;
+
     protected $type;
 
     public function __construct($type = null)
@@ -38,17 +41,13 @@ class TutupKepalaExport implements FromCollection, WithHeadings, WithStyles, Wit
         if ($this->type) {
             if ($this->type === 'TOPI LAPANGAN') {
                 $query->where('item_name', 'LIKE', '%Topi Lapangan%');
-            }
-            elseif ($this->type === 'PET') {
+            } elseif ($this->type === 'PET') {
                 $query->where('item_name', 'LIKE', '%Pet%');
-            }
-            elseif ($this->type === 'BARET') {
+            } elseif ($this->type === 'BARET') {
                 $query->where('item_name', 'LIKE', '%Baret%');
-            }
-            elseif ($this->type === 'PECI') {
+            } elseif ($this->type === 'PECI') {
                 $query->where('item_name', 'LIKE', '%Peci%');
-            }
-            elseif ($this->type === 'JILBAB') {
+            } elseif ($this->type === 'JILBAB') {
                 $query->where('item_name', 'LIKE', '%Jilbab%');
             }
         }
@@ -83,10 +82,10 @@ class TutupKepalaExport implements FromCollection, WithHeadings, WithStyles, Wit
                     // Count personnel in this Satker having this specific size submission
                     $count = $satker->personnels()
                         ->whereHas('submissions', function ($q) use ($item, $size) {
-                        $q->where('fiscal_year', $this->fiscalYear)
-                            ->where('kapor_item_id', $item->id)
-                            ->where('kapor_size_id', $size->id);
-                    })
+                            $q->where('fiscal_year', $this->fiscalYear)
+                                ->where('kapor_item_id', $item->id)
+                                ->where('kapor_size_id', $size->id);
+                        })
                         ->count();
 
                     $row[] = $count > 0 ? $count : '-';
@@ -98,12 +97,12 @@ class TutupKepalaExport implements FromCollection, WithHeadings, WithStyles, Wit
             // Usually rekap counts the ITEM quantity needed.
             $totalQty = $satker->personnels()
                 ->whereHas('submissions', function ($q) {
-                $q->where('fiscal_year', $this->fiscalYear)
-                    ->whereHas('kaporItem', function ($qi) {
-                    $qi->where('category', 'Tutup_Kepala');
-                }
-                );
-            })
+                    $q->where('fiscal_year', $this->fiscalYear)
+                        ->whereHas('kaporItem', function ($qi) {
+                            $qi->where('category', 'Tutup_Kepala');
+                        }
+                        );
+                })
                 ->count();
 
             $row[] = $totalQty;
@@ -117,7 +116,7 @@ class TutupKepalaExport implements FromCollection, WithHeadings, WithStyles, Wit
     public function headings(): array
     {
         // Row 1: Title
-        $titleText = 'REKAPITULASI DATA TUTUP KEPALA ' . ($this->type ? strtoupper($this->type) . ' ' : '') . 'PERSONEL POLDA NTB TA. ' . $this->fiscalYear;
+        $titleText = 'REKAPITULASI DATA TUTUP KEPALA '.($this->type ? strtoupper($this->type).' ' : '').'PERSONEL POLDA NTB TA. '.$this->fiscalYear;
         $title = [$titleText];
 
         // Row 2: Empty
@@ -140,7 +139,7 @@ class TutupKepalaExport implements FromCollection, WithHeadings, WithStyles, Wit
             $title,
             [''], // Spacer
             $headerRow1,
-            $headerRow2
+            $headerRow2,
         ];
     }
 
@@ -157,48 +156,48 @@ class TutupKepalaExport implements FromCollection, WithHeadings, WithStyles, Wit
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
-            $sheet = $event->sheet->getDelegate();
-            $lastColIndex = 3; // Starting after JML PERSONIL
+                $sheet = $event->sheet->getDelegate();
+                $lastColIndex = 3; // Starting after JML PERSONIL
 
-            // Calculate last column
-            $totalSizes = 0;
-            foreach ($this->items as $item) {
-                $totalSizes += $item->sizes->count();
-            }
-            $lastColIndex += $totalSizes;
-            $lastColIndex++; // For TOTAL column (1-based count so far)
-
-            // Convert index to Letter (e.g., 5 -> E)
-            $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastColIndex);
-
-            // Merge Title
-            $sheet->mergeCells("A1:{$lastColLetter}1");
-
-            // Merge Fixed Headers
-            $sheet->mergeCells('A3:A4'); // NO
-            $sheet->mergeCells('B3:B4'); // SATKER
-            $sheet->mergeCells('C3:C4'); // JML PERSONIL
-
-            // Merge Item Headers
-            $currentCol = 4; // Column D
-            foreach ($this->items as $item) {
-                $count = $item->sizes->count();
-                $startLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($currentCol);
-                $endLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($currentCol + $count - 1);
-
-                if ($count > 1) {
-                    $sheet->mergeCells("{$startLetter}3:{$endLetter}3");
+                // Calculate last column
+                $totalSizes = 0;
+                foreach ($this->items as $item) {
+                    $totalSizes += $item->sizes->count();
                 }
-                $currentCol += $count;
-            }
+                $lastColIndex += $totalSizes;
+                $lastColIndex++; // For TOTAL column (1-based count so far)
 
-            // Merge Total
-            $totalLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($currentCol);
-            $sheet->mergeCells("{$totalLetter}3:{$totalLetter}4");
+                // Convert index to Letter (e.g., 5 -> E)
+                $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastColIndex);
 
-            // Borders
-            $highestRow = $sheet->getHighestRow();
-            $styleArray = [
+                // Merge Title
+                $sheet->mergeCells("A1:{$lastColLetter}1");
+
+                // Merge Fixed Headers
+                $sheet->mergeCells('A3:A4'); // NO
+                $sheet->mergeCells('B3:B4'); // SATKER
+                $sheet->mergeCells('C3:C4'); // JML PERSONIL
+
+                // Merge Item Headers
+                $currentCol = 4; // Column D
+                foreach ($this->items as $item) {
+                    $count = $item->sizes->count();
+                    $startLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($currentCol);
+                    $endLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($currentCol + $count - 1);
+
+                    if ($count > 1) {
+                        $sheet->mergeCells("{$startLetter}3:{$endLetter}3");
+                    }
+                    $currentCol += $count;
+                }
+
+                // Merge Total
+                $totalLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($currentCol);
+                $sheet->mergeCells("{$totalLetter}3:{$totalLetter}4");
+
+                // Borders
+                $highestRow = $sheet->getHighestRow();
+                $styleArray = [
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
@@ -206,13 +205,13 @@ class TutupKepalaExport implements FromCollection, WithHeadings, WithStyles, Wit
                         ],
                     ],
                 ];
-            $sheet->getStyle("A3:{$lastColLetter}{$highestRow}")->applyFromArray($styleArray);
+                $sheet->getStyle("A3:{$lastColLetter}{$highestRow}")->applyFromArray($styleArray);
 
-            // Background for headers
-            $sheet->getStyle("A3:{$lastColLetter}4")->getFill()
-                ->setFillType(Fill::FILL_SOLID)
-                ->getStartColor()->setARGB('F2F2F2');
-        },
+                // Background for headers
+                $sheet->getStyle("A3:{$lastColLetter}4")->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('F2F2F2');
+            },
         ];
     }
 }

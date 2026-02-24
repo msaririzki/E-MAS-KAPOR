@@ -6,10 +6,10 @@ use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\User;
+use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Faker\Factory as Faker;
 
 class DummyPersonnelSeeder extends Seeder
 {
@@ -24,6 +24,7 @@ class DummyPersonnelSeeder extends Seeder
 
         if ($satkers->isEmpty() || $ranks->isEmpty()) {
             $this->command->error('Pastikan tabel satkers and ranks sudah memiliki data (jalankan SatkerSeeder and RankSeeder).');
+
             return;
         }
 
@@ -76,8 +77,9 @@ class DummyPersonnelSeeder extends Seeder
                 // Random Kapor Sizes
                 $kaporSizes = [];
                 foreach ($sizes as $key => $options) {
-                    if ($key === 'jilbab' && $gender === 'L')
+                    if ($key === 'jilbab' && $gender === 'L') {
                         continue;
+                    }
                     $kaporSizes[$key] = $faker->randomElement($options);
                 }
 
@@ -96,7 +98,7 @@ class DummyPersonnelSeeder extends Seeder
                     'rank_id' => $rankId,
                     'golongan' => $golongan,
                     'jabatan' => $faker->jobTitle,
-                    'bagian' => $satker->name . ' - ' . $faker->word,
+                    'bagian' => $satker->name.' - '.$faker->word,
                     'satker_id' => $satker->id,
                     'phone' => $faker->phoneNumber,
                     'religion' => $faker->randomElement(['Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu']),
@@ -105,15 +107,14 @@ class DummyPersonnelSeeder extends Seeder
                 ]);
 
                 if (($i + 1) % 100 === 0) {
-                    $this->command->info("Berhasil membuat " . ($i + 1) . " data...");
+                    $this->command->info('Berhasil membuat '.($i + 1).' data...');
                 }
             }
             DB::commit();
-            $this->command->info("Selesai! Berhasil membuat 1000 data personil.");
-        }
-        catch (\Exception $e) {
+            $this->command->info('Selesai! Berhasil membuat 1000 data personil.');
+        } catch (\Exception $e) {
             DB::rollBack();
-            $this->command->error("Gagal membuat data dummy: " . $e->getMessage());
+            $this->command->error('Gagal membuat data dummy: '.$e->getMessage());
         }
     }
 }

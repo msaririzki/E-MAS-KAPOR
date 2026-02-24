@@ -39,10 +39,10 @@ class AuditLogController extends Controller
         if ($request->filled('role')) {
             $query->whereHas('user', function ($q) use ($request) {
                 $q->whereHas('roles', function ($rq) use ($request) {
-                        $rq->where('name', $request->role);
-                    }
-                    );
-                });
+                    $rq->where('name', $request->role);
+                }
+                );
+            });
         }
         if ($request->filled('search')) {
             $search = $request->search;
@@ -50,10 +50,10 @@ class AuditLogController extends Controller
                 $q->where('details', 'LIKE', "%{$search}%")
                     ->orWhere('action', 'LIKE', "%{$search}%")
                     ->orWhereHas('user', function ($uq) use ($search) {
-                    $uq->where('name', 'LIKE', "%{$search}%")
-                        ->orWhere('username', 'LIKE', "%{$search}%");
-                }
-                );
+                        $uq->where('name', 'LIKE', "%{$search}%")
+                            ->orWhere('username', 'LIKE', "%{$search}%");
+                    }
+                    );
             });
         }
 

@@ -12,11 +12,10 @@ class EnsureRole
      * Handle an incoming request.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     * @param  string  ...$roles
      */
-    public function handle(Request $request, Closure $next, string...$roles): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if (!$request->user() || !$request->user()->hasAnyRole($roles)) {
+        if (! $request->user() || ! $request->user()->hasAnyRole($roles)) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
 

@@ -52,7 +52,7 @@ class KaporItemSeeder extends Seeder
                 foreach ($sizeList as $sizeLabel) {
                     KaporSize::create([
                         'kapor_item_id' => $item->id,
-                        'size_label' => (string)$sizeLabel,
+                        'size_label' => (string) $sizeLabel,
                         'gender' => $gender,
                         'sort_order' => $order++,
                     ]);

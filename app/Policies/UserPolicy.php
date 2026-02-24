@@ -53,13 +53,13 @@ class UserPolicy
 
         // Admin can edit non-superadmin users
         if ($auth->hasRole('admin')) {
-            return !$target->hasRole('superadmin');
+            return ! $target->hasRole('superadmin');
         }
 
         // Admin Satker can edit users in same satker (non-admin/superadmin)
         if ($auth->hasRole('admin_satker')) {
             return $target->satker_id === $auth->satker_id
-                && !$target->hasAnyRole(['superadmin', 'admin']);
+                && ! $target->hasAnyRole(['superadmin', 'admin']);
         }
 
         // User can edit own profile only
@@ -83,7 +83,7 @@ class UserPolicy
 
         // Admin can delete non-superadmin users
         if ($auth->hasRole('admin')) {
-            return !$target->hasRole('superadmin');
+            return ! $target->hasRole('superadmin');
         }
 
         return false;

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Setting;
 use App\Models\KaporSubmission;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -28,18 +28,18 @@ class SettingsController extends Controller
 
         // Build a comprehensive list of years to show
         $yearsToShow = $submissionStats->keys()->toArray();
-        if (!in_array($activeYear, $yearsToShow)) {
+        if (! in_array($activeYear, $yearsToShow)) {
             $yearsToShow[] = $activeYear;
         }
         rsort($yearsToShow);
 
         $yearlyStats = [];
         foreach ($yearsToShow as $year) {
-            $yearlyStats[] = (object)[
+            $yearlyStats[] = (object) [
                 'fiscal_year' => $year,
                 'total' => $submissionStats[$year]->total ?? 0,
                 'is_active' => $year == $activeYear,
-                'status' => $year < $activeYear ? 'Selesai' : ($year == $activeYear ? 'Aktif' : 'Mendatang')
+                'status' => $year < $activeYear ? 'Selesai' : ($year == $activeYear ? 'Aktif' : 'Mendatang'),
             ];
         }
 

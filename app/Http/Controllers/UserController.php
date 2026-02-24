@@ -2,17 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Satker;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
-use Illuminate\Validation\Rule;
-use App\Services\AuditLogger;
-use Illuminate\Support\Facades\DB;
-
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Satker;
+use App\Models\User;
+use App\Services\AuditLogger;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -31,9 +29,9 @@ class UserController extends Controller
                     ->orWhere('nrp_nip', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
                     ->orWhereHas('satker', function ($sq) use ($search) {
-                    $sq->where('name', 'like', "%{$search}%");
-                }
-                );
+                        $sq->where('name', 'like', "%{$search}%");
+                    }
+                    );
             });
         }
 
@@ -104,7 +102,7 @@ class UserController extends Controller
             'is_active' => $request->has('is_active'),
         ];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $updateData['password'] = Hash::make($validated['password']);
         }
 
@@ -142,11 +140,11 @@ class UserController extends Controller
     public function downloadTemplate()
     {
         $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=template_import_user.csv",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
+            'Content-type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=template_import_user.csv',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
         $columns = ['nrp_nip', 'name', 'phone', 'role', 'password'];
@@ -171,11 +169,11 @@ class UserController extends Controller
         set_time_limit(0);
 
         $request->validate([
-            'file' => 'required|mimes:csv,txt|max:2048'
+            'file' => 'required|mimes:csv,txt|max:2048',
         ]);
 
         $file = $request->file('file');
-        $handle = fopen($file->getRealPath(), "r");
+        $handle = fopen($file->getRealPath(), 'r');
 
         // Skip header
         fgetcsv($handle);
@@ -186,9 +184,10 @@ class UserController extends Controller
 
         DB::beginTransaction();
         try {
-            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-                if (count($data) < 5)
+            while (($data = fgetcsv($handle, 1000, ',')) !== false) {
+                if (count($data) < 5) {
                     continue;
+                }
 
                 $nrp_nip = trim($data[0]);
                 $name = trim($data[1]);
@@ -198,6 +197,7 @@ class UserController extends Controller
 
                 if (empty($nrp_nip) || empty($name)) {
                     $errorCount++;
+
                     continue;
                 }
 
@@ -205,41 +205,42 @@ class UserController extends Controller
                 if ($roleName === 'personil') {
                     $errorCount++;
                     $errors[] = "NRP {$nrp_nip}: Peran 'personil' harus diinput melalui Data Personel.";
+
                     continue;
                 }
 
                 // Role validation
                 $role = Role::where('name', $roleName)->first();
-                if (!$role) {
+                if (! $role) {
                     $errorCount++;
                     $errors[] = "Role '{$roleName}' tidak valid.";
+
                     continue;
                 }
 
                 try {
                     $user = User::updateOrCreate(
-                    ['nrp_nip' => $nrp_nip],
-                    [
-                        'name' => $name,
-                        'phone' => $phone,
-                        'password' => Hash::make($password),
-                        'is_active' => true,
-                    ]
+                        ['nrp_nip' => $nrp_nip],
+                        [
+                            'name' => $name,
+                            'phone' => $phone,
+                            'password' => Hash::make($password),
+                            'is_active' => true,
+                        ]
                     );
 
                     $user->syncRoles([$roleName]);
                     $successCount++;
-                }
-                catch (\Exception $e) {
+                } catch (\Exception $e) {
                     $errorCount++;
-                    $errors[] = "Gagal memproses {$nrp_nip}: " . $e->getMessage();
+                    $errors[] = "Gagal memproses {$nrp_nip}: ".$e->getMessage();
                 }
             }
             DB::commit();
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('admin.users.index')->with('error', 'Terjadi kesalahan sistem saat impor: ' . $e->getMessage());
+
+            return redirect()->route('admin.users.index')->with('error', 'Terjadi kesalahan sistem saat impor: '.$e->getMessage());
         }
 
         fclose($handle);
@@ -247,7 +248,7 @@ class UserController extends Controller
         AuditLogger::log('Import User', 'Manajemen Pengguna', null, null, null, 'success', "Berhasil memproses {$successCount} pengguna. Gagal: {$errorCount}");
 
         if ($errorCount > 0) {
-            return redirect()->route('admin.users.index')->with('warning', "Berhasil memproses {$successCount} data. Gagal: {$errorCount}. Contoh error: " . implode(', ', array_slice($errors, 0, 3)));
+            return redirect()->route('admin.users.index')->with('warning', "Berhasil memproses {$successCount} data. Gagal: {$errorCount}. Contoh error: ".implode(', ', array_slice($errors, 0, 3)));
         }
 
         return redirect()->route('admin.users.index')->with('success', "Berhasil mengimpor {$successCount} pengguna.");

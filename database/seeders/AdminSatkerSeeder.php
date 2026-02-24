@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Satker;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -70,9 +70,9 @@ class AdminSatkerSeeder extends Seeder
                 // Check if user already exists
                 $user = User::where('nrp_nip', $u['username'])->first();
 
-                if (!$user) {
+                if (! $user) {
                     $user = User::create([
-                        'name' => 'Admin ' . $u['name'],
+                        'name' => 'Admin '.$u['name'],
                         'nrp_nip' => $u['username'],
                         'password' => Hash::make($u['password']),
                         'satker_id' => $satker->id,

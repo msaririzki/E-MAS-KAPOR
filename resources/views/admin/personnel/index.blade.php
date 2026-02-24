@@ -435,12 +435,42 @@
         <form action="{{ route('admin.personnel.import') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="modal-body" style="padding: 24px;">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="font-weight: 700; color: #374151;">Pilih Satuan Kerja (Satker) Tujuan <span style="color: #EF4444;">*</span></label>
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select" onclick="toggleDropdown(this)">
+                            <div class="select-trigger">
+                                <span id="import_satker_label">-- Pilih Satker --</span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </div>
+                            <div class="custom-options">
+                                <div class="select-search-container">
+                                    <input type="text" class="select-search-input" placeholder="Cari Satker..." onclick="event.stopPropagation()" onkeyup="filterSatkerOptions(this)">
+                                </div>
+                                <div class="options-scroll">
+                                    @foreach($satkers as $s)
+                                        <div class="option" data-value="{{ $s->id }}" data-label="{{ $s->name }}" onclick="selectSatkerOptionSimple(this, 'import')">{{ $s->name }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="satker_id" id="import_satker_id" required>
+                    </div>
+                    <p style="font-size: 12px; color: #6B7280; margin-top: 4px;">Pilih satker yang sesuai dengan isi file yang akan diimport.</p>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label style="font-weight: 700; color: #374151;">Pilih File Excel/CSV Hasil Pengisian <span style="color: #EF4444;">*</span></label>
+                    <input type="file" name="file" accept=".xlsx,.xls,.csv" required class="form-input" style="padding: 12px; border: 2px dashed #E5E7EB; background: #F9FAFB;">
+                    <p style="font-size: 12px; color: #6B7280; margin-top: 8px;">Format yang didukung: .xlsx, .xls, atau .csv</p>
+                </div>
+
                 <div style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
                     <div style="display: flex; gap: 12px;">
                         <i class="ri-information-line" style="font-size: 24px; color: #F97316;"></i>
                         <div>
                             <h4 style="font-size: 14px; font-weight: 700; color: #9A3412; margin-bottom: 4px;">Instruksi Format Import</h4>
-                            <p style="font-size: 13px; color: #C2410C; line-height: 1.5;">Gunakan tombol di bawah untuk mengunduh format yang benar. Anda bisa langsung memasukkan ukuran kapor pada kolom yang tersedia di bagian akhir file.</p>
+                            <p style="font-size: 13px; color: #C2410C; line-height: 1.5;">Setelah upload, sistem akan menampilkan <strong>halaman preview</strong> untuk memeriksa data sebelum disimpan. Pangkat yang mengandung typo akan dikoreksi otomatis dan dapat diedit manual jika diperlukan.</p>
                             <a href="{{ route('admin.personnel.template') }}" class="btn btn-primary" style="background: #B91C1C; margin-top: 12px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;">
                                 <i class="ri-download-cloud-2-line"></i> Unduh Tabel Format Import (Excel)
                             </a>
@@ -496,7 +526,7 @@
                                 <tr>
                                     <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">JENIS KELAMIN</td>
                                     <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Tidak</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Isi dengan <strong>P</strong> (Pria) atau <strong>W</strong> (Wanita) - <strong>Kolom H</strong>.</td>
+                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Isi dengan <strong>P</strong> (Pria/Laki-laki) atau <strong>W</strong> (Wanita/Perempuan) - <strong>Kolom H</strong>.</td>
                                 </tr>
                                 <tr style="background: #FEF2F2;">
                                     <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">DATA UKURAN</td>
@@ -529,41 +559,11 @@
                         </table>
                     </div>
                 </div>
-
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label style="font-weight: 700; color: #374151;">Pilih Satuan Kerja (Satker) Tujuan <span style="color: #EF4444;">*</span></label>
-                    <div class="custom-select-wrapper">
-                        <div class="custom-select" onclick="toggleDropdown(this)">
-                            <div class="select-trigger">
-                                <span id="import_satker_label">-- Pilih Satker --</span>
-                                <i class="ri-arrow-down-s-line"></i>
-                            </div>
-                            <div class="custom-options">
-                                <div class="select-search-container">
-                                    <input type="text" class="select-search-input" placeholder="Cari Satker..." onclick="event.stopPropagation()" onkeyup="filterSatkerOptions(this)">
-                                </div>
-                                <div class="options-scroll">
-                                    @foreach($satkers as $s)
-                                        <div class="option" data-value="{{ $s->id }}" data-label="{{ $s->name }}" onclick="selectSatkerOptionSimple(this, 'import')">{{ $s->name }}</div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                        <input type="hidden" name="satker_id" id="import_satker_id" required>
-                    </div>
-                    <p style="font-size: 12px; color: #6B7280; margin-top: 4px;">Pilih satker yang sesuai dengan isi file yang akan diimport.</p>
-                </div>
-
-                <div class="form-group">
-                    <label style="font-weight: 700; color: #374151;">Pilih File Excel/CSV Hasil Pengisian <span style="color: #EF4444;">*</span></label>
-                    <input type="file" name="file" accept=".xlsx,.xls,.csv" required class="form-input" style="padding: 12px; border: 2px dashed #E5E7EB; background: #F9FAFB;">
-                    <p style="font-size: 12px; color: #6B7280; margin-top: 8px;">Format yang didukung: .xlsx, .xls, atau .csv</p>
-                </div>
             </div>
             <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">
                 <button type="button" class="btn btn-outline" onclick="closeModal('importModal')">Tutup</button>
                 <button type="submit" class="btn btn-primary" style="background: #B91C1C; padding-left: 30px; padding-right: 30px;">
-                    <i class="ri-upload-2-line"></i> Proses Import Sekarang
+                    <i class="ri-eye-line"></i> Proses &amp; Lihat Preview
                 </button>
             </div>
         </form>

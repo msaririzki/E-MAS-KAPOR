@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration 
+return new class extends Migration
 {
     public function up(): void
     {
@@ -18,7 +18,7 @@ return new class extends Migration
 
             // Ensure one submission per personnel per item per fiscal year
             $table->unique(
-            ['personnel_id', 'kapor_item_id', 'fiscal_year'],
+                ['personnel_id', 'kapor_item_id', 'fiscal_year'],
                 'unique_submission_per_year'
             );
         });

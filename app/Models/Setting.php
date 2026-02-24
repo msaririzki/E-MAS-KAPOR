@@ -27,8 +27,8 @@ class Setting extends Model
     public static function setValue(string $key, mixed $value): void
     {
         static::updateOrCreate(
-        ['key' => $key],
-        ['value' => $value]
+            ['key' => $key],
+            ['value' => $value]
         );
     }
 }
