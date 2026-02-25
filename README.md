@@ -33,20 +33,30 @@ Sistem Informasi Manajemen Kapor berbasis Laravel untuk pendataan personel, peng
 
 Pastikan environment lokal memiliki:
 
-- PHP 8.2+
+- PHP 8.2+ (dengan ekstensi `pdo_mysql` dan `mysqli` aktif)
 - Composer
 - Node.js + npm
-- Database: MySQL/MariaDB atau SQLite
+- MariaDB 10.5+ (disarankan 11.4 LTS)
 
 ---
 
 ## Quick Start Lokal
 
 ```bash
+# 1. Buat database MariaDB
+mysql -u root -p -e "CREATE DATABASE kapor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 2. Install dependencies
 composer install
 npm install
+
+# 3. Setup environment
 cp .env.example .env
 php artisan key:generate
+
+# 4. Edit .env → isi DB_PASSWORD sesuai password MariaDB kamu
+
+# 5. Jalankan migrasi & seed
 php artisan migrate --seed
 npm run build
 php artisan serve
