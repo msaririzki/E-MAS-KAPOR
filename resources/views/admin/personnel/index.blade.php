@@ -436,28 +436,69 @@
             @csrf
             <div class="modal-body" style="padding: 24px;">
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label style="font-weight: 700; color: #374151;">Pilih Satuan Kerja (Satker) Tujuan <span style="color: #EF4444;">*</span></label>
-                    <div class="custom-select-wrapper">
-                        <div class="custom-select" onclick="toggleDropdown(this)">
-                            <div class="select-trigger">
-                                <span id="import_satker_label">-- Pilih Satker --</span>
-                                <i class="ri-arrow-down-s-line"></i>
-                            </div>
-                            <div class="custom-options">
-                                <div class="select-search-container">
-                                    <input type="text" class="select-search-input" placeholder="Cari Satker..." onclick="event.stopPropagation()" onkeyup="filterSatkerOptions(this)">
-                                </div>
-                                <div class="options-scroll">
-                                    @foreach($satkers as $s)
-                                        <div class="option" data-value="{{ $s->id }}" data-label="{{ $s->name }}" onclick="selectSatkerOptionSimple(this, 'import')">{{ $s->name }}</div>
-                                    @endforeach
-                                </div>
-                            </div>
+                    <label style="font-weight: 700; color: #374151;">PILIH SATUAN KERJA (SATKER) TUJUAN <span style="color: #EF4444;">*</span></label>
+                    
+                    <div class="custom-search-select" style="position: relative; margin-top: 8px;">
+                        <input type="text" id="import_satker_input" class="form-input" placeholder="-- Ketik atau Pilih Satker --" autocomplete="off" style="width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 8px; font-weight: 500; color: #374151; cursor: pointer; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394A3B8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 14px center; background-size: 10px;" onfocus="openCustomSatkerDropdown()" onkeyup="filterCustomSatkerDropdown()" onclick="openCustomSatkerDropdown()">
+                        
+                        <div id="import_satker_dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #E5E7EB; border-radius: 8px; margin-top: 4px; max-height: 250px; overflow-y: auto; z-index: 1050; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+                            @foreach($satkers as $s)
+                                <div class="custom-dropdown-option" data-id="{{ $s->id }}" data-name="{{ $s->name }}" onclick="selectCustomSatker('{{ $s->id }}', '{{ $s->name }}')" style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #F8FAFC; font-size: 13px; font-weight: 500; color: #475569; transition: background 0.15s, color 0.15s;" onmouseover="this.style.background='#F1F5F9'; this.style.color='#0F172A'" onmouseout="this.style.background='white'; this.style.color='#475569'">{{ $s->name }}</div>
+                            @endforeach
                         </div>
+                        
                         <input type="hidden" name="satker_id" id="import_satker_id" required>
                     </div>
+
                     <p style="font-size: 12px; color: #6B7280; margin-top: 4px;">Pilih satker yang sesuai dengan isi file yang akan diimport.</p>
                 </div>
+                
+                <script>
+                    function openCustomSatkerDropdown() {
+                        const dropdown = document.getElementById('import_satker_dropdown');
+                        dropdown.style.display = 'block';
+                        filterCustomSatkerDropdown();
+                    }
+                    
+                    function filterCustomSatkerDropdown() {
+                        const input = document.getElementById('import_satker_input');
+                        const filterVal = input.value.toUpperCase();
+                        const dropdown = document.getElementById('import_satker_dropdown');
+                        const options = dropdown.querySelectorAll('.custom-dropdown-option');
+                        let hasVisible = false;
+
+                        options.forEach(opt => {
+                            const txtValue = opt.getAttribute('data-name').toUpperCase();
+                            if (txtValue.indexOf(filterVal) > -1) {
+                                opt.style.display = 'block';
+                                hasVisible = true;
+                            } else {
+                                opt.style.display = 'none';
+                            }
+                        });
+
+                        dropdown.style.display = hasVisible ? 'block' : 'none';
+                        
+                        const hiddenId = document.getElementById('import_satker_id');
+                        if(input.value.trim() === "") {
+                            hiddenId.value = '';
+                        }
+                    }
+
+                    function selectCustomSatker(id, name) {
+                        document.getElementById('import_satker_input').value = name;
+                        document.getElementById('import_satker_id').value = id;
+                        document.getElementById('import_satker_dropdown').style.display = 'none';
+                    }
+
+                    document.addEventListener('click', function(e) {
+                        const container = document.querySelector('.custom-search-select');
+                        const dropdown = document.getElementById('import_satker_dropdown');
+                        if (container && !container.contains(e.target) && dropdown) {
+                            dropdown.style.display = 'none';
+                        }
+                    });
+                </script>
 
                 <div class="form-group" style="margin-bottom: 24px;">
                     <label style="font-weight: 700; color: #374151;">Pilih File Excel/CSV Hasil Pengisian <span style="color: #EF4444;">*</span></label>
