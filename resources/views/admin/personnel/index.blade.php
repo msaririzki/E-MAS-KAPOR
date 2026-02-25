@@ -129,7 +129,7 @@
             <span class="stat-number">{{ number_format($stats['submitted']) }}</span>
         </div>
     </div>
-    <div class="stat-card">
+    <a href="{{ route('admin.personnel.index', ['status' => 'incomplete']) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
         <div class="stat-icon icon-red">
             <i class="ri-close-circle-line"></i>
         </div>
@@ -137,8 +137,23 @@
             <span class="stat-label">BELUM INPUT DATA</span>
             <span class="stat-number">{{ number_format($stats['pending']) }}</span>
         </div>
-    </div>
+        <div style="position: absolute; top: 10px; right: 12px;">
+            <i class="ri-arrow-right-s-line" style="font-size: 18px; color: #9CA3AF;"></i>
+        </div>
+    </a>
 </div>
+
+@if(request('status') === 'incomplete')
+<div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <i class="ri-filter-3-line" style="font-size: 18px; color: #DC2626;"></i>
+        <span style="font-size: 14px; font-weight: 600; color: #991B1B;">Menampilkan personel dengan data <strong>belum lengkap</strong> ({{ $stats['pending'] }} orang)</span>
+    </div>
+    <a href="{{ route('admin.personnel.index') }}" class="btn" style="background: #DC2626; color: white; font-size: 13px; padding: 6px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+        <i class="ri-close-line"></i> Tampilkan Semua
+    </a>
+</div>
+@endif
 
 {{-- Filter Bar --}}
 {{-- Filter Bar --}}
@@ -259,7 +274,24 @@
                 </tr>
             </thead>
             <tbody>
+                @php $currentSatkerGroup = null; @endphp
                 @forelse($personnels as $p)
+                @if(!empty($isIncompleteFilter) && ($p->satker->name ?? '—') !== $currentSatkerGroup)
+                    @php $currentSatkerGroup = $p->satker->name ?? '—'; @endphp
+                    <tr>
+                        <td colspan="5" style="background: #F8FAFC; padding: 10px 20px; border-left: 4px solid #60A5FA; border-top: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="ri-building-2-fill" style="color: #3B82F6; font-size: 16px;"></i>
+                                <span style="font-weight: 700; color: #1E293B; font-size: 13px; letter-spacing: 0.3px;">
+                                    {{ $currentSatkerGroup }}
+                                </span>
+                                <span style="font-size: 11px; background: #E0E7FF; color: #4338CA; padding: 2px 10px; border-radius: 20px; font-weight: 600;">
+                                    {{ $personnels->filter(fn($item) => ($item->satker->name ?? '—') === $currentSatkerGroup)->count() }} personel
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                @endif
                 <tr>
                     <td>
                         <div class="user-info">
@@ -269,8 +301,10 @@
                             <div class="details">
                                 <span class="name">{{ $p->full_name }}</span>
                                 <div style="display: flex; align-items: center; gap: 4px;">
-                                    <span class="nrp">{{ $p->nrp }}</span>
+                                    <span class="nrp">{{ $p->nrp ?? '—' }}</span>
+                                    @if($p->nrp)
                                     <i class="ri-file-copy-line icon-copy" title="Salin NRP" onclick="copyToClipboard('{{ $p->nrp }}')"></i>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -1656,8 +1690,10 @@
         gap: 16px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         transition: transform 0.2s;
+        position: relative;
     }
     .stat-card:hover { transform: translateY(-4px); border-color: #E5E7EB; }
+    .stat-card-clickable:hover { border-color: #FECACA; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1); }
 
     .stat-icon {
         width: 48px; height: 48px;

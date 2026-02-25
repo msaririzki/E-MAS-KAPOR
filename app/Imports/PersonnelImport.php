@@ -59,9 +59,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'BRIG' => 'BRIGJEN',
 
             // ── PAMEN ──
-            'KOMBES POL' => 'KOMBES',
-            'KOMBESPOL' => 'KOMBES',
-            'KOMBES.' => 'KOMBES',
+            'KOMBESPOL' => 'KOMBES POL',
+            'KOMBES.' => 'KOMBES POL',
+            'KOMBES' => 'KOMBES POL',
             'AKBP.' => 'AKBP',
             'KOMPOL.' => 'KOMPOL',
 
@@ -92,7 +92,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'IRJED' => 'IRJEN',
             'IRGJEN' => 'IRJEN',
             'BRIGGEN' => 'BRIGJEN',
-            'KOMBESS' => 'KOMBES',
+            'KOMBESS' => 'KOMBES POL',
             'AKBPP' => 'AKBP',
             'KOMPOLL' => 'KOMPOL',
             'AKB' => 'AKBP',
@@ -163,15 +163,25 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PEMBIINA' => 'Pembina',
             'PEMBIINA UTAMA' => 'Pembina Utama',
 
-            // ── PPPK ──
-            'PPPK' => 'PPPK Golongan II',
-            'PPPK GOLONGAN 2' => 'PPPK Golongan II',
-            'PPPK GOL II' => 'PPPK Golongan II',
-            'PPPK GOL. II' => 'PPPK Golongan II',
-            'P3K' => 'PPPK Golongan II',
-            'P3K GOLONGAN 2' => 'PPPK Golongan II',
-            'P3K GOL II' => 'PPPK Golongan II',
-            'P3K GOL. II' => 'PPPK Golongan II',
+            // ── PPPK — semua varian PPPK/P3K dikoreksi ke 'PPPK' ──
+            'PPPK GOLONGAN I' => 'PPPK',
+            'PPPK GOLONGAN II' => 'PPPK',
+            'PPPK GOLONGAN III' => 'PPPK',
+            'PPPK GOLONGAN IV' => 'PPPK',
+            'PPPK GOLONGAN V' => 'PPPK',
+            'PPPK GOLONGAN VI' => 'PPPK',
+            'PPPK GOLONGAN VII' => 'PPPK',
+            'PPPK GOLONGAN VIII' => 'PPPK',
+            'PPPK GOLONGAN IX' => 'PPPK',
+            'PPPK GOLONGAN X' => 'PPPK',
+            'PPPK GOL II' => 'PPPK',
+            'PPPK GOL. II' => 'PPPK',
+            'PPPK GOL III' => 'PPPK',
+            'PPPK GOL. III' => 'PPPK',
+            'P3K' => 'PPPK',
+            'P3K GOLONGAN 2' => 'PPPK',
+            'P3K GOL II' => 'PPPK',
+            'P3K GOL. II' => 'PPPK',
         ];
     }
 
@@ -192,29 +202,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $upperInput = trim($upperInput);
 
         // --- KHUSUS PPPK ---
-        // Jika pangkat yang dimasukkan adalah "PPPK" atau "P3K" murni (tanpa embel-embel golongan di pangkatnya)
+        // Jika pangkat yang dimasukkan adalah "PPPK" atau "P3K", langsung set ke 'PPPK'
         $cleanInput = trim($upperInput, '.');
         if ($cleanInput === 'PPPK' || $cleanInput === 'P3K') {
-            $golKey = strtoupper(trim($golongan));
-            $golMap = [
-                '1' => 'I',   'I' => 'I',
-                '2' => 'II',  'II' => 'II',
-                '3' => 'III', 'III' => 'III',
-                '4' => 'IV',  'IV' => 'IV',
-                '5' => 'V',   'V' => 'V',
-                '6' => 'VI',  'VI' => 'VI',
-                '7' => 'VII', 'VII' => 'VII',
-                '8' => 'VIII', 'VIII' => 'VIII',
-                '9' => 'IX',  'IX' => 'IX',
-                '10' => 'X',   'X' => 'X',
-            ];
-            // Jika ada info golongan, rubah tulisan PPPK menjadi PPPK GOL. X untuk dicari di kamus
-            if (isset($golMap[$golKey])) {
-                $upperInput = 'PPPK GOLONGAN '.$golMap[$golKey];
-            } else {
-                // Fallback default PPPK jika golongannya kosong / tidak dikenali
-                $upperInput = 'PPPK GOLONGAN II';
-            }
+            $upperInput = 'PPPK';
         }
 
         $correctionMap = self::getPangkatCorrectionMap();
@@ -302,9 +293,18 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $genderRaw = strtoupper(trim($row[7] ?? ''));
             $keterangan = trim($row[17] ?? '');
 
-            // Jika Nama atau PANGKAT kosong, dipastikan baris tidak valid/kosong/rekap
-            // Personel asli (Polri/PNS) pasti menaruh jabatan atau pangkat di kolom pangkat (C)
-            if (empty($fullName) || empty($rankInput)) {
+            // Ambil nomor urut dari kolom pertama (NO)
+            $no = trim($row[0] ?? '');
+
+            // Jika Nama kosong, dipastikan baris tidak valid/kosong/rekap
+            if (empty($fullName)) {
+                continue;
+            }
+
+            // Jika pangkat kosong, cek apakah baris punya nomor urut (kolom NO)
+            // Personel asli selalu punya nomor urut (1, 2, 3, ...)
+            // Baris header/catatan (TUTUP KEPALA, BAJU PRIA, dll) tidak punya nomor urut
+            if (empty($rankInput) && !is_numeric($no)) {
                 continue;
             }
 
@@ -328,9 +328,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
 
             // 3. Pengecekan NRP/NIP
             if (empty($nrp)) {
-                // Jika NRP kosong tapi Nama valid, generate NIP dummy agar tetap masuk database
-                // Berguna untuk pegawai PPPK / PNS yang belum masuk NIP di file excel
-                $nrp = 'NONIP-'.strtoupper(substr(md5($fullName.$rowIndex), 0, 8));
+                // Jika NRP kosong, biarkan kosong — akan di-generate saat save jika diperlukan
+                // Ini agar di preview tampil '—' bukan kode acak
+                $nrp = '';
             } else {
                 $nrpLower = strtolower($nrp);
                 // Abaikan jika NRP/NIP berisi kata rekapan atau rumus
@@ -367,11 +367,41 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 'jilbab' => trim($row[16] ?? ''),
             ];
 
+            // Pria tidak butuh jilbab — hapus dari data ukuran
+            if ($gender === 'L') {
+                unset($sizes['jilbab']);
+            }
+
             $status = 'ok';
-            if (! $rankResult['rank']) {
-                $status = 'error'; // pangkat tidak dikenali
-            } elseif ($rankResult['corrected']) {
-                $status = 'corrected'; // pangkat dikoreksi otomatis
+            $incompleteFields = [];
+
+            // Cek kelengkapan data — kumpulkan semua field yang kosong
+            if (! $rankResult['rank'] && ! empty($rankInput)) {
+                $status = 'error'; // pangkat diisi tapi tidak dikenali → perlu pilih manual
+            } elseif (! $rankResult['rank'] && empty($rankInput)) {
+                $incompleteFields[] = 'Pangkat';
+            }
+            if (empty($nrp)) {
+                $incompleteFields[] = 'NRP/NIP';
+            }
+
+            // Jika pangkat dikoreksi otomatis (misal PPPK, KOMBES POL, dll)
+            if ($rankResult['corrected'] && $status !== 'error') {
+                $status = 'corrected';
+            }
+
+            // Jika ada field yang belum lengkap, masukkan ke Auto Koreksi agar admin bisa lihat
+            if (! empty($incompleteFields) && $status !== 'error') {
+                $status = 'corrected';
+                // Tambahkan info field yang kosong ke corrected_to
+                $missingLabel = '— (Belum Lengkap: ' . implode(', ', $incompleteFields) . ')';
+                if ($rankResult['corrected_to']) {
+                    // Sudah ada koreksi pangkat, tambahkan info missing
+                    $rankResult['corrected_to'] .= ' | ' . implode(', ', $incompleteFields) . ' kosong';
+                } else {
+                    $rankResult['corrected'] = true;
+                    $rankResult['corrected_to'] = $missingLabel;
+                }
             }
 
             $preview[] = [
@@ -390,6 +420,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 'keterangan' => $keterangan,
                 'sizes' => $sizes,
                 'status' => $status, // 'ok' | 'corrected' | 'error'
+                'incomplete_fields' => $incompleteFields, // field yang kosong
             ];
         }
 
@@ -432,15 +463,15 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 $keterangan = trim($data['keterangan'] ?? '');
                 $sizes = $data['sizes'] ?? [];
 
-                if (empty($nrp) || empty($fullName) || ! $rankId) {
+                if (empty($fullName)) {
                     $errorCount++;
-                    $errors[] = "Baris {$idx}: Data tidak lengkap (NRP: {$nrp}).";
+                    $errors[] = "Baris {$idx}: Nama kosong, dilewati.";
 
                     continue;
                 }
 
-                $rank = $ranksById->get($rankId);
-                if (! $rank) {
+                $rank = $rankId ? $ranksById->get($rankId) : null;
+                if ($rankId && ! $rank) {
                     $errorCount++;
                     $errors[] = "Baris {$idx}: Pangkat ID={$rankId} tidak ditemukan (NRP: {$nrp}).";
 
@@ -448,50 +479,71 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 }
 
                 try {
-                    $personnel = $existingPersonnel->get($nrp);
+                    // Jika NRP kosong, generate ID sementara untuk akun user (login)
+                    // tapi simpan personnels.nrp sebagai NULL agar tampil "—" di UI
+                    $effectiveNrp = $nrp;
+                    $isEmptyNrp = empty($nrp);
+                    if ($isEmptyNrp) {
+                        $effectiveNrp = 'TEMP-' . strtoupper(substr(md5($fullName . $idx . time()), 0, 8));
+                    }
+
+                    $personnel = $isEmptyNrp ? null : $existingPersonnel->get($effectiveNrp);
 
                     if (! $personnel) {
                         // ── User baru: bcrypt cost=4 (10× lebih cepat, password bisa diubah nanti) ──
-                        $user = $existingUsers->get($nrp);
+                        $user = $existingUsers->get($effectiveNrp);
                         if (! $user) {
                             $user = User::create([
                                 'name' => $fullName,
-                                'nrp_nip' => $nrp,
-                                'password' => password_hash($nrp, PASSWORD_BCRYPT, ['cost' => 4]),
+                                'nrp_nip' => $effectiveNrp,
+                                'password' => password_hash($effectiveNrp, PASSWORD_BCRYPT, ['cost' => 4]),
                                 'satker_id' => $satker->id,
                                 'is_active' => true,
                             ]);
                             $user->assignRole('personil');
-                            $existingUsers->put($nrp, $user);
+                            $existingUsers->put($effectiveNrp, $user);
+                        }
+
+                        // Tentukan personnel_type berdasarkan rank atau default
+                        $personnelType = 'Polri';
+                        if ($rank && $rank->category === 'PNS') {
+                            $personnelType = 'PNS';
+                        } elseif (! $rank && ! empty($golongan)) {
+                            // Jika tidak ada pangkat tapi ada golongan, kemungkinan PNS
+                            $personnelType = 'PNS';
                         }
 
                         $personnel = Personnel::create([
                             'user_id' => $user->id,
-                            'nrp' => $nrp,
+                            'nrp' => $isEmptyNrp ? null : $effectiveNrp,
                             'full_name' => $fullName,
-                            'rank_id' => $rank->id,
+                            'rank_id' => $rank ? $rank->id : null,
                             'satker_id' => $satker->id,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
-                            'personnel_type' => $rank->category === 'PNS' ? 'PNS' : 'Polri',
+                            'personnel_type' => $personnelType,
                             'gender' => $gender,
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
                             'is_active' => true,
                         ]);
-                        $existingPersonnel->put($nrp, $personnel);
+                        $existingPersonnel->put($effectiveNrp, $personnel);
                     } else {
                         // ── Update personel yang sudah ada ──
-                        $personnel->update([
+                        $updateData = [
                             'full_name' => $fullName,
-                            'rank_id' => $rank->id,
                             'satker_id' => $satker->id,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
                             'gender' => $gender,
-                        ]);
+                        ];
+                        // Hanya update rank_id jika ada
+                        if ($rank) {
+                            $updateData['rank_id'] = $rank->id;
+                        }
+                        $personnel->update($updateData);
                     }
 
                     // Simpan ukuran kapor
@@ -502,6 +554,12 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             $kaporSizes[$key] = $val;
                         }
                     }
+
+                    // Pria tidak butuh jilbab — hapus dari kapor_sizes
+                    if ($gender === 'L') {
+                        unset($kaporSizes['jilbab']);
+                    }
+
                     $personnel->kapor_sizes = $kaporSizes;
                     $personnel->save();
 
@@ -661,6 +719,12 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             $kaporSizes[$key] = $sizeVal;
                         }
                     }
+
+                    // Pria tidak butuh jilbab — hapus dari kapor_sizes
+                    if ($gender === 'L') {
+                        unset($kaporSizes['jilbab']);
+                    }
+
                     $personnel->kapor_sizes = $kaporSizes;
                     $personnel->save();
                 });

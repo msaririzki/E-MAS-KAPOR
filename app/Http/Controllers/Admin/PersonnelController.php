@@ -48,8 +48,12 @@ class PersonnelController extends Controller
         // Stats Calculation
         $totalReal = Personnel::forCurrentSatker()->count();
 
-        // Calculate submitted count based on kapor_sizes column availability
-        $submittedCount = Personnel::forCurrentSatker()->whereNotNull('kapor_sizes')->count();
+        // Personel "sudah input" = punya kapor_sizes DAN rank_id DAN NRP valid (bukan NULL)
+        $submittedCount = Personnel::forCurrentSatker()
+            ->whereNotNull('kapor_sizes')
+            ->whereNotNull('rank_id')
+            ->whereNotNull('nrp')
+            ->count();
 
         $stats = [
             'total_real' => $totalReal,
@@ -86,8 +90,25 @@ class PersonnelController extends Controller
             $query->where('keterangan', $request->keterangan);
         }
 
+        // Filter: hanya tampilkan personel dengan data belum lengkap
+        // (kapor_sizes NULL ATAU rank_id NULL ATAU NRP NULL)
+        $isIncompleteFilter = $request->get('status') === 'incomplete';
+        if ($isIncompleteFilter) {
+            $query->where(function ($q) {
+                $q->whereNull('personnels.kapor_sizes')
+                  ->orWhereNull('personnels.rank_id')
+                  ->orWhereNull('personnels.nrp');
+            });
+            // Kelompokkan berdasarkan satker agar tidak tercampur
+            if ($sort !== 'satker') {
+                $query->leftJoin('satkers', 'personnels.satker_id', '=', 'satkers.id')
+                      ->select('personnels.*');
+            }
+            $query->orderBy('satkers.name', 'asc')->orderBy('personnels.full_name', 'asc');
+        }
+
         // Pagination
-        $perPage = $request->get('per_page', 10);
+        $perPage = $request->get('per_page', $isIncompleteFilter ? 100 : 10);
         $personnels = $query->paginate($perPage)->withQueryString();
 
         $ranks = Rank::orderBy('sort_order')->get();
@@ -96,7 +117,7 @@ class PersonnelController extends Controller
 
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
 
-        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage'));
+        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter'));
     }
 
     public function store(Request $request)
@@ -329,17 +350,13 @@ class PersonnelController extends Controller
             }
         }
 
-        // Validasi: pastikan tidak ada baris error yang rank_id-nya masih kosong
-        $missing = [];
+        // Info: baris error tanpa pangkat akan tetap diimport dengan rank_id NULL
+        // Tidak memblokir proses import agar data personel yang belum lengkap tetap masuk
+        $missingRank = [];
         foreach ($preview as $i => $row) {
             if ($row['status'] === 'error' && empty($row['rank_id'])) {
-                $missing[] = ($row['full_name'] ?? "Baris #{$i}");
+                $missingRank[] = ($row['full_name'] ?? "Baris #{$i}");
             }
-        }
-
-        if (! empty($missing)) {
-            return redirect()->back()
-                ->with('error', 'Masih ada '.count($missing).' baris yang belum dipilih pangkatnya: '.implode(', ', array_slice($missing, 0, 5)));
         }
 
         try {

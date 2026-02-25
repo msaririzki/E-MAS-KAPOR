@@ -180,11 +180,24 @@
 
                     @elseif($row['status'] === 'corrected')
                         <div style="display:flex; flex-direction:column; gap:3px;">
+                            @if($row['rank_corrected'])
                             <span style="font-size:10px; color:#92400E;">
+                                @if($row['rank_input'])
                                 <s style="color:#9CA3AF;">{{ $row['rank_input'] }}</s>
-                                → <strong>{{ $row['rank_name'] }}</strong>
+                                → <strong>{{ $row['rank_name'] ?? '—' }}</strong>
+                                @else
+                                <strong>{{ $row['rank_name'] ?? '— (Pangkat Kosong)' }}</strong>
+                                @endif
                             </span>
                             <span style="font-size:10px; background:#FDE68A; color:#92400E; padding:1px 7px; border-radius:10px; font-weight:700; display:inline-block; width:fit-content;">AUTO KOREKSI</span>
+                            @else
+                            <span style="font-weight:600; color:#059669;">{{ $row['rank_name'] }}</span>
+                            @endif
+                            @if(!empty($row['incomplete_fields']))
+                            <span style="font-size:9px; background:#FED7AA; color:#9A3412; padding:1px 7px; border-radius:10px; font-weight:600; display:inline-block; width:fit-content;">
+                                <i class="ri-alert-line"></i> {{ implode(', ', $row['incomplete_fields']) }} kosong
+                            </span>
+                            @endif
                             <button type="button" onclick="toggleEdit({{ $i }})"
                                 style="font-size:10px; color:#6B7280; background:none; border:none; cursor:pointer; padding:0; text-align:left;">
                                 <i class="ri-edit-line"></i> Edit
@@ -227,7 +240,7 @@
                     </td>
 
                     <td style="color:#6B7280;">{{ $row['golongan'] ?: '—' }}</td>
-                    <td style="font-family:monospace; color:#374151;">{{ $row['nrp'] }}</td>
+                    <td style="font-family:monospace; color:#374151;">{{ $row['nrp'] ?: '—' }}</td>
                     <td style="color:#4B5563;">{{ $row['jabatan'] ?: '—' }}</td>
                     <td style="color:#4B5563;">{{ $row['bagian'] ?: '—' }}</td>
                     <td>
