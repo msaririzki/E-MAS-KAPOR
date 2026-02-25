@@ -20,9 +20,9 @@
 @endif
 <style>
     .filter-pill {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 10px 20px; border-radius: 40px; cursor: pointer;
-        font-weight: 700; font-size: 14px; border: 2px solid transparent;
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 14px; border-radius: 40px; cursor: pointer;
+        font-weight: 600; font-size: 13px; border: 2px solid transparent;
         transition: all 0.18s ease; user-select: none;
     }
     .filter-pill.all   { background: #F3F4F6; color: #374151; border-color: #D1D5DB; }
@@ -35,7 +35,7 @@
     .filter-pill.active.error { background: #DC2626; color: #fff; border-color: #DC2626; }
     .filter-pill .badge {
         background: rgba(0,0,0,0.08); border-radius: 20px;
-        padding: 1px 9px; font-size: 13px; font-weight: 800;
+        padding: 2px 8px; font-size: 12px; font-weight: 700;
     }
     .filter-pill.active .badge { background: rgba(255,255,255,0.25); }
     .row-ok       { }
@@ -73,9 +73,9 @@
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:16px;">
         
         {{-- Bagian Kiri: Filter --}}
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1;">
             @if($stats['error'] == 0)
-            <span style="font-size:13px; font-weight:600; color:#6B7280;">TAMPILKAN:</span>
+            <span style="font-size:13px; font-weight:600; color:#6B7280; margin-right:4px;">TAMPILKAN:</span>
             @endif
             
             <div class="filter-pill all active" onclick="setFilter('all')" id="pill-all">
@@ -96,23 +96,15 @@
             @endif
         </div>
 
-        {{-- Bagian Kanan: Aksi (Form Konfirmasi & Batal) - POSISI ATAS --}}
-        <div style="display:flex; gap:12px; align-items:center; white-space:nowrap;">
-            <form action="{{ route('admin.personnel.import-cancel') }}" method="POST" id="cancelFormTop" style="margin:0;">
-                @csrf
-                <button type="submit" class="btn btn-outline" style="padding: 10px 16px; border-radius: 8px; font-weight: 600;">
-                    <i class="ri-close-line"></i> Batalkan
-                </button>
-            </form>
-
-            <form action="{{ route('admin.personnel.import-confirm') }}" method="POST" id="importForm" style="margin:0;">
-                @csrf
-                <!-- rank overrides akan dikumpulkan saat submit di script -->
-                <button type="submit" class="btn btn-primary btn-submit-import" style="background:#059669; padding:10px 24px; border-radius:8px; font-weight:700; box-shadow:0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -1px rgba(5, 150, 105, 0.1);">
-                    <i class="ri-check-double-line" style="margin-right:6px;"></i> Konfirmasi Import 
-                    <span style="background:rgba(255,255,255,0.25); margin-left:8px; padding:2px 8px; border-radius:12px; font-size:12px;">{{ $stats['total'] }}</span>
-                </button>
-            </form>
+        {{-- Bagian Kanan: Aksi (Form Konfirmasi & Batal) - Tampil Berdasar Scroll --}}
+        <div id="header-confirm" style="display:none; gap:12px; align-items:center; white-space:nowrap;">
+            <button type="submit" form="cancelForm" class="btn btn-outline" style="padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px;">
+                <i class="ri-close-line"></i> Batalkan
+            </button>
+            <button type="submit" class="btn btn-primary btn-submit-import" style="background:#059669; padding:8px 18px; border-radius:8px; font-weight:700; font-size:13px; box-shadow:0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -1px rgba(5, 150, 105, 0.1);">
+                <i class="ri-check-double-line" style="margin-right:6px;"></i> Konfirmasi
+                <span style="background:rgba(255,255,255,0.25); margin-left:6px; padding:2px 8px; border-radius:12px; font-size:11px;">{{ $stats['total'] }}</span>
+            </button>
         </div>
     </div>
 
@@ -259,24 +251,22 @@
         </div>
     </div>
 
-    @if(count($preview) > 10)
     {{-- Footer (Tombol Konfirmasi Bawah) --}}
     <div id="footer-confirm" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding:16px 20px; background:#F9FAFB; border-radius:12px; border:1px solid #E5E7EB; flex-wrap:wrap; gap:12px;">
         <div style="font-size:12px; color:#6B7280;">
             <i class="ri-information-line" style="color:#6366F1;"></i>
-            Baris <strong>kuning</strong> sudah otomatis diperbaiki. Periksa baris <strong style="color:#DC2626;">merah</strong> lalu konfirmasi di sini atau di atas.
+            Baris <strong>kuning</strong> sudah otomatis diperbaiki. Periksa baris <strong style="color:#DC2626;">merah</strong> lalu konfirmasi di bawah ini.
         </div>
         <div style="display:flex; gap:12px; align-items:center;">
-            <button type="submit" form="cancelFormTop" class="btn btn-outline" style="padding: 10px 16px; border-radius: 8px; font-weight: 600;">
+            <button type="submit" form="cancelForm" class="btn btn-outline" style="padding: 10px 16px; border-radius: 8px; font-weight: 600;">
                 <i class="ri-close-line"></i> Batalkan
             </button>
-            <button type="button" class="btn btn-primary btn-submit-import" onclick="document.getElementById('importForm').submit();" style="background:#059669; padding:10px 24px; border-radius:8px; font-weight:700; box-shadow:0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -1px rgba(5, 150, 105, 0.1);">
+            <button type="submit" class="btn btn-primary btn-submit-import" style="background:#059669; padding:10px 24px; border-radius:8px; font-weight:700; box-shadow:0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -1px rgba(5, 150, 105, 0.1);">
                 <i class="ri-check-double-line" style="margin-right:6px;"></i> Konfirmasi Import 
                 <span style="background:rgba(255,255,255,0.25); margin-left:8px; padding:2px 8px; border-radius:12px; font-size:12px;">{{ $stats['total'] }}</span>
             </button>
         </div>
     </div>
-    @endif
 
 </form>
 
@@ -299,11 +289,15 @@ function setFilter(status) {
 
     const empty = document.getElementById('emptyRow');
     if (empty) empty.classList.toggle('hidden-row', visible > 0);
+
+    const headerConfirm = document.getElementById('header-confirm');
+    if (headerConfirm) {
+        headerConfirm.style.display = visible > 10 ? 'flex' : 'none';
+    }
     
-    // Tampilkan/Sembunyikan form konfirmasi bawah sesuai jumlah baris
     const footerConfirm = document.getElementById('footer-confirm');
     if (footerConfirm) {
-        footerConfirm.style.display = visible > 10 ? 'flex' : 'none';
+        footerConfirm.style.display = visible > 0 ? 'flex' : 'none';
     }
 
     const first = document.querySelector('#previewTableBody tr[data-status]:not(.hidden-row)');
@@ -361,5 +355,8 @@ function doConfirm(e) {
 }
 
 recalcPending();
+
+// Initialize UI
+setFilter('all');
 </script>
 @endsection
