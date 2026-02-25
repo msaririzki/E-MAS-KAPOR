@@ -187,6 +187,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
     {
         $upperInput = strtoupper(trim($rankName));
 
+        // Bersihkan embel-embel golongan PNS jika menempel di nama pangkat (misal: "PENATA/IIIC", "PENGATUR TK.I/II.D")
+        $upperInput = preg_replace('/\s*\/?\s*(IV|III|II|I)\.?\s*[A-E]\s*$/i', '', $upperInput);
+        $upperInput = trim($upperInput);
+
         // --- KHUSUS PPPK ---
         // Jika pangkat yang dimasukkan adalah "PPPK" atau "P3K" murni (tanpa embel-embel golongan di pangkatnya)
         $cleanInput = trim($upperInput, '.');
