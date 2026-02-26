@@ -43,10 +43,15 @@ class DashboardController extends Controller
 
         $totalPolri = Satker::sum('polri_count');
         $totalPns = Satker::sum('pns_count');
-        $totalPersonnel = $totalPolri + $totalPns;
 
-        // Count Personnel who have kapor_sizes data (Profile Attribute)
-        $submittedCount = Personnel::whereNotNull('kapor_sizes')->count();
+        // Total personel rill = jumlah record di database (sinkron dengan halaman Personel)
+        $totalPersonnel = Personnel::count();
+
+        // Count Personnel who have complete data (kapor_sizes + rank_id + nrp)
+        $submittedCount = Personnel::whereNotNull('kapor_sizes')
+            ->whereNotNull('rank_id')
+            ->whereNotNull('nrp')
+            ->count();
         $pendingCount = $totalPersonnel - $submittedCount;
         $fillRate = $totalPersonnel > 0 ? round(($submittedCount / $totalPersonnel) * 100, 1) : 0;
 
@@ -68,10 +73,13 @@ class DashboardController extends Controller
         // Fill rate per satker (top-level)
         $poldaId = Satker::where('code', 'POLDA-NTB')->value('id');
         $satkerStats = Satker::query()
-            ->selectRaw('satkers.*, (satkers.polri_count + satkers.pns_count) as total_personnel')
+            ->selectRaw('satkers.*')
+            ->withCount(['personnels as total_personnel'])
             ->withCount(['personnels as submitted_count' => function ($q) {
-                // Check if kapor_sizes is not null
-                $q->whereNotNull('kapor_sizes');
+                // Sinkron dengan PersonnelController: data lengkap = kapor_sizes + rank_id + nrp
+                $q->whereNotNull('kapor_sizes')
+                  ->whereNotNull('rank_id')
+                  ->whereNotNull('nrp');
             }])
             ->where(function ($query) use ($poldaId) {
                 $query->whereNull('parent_id')->orWhere('parent_id', $poldaId);
@@ -92,7 +100,10 @@ class DashboardController extends Controller
     {
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
 
-        $submittedCount = Personnel::whereNotNull('kapor_sizes')->count();
+        $submittedCount = Personnel::whereNotNull('kapor_sizes')
+            ->whereNotNull('rank_id')
+            ->whereNotNull('nrp')
+            ->count();
         $totalPersonnel = Personnel::count();
 
         $stats = [
@@ -116,6 +127,8 @@ class DashboardController extends Controller
         $totalPersonnel = Personnel::where('satker_id', $satkerId)->count();
         $submittedCount = Personnel::where('satker_id', $satkerId)
             ->whereNotNull('kapor_sizes')
+            ->whereNotNull('rank_id')
+            ->whereNotNull('nrp')
             ->count();
 
         $stats = [
@@ -129,7 +142,11 @@ class DashboardController extends Controller
 
         $pendingPersonnel = Personnel::with(['user', 'rank'])
             ->where('satker_id', $satkerId)
-            ->whereNull('kapor_sizes')
+            ->where(function ($q) {
+                $q->whereNull('kapor_sizes')
+                  ->orWhereNull('rank_id')
+                  ->orWhereNull('nrp');
+            })
             ->limit(20)
             ->get();
 

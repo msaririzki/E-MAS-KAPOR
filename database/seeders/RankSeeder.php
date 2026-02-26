@@ -20,7 +20,7 @@ class RankSeeder extends Seeder
             ['name' => 'BRIGJEN', 'category' => 'PATI', 'sort_order' => 4],
 
             // ── Polri — PAMEN ──
-            ['name' => 'KOMBES', 'category' => 'PAMEN', 'sort_order' => 5],
+            ['name' => 'KOMBES POL', 'category' => 'PAMEN', 'sort_order' => 5],
             ['name' => 'AKBP', 'category' => 'PAMEN', 'sort_order' => 6],
             ['name' => 'KOMPOL', 'category' => 'PAMEN', 'sort_order' => 7],
 
@@ -60,6 +60,7 @@ class RankSeeder extends Seeder
             ['name' => 'Juru', 'category' => 'PNS', 'sort_order' => 36],
             ['name' => 'Juru Muda Tingkat I', 'category' => 'PNS', 'sort_order' => 37],
             ['name' => 'Juru Muda', 'category' => 'PNS', 'sort_order' => 38],
+            ['name' => 'PPPK', 'category' => 'PNS', 'sort_order' => 39],
         ];
 
         foreach ($ranks as $rank) {

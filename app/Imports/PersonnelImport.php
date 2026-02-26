@@ -108,13 +108,29 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'BHARATU ' => 'BHARATU',
             'BHARADA ' => 'BHARADA',
 
-            // ── PNS — variasi umum ──
+            // ── PNS — SINGKATAN UMUM (sering dipakai di file Excel satker) ──
+            // Pembina
+            'PEMB' => 'Pembina',
+            'PEMB UTM' => 'Pembina Utama',
+            'PEMB UTAMA' => 'Pembina Utama',
+            'PEMBINA UTM' => 'Pembina Utama',
+            'PEMBINA UTAMA MADY' => 'Pembina Utama Madya',
+            'PEMBINA UTAMA MUUDA' => 'Pembina Utama Muda',
+            'PEMBIINA' => 'Pembina',
+            'PEMBIINA UTAMA' => 'Pembina Utama',
+            'PEMBTU' => 'Pembina Tingkat I',
+            'PEMB TU' => 'Pembina Tingkat I',
             'PEMBINA TK.I' => 'Pembina Tingkat I',
             'PEMBINA TK I' => 'Pembina Tingkat I',
             'PEMBINA TKT I' => 'Pembina Tingkat I',
             'PEMBINA TINGKAT 1' => 'Pembina Tingkat I',
             'PEMBINA TK 1' => 'Pembina Tingkat I',
             'PEMBINA TK. 1' => 'Pembina Tingkat I',
+
+            // Penata Tingkat I
+            'PENTU' => 'Penata Tingkat I',
+            'PEN TU' => 'Penata Tingkat I',
+            'PNTA TK I' => 'Penata Tingkat I',
             'PENATA TK.I' => 'Penata Tingkat I',
             'PENATA TK I' => 'Penata Tingkat I',
             'PENATA TKT I' => 'Penata Tingkat I',
@@ -122,46 +138,99 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PENATA TK 1' => 'Penata Tingkat I',
             'PENATA TK1' => 'Penata Tingkat I',
             'PENATA TK. 1' => 'Penata Tingkat I',
-            'PENATA TK II' => 'Penata Tingkat I', // Dianggap typo Penata Tk I, karena Penata Tk II secara resmi tidak ada di struktur (biasanya Penata saja atau Penata Muda Tk I)
-            'PENATA TK 2' => 'Penata Tingkat I',
+            'PENATA TK II' => 'Penata Tingkat I', // Dianggap typo
+            'PENATA I' => 'Penata Tingkat I',
+            'PENATA 1' => 'Penata Tingkat I',
+
+            // Penata Muda Tingkat I (PENDATU / PENDA I)
+            'PENDATU' => 'Penata Muda Tingkat I',
+            'PENDA I' => 'Penata Muda Tingkat I',
+            'PENDA 1' => 'Penata Muda Tingkat I',
+            'PEN DATU' => 'Penata Muda Tingkat I',
+            'PNTA MDU TK I' => 'Penata Muda Tingkat I',
             'PENATA MD TK I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TK.I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TK I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TKT I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TINGKAT 1' => 'Penata Muda Tingkat I',
+            'PENATA MUDA TK 1' => 'Penata Muda Tingkat I',
+            'PENATA MUDA TK.1' => 'Penata Muda Tingkat I',
+            'PENATA MDU TK I' => 'Penata Muda Tingkat I',
+
+            // Penata Muda (PENDA)
+            'PENDA' => 'Penata Muda',
+            'PEN DA' => 'Penata Muda',
+            'PENATA MD' => 'Penata Muda',
+            'PENATA MDU' => 'Penata Muda',
+            'PNTA MDU' => 'Penata Muda',
+            'PENATA MDA' => 'Penata Muda',
+
+            // Pengatur Tingkat I
+            'PENGTU' => 'Pengatur Tingkat I',
+            'PENG TU' => 'Pengatur Tingkat I',
             'PENGATUR TK.I' => 'Pengatur Tingkat I',
             'PENGATUR TK I' => 'Pengatur Tingkat I',
             'PENGATUR TK. I/II.D' => 'Pengatur Tingkat I',
             'PENGATUR TK I/II.D' => 'Pengatur Tingkat I',
             'PENGATUR TK I/II D' => 'Pengatur Tingkat I',
             'PENGATUR TK.I/II.D' => 'Pengatur Tingkat I',
-            'PENGATUR TK L' => 'Pengatur Tingkat I', // Kadang 'I' diganti huruf 'L' kecil atau besar
+            'PENGATUR TK L' => 'Pengatur Tingkat I',
             'PENGATUR TKT I' => 'Pengatur Tingkat I',
             'PENGATUR TINGKAT 1' => 'Pengatur Tingkat I',
             'PENGATUR TK 1' => 'Pengatur Tingkat I',
             'PENGATUR TK1' => 'Pengatur Tingkat I',
             'PENGATUR TK. 1' => 'Pengatur Tingkat I',
+            'PENGATUR I' => 'Pengatur Tingkat I',
+            'PENGATUR 1' => 'Pengatur Tingkat I',
+
+            // Pengatur Muda Tingkat I (PENGDATU / PENGDA I)
+            'PENGDATU' => 'Pengatur Muda Tingkat I',
+            'PENGDA I' => 'Pengatur Muda Tingkat I',
+            'PENGDA 1' => 'Pengatur Muda Tingkat I',
+            'PENG DATU' => 'Pengatur Muda Tingkat I',
             'PENGATUR MD TK I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TK.I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TK I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TKT I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TINGKAT 1' => 'Pengatur Muda Tingkat I',
+            'PENGATUR MUDA TK 1' => 'Pengatur Muda Tingkat I',
+            'PENGATUR MUDA TK.1' => 'Pengatur Muda Tingkat I',
+            'PENGATUR MDU TK I' => 'Pengatur Muda Tingkat I',
+
+            // Pengatur Muda (PENGDA)
+            'PENGDA' => 'Pengatur Muda',
+            'PENG DA' => 'Pengatur Muda',
+            'PENGATUR MD' => 'Pengatur Muda',
+            'PENGATUR MDU' => 'Pengatur Muda',
+            'PENGATUR MDA' => 'Pengatur Muda',
+
+            // Juru Tingkat I
+            'JURTU' => 'Juru Tingkat I',
+            'JUR TU' => 'Juru Tingkat I',
             'JURU TK.I' => 'Juru Tingkat I',
             'JURU TK I' => 'Juru Tingkat I',
             'JURU TKT I' => 'Juru Tingkat I',
             'JURU TINGKAT 1' => 'Juru Tingkat I',
             'JURU TK 1' => 'Juru Tingkat I',
             'JURU TK. 1' => 'Juru Tingkat I',
+
+            // Juru Muda Tingkat I (JURDATU / JURDA I)
+            'JURDATU' => 'Juru Muda Tingkat I',
+            'JURDA I' => 'Juru Muda Tingkat I',
+            'JURDA 1' => 'Juru Muda Tingkat I',
+            'JUR DATU' => 'Juru Muda Tingkat I',
             'JURU MD TK I' => 'Juru Muda Tingkat I',
             'JURU MUDA TK.I' => 'Juru Muda Tingkat I',
             'JURU MUDA TK I' => 'Juru Muda Tingkat I',
             'JURU MUDA TKT I' => 'Juru Muda Tingkat I',
             'JURU MUDA TINGKAT 1' => 'Juru Muda Tingkat I',
-            'PEMBINA UTM' => 'Pembina Utama',
-            'PEMBINA UTAMA MADY' => 'Pembina Utama Madya',
-            'PEMBINA UTAMA MUUDA' => 'Pembina Utama Muda',
-            'PEMBIINA' => 'Pembina',
-            'PEMBIINA UTAMA' => 'Pembina Utama',
+            'JURU MUDA TK 1' => 'Juru Muda Tingkat I',
+
+            // Juru Muda (JURDA)
+            'JURDA' => 'Juru Muda',
+            'JUR DA' => 'Juru Muda',
+            'JURU MD' => 'Juru Muda',
+            'JURU MDU' => 'Juru Muda',
 
             // ── PPPK — semua varian PPPK/P3K dikoreksi ke 'PPPK' ──
             'PPPK GOLONGAN I' => 'PPPK',
@@ -287,7 +356,15 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $rankInput = trim(preg_replace('/\s+/', ' ', $rankInputRtn));
 
             $golongan = trim($row[3] ?? '');
-            $nrp = trim($row[4] ?? '');
+            $nrpRaw = $row[4] ?? '';
+            // Excel menyimpan NIP panjang (18 digit) sebagai float → dibaca sebagai scientific notation
+            // Contoh: 196905181990031002 → 1.96905181990031E+17
+            // Konversi ke string integer penuh agar NIP tampil benar
+            if (is_numeric($nrpRaw) && (is_float($nrpRaw) || stripos((string)$nrpRaw, 'E') !== false)) {
+                $nrp = number_format((float)$nrpRaw, 0, '', '');
+            } else {
+                $nrp = trim((string)$nrpRaw);
+            }
             $jabatan = trim($row[5] ?? '');
             $bagian = trim($row[6] ?? '');
             $genderRaw = strtoupper(trim($row[7] ?? ''));
