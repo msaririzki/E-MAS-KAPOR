@@ -87,7 +87,7 @@
         .sidebar {
             position: fixed; top: 0; left: 0; bottom: 0;
             width: var(--sidebar-w);
-            background: #1A0505;
+            background: #111827;
             color: #fff;
             z-index: 100;
             display: flex; flex-direction: column;
