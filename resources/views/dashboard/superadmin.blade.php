@@ -9,7 +9,7 @@
     <div class="page-header-row">
         <div>
             <h1>Dashboard</h1>
-            <p>Selamat datang kembali. Berikut ringkasan data SI-KAPOR TA {{ $stats['fiscal_year'] }}.</p>
+            <p>Selamat datang kembali. Berikut ringkasan data E-MAS KAPOR TA {{ $stats['fiscal_year'] }}.</p>
         </div>
         <div class="page-header-actions">
             {{-- Filter Tahun Anggaran --}}

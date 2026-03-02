@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'SI-KAPOR') — SI-KAPOR Polda NTB</title>
+    <title>@yield('title', 'E-MAS KAPOR') — E-MAS KAPOR Polda NTB</title>
     <link rel="icon" href="{{ asset('e-mas-kapor.png') }}" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -17,7 +18,7 @@
     
     <style>
         /* ═══════════════════════════════════════════════════════
-           SI-KAPOR Design System — Stripe/Linear Inspired
+           E-MAS KAPOR Design System — Stripe/Linear Inspired
            ═══════════════════════════════════════════════════════ */
         :root {
             /* Core palette */
@@ -33,10 +34,10 @@
             --slate-900: #0F172A;
 
             /* Brand */
-            --brand: #4F46E5;
-            --brand-light: #6366F1;
-            --brand-lighter: #818CF8;
-            --brand-bg: #EEF2FF;
+            --brand: #C62828;
+            --brand-light: #E53935;
+            --brand-lighter: #EF5350;
+            --brand-bg: #FFEBEE;
             --accent: #D4AF37;
             --accent-light: #E8C94A;
 
@@ -86,7 +87,7 @@
         .sidebar {
             position: fixed; top: 0; left: 0; bottom: 0;
             width: var(--sidebar-w);
-            background: var(--slate-900);
+            background: #1A0505;
             color: #fff;
             z-index: 100;
             display: flex; flex-direction: column;
@@ -101,13 +102,11 @@
             border-bottom: 1px solid rgba(255,255,255,.06);
             flex-shrink: 0;
         }
-        .brand-icon {
+        .brand-logo {
             width: 32px; height: 32px;
-            background: linear-gradient(135deg, var(--brand), var(--brand-light));
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 800; color: #fff;
-            letter-spacing: -.5px; flex-shrink: 0;
+            border-radius: 6px;
+            object-fit: contain;
+            flex-shrink: 0;
         }
         .brand-text { font-size: 14px; font-weight: 700; letter-spacing: -.2px; }
         .brand-badge {
@@ -135,7 +134,7 @@
         }
         .nav-link:hover { background: rgba(255,255,255,.06); color: var(--slate-200); }
         .nav-link.active {
-            background: rgba(79,70,229,.15);
+            background: rgba(198,40,40,.15);
             color: var(--brand-lighter);
         }
         .nav-link.active::before {
@@ -215,7 +214,7 @@
         .search-input::placeholder { color: var(--slate-400); }
         .search-input:focus {
             border-color: var(--brand-lighter); background: #fff;
-            box-shadow: 0 0 0 3px rgba(79,70,229,.08);
+            box-shadow: 0 0 0 3px rgba(198,40,40,.08);
         }
         .search-kbd {
             position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
@@ -453,8 +452,8 @@
     {{-- ═══ Sidebar ═══ --}}
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <div class="brand-icon">SK</div>
-            <span class="brand-text">SI-KAPOR</span>
+            <img src="{{ asset('e-mas-kapor.png') }}" alt="Logo E-MAS KAPOR" class="brand-logo">
+            <span class="brand-text">E-MAS KAPOR</span>
             <span class="brand-badge">v1.0</span>
         </div>
 
@@ -554,7 +553,7 @@
             <div class="header-left">
                 <button class="btn-menu-toggle" onclick="toggleSidebar()"><i class="ri-menu-line"></i></button>
                 <div class="breadcrumb">
-                    <a href="{{ route('dashboard') }}">SI-KAPOR</a>
+                    <a href="{{ route('dashboard') }}">E-MAS KAPOR</a>
                     <span class="sep">/</span>
                     <span class="current">@yield('breadcrumb', 'Dashboard')</span>
                 </div>

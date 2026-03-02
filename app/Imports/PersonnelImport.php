@@ -109,29 +109,43 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'BHARADA ' => 'BHARADA',
 
             // ── PNS — SINGKATAN UMUM (sering dipakai di file Excel satker) ──
-            // Pembina
-            'PEMB' => 'Pembina',
+            // Pembina Utama
             'PEMB UTM' => 'Pembina Utama',
             'PEMB UTAMA' => 'Pembina Utama',
             'PEMBINA UTM' => 'Pembina Utama',
-            'PEMBINA UTAMA MADY' => 'Pembina Utama Madya',
-            'PEMBINA UTAMA MUUDA' => 'Pembina Utama Muda',
-            'PEMBIINA' => 'Pembina',
             'PEMBIINA UTAMA' => 'Pembina Utama',
+            // Pembina Utama Madya
+            'PEMBINA UTAMA MADY' => 'Pembina Utama Madya',
+            'PEMBINA UTM MADYA' => 'Pembina Utama Madya',
+            'PEMB UTM MADYA' => 'Pembina Utama Madya',
+            'PEMBINA UTM MDY' => 'Pembina Utama Madya',
+            // Pembina Utama Muda
+            'PEMBINA UTAMA MUUDA' => 'Pembina Utama Muda',
+            'PEMBINA UTM MUDA' => 'Pembina Utama Muda',
+            'PEMB UTM MUDA' => 'Pembina Utama Muda',
+            'PEMBINA UTM MDU' => 'Pembina Utama Muda',
+            // Pembina Tingkat I
             'PEMBTU' => 'Pembina Tingkat I',
             'PEMB TU' => 'Pembina Tingkat I',
             'PEMBINA TK.I' => 'Pembina Tingkat I',
+            'PEMBINA TK. I' => 'Pembina Tingkat I',
             'PEMBINA TK I' => 'Pembina Tingkat I',
             'PEMBINA TKT I' => 'Pembina Tingkat I',
             'PEMBINA TINGKAT 1' => 'Pembina Tingkat I',
             'PEMBINA TK 1' => 'Pembina Tingkat I',
             'PEMBINA TK. 1' => 'Pembina Tingkat I',
+            'PEMBINA I' => 'Pembina Tingkat I',
+            'PEMBINA 1' => 'Pembina Tingkat I',
+            // Pembina (ambigu — bisa jadi Pembina / Pembina Tingkat I, golongan akan membantu)
+            'PEMB' => 'Pembina',
+            'PEMBIINA' => 'Pembina',
 
             // Penata Tingkat I
             'PENTU' => 'Penata Tingkat I',
             'PEN TU' => 'Penata Tingkat I',
             'PNTA TK I' => 'Penata Tingkat I',
             'PENATA TK.I' => 'Penata Tingkat I',
+            'PENATA TK. I' => 'Penata Tingkat I',
             'PENATA TK I' => 'Penata Tingkat I',
             'PENATA TKT I' => 'Penata Tingkat I',
             'PENATA TINGKAT 1' => 'Penata Tingkat I',
@@ -141,6 +155,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PENATA TK II' => 'Penata Tingkat I', // Dianggap typo
             'PENATA I' => 'Penata Tingkat I',
             'PENATA 1' => 'Penata Tingkat I',
+            // Penata (ambigu)
+            'PNTA' => 'Penata',
+            'PENAT' => 'Penata',
+            'PENAAT' => 'Penata',
 
             // Penata Muda Tingkat I (PENDATU / PENDA I)
             'PENDATU' => 'Penata Muda Tingkat I',
@@ -150,6 +168,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PNTA MDU TK I' => 'Penata Muda Tingkat I',
             'PENATA MD TK I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TK.I' => 'Penata Muda Tingkat I',
+            'PENATA MUDA TK. I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TK I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TKT I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TINGKAT 1' => 'Penata Muda Tingkat I',
@@ -169,6 +188,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PENGTU' => 'Pengatur Tingkat I',
             'PENG TU' => 'Pengatur Tingkat I',
             'PENGATUR TK.I' => 'Pengatur Tingkat I',
+            'PENGATUR TK. I' => 'Pengatur Tingkat I',
             'PENGATUR TK I' => 'Pengatur Tingkat I',
             'PENGATUR TK. I/II.D' => 'Pengatur Tingkat I',
             'PENGATUR TK I/II.D' => 'Pengatur Tingkat I',
@@ -182,6 +202,11 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PENGATUR TK. 1' => 'Pengatur Tingkat I',
             'PENGATUR I' => 'Pengatur Tingkat I',
             'PENGATUR 1' => 'Pengatur Tingkat I',
+            // Pengatur (ambigu)
+            'PENGATU' => 'Pengatur',
+            'PENGATR' => 'Pengatur',
+            'PENGAUR' => 'Pengatur',
+            'PENGTR' => 'Pengatur',
 
             // Pengatur Muda Tingkat I (PENGDATU / PENGDA I)
             'PENGDATU' => 'Pengatur Muda Tingkat I',
@@ -190,6 +215,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PENG DATU' => 'Pengatur Muda Tingkat I',
             'PENGATUR MD TK I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TK.I' => 'Pengatur Muda Tingkat I',
+            'PENGATUR MUDA TK. I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TK I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TKT I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TINGKAT 1' => 'Pengatur Muda Tingkat I',
@@ -208,11 +234,14 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'JURTU' => 'Juru Tingkat I',
             'JUR TU' => 'Juru Tingkat I',
             'JURU TK.I' => 'Juru Tingkat I',
+            'JURU TK. I' => 'Juru Tingkat I',
             'JURU TK I' => 'Juru Tingkat I',
             'JURU TKT I' => 'Juru Tingkat I',
             'JURU TINGKAT 1' => 'Juru Tingkat I',
             'JURU TK 1' => 'Juru Tingkat I',
             'JURU TK. 1' => 'Juru Tingkat I',
+            'JURU I' => 'Juru Tingkat I',
+            'JURU 1' => 'Juru Tingkat I',
 
             // Juru Muda Tingkat I (JURDATU / JURDA I)
             'JURDATU' => 'Juru Muda Tingkat I',
@@ -221,6 +250,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'JUR DATU' => 'Juru Muda Tingkat I',
             'JURU MD TK I' => 'Juru Muda Tingkat I',
             'JURU MUDA TK.I' => 'Juru Muda Tingkat I',
+            'JURU MUDA TK. I' => 'Juru Muda Tingkat I',
             'JURU MUDA TK I' => 'Juru Muda Tingkat I',
             'JURU MUDA TKT I' => 'Juru Muda Tingkat I',
             'JURU MUDA TINGKAT 1' => 'Juru Muda Tingkat I',
@@ -254,51 +284,208 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         ];
     }
 
+    /**
+     * Mapping golongan PNS ke nama pangkat resmi.
+     * Berdasarkan Urutan Pangkat dan Golongan PNS Lengkap.
+     *
+     * Golongan I (Juru):
+     *   Ia  = Juru Muda
+     *   Ib  = Juru Muda Tingkat I
+     *   Ic  = Juru
+     *   Id  = Juru Tingkat I
+     *
+     * Golongan II (Pengatur):
+     *   IIa = Pengatur Muda
+     *   IIb = Pengatur Muda Tingkat I
+     *   IIc = Pengatur
+     *   IId = Pengatur Tingkat I
+     *
+     * Golongan III (Penata):
+     *   IIIa = Penata Muda
+     *   IIIb = Penata Muda Tingkat I
+     *   IIIc = Penata
+     *   IIId = Penata Tingkat I
+     *
+     * Golongan IV (Pembina):
+     *   IVa = Pembina
+     *   IVb = Pembina Tingkat I
+     *   IVc = Pembina Utama Muda
+     *   IVd = Pembina Utama Madya
+     *   IVe = Pembina Utama
+     */
+    public static function getGolonganToRankMap(): array
+    {
+        return [
+            // ── Golongan I (Juru) ──
+            'IA'   => 'Juru Muda',
+            'IB'   => 'Juru Muda Tingkat I',
+            'IC'   => 'Juru',
+            'ID'   => 'Juru Tingkat I',
+            // Alias angka
+            '1A'   => 'Juru Muda',
+            '1B'   => 'Juru Muda Tingkat I',
+            '1C'   => 'Juru',
+            '1D'   => 'Juru Tingkat I',
+
+            // ── Golongan II (Pengatur) ──
+            'IIA'  => 'Pengatur Muda',
+            'IIB'  => 'Pengatur Muda Tingkat I',
+            'IIC'  => 'Pengatur',
+            'IID'  => 'Pengatur Tingkat I',
+            // Alias angka
+            '2A'   => 'Pengatur Muda',
+            '2B'   => 'Pengatur Muda Tingkat I',
+            '2C'   => 'Pengatur',
+            '2D'   => 'Pengatur Tingkat I',
+
+            // ── Golongan III (Penata) ──
+            'IIIA' => 'Penata Muda',
+            'IIIB' => 'Penata Muda Tingkat I',
+            'IIIC' => 'Penata',
+            'IIID' => 'Penata Tingkat I',
+            // Alias angka
+            '3A'   => 'Penata Muda',
+            '3B'   => 'Penata Muda Tingkat I',
+            '3C'   => 'Penata',
+            '3D'   => 'Penata Tingkat I',
+
+            // ── Golongan IV (Pembina) ──
+            'IVA'  => 'Pembina',
+            'IVB'  => 'Pembina Tingkat I',
+            'IVC'  => 'Pembina Utama Muda',
+            'IVD'  => 'Pembina Utama Madya',
+            'IVE'  => 'Pembina Utama',
+            // Alias angka
+            '4A'   => 'Pembina',
+            '4B'   => 'Pembina Tingkat I',
+            '4C'   => 'Pembina Utama Muda',
+            '4D'   => 'Pembina Utama Madya',
+            '4E'   => 'Pembina Utama',
+        ];
+    }
+
+    /**
+     * Normalisasi string golongan dari Excel ke format standar (uppercase, tanpa spasi/titik)
+     * Contoh: "II.d" -> "IID", "III/a" -> "IIIA", "2 a" -> "2A"
+     */
+    private static function normalizeGolongan(string $golongan): string
+    {
+        $g = strtoupper(trim($golongan));
+        // Hapus karakter pemisah: titik, garis miring, spasi
+        $g = preg_replace('/[\s.\/\-]+/', '', $g);
+        return $g;
+    }
+
+    /**
+     * Cek apakah input terlihat seperti pangkat PNS (bukan POLRI)
+     */
+    private static function looksLikePnsRank(string $upperInput): bool
+    {
+        $pnsKeywords = ['PEMB', 'PENAT', 'PENDA', 'PENGAT', 'PENGD', 'JURU', 'JURDA', 'PNTA', 'PPPK', 'P3K'];
+        foreach ($pnsKeywords as $kw) {
+            if (str_starts_with($upperInput, $kw)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static function findRankWithCorrection(string $rankName, Collection $ranks, string $golongan = ''): array
     {
         $upperInput = strtoupper(trim($rankName));
 
         // Bersihkan embel-embel golongan PNS jika menempel di nama pangkat (misal: "PENATA/IIIC", "PENGATUR TK.I/II.D")
-        $upperInput = preg_replace('/\s*\/?\s*(IV|III|II|I)\.?\s*[A-E]\s*$/i', '', $upperInput);
-        $upperInput = trim($upperInput);
+        // Tapi simpan informasi golongan yang diekstrak jika belum ada golongan dari kolom Excel
+        $extractedGolongan = '';
+        if (preg_match('/\s*\/?\s*((IV|III|II|I)\.?\s*[A-E])\s*$/i', $upperInput, $golMatch)) {
+            $extractedGolongan = $golMatch[1];
+            $upperInput = preg_replace('/\s*\/?\s*(IV|III|II|I)\.?\s*[A-E]\s*$/i', '', $upperInput);
+            $upperInput = trim($upperInput);
+        }
+
+        // Gunakan golongan dari kolom Excel, atau yang diekstrak dari nama pangkat
+        $effectiveGolongan = !empty($golongan) ? $golongan : $extractedGolongan;
+        $normalizedGolongan = self::normalizeGolongan($effectiveGolongan);
 
         // --- KHUSUS PPPK ---
-        // Jika pangkat yang dimasukkan adalah "PPPK" atau "P3K", langsung set ke 'PPPK'
         $cleanInput = trim($upperInput, '.');
         if ($cleanInput === 'PPPK' || $cleanInput === 'P3K') {
             $upperInput = 'PPPK';
         }
 
         $correctionMap = self::getPangkatCorrectionMap();
+        $golonganMap = self::getGolonganToRankMap();
 
-        // 1. Exact match
+        // ═══════════════════════════════════════════════════════════
+        // STRATEGI 1: GOLONGAN-BASED RESOLUTION (paling akurat)
+        // Jika ada golongan dan input terlihat seperti PNS, langsung
+        // tentukan pangkat dari golongan.
+        // ═══════════════════════════════════════════════════════════
+        if (!empty($normalizedGolongan) && isset($golonganMap[$normalizedGolongan])) {
+            $isPnsLike = self::looksLikePnsRank($upperInput) || empty($upperInput);
+
+            if ($isPnsLike) {
+                $golonganRankName = $golonganMap[$normalizedGolongan];
+                $rank = self::findRankByName($golonganRankName, $ranks);
+                if ($rank) {
+                    $isCorrected = (strtoupper($rank->name) !== $upperInput);
+                    return [
+                        'rank' => $rank,
+                        'corrected' => $isCorrected,
+                        'original' => $rankName,
+                        'corrected_to' => $isCorrected ? $rank->name : null,
+                    ];
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // STRATEGI 2: EXACT MATCH (nama pangkat persis ada di DB)
+        // ═══════════════════════════════════════════════════════════
         $rank = $ranks->get($upperInput);
         if ($rank) {
             return ['rank' => $rank, 'corrected' => false, 'original' => $rankName, 'corrected_to' => null];
         }
 
-        // 2. Cek di correction map
+        // ═══════════════════════════════════════════════════════════
+        // STRATEGI 3: CORRECTION MAP (typo umum)
+        // ═══════════════════════════════════════════════════════════
         if (isset($correctionMap[$upperInput])) {
             $correctedName = $correctionMap[$upperInput];
-            $rank = $ranks->get(strtoupper($correctedName));
-            // Coba case-insensitive juga untuk PNS
-            if (! $rank) {
-                foreach ($ranks as $key => $r) {
-                    if (strtolower($key) === strtolower($correctedName)) {
-                        $rank = $r;
-                        break;
+
+            // Jika ada golongan, validasi apakah koreksi map sesuai dengan golongan
+            // Jika tidak sesuai, gunakan golongan sebagai sumber kebenaran
+            if (!empty($normalizedGolongan) && isset($golonganMap[$normalizedGolongan])) {
+                $golonganRankName = $golonganMap[$normalizedGolongan];
+                if (strtolower($correctedName) !== strtolower($golonganRankName)) {
+                    // Golongan mengatakan pangkat berbeda dari correction map
+                    // Prioritaskan golongan karena lebih akurat
+                    $rank = self::findRankByName($golonganRankName, $ranks);
+                    if ($rank) {
+                        return ['rank' => $rank, 'corrected' => true, 'original' => $rankName, 'corrected_to' => $rank->name];
                     }
                 }
             }
+
+            $rank = self::findRankByName($correctedName, $ranks);
             if ($rank) {
                 return ['rank' => $rank, 'corrected' => true, 'original' => $rankName, 'corrected_to' => $rank->name];
             }
         }
 
-        // 3. Levenshtein / similar_text match terhadap semua pangkat
+        // ═══════════════════════════════════════════════════════════
+        // STRATEGI 4: LEVENSHTEIN (fuzzy match, max distance 2)
+        // Untuk PNS, batasi hanya ke pangkat PNS agar tidak salah
+        // ═══════════════════════════════════════════════════════════
         $bestMatch = null;
         $bestDistance = PHP_INT_MAX;
+        $isPnsLike = self::looksLikePnsRank($upperInput);
+
         foreach ($ranks as $key => $r) {
+            // Jika input terlihat PNS, hanya bandingkan dengan pangkat PNS
+            if ($isPnsLike && isset($r->category) && $r->category !== 'PNS') {
+                continue;
+            }
             $dist = levenshtein($upperInput, strtoupper($key));
             if ($dist < $bestDistance) {
                 $bestDistance = $dist;
@@ -307,10 +494,48 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         }
 
         if ($bestDistance <= 2 && $bestMatch) {
+            // Jika ada golongan, sekali lagi validasi terhadap golongan
+            if (!empty($normalizedGolongan) && isset($golonganMap[$normalizedGolongan])) {
+                $golonganRankName = $golonganMap[$normalizedGolongan];
+                $golonganRank = self::findRankByName($golonganRankName, $ranks);
+                if ($golonganRank) {
+                    return ['rank' => $golonganRank, 'corrected' => true, 'original' => $rankName, 'corrected_to' => $golonganRank->name];
+                }
+            }
             return ['rank' => $bestMatch, 'corrected' => true, 'original' => $rankName, 'corrected_to' => $bestMatch->name];
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // FALLBACK: Jika masih tidak ketemu tapi ada golongan, gunakan golongan
+        // ═══════════════════════════════════════════════════════════
+        if (!empty($normalizedGolongan) && isset($golonganMap[$normalizedGolongan])) {
+            $golonganRankName = $golonganMap[$normalizedGolongan];
+            $rank = self::findRankByName($golonganRankName, $ranks);
+            if ($rank) {
+                return ['rank' => $rank, 'corrected' => true, 'original' => $rankName, 'corrected_to' => $rank->name];
+            }
+        }
+
         return ['rank' => null, 'corrected' => false, 'original' => $rankName, 'corrected_to' => null];
+    }
+
+    /**
+     * Helper: cari Rank dari collection berdasarkan nama (case-insensitive)
+     */
+    private static function findRankByName(string $name, Collection $ranks): ?Rank
+    {
+        // Coba exact match dulu (uppercase)
+        $rank = $ranks->get(strtoupper($name));
+        if ($rank) {
+            return $rank;
+        }
+        // Case-insensitive fallback
+        foreach ($ranks as $key => $r) {
+            if (strtolower($key) === strtolower($name)) {
+                return $r;
+            }
+        }
+        return null;
     }
 
     public function __construct($satkerId = null)
