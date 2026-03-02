@@ -254,14 +254,6 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         ];
     }
 
-    /**
-     * Mencari pangkat yang cocok dari daftar pangkat dengan logika:
-     * 1. Exact match (uppercase)
-     * 2. Cek correction map (typo map)
-     * 3. Similar text match (jika Levenshtein distance ≤ 2)
-     *
-     * Return: ['rank' => Rank|null, 'corrected' => bool, 'original' => string, 'corrected_to' => string|null]
-     */
     public static function findRankWithCorrection(string $rankName, Collection $ranks, string $golongan = ''): array
     {
         $upperInput = strtoupper(trim($rankName));
