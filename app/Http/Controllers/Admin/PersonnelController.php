@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\PersonnelExport;
 use App\Exports\PersonnelTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\PersonnelImport;
+use App\Imports\PersonnelUpdateImport;
 use App\Models\KaporItem;
 use App\Models\Personnel;
 use App\Models\Rank;
@@ -392,6 +394,200 @@ class PersonnelController extends Controller
         session()->forget(['import_preview', 'import_satker_id', 'import_stats']);
 
         return redirect()->route('admin.personnel.index')->with('info', 'Proses import dibatalkan.');
+    }
+
+    /**
+     * Export data personel ke Excel (untuk diedit dan diupload kembali sebagai update).
+     *
+     * Admin        : bisa memilih satker tertentu atau semua satker.
+     * Admin Satker : otomatis hanya export satker miliknya sendiri.
+     */
+    public function exportPersonnel(Request $request)
+    {
+        $user = auth()->user();
+
+        if ($user->hasRole('admin_satker')) {
+            // Admin satker: paksa ke satkernya sendiri
+            $satker = Satker::find($user->satker_id);
+            $satkerIds  = [$user->satker_id];
+            $satkerName = $satker?->name ?? 'SATKER';
+        } else {
+            // Admin: bisa pilih satker atau semua
+            $satkerIdParam = $request->get('satker_id');
+            if ($satkerIdParam && $satkerIdParam !== 'all') {
+                $satker     = Satker::findOrFail($satkerIdParam);
+                $satkerIds  = [$satker->id];
+                $satkerName = $satker->name;
+            } else {
+                $satkerIds  = null; // semua
+                $satkerName = 'SEMUA SATKER';
+            }
+        }
+
+        $safeName = preg_replace('/[\\/:*?"<>|]/', '_', $satkerName);
+        $fileName = 'Data_Personel_' . $safeName . '_' . date('Ymd') . '.xlsx';
+
+        AuditLogger::log(
+            'Export Data Personel',
+            'Manajemen Personil',
+            null, null, null,
+            'info',
+            "Export: {$satkerName}"
+        );
+
+        return Excel::download(new PersonnelExport($satkerIds, $satkerName), $fileName);
+    }
+
+    /**
+     * Import UPDATE: baca file Excel, cocokkan via NRP, tampilkan preview.
+     */
+    public function importUpdate(Request $request)
+    {
+        set_time_limit(0);
+        ini_set('memory_limit', '512M');
+
+        $request->validate([
+            'file'      => 'required|mimes:xlsx,xls,csv|max:51200',
+            'satker_id' => 'required|exists:satkers,id',
+        ]);
+
+        $user = auth()->user();
+
+        // Admin satker hanya boleh update satkernya sendiri
+        if ($user->hasRole('admin_satker') && (int) $request->satker_id !== (int) $user->satker_id) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk satker tersebut.');
+        }
+
+        try {
+            $import     = new PersonnelUpdateImport((int) $request->satker_id);
+            $collection = Excel::toCollection($import, $request->file('file'));
+
+            $dataRows = collect();
+            foreach ($collection as $sheetRows) {
+                $dataRows = $dataRows->concat($sheetRows);
+            }
+
+            $preview = $import->generatePreview($dataRows);
+
+            $coll          = collect($preview);
+            // Hanya hitung baris yang benar-benar BERUBAH (bukan no_change) untuk angka "update"
+            $totalUpdate   = $coll->where('action', 'update')->whereIn('status', ['update', 'corrected'])->count();
+            $totalNew      = $coll->where('action', 'new')->whereNotIn('status', ['error'])->count();
+            $totalError    = $coll->where('status', 'error')->count();
+            $totalNoChange = $coll->where('status', 'no_change')->count();
+            $totalCorrected= $coll->where('status', 'corrected')->count();
+
+            session([
+                'update_import_preview'   => $preview,
+                'update_import_satker_id' => $request->satker_id,
+                'update_import_stats'     => [
+                    'update'    => $totalUpdate,
+                    'new'       => $totalNew,
+                    'error'     => $totalError,
+                    'no_change' => $totalNoChange,
+                    'corrected' => $totalCorrected,
+                    'total'     => count($preview),
+                ],
+            ]);
+
+            AuditLogger::log(
+                'Preview Import Update/Tambah Personil',
+                'Manajemen Personil',
+                null, null, null,
+                'info',
+                "Preview: {$totalUpdate} diupdate, {$totalNew} baru, {$totalError} error, {$totalNoChange} tidak berubah"
+            );
+
+            return redirect()->route('admin.personnel.import-update-preview');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memproses file: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Tampilkan halaman preview hasil parsing file Excel update.
+     */
+    public function importUpdatePreview()
+    {
+        $preview  = session('update_import_preview');
+        $satkerId = session('update_import_satker_id');
+        $stats    = session('update_import_stats');
+
+        if (! $preview || ! $satkerId) {
+            return redirect()->route('admin.personnel.index')
+                ->with('error', 'Sesi preview update sudah kadaluwarsa. Silakan upload ulang file.');
+        }
+
+        $satker = Satker::find($satkerId);
+        $ranks  = Rank::orderBy('sort_order')->get();
+
+        return view('admin.personnel.import_update_preview', compact('preview', 'satker', 'stats', 'ranks'));
+    }
+
+    /**
+     * Konfirmasi import update: simpan data yang statusnya bukan 'skip'.
+     */
+    public function importUpdateConfirm(Request $request)
+    {
+        set_time_limit(0);
+
+        $satkerId = session('update_import_satker_id');
+        $preview  = session('update_import_preview');
+
+        if (! $satkerId || ! $preview) {
+            return redirect()->route('admin.personnel.index')
+                ->with('error', 'Sesi preview update sudah kadaluwarsa. Silakan upload ulang file.');
+        }
+
+        // Terapkan override rank_id manual dari form
+        $rankOverrides = $request->input('rank_overrides', []);
+        foreach ($rankOverrides as $index => $rankId) {
+            if (isset($preview[$index]) && $rankId !== '' && $rankId !== null) {
+                $preview[$index]['rank_id'] = $rankId;
+            }
+        }
+
+        try {
+            $importer = new PersonnelUpdateImport((int) $satkerId);
+            $results  = $importer->saveUpdateFromPreview($preview);
+
+            session()->forget(['update_import_preview', 'update_import_satker_id', 'update_import_stats']);
+
+            AuditLogger::log(
+                'Konfirmasi Import Update/Tambah Personil',
+                'Manajemen Personil',
+                null, null, null,
+                'success',
+                "Update: {$results['success_count']}. Baru: {$results['new_count']}. Tidak berubah: {$results['no_change_count']}. Gagal: {$results['error_count']}"
+            );
+
+            $message = "Berhasil memperbarui {$results['success_count']} data.";
+            if (($results['new_count'] ?? 0) > 0) {
+                $message .= " {$results['new_count']} personel baru ditambahkan.";
+            }
+            if (($results['no_change_count'] ?? 0) > 0) {
+                $message .= " {$results['no_change_count']} data tidak ada perubahan.";
+            }
+
+            if ($results['error_count'] > 0) {
+                return redirect()->route('admin.personnel.index')
+                    ->with('warning', $message . " Gagal: {$results['error_count']}.");
+            }
+
+            return redirect()->route('admin.personnel.index')->with('success', $message);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Batalkan proses import update.
+     */
+    public function importUpdateCancel()
+    {
+        session()->forget(['update_import_preview', 'update_import_satker_id', 'update_import_stats']);
+
+        return redirect()->route('admin.personnel.index')->with('info', 'Proses import update dibatalkan.');
     }
 
     /**

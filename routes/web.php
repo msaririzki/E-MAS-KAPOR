@@ -92,6 +92,11 @@ Route::middleware(['auth', 'role:admin|superadmin'])->prefix('admin')->name('adm
     Route::post('/personnel/import-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importCancel'])->name('personnel.import-cancel');
     Route::delete('/personnel/bulk-delete', [\App\Http\Controllers\Admin\PersonnelController::class, 'bulkDeleteBySatker'])->name('personnel.bulk-delete');
     Route::get('/personnel/export-rekap', [\App\Http\Controllers\Admin\PersonnelController::class, 'exportRekap'])->name('personnel.export-rekap');
+    Route::get('/personnel/export-personnel', [\App\Http\Controllers\Admin\PersonnelController::class, 'exportPersonnel'])->name('personnel.export-personnel');
+    Route::post('/personnel/import-update', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdate'])->name('personnel.import-update');
+    Route::get('/personnel/import-update-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdatePreview'])->name('personnel.import-update-preview');
+    Route::post('/personnel/import-update-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdateConfirm'])->name('personnel.import-update-confirm');
+    Route::post('/personnel/import-update-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdateCancel'])->name('personnel.import-update-cancel');
     Route::resource('kapor-items', \App\Http\Controllers\Admin\KaporItemController::class)->except(['create', 'edit', 'show']);
 
     Route::get('/personnel/print-satker', [\App\Http\Controllers\Admin\PersonnelController::class, 'printSatker'])->name('personnel.print-satker');
