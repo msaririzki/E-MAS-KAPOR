@@ -342,17 +342,9 @@
                         </td>
                     </tr>
                 @endif
-                {{-- Cek apakah datanya belum lengkap (kapor) --}}
-                @php
-                    $isIncomplete = !isset($p->kapor) || empty($p->kapor->tutup_kepala); 
-                    $rowStyle = (!empty($isIncompleteFilter) || $isIncomplete) 
-                                ? 'background-color: #FEF2F2; border-left: 4px solid #EF4444;' 
-                                : '';
-                @endphp
-                <tr style="{{ $rowStyle }}">
+                <tr>
                     <td>
                         <div class="user-info">
-
                             <div class="avatar" style="background-color: {{ ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899'][ord($p->full_name[0]) % 7] }};">
                                 {{ strtoupper(substr($p->full_name, 0, 1)) }}
                             </div>
