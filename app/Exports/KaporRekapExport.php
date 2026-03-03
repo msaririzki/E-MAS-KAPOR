@@ -57,7 +57,6 @@ class KaporRekapExport implements FromCollection, ShouldAutoSize, WithEvents, Wi
             ->where('kapor_submissions.fiscal_year', $this->fiscalYear)
             ->whereIn('kapor_submissions.kapor_item_id', $itemIds)
             // Ensure we only count active personnel if required, usually rekap includes all current personnel
-            ->whereNull('personnels.deleted_at')
             ->select(
                 'personnels.satker_id',
                 'kapor_submissions.kapor_item_id',
