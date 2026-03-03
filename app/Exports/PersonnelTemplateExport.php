@@ -13,6 +13,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PersonnelTemplateExport implements FromCollection, ShouldAutoSize, WithEvents, WithHeadings, WithStyles
@@ -111,6 +112,9 @@ class PersonnelTemplateExport implements FromCollection, ShouldAutoSize, WithEve
                 $sheet->mergeCells('Q9:Q10'); // JILBAB
 
                 $sheet->mergeCells('R8:R10'); // KETERANGAN
+
+                // ── Format kolom NRP (E) sebagai TEXT agar NIP 18 digit tidak kehilangan presisi ──
+                $sheet->getStyle('E11:E5000')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
 
                 // Borders for table
                 $styleArray = [

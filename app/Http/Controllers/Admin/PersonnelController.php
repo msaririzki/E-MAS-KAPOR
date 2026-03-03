@@ -159,6 +159,9 @@ class PersonnelController extends Controller
 
             DB::commit();
 
+            // Sinkronkan jumlah Polri/PNS di satker setelah tambah personil
+            PersonnelImport::recalculateSatkerCount($validated['satker_id']);
+
             return redirect()->route('admin.personnel.index')->with('success', 'Data personil dan ukuran berhasil ditambahkan.');
 
         } catch (\Exception $e) {
@@ -202,6 +205,8 @@ class PersonnelController extends Controller
             'kapor_sizes' => 'nullable|array',
         ]);
 
+        $oldSatkerId = $personnel->satker_id;
+
         DB::beginTransaction();
         try {
             // Update Personnel
@@ -219,6 +224,13 @@ class PersonnelController extends Controller
 
             DB::commit();
 
+            // Sinkronkan jumlah Polri/PNS di satker setelah update personil
+            PersonnelImport::recalculateSatkerCount($validated['satker_id']);
+            // Jika satker berubah, update juga satker lama
+            if ($oldSatkerId != $validated['satker_id']) {
+                PersonnelImport::recalculateSatkerCount($oldSatkerId);
+            }
+
             return redirect()->back()->with('success', 'Data personil dan akun berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -229,6 +241,8 @@ class PersonnelController extends Controller
 
     public function destroy(Personnel $personnel)
     {
+        $satkerId = $personnel->satker_id;
+
         DB::beginTransaction();
         try {
             if ($personnel->user) {
@@ -237,6 +251,9 @@ class PersonnelController extends Controller
             $personnel->delete();
 
             DB::commit();
+
+            // Sinkronkan jumlah Polri/PNS di satker setelah hapus personil
+            PersonnelImport::recalculateSatkerCount($satkerId);
 
             return redirect()->back()->with('success', 'Personil dan akun terkait berhasil dihapus.');
         } catch (\Exception $e) {
@@ -271,15 +288,14 @@ class PersonnelController extends Controller
             $import = new PersonnelImport($request->satker_id);
             $collection = Excel::toCollection($import, $request->file('file'));
 
-            // Gabungkan semua sheet menjadi satu koleksi baris data
-            $dataRows = collect();
+            // Proses setiap sheet terpisah agar deteksi kolom (double-NO) per-sheet
+            // Sheet POLRI dan PNS bisa punya layout berbeda
+            $preview = [];
             foreach ($collection as $sheetIndex => $sheetRows) {
-                // $sheetRows sudah dipotong 10 baris pertama oleh WithStartRow(11) di Import class
-                // Jangan dislice(10) lagi karena akan menghilangkan 10 data pertama di tiap sheet!
-                $dataRows = $dataRows->concat($sheetRows);
+                // generatePreview menerima Collection hasil toCollection langsung
+                $sheetPreview = $import->generatePreview($sheetRows);
+                $preview = array_merge($preview, $sheetPreview);
             }
-
-            $preview = $import->generatePreview($dataRows);
 
             // Hitung total status
             $totalOk = collect($preview)->where('status', 'ok')->count();
@@ -715,6 +731,9 @@ class PersonnelController extends Controller
 
                 AuditLogger::log('Hapus Bulk Personil', 'Manajemen Personil', $satker, null, null, 'success', "Berhasil menghapus {$count} personil dari Satker: {$satker->name}");
             });
+
+            // Sinkronkan jumlah Polri/PNS di satker setelah bulk delete
+            PersonnelImport::recalculateSatkerCount($satker->id);
 
             return redirect()->back()->with('success', "Berhasil menghapus seluruh data personil dari Satker {$satker->name}.");
         } catch (\Exception $e) {

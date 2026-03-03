@@ -240,7 +240,14 @@
                     </td>
 
                     <td style="color:#6B7280;">{{ $row['golongan'] ?: '—' }}</td>
-                    <td style="font-family:monospace; color:#374151;">{{ $row['nrp'] ?: '—' }}</td>
+                    <td style="font-family:monospace; color:#374151;">
+                        {{ $row['nrp'] ?: '—' }}
+                        @if(!empty($row['duplicate_nrp']))
+                        <span style="display:block; font-size:9px; background:#FED7AA; color:#9A3412; padding:1px 7px; border-radius:10px; font-weight:700; margin-top:2px; width:fit-content; font-family:sans-serif;">
+                            <i class="ri-alert-line"></i> NRP DUPLIKAT
+                        </span>
+                        @endif
+                    </td>
                     <td style="color:#4B5563;">{{ $row['jabatan'] ?: '—' }}</td>
                     <td style="color:#4B5563;">{{ $row['bagian'] ?: '—' }}</td>
                     <td>

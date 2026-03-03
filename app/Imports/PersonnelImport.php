@@ -164,6 +164,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PENDATU' => 'Penata Muda Tingkat I',
             'PENDA I' => 'Penata Muda Tingkat I',
             'PENDA 1' => 'Penata Muda Tingkat I',
+            'PENDA TK I' => 'Penata Muda Tingkat I',
+            'PENDA TK. I' => 'Penata Muda Tingkat I',
+            'PENDA TK 1' => 'Penata Muda Tingkat I',
+            'PENDA TK.I' => 'Penata Muda Tingkat I',
             'PEN DATU' => 'Penata Muda Tingkat I',
             'PNTA MDU TK I' => 'Penata Muda Tingkat I',
             'PENATA MD TK I' => 'Penata Muda Tingkat I',
@@ -552,6 +556,49 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
     }
 
     /**
+     * Deteksi apakah file Excel punya 2 kolom NO (double-NO).
+     * Beberapa satker menambahkan kolom NO ekstra di kolom A, sehingga semua kolom data bergeser 1.
+     * Contoh: Kolom A = NO grup, Kolom B = NO urut, Kolom C = NAMA, ...
+     *
+     * @return int Offset kolom (0 = standar, 1 = double-NO)
+     */
+    private static function detectColumnOffset(Collection $rows): int
+    {
+        $doubleNoScore = 0;
+        $normalScore = 0;
+        $sampled = 0;
+
+        foreach ($rows as $row) {
+            if ($row instanceof Collection) {
+                $row = $row->toArray();
+            }
+
+            $col0 = trim((string)($row[0] ?? ''));
+            $col1 = trim((string)($row[1] ?? ''));
+            $col2 = trim((string)($row[2] ?? ''));
+
+            // Skip baris kosong atau header
+            if (empty($col0) && empty($col1) && empty($col2)) {
+                continue;
+            }
+
+            // Jika col0 numeric DAN col1 numeric DAN col2 teks (nama) → double-NO
+            if (is_numeric($col0) && is_numeric($col1) && !empty($col2) && !is_numeric($col2) && strlen($col2) >= 2) {
+                $doubleNoScore++;
+            }
+            // Jika col0 numeric DAN col1 teks (nama) → standar
+            elseif (is_numeric($col0) && !empty($col1) && !is_numeric($col1) && strlen($col1) >= 2) {
+                $normalScore++;
+            }
+
+            $sampled++;
+            if ($sampled >= 30) break; // Cukup sample 30 baris
+        }
+
+        return ($doubleNoScore > $normalScore && $doubleNoScore >= 3) ? 1 : 0;
+    }
+
+    /**
      * Parse rows menjadi array preview data (TANPA menyimpan ke DB).
      * Digunakan untuk menampilkan preview sebelum konfirmasi import.
      */
@@ -559,33 +606,66 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
     {
         $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
         $preview = [];
+        $seenNrps = []; // Track NRPs untuk deteksi duplikat
+
+        // Auto-detect apakah file punya 2 kolom NO (double-NO)
+        $offset = self::detectColumnOffset($rows);
 
         foreach ($rows as $rowIndex => $row) {
             if ($row instanceof Collection) {
                 $row = $row->toArray();
             }
 
+            // Terapkan offset kolom: jika double-NO, semua index geser +1
+            $colName     = 1 + $offset;
+            $colRank     = 2 + $offset;
+            $colGol      = 3 + $offset;
+            $colNrp      = 4 + $offset;
+            $colJabatan  = 5 + $offset;
+            $colBagian   = 6 + $offset;
+            $colGender   = 7 + $offset;
+            $colKet      = 17 + $offset;
+
             // Bersihkan tanda bintang (*) dan normalisasi enter/spasi ganda (karena sering ada \n di dalam cell Excel)
-            $fullNameRtn = str_replace('*', '', $row[1] ?? '');
+            $fullNameRtn = str_replace('*', '', $row[$colName] ?? '');
             $fullName = trim(preg_replace('/\s+/', ' ', $fullNameRtn));
 
-            $rankInputRtn = str_replace('*', '', $row[2] ?? '');
+            $rankInputRtn = str_replace('*', '', $row[$colRank] ?? '');
             $rankInput = trim(preg_replace('/\s+/', ' ', $rankInputRtn));
 
-            $golongan = trim($row[3] ?? '');
-            $nrpRaw = $row[4] ?? '';
-            // Excel menyimpan NIP panjang (18 digit) sebagai float → dibaca sebagai scientific notation
-            // Contoh: 196905181990031002 → 1.96905181990031E+17
-            // Konversi ke string integer penuh agar NIP tampil benar
-            if (is_numeric($nrpRaw) && (is_float($nrpRaw) || stripos((string)$nrpRaw, 'E') !== false)) {
-                $nrp = number_format((float)$nrpRaw, 0, '', '');
+            $golongan = trim($row[$colGol] ?? '');
+            $nrpRaw = $row[$colNrp] ?? '';
+
+            // ── NRP/NIP Precision Fix ──
+            // Jika format cell Excel awalnya General/Number (bukan Text) dengan panjang NIP > 15 digit (spt 18 digit),
+            // PhpSpreadsheet / toCollection akan membacanya sebagai float/int yang termutiasi
+            // karena limit presisi IEEE 754 (contoh: 197303052008101000 murni dibaca PHP sbg int 197303052008100992).
+            // Namun Excel UI menampilkan 15 significant digits (trailing zero).
+            // Logic ini secara matematis mengembalikan angka termutasi tsb kembali ke versi 15-sig display di Excel.
+            if ((is_int($nrpRaw) || is_float($nrpRaw)) && $nrpRaw >= 1000000000000000) {
+                $strNrp = sprintf("%.15g", (float)$nrpRaw);
+                // Menjadi '1.97303052008101e+17' (membuang sisa digit termutasi di ujung)
+                if (stripos($strNrp, 'e') !== false) {
+                    $parts = explode('e', strtolower($strNrp));
+                    $base = str_replace('.', '', $parts[0]);
+                    $exp = (int)$parts[1];
+                    $nrp = str_pad($base, $exp + 1, '0', STR_PAD_RIGHT); 
+                } else {
+                    $nrp = str_replace('.', '', $strNrp);
+                }
             } else {
-                $nrp = trim((string)$nrpRaw);
+                // Untuk teks literal asli (format cell Text) atau angka normal < 15 digit
+                $trimNrp = trim((string)$nrpRaw);
+                if (is_numeric($trimNrp) && stripos($trimNrp, 'E') !== false) {
+                    $nrp = number_format((float)$trimNrp, 0, '', '');
+                } else {
+                    $nrp = $trimNrp;
+                }
             }
-            $jabatan = trim($row[5] ?? '');
-            $bagian = trim($row[6] ?? '');
-            $genderRaw = strtoupper(trim($row[7] ?? ''));
-            $keterangan = trim($row[17] ?? '');
+            $jabatan = trim($row[$colJabatan] ?? '');
+            $bagian = trim($row[$colBagian] ?? '');
+            $genderRaw = strtoupper(trim($row[$colGender] ?? ''));
+            $keterangan = trim($row[$colKet] ?? '');
 
             // Ambil nomor urut dari kolom pertama (NO)
             $no = trim($row[0] ?? '');
@@ -598,7 +678,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             // Jika pangkat kosong, cek apakah baris punya nomor urut (kolom NO)
             // Personel asli selalu punya nomor urut (1, 2, 3, ...)
             // Baris header/catatan (TUTUP KEPALA, BAJU PRIA, dll) tidak punya nomor urut
-            if (empty($rankInput) && !is_numeric($no)) {
+            // Untuk double-NO, cek kedua kolom NO
+            $hasNumericNo = is_numeric($no) || ($offset > 0 && is_numeric(trim($row[1] ?? '')));
+            if (empty($rankInput) && !$hasNumericNo) {
                 continue;
             }
 
@@ -614,6 +696,13 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 continue;
             }
 
+            // 1b. Abaikan baris rekapitulasi: jika golongan berisi "JUMLAH" atau "TOTAL"
+            // Baris rekap biasanya: Nama="SD"/"JUMLAH", Golongan="JUMLAH" — ini bukan data personel
+            $golLower = strtolower($golongan);
+            if ($golLower === 'jumlah' || $golLower === 'total' || $golLower === 'sub total' || $golLower === 'sub jumlah') {
+                continue;
+            }
+
             // 2. Abaikan baris jika Nama SANGAT PENDEK / berupa angka (seperti baris rekap -> Nama "14", "15", "K")
             // Nama personel asli umumnya >= 2 huruf dan tidak cuma terdiri dari angka.
             if (strlen($fullName) < 2 || is_numeric(str_replace([' ', '.', ','], '', $fullName))) {
@@ -621,6 +710,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             }
 
             // 3. Pengecekan NRP/NIP
+            // Normalisasi: dash/strip saja (-, --, ---) dianggap kosong (bukan NRP asli)
+            if (preg_match('/^[\-\.]+$/', $nrp)) {
+                $nrp = '';
+            }
             if (empty($nrp)) {
                 // Jika NRP kosong, biarkan kosong — akan di-generate saat save jika diperlukan
                 // Ini agar di preview tampil '—' bukan kode acak
@@ -648,17 +741,17 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             // Koreksi pangkat (sekarang menyertakan golongan untuk PPPK)
             $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan);
 
-            // Ukuran kapor (kolom I-Q, index 8-16)
+            // Ukuran kapor (kolom I-Q, index 8-16, ditambah offset jika double-NO)
             $sizes = [
-                'topi' => trim($row[8] ?? ''),
-                'kemeja' => trim($row[9] ?? ''),
-                'celana' => trim($row[10] ?? ''),
-                'olahraga' => trim($row[11] ?? ''),
-                'sepatu_dinas' => trim($row[12] ?? ''),
-                'sepatu_olahraga' => trim($row[13] ?? ''),
-                'jaket' => trim($row[14] ?? ''),
-                'sabuk' => trim($row[15] ?? ''),
-                'jilbab' => trim($row[16] ?? ''),
+                'topi' => trim($row[8 + $offset] ?? ''),
+                'kemeja' => trim($row[9 + $offset] ?? ''),
+                'celana' => trim($row[10 + $offset] ?? ''),
+                'olahraga' => trim($row[11 + $offset] ?? ''),
+                'sepatu_dinas' => trim($row[12 + $offset] ?? ''),
+                'sepatu_olahraga' => trim($row[13 + $offset] ?? ''),
+                'jaket' => trim($row[14 + $offset] ?? ''),
+                'sabuk' => trim($row[15 + $offset] ?? ''),
+                'jilbab' => trim($row[16 + $offset] ?? ''),
             ];
 
             // Pria tidak butuh jilbab — hapus dari data ukuran
@@ -670,13 +763,36 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $incompleteFields = [];
 
             // Cek kelengkapan data — kumpulkan semua field yang kosong
-            if (! $rankResult['rank'] && ! empty($rankInput)) {
+            // Pangkat berupa dash (-, --) atau angka saja (57, 8) dianggap kosong, bukan error
+            $rankIsPlaceholder = preg_match('/^[\-\.]+$/', $rankInput) || (is_numeric($rankInput) && strlen($rankInput) <= 3);
+            if (! $rankResult['rank'] && ! empty($rankInput) && !$rankIsPlaceholder) {
                 $status = 'error'; // pangkat diisi tapi tidak dikenali → perlu pilih manual
-            } elseif (! $rankResult['rank'] && empty($rankInput)) {
+            } elseif (! $rankResult['rank']) {
+                // Pangkat kosong atau placeholder → tandai sebagai belum lengkap (bisa diedit admin nanti)
                 $incompleteFields[] = 'Pangkat';
             }
             if (empty($nrp)) {
                 $incompleteFields[] = 'NRP/NIP';
+            }
+
+            // Deteksi NRP duplikat dalam batch yang sama
+            $isDuplicateNrp = false;
+            if (!empty($nrp)) {
+                if (isset($seenNrps[$nrp])) {
+                    $isDuplicateNrp = true;
+                    if ($status !== 'error') {
+                        $status = 'corrected';
+                    }
+                    $dupeRow = $seenNrps[$nrp];
+                    $dupeLabel = "NRP duplikat dengan baris #{$dupeRow}";
+                    if ($rankResult['corrected_to']) {
+                        $rankResult['corrected_to'] .= ' | ' . $dupeLabel;
+                    } else {
+                        $rankResult['corrected'] = true;
+                        $rankResult['corrected_to'] = $dupeLabel;
+                    }
+                }
+                $seenNrps[$nrp] = $rowIndex + 11; // Simpan nomor baris Excel
             }
 
             // Jika pangkat dikoreksi otomatis (misal PPPK, KOMBES POL, dll)
@@ -715,6 +831,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 'sizes' => $sizes,
                 'status' => $status, // 'ok' | 'corrected' | 'error'
                 'incomplete_fields' => $incompleteFields, // field yang kosong
+                'duplicate_nrp' => $isDuplicateNrp, // true jika NRP duplikat
             ];
         }
 
@@ -777,11 +894,14 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     // tapi simpan personnels.nrp sebagai NULL agar tampil "—" di UI
                     $effectiveNrp = $nrp;
                     $isEmptyNrp = empty($nrp);
-                    if ($isEmptyNrp) {
+                    $isDuplicateNrp = !empty($data['duplicate_nrp']);
+
+                    if ($isEmptyNrp || $isDuplicateNrp) {
                         $effectiveNrp = 'TEMP-' . strtoupper(substr(md5($fullName . $idx . time()), 0, 8));
                     }
 
-                    $personnel = $isEmptyNrp ? null : $existingPersonnel->get($effectiveNrp);
+                    // Jika NRP duplikat dalam batch, jangan lookup existing — buat record baru
+                    $personnel = ($isEmptyNrp || $isDuplicateNrp) ? null : $existingPersonnel->get($effectiveNrp);
 
                     if (! $personnel) {
                         // ── User baru: bcrypt cost=4 (10× lebih cepat, password bisa diubah nanti) ──
@@ -807,9 +927,13 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             $personnelType = 'PNS';
                         }
 
+                        // Simpan NRP asli untuk personil, tapi NRP duplikat disimpan NULL
+                        // agar tidak bentrok di database
+                        $saveNrp = $isEmptyNrp ? null : ($isDuplicateNrp ? $nrp : $effectiveNrp);
+
                         $personnel = Personnel::create([
                             'user_id' => $user->id,
-                            'nrp' => $isEmptyNrp ? null : $effectiveNrp,
+                            'nrp' => $saveNrp,
                             'full_name' => $fullName,
                             'rank_id' => $rank ? $rank->id : null,
                             'satker_id' => $satker->id,
@@ -821,7 +945,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'keterangan' => $keterangan,
                             'is_active' => true,
                         ]);
-                        $existingPersonnel->put($effectiveNrp, $personnel);
+                        if (!$isDuplicateNrp) {
+                            $existingPersonnel->put($effectiveNrp, $personnel);
+                        }
                     } else {
                         // ── Update personel yang sudah ada ──
                         $updateData = [
