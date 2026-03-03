@@ -19,13 +19,13 @@
 </div>
 
 {{-- Stats --}}
-<div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+<div class="stats-grid" style="grid-template-columns: repeat(5, 1fr);">
     <div class="stat-card">
         <div class="stat-icon icon-blue">
             <i class="ri-shirt-line"></i>
         </div>
         <div class="stat-content">
-            <span class="stat-label">TOTAL KEPA ITEM</span>
+            <span class="stat-label">TUTUP KEPALA</span>
             <span class="stat-number">{{ $stats['kepala'] }}</span>
         </div>
     </div>
@@ -34,7 +34,7 @@
             <i class="ri-t-shirt-line"></i>
         </div>
         <div class="stat-content">
-            <span class="stat-label">TOTAL BADAN ITEM</span>
+            <span class="stat-label">TUTUP BADAN</span>
             <span class="stat-number">{{ $stats['badan'] }}</span>
         </div>
     </div>
@@ -43,17 +43,26 @@
             <i class="ri-footprint-line"></i>
         </div>
         <div class="stat-content">
-            <span class="stat-label">TOTAL KAKI ITEM</span>
+            <span class="stat-label">TUTUP KAKI</span>
             <span class="stat-number">{{ $stats['kaki'] }}</span>
         </div>
     </div>
-     <div class="stat-card">
+    <div class="stat-card">
         <div class="stat-icon icon-green">
             <i class="ri-stack-line"></i>
         </div>
         <div class="stat-content">
-            <span class="stat-label">TOTAL SEMUA</span>
+            <span class="stat-label">TOTAL ITEM</span>
             <span class="stat-number">{{ $stats['total'] }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #FEF3C7; color: #D97706;">
+            <i class="ri-money-dollar-circle-line"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">ITEM DENGAN HARGA</span>
+            <span class="stat-number">{{ $stats['active'] }}</span>
         </div>
     </div>
 </div>
@@ -191,49 +200,63 @@
 
 {{-- Add Modal --}}
 <div id="addItemModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
             <h2 class="modal-title">Tambah Item Kapor</h2>
             <button class="modal-close" onclick="closeModal('addItemModal')"><i class="ri-close-line"></i></button>
         </div>
         <form action="{{ route('admin.kapor-items.store') }}" method="POST">
             @csrf
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                 <div class="form-group">
                     <label>NAMA ITEM</label>
-                    <input type="text" name="item_name" required class="form-input" placeholder="Contoh: Kemeja PDH">
+                    <input type="text" name="item_name" required class="form-input" placeholder="Contoh: PDL II POLRI TWO TONE PRIA">
                 </div>
-                <div class="form-group">
-                    <label>KATEGORI</label>
-                    <div class="custom-select-wrapper">
-                        <select name="category" class="form-input" required style="appearance: auto;">
-                            <option value="">-- Pilih Kategori --</option>
-                            <option value="Tutup_Kepala">Tutup Kepala</option>
-                            <option value="Tutup_Badan">Tutup Badan</option>
-                            <option value="Tutup_Kaki">Tutup Kaki</option>
-                            <option value="Atribut">Atribut</option>
-                        </select>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>KATEGORI</label>
+                        <div class="custom-select-wrapper">
+                            <select name="category" class="form-input" required style="appearance: auto;">
+                                <option value="">-- Pilih --</option>
+                                <option value="Tutup_Kepala">Tutup Kepala</option>
+                                <option value="Tutup_Badan">Tutup Badan</option>
+                                <option value="Tutup_Kaki">Tutup Kaki</option>
+                                <option value="Atribut">Atribut</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>KHUSUS GENDER</label>
+                        <div class="custom-select-wrapper">
+                            <select name="gender_specific" class="form-input" style="appearance: auto;">
+                                <option value="">Semua (Unisex)</option>
+                                <option value="L">Pria</option>
+                                <option value="P">Wanita</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>HARGA SATUAN (Rp)</label>
+                        <input type="number" name="price" class="form-input" placeholder="748000" min="0" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>SATUAN</label>
+                        <div class="custom-select-wrapper">
+                            <select name="unit" class="form-input" style="appearance: auto;">
+                                @foreach($unitOptions as $key => $label)
+                                    <option value="{{ $key }}" {{ $key == 'PCS' ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>KHUSUS GENDER (OPSIONAL)</label>
-                    <div class="selection-grid">
-                         <label class="selection-card">
-                            <input type="radio" name="gender_specific" value="L">
-                            <div class="card-content">
-                                <span class="card-title">Pria</span>
-                            </div>
-                            <div class="card-check"><i class="ri-check-line"></i></div>
-                        </label>
-                        <label class="selection-card">
-                            <input type="radio" name="gender_specific" value="P">
-                            <div class="card-content">
-                                <span class="card-title">Wanita</span>
-                            </div>
-                            <div class="card-check"><i class="ri-check-line"></i></div>
-                        </label>
-                    </div>
-                    <p style="font-size: 11px; color: #6B7280; margin-top: 4px;">Biarkan kosong jika item ini Unisex (Semua Gender)</p>
+                    <label>GROUP INVOICE / HPS</label>
+                    <input type="text" name="invoice_group" class="form-input" placeholder="Contoh: PDL POLRI, TOPI LAPANGAN PNS, JILBAB POLRI DAN PNS">
+                    <p style="font-size: 11px; color: #6B7280; margin-top: 4px;">Digunakan untuk pengelompokan barang di dokumen Invoice/HPS</p>
                 </div>
                 <div class="form-group">
                     <label>DESKRIPSI (OPSIONAL)</label>
@@ -250,7 +273,7 @@
 
 {{-- Edit Modal --}}
 <div id="editItemModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
             <h2 class="modal-title">Edit Item Kapor</h2>
             <button class="modal-close" onclick="closeModal('editItemModal')"><i class="ri-close-line"></i></button>
@@ -258,40 +281,54 @@
         <form id="editForm" method="POST">
             @csrf
             @method('PUT')
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                 <div class="form-group">
                     <label>NAMA ITEM</label>
                     <input type="text" name="item_name" id="edit_item_name" required class="form-input">
                 </div>
-                <div class="form-group">
-                    <label>KATEGORI</label>
-                    <div class="custom-select-wrapper">
-                        <select name="category" id="edit_category" class="form-input" required style="appearance: auto;">
-                            <option value="Tutup_Kepala">Tutup Kepala</option>
-                            <option value="Tutup_Badan">Tutup Badan</option>
-                            <option value="Tutup_Kaki">Tutup Kaki</option>
-                            <option value="Atribut">Atribut</option>
-                        </select>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>KATEGORI</label>
+                        <div class="custom-select-wrapper">
+                            <select name="category" id="edit_category" class="form-input" required style="appearance: auto;">
+                                <option value="Tutup_Kepala">Tutup Kepala</option>
+                                <option value="Tutup_Badan">Tutup Badan</option>
+                                <option value="Tutup_Kaki">Tutup Kaki</option>
+                                <option value="Atribut">Atribut</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>KHUSUS GENDER</label>
+                        <div class="custom-select-wrapper">
+                            <select name="gender_specific" id="edit_gender" class="form-input" style="appearance: auto;">
+                                <option value="">Semua (Unisex)</option>
+                                <option value="L">Pria</option>
+                                <option value="P">Wanita</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>HARGA SATUAN (Rp)</label>
+                        <input type="number" name="price" id="edit_price" class="form-input" placeholder="748000" min="0" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>SATUAN</label>
+                        <div class="custom-select-wrapper">
+                            <select name="unit" id="edit_unit" class="form-input" style="appearance: auto;">
+                                @foreach($unitOptions as $key => $label)
+                                    <option value="{{ $key }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>KHUSUS GENDER (OPSIONAL)</label>
-                    <div class="selection-grid">
-                         <label class="selection-card">
-                            <input type="radio" name="gender_specific" value="L" id="edit_gender_l">
-                            <div class="card-content">
-                                <span class="card-title">Pria</span>
-                            </div>
-                            <div class="card-check"><i class="ri-check-line"></i></div>
-                        </label>
-                        <label class="selection-card">
-                            <input type="radio" name="gender_specific" value="P" id="edit_gender_p">
-                            <div class="card-content">
-                                <span class="card-title">Wanita</span>
-                            </div>
-                            <div class="card-check"><i class="ri-check-line"></i></div>
-                        </label>
-                    </div>
+                    <label>GROUP INVOICE / HPS</label>
+                    <input type="text" name="invoice_group" id="edit_invoice_group" class="form-input" placeholder="Contoh: PDL POLRI">
                 </div>
                 <div class="form-group">
                     <label>STATUS</label>
@@ -354,12 +391,10 @@
     function openEditModal(item) {
         document.getElementById('edit_item_name').value = item.item_name;
         document.getElementById('edit_category').value = item.category;
-        
-        // Gender Reset
-        document.getElementById('edit_gender_l').checked = false;
-        document.getElementById('edit_gender_p').checked = false;
-        if(item.gender_specific == 'L') document.getElementById('edit_gender_l').checked = true;
-        if(item.gender_specific == 'P') document.getElementById('edit_gender_p').checked = true;
+        document.getElementById('edit_gender').value = item.gender_specific || '';
+        document.getElementById('edit_price').value = item.price || '';
+        document.getElementById('edit_unit').value = item.unit || 'PCS';
+        document.getElementById('edit_invoice_group').value = item.invoice_group || '';
 
         // Active Status
         if(item.is_active) {

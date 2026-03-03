@@ -14,19 +14,40 @@ class KaporItem extends Model
         'category',
         'item_name',
         'description',
+        'price',
+        'unit',
+        'image',
+        'invoice_group',
         'gender_specific',
         'rank_categories',
         'unit_keywords',
+        'default_recipients',
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
+            'price' => 'decimal:2',
             'rank_categories' => 'array',
             'unit_keywords' => 'array',
+            'default_recipients' => 'array',
             'is_active' => 'boolean',
         ];
+    }
+
+    // ── Accessors ────────────────────────────────────────────
+
+    /**
+     * Format harga ke Rupiah: Rp 748.000
+     */
+    public function getFormattedPriceAttribute(): string
+    {
+        if ($this->price === null) {
+            return '-';
+        }
+
+        return 'Rp ' . number_format((float) $this->price, 0, ',', '.');
     }
 
     // ── Relationships ─────────────────────────────────────────

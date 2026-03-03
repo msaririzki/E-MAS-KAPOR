@@ -125,6 +125,44 @@ Route::middleware(['auth', 'role:admin|superadmin'])->prefix('admin')->name('adm
 
     // Audit Logs
     Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
+
+    // ── Budget / Rencana Anggaran ──────────────────────────────
+    Route::prefix('budget')->name('budget.')->group(function () {
+        // Tahun Anggaran
+        Route::get('/', [\App\Http\Controllers\Admin\BudgetController::class, 'index'])->name('index');
+        Route::post('/years', [\App\Http\Controllers\Admin\BudgetController::class, 'storeYear'])->name('store-year');
+        Route::put('/years/{budgetYear}', [\App\Http\Controllers\Admin\BudgetController::class, 'updateYear'])->name('update-year');
+        Route::delete('/years/{budgetYear}', [\App\Http\Controllers\Admin\BudgetController::class, 'destroyYear'])->name('destroy-year');
+
+        // Paket dalam Tahun
+        Route::get('/years/{budgetYear}', [\App\Http\Controllers\Admin\BudgetController::class, 'showYear'])->name('show-year');
+        Route::post('/years/{budgetYear}/packages', [\App\Http\Controllers\Admin\BudgetController::class, 'storePackage'])->name('store-package');
+        Route::put('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'updatePackage'])->name('update-package');
+        Route::delete('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'destroyPackage'])->name('destroy-package');
+
+        // Detail Paket (Wizard)
+        Route::get('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'showPackage'])->name('show-package');
+
+        // Wizard Step 1: Pilih Barang
+        Route::get('/packages/{budgetPackage}/select-items', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectItems'])->name('wizard.step1');
+        Route::post('/packages/{budgetPackage}/toggle-item', [\App\Http\Controllers\Admin\PackageItemController::class, 'toggleItem'])->name('wizard.toggle-item');
+
+        // Wizard Step 2: Pilih Penerima
+        Route::get('/packages/{budgetPackage}/select-recipients', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectRecipients'])->name('wizard.step2');
+        Route::post('/package-items/{packageItem}/save-recipients', [\App\Http\Controllers\Admin\PackageItemController::class, 'saveRecipients'])->name('wizard.save-recipients');
+
+        // Wizard Step 3: Preview
+        Route::get('/packages/{budgetPackage}/preview', [\App\Http\Controllers\Admin\PackageItemController::class, 'preview'])->name('wizard.step3');
+
+        // Item operations
+        Route::delete('/package-items/{packageItem}', [\App\Http\Controllers\Admin\PackageItemController::class, 'removeItem'])->name('wizard.remove-item');
+
+        // Export & Invoice
+        Route::get('/packages/{budgetPackage}/recap', [\App\Http\Controllers\Admin\BudgetExportController::class, 'previewRecap'])->name('recap');
+        Route::get('/packages/{budgetPackage}/invoice', [\App\Http\Controllers\Admin\BudgetExportController::class, 'previewInvoice'])->name('invoice');
+        Route::get('/packages/{budgetPackage}/export-csv', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportRecapExcel'])->name('export-csv');
+        Route::post('/invoice-settings', [\App\Http\Controllers\Admin\BudgetExportController::class, 'updateSettings'])->name('update-settings');
+    });
 });
 
 // â”€â”€ Superadmin Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

@@ -38,25 +38,33 @@ class KaporItemController extends Controller
             'kepala' => KaporItem::where('category', 'Tutup_Kepala')->count(),
             'badan' => KaporItem::where('category', 'Tutup_Badan')->count(),
             'kaki' => KaporItem::where('category', 'Tutup_Kaki')->count(),
+            'total_value' => KaporItem::where('is_active', true)->sum('price'),
         ];
+
+        // Unit options for dropdown
+        $unitOptions = ['PCS' => 'PCS (Pieces)', 'STEL' => 'STEL (Setel)', 'PASANG' => 'PASANG', 'SET' => 'SET', 'BUAH' => 'BUAH'];
 
         if ($request->ajax()) {
             return view('admin.kapor-items.partials.table', compact('items'))->render();
         }
 
-        return view('admin.kapor-items.index', compact('items', 'categories', 'stats'));
+        return view('admin.kapor-items.index', compact('items', 'categories', 'stats', 'unitOptions'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'item_name' => 'required|string|max:255',
-            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut',
+            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut,Lainnya',
             'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'unit' => 'nullable|string|max:50',
+            'invoice_group' => 'nullable|string|max:255',
             'gender_specific' => 'nullable|in:L,P',
         ]);
 
-        $validated['is_active'] = true; // Default active
+        $validated['is_active'] = true;
+        $validated['unit'] = $validated['unit'] ?? 'PCS';
 
         KaporItem::create($validated);
 
@@ -67,8 +75,11 @@ class KaporItemController extends Controller
     {
         $validated = $request->validate([
             'item_name' => 'required|string|max:255',
-            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut',
+            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut,Lainnya',
             'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'unit' => 'nullable|string|max:50',
+            'invoice_group' => 'nullable|string|max:255',
             'gender_specific' => 'nullable|in:L,P',
             'is_active' => 'boolean',
         ]);

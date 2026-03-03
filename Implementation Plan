@@ -1,0 +1,423 @@
+# Rencana Besar: Sistem Logistik KAPOR E-Commerce Style
+
+## Latar Belakang
+
+Saat ini SI-KAPOR sudah memiliki fitur manajemen personel, satker, dan item kapor yang bersifat **generik** (tanpa harga, tanpa konsep paket/anggaran). Perubahan besar ini bertujuan mengubahnya menjadi sistem logistik **end-to-end** yang terintegrasi: mulai dari perencanaan anggaran → pemilihan barang per paket → penugasan ke satker → perhitungan biaya & jumlah personel → menghasilkan rekapan otomatis (Excel/PDF).
+
+---
+
+## Analisis Kondisi Saat Ini
+
+| Komponen | Status Sekarang |
+|---|---|
+| `KaporItem` | Hanya `item_name`, `category`, `gender_specific`, `rank_categories`, `unit_keywords` — **TANPA HARGA** |
+| `KaporSubmission` | Tracking per-personel per-item per-size — cocok untuk **data ukuran**, bukan perencanaan anggaran |
+| `Satker` | Hierarki POLDA → POLRES dengan `polri_count` & `pns_count` |
+| `Personnel` | Detail personel lengkap termasuk `kapor_sizes` (JSON) |
+| `Rank` | Kategori: PATI, PAMEN, PAMA, BINTARA, PNS (termasuk PPPK) |
+
+---
+
+## Contoh Invoice / HPS (Harga Perkiraan Sendiri)
+
+Berdasarkan file [invoice PAKET 1 2026.pdf](file:///E:/projeck%20git/kapor/DATA%20KAPOR/invoice%20PAKET%201%202026.pdf), berikut adalah format dokumen resmi:
+
+### Header Dokumen
+```
+KEPOLISIAN NEGARA REPUBLIK INDONESIA
+DAERAH NUSA TENGGARA BARAT — BIRO LOGISTIK
+
+HARGA PERKIRAAN SENDIRI
+SATUAN KERJA  : BIRO LOGISTIK POLDA NTB
+PEKERJAAN     : E-PURCHASING
+JENIS PEKERJAAN: KAPOR POLRI DAN PNS PAKET I BERUPA
+                 PAKAIAN DINAS, TOPI LAPANGAN PATI, TOPI LAPANGAN PNS,
+                 JILBAB DAN PAKAIAN OLAHRAGA POLDA NTB T.A. 2026
+LOKASI        : Jalan Langko No. 77 Mataram 83114
+```
+
+### Struktur Tabel Invoice
+
+| NO | JENIS BARANG/JASA | SATUAN UNIT | VOLUME | HARGA SATUAN (Rp) | JUMLAH HARGA (Rp) |
+|---|---|---|---|---|---|
+| | **PDL PNS** | | | | |
+| 1 | PDL PNS PRIA | STEL | 181 | 548.000 | 99.188.000 |
+| 2 | PDL PNS WANITA | STEL | 220 | 573.000 | 126.060.000 |
+| | **PDL POLRI** | | | | |
+| 3 | PDL I POLANTAS PRIA | STEL | 709 | 649.000 | 459.432.000 |
+| 4 | PDL I POLANTAS WANITA | STEL | 73 | 649.000 | 47.304.000 |
+| 5 | PDL II POLRI TWO TONE PRIA | STEL | 5.893 | 748.000 | 4.407.364.000 |
+| 6 | PDL II POLRI TWO TONE WANITA | STEL | 240 | 748.000 | 179.520.000 |
+| 7 | PDL II TACTICAL COKLAT BRIMOB | STEL | 1.363 | 823.000 | 1.121.749.000 |
+| 8 | PDL II PROVOS PRIA | STEL | 255 | 748.000 | 190.740.000 |
+| 9 | PDL II PROVOS WANITA | STEL | 7 | 748.000 | 5.236.000 |
+| | **PAKAIAN PDI RESINTELPAM** | | | | |
+| 10 | PAKAIAN LENGAN PENDEK RESINTELPAM PRIA | STEL | 2.119 | 548.000 | 1.161.212.000 |
+| 11 | PAKAIAN LENGAN PANJANG RESINTELPAM WANITA | STEL | 152 | 618.000 | 93.936.000 |
+| | **PAKAIAN PELIPUTAN HUMAS** | | | | |
+| 12 | HUMAS LENGAN PANJANG PRIA | STEL | 90 | 748.000 | 67.320.000 |
+| 13 | HUMAS LENGAN PANJANG WANITA | STEL | 16 | 748.000 | 11.968.000 |
+| | **PAKAIAN OPSNAL TIK** | | | | |
+| 14 | OPSNAL TIK LENGAN PENDEK PRIA | STEL | 89 | 748.000 | 66.572.000 |
+| 15 | OPSNAL TIK LENGAN PANJANG WANITA | STEL | 3 | 748.000 | 2.244.000 |
+| | **TOPI LAPANGAN POLRI** | | | | |
+| 14 | PATI BINTANG 2 | PCS | 1 | 181.000 | 181.000 |
+| 15 | PATI BINTANG 1 | PCS | 1 | 177.000 | 177.000 |
+| | **TOPI LAPANGAN PNS** | | | | |
+| 16 | GOL 4 | PCS | 13 | 108.000 | 1.404.000 |
+| 17 | GOL 3 | PCS | 158 | 103.000 | 16.274.000 |
+| 18 | GOL 2 | PCS | 228 | 98.000 | 22.344.000 |
+| 19 | GOL 1 | PCS | 2 | 93.000 | 186.000 |
+| | **JILBAB POLRI DAN PNS** | | | | |
+| 20 | POLRI DAN PNS | PCS | 1.092 | 89.000 | 97.188.000 |
+| | **PAKAIAN OLAHRAGA** | | | | |
+| 21 | PAKAIAN OLAHRAGA | STEL | 2.203 | 437.000 | 962.711.000 |
+| | | | | **JUMLAH** | **9.140.910.000** |
+
+### Footer Dokumen
+```
+Mataram, Januari 2026
+a.n KEPALA BIRO LOGISTIK POLDA NTB
+PEJABAT PEMBUAT KOMITMEN
+[Nama & NRP Pejabat]
+```
+
+### 🔍 Insight Penting dari Invoice
+
+| Temuan | Implikasi untuk Sistem |
+|---|---|
+| Satuan ada **STEL** (setel) dan **PCS** | Field `unit` di `kapor_items` harus support keduanya |
+| Harga **berbeda** per item meskipun mirip | Setiap varian harus punya entry + harga sendiri |
+| Topi PNS harganya **berbeda per golongan** | Perlu sub-item atau harga per varian golongan |
+| Volume = total semua satker gabungan | Sistem perlu menghitung total dari semua satker terpilih |
+| Item dikelompokkan per **sub-kategori** | Butuh field `sub_category` atau `group_label` untuk grouping di invoice |
+| Grand total di bawah | Auto-calculated dari sum semua JUMLAH HARGA |
+| Ada info pejabat penandatangan | Perlu setting untuk nama & NRP pejabat |
+
+---
+
+## Arsitektur Baru yang Diusulkan
+
+### 📐 ERD (Entity Relationship Diagram)
+
+```mermaid
+erDiagram
+    BUDGET_YEARS {
+        int id PK
+        int year
+        string name
+        boolean is_active
+    }
+    
+    BUDGET_PACKAGES {
+        int id PK
+        int budget_year_id FK
+        string name
+        string description
+        enum status
+        timestamps
+    }
+    
+    KAPOR_ITEMS {
+        int id PK
+        string category
+        string item_name
+        decimal price
+        string unit
+        text description
+        json default_recipients
+        boolean is_active
+    }
+    
+    PACKAGE_ITEMS {
+        int id PK
+        int budget_package_id FK
+        int kapor_item_id FK
+        decimal custom_price
+        timestamps
+    }
+    
+    PACKAGE_ITEM_RECIPIENTS {
+        int id PK
+        int package_item_id FK
+        int satker_id FK
+        json recipient_filters
+        timestamps
+    }
+    
+    RECIPIENT_DETAILS {
+        int id PK
+        int package_item_recipient_id FK
+        int personnel_id FK
+        int kapor_size_id FK
+        int quantity
+    }
+    
+    BUDGET_YEARS ||--o{ BUDGET_PACKAGES : "memiliki"
+    BUDGET_PACKAGES ||--o{ PACKAGE_ITEMS : "berisi"
+    KAPOR_ITEMS ||--o{ PACKAGE_ITEMS : "dipilih di"
+    PACKAGE_ITEMS ||--o{ PACKAGE_ITEM_RECIPIENTS : "ditujukan ke"
+    PACKAGE_ITEM_RECIPIENTS ||--o{ RECIPIENT_DETAILS : "detail penerima"
+```
+
+### 🔑 Penjelasan Konsep Kunci
+
+#### 1. Masalah Polri vs PNS yang Berbeda Pangkat & Barang
+
+> [!IMPORTANT]
+> Ini masalah utama yang perlu dipecahkan: bagaimana membedakan barang untuk Polri vs PNS ketika pangkat dan golongan berbeda.
+
+**Solusi yang direkomendasikan: Sistem "Recipient Filter" Berbasis Aturan**
+
+Setiap `KaporItem` sudah memiliki `rank_categories` dan `unit_keywords`. Kita perluas konsep ini:
+
+```
+Skenario: Admin memilih barang "PDH POLRI PRIA" dalam paket
+→ Sistem otomatis merekomendasikan: Satker mana saja yang punya anggota POLRI PRIA
+→ Admin pilih satker (bisa lebih dari 1, tidak terbatas)
+→ Untuk setiap satker, sistem menghitung:
+   - Jumlah personnel yang match (POLRI + PRIA + rank_categories match)
+   - Breakdown per ukuran
+   - Total quantity × harga = biaya
+```
+
+**Strategi Pembagian Personel:**
+
+| Dimensi | Filter | Contoh |
+|---|---|---|
+| **personnel_type** | `polri` atau `pns` | PDH **Polri** vs Pakaian Korpri **PNS** |
+| **gender** | `L` atau `P` | Baju Polki vs Baju Polwan |
+| **rank.category** | PATI, PAMEN, PAMA, BINTARA, PNS | Topi Lapangan PATI ≠ Topi Lapangan BINTARA |
+| **satker** | Unit tertentu | Baret BRIMOB hanya untuk SAT BRIMOB |
+
+Field `recipient_filters` dalam `package_item_recipients` berupa JSON:
+```json
+{
+  "personnel_type": ["polri"],
+  "gender": ["L"],
+  "rank_categories": ["PAMEN", "PAMA", "BINTARA"]
+}
+```
+
+Ini membuat sistem **sangat fleksibel**: admin bisa mengatur filter sekompleks apapun.
+
+#### 2. Konsep "Default Recipients" (Rekomendasi Otomatis)
+
+`KaporItem` yang sudah punya data `rank_categories` dan `unit_keywords` otomatis menjadi **rekomendasi**. Contoh:
+
+- `PDL II PROVOS PRIA` → rekomendasi: satker yang mengandung "PROVOS", gender L
+- `BARET + EMBLEM BRIMOB` → rekomendasi: satker "SAT BRIMOB"
+- `SEPATU OLAHRAGA` → rekomendasi: SEMUA satker (universal)
+
+Admin tetap bisa override dan pilih satker lain yang tidak ada di rekomendasi.
+
+---
+
+## User Review Required
+
+> [!WARNING]
+> **Perubahan Database Besar**: Menambah 5+ tabel baru dan memodifikasi `kapor_items`. Data yang sudah ada di `kapor_items` aman (hanya menambah kolom), tapi tabel baru perlu migration.
+
+> [!IMPORTANT]
+> **Keputusan Desain yang Perlu Disetujui:**
+> 1. Apakah `KaporItem.price` satu harga global, atau bisa berbeda per paket? (Rekomendasi: harga global di item + override opsional di `package_items.custom_price`)
+> 2. Apakah satu item kapor bisa muncul di beberapa paket dalam satu tahun anggaran yang sama?
+> 3. Untuk rekapan: apakah formatnya harus **persis** seperti Excel contoh, atau boleh format baru yang lebih rapi?
+> 4. Apakah semua role (admin, superadmin) bisa akses modul anggaran, atau hanya role tertentu?
+
+---
+
+## Proposed Changes (Fase per Fase)
+
+### Fase 1: Perkuat Data Item KAPOR (E-Commerce Style)
+
+#### [MODIFY] [KaporItem.php](file:///E:/projeck%20git/kapor/app/Models/KaporItem.php)
+- Tambah field `price` (decimal), `unit` (string, misal: "pcs", "pasang"), `image` (string, nullable)
+- Tambah field `default_recipients` (JSON) — berisi filter default penerima
+
+#### [NEW] Migration: `add_price_and_unit_to_kapor_items_table`
+- `price` DECIMAL(15,2) nullable
+- `unit` VARCHAR(50) default 'pcs'
+- `image` VARCHAR(255) nullable
+- `default_recipients` JSON nullable
+
+#### [MODIFY] [KaporItemController.php](file:///E:/projeck%20git/kapor/app/Http/Controllers/Admin/KaporItemController.php)
+- Update store/update untuk handle field baru (price, unit, image, default_recipients)
+- Tambah upload image (optional)
+
+#### [MODIFY] View: `admin/kapor-items/index.blade.php`
+- Tampilkan harga, unit, dan gambar di card/tabel
+- Toggle aktif/nonaktif
+- UI e-commerce style (card grid dengan gambar, harga, badge kategori)
+
+---
+
+### Fase 2: Modul Tahun Anggaran & Paket
+
+#### [NEW] Model: `BudgetYear`
+```
+- id, year (int), name (string), is_active (bool), timestamps
+```
+
+#### [NEW] Model: `BudgetPackage`
+```
+- id, budget_year_id (FK), name, description, status (draft/finalized), timestamps
+```
+
+#### [NEW] Migration: `create_budget_years_table`
+#### [NEW] Migration: `create_budget_packages_table`
+
+#### [NEW] Controller: `BudgetYearController`
+- CRUD tahun anggaran
+
+#### [NEW] Controller: `BudgetPackageController`
+- CRUD paket per tahun anggaran
+
+#### [NEW] Views: `admin/budget/`
+- `years/index.blade.php` — daftar tahun anggaran
+- `packages/index.blade.php` — daftar paket dalam satu tahun
+- `packages/show.blade.php` — detail paket (wizard pemilihan barang)
+
+---
+
+### Fase 3: Modul Pemilihan Barang dalam Paket (Wizard)
+
+#### [NEW] Model: `PackageItem`
+```
+- id, budget_package_id (FK), kapor_item_id (FK), custom_price (nullable), timestamps
+```
+
+#### [NEW] Model: `PackageItemRecipient`
+```
+- id, package_item_id (FK), satker_id (FK), recipient_filters (JSON), timestamps
+```
+
+#### [NEW] Migration: `create_package_items_table`
+#### [NEW] Migration: `create_package_item_recipients_table`
+
+#### [NEW] Controller: `PackageItemController`
+- Tambah/hapus barang dalam paket
+- Set recipient per barang
+
+#### [NEW] Views: `admin/budget/packages/items/`
+
+**Alur Wizard (3 Langkah):**
+
+| Step | Aksi | UI |
+|---|---|---|
+| **1. Pilih Barang** | Grid semua item aktif, klik untuk menambahkan ke paket | Card grid e-commerce dengan "Tambah ke Paket" button |
+| **2. Pilih Penerima** | Per barang, pilih satker + filter (rekomendasi otomatis ditampilkan di atas) | Multi-select satker, dengan badge "Direkomendasikan" |
+| **3. Preview & Hitung** | Preview semua barang + penerima + total biaya per barang + grand total | Tabel ringkasan dengan collapse per barang |
+
+---
+
+### Fase 4: Perhitungan Otomatis, Rekapan & Invoice HPS
+
+#### [NEW] Service: `BudgetCalculationService`
+- Hitung jumlah penerima per barang per satker berdasarkan `recipient_filters`
+- Breakdown per ukuran (dari data personnel `kapor_sizes`)
+- Hitung total biaya: qty × harga
+
+#### [NEW] Service: `RekapExportService`
+- Generate Excel rekapan per paket per kategori
+- Format mengikuti contoh di `DATA KAPOR/REKAPAN/PAKET I/EXCEL/`
+- Kolom: NO, SATKER, lalu breakdown per jenis (POLRI POLKI, POLRI POLWAN, PNS PRIA, PNS WANITA), per ukuran
+- Subtotal dan Grand Total
+
+#### [NEW] Service: `InvoiceHpsService`
+- Generate dokumen HPS (Harga Perkiraan Sendiri) mengikuti format resmi dari contoh invoice
+- Struktur output:
+  - **Header**: Kop surat Polda NTB, info satuan kerja, pekerjaan, jenis pekerjaan, lokasi
+  - **Tabel**: NO, JENIS BARANG/JASA, SATUAN UNIT, VOLUME, HARGA SATUAN, JUMLAH HARGA
+  - **Grouping**: Barang dikelompokkan per sub-kategori (PDL PNS, PDL POLRI, RESINTELPAM, HUMAS, TIK, TOPI POLRI, TOPI PNS, JILBAB, OLAHRAGA)
+  - **Grand Total**: Sum dari semua JUMLAH HARGA
+  - **Footer**: Tempat, tanggal, nama & NRP pejabat penandatangan
+- Volume dihitung otomatis dari total personel yang match per item
+- JUMLAH HARGA = VOLUME × HARGA SATUAN
+
+#### [NEW] Export: `BudgetRekapExport` (Laravel Excel)
+- Export rekapan ke Excel dan PDF
+
+#### [NEW] Export: `InvoiceHpsExport` (Laravel Excel/DomPDF)
+- Export invoice HPS ke Excel dan PDF
+- Layout persis mengikuti format resmi (kop surat, tabel, footer tanda tangan)
+
+#### [NEW] Migration: tambah tabel `invoice_settings`
+- `signatory_name` (nama pejabat penandatangan)
+- `signatory_rank` (pangkat)
+- `signatory_nrp` (NRP)
+- `signatory_title` (jabatan, default: "PEJABAT PEMBUAT KOMITMEN")
+- `location` (lokasi, default: "Mataram")
+- `organization_name` (default: "KEPALA BIRO LOGISTIK POLDA NTB")
+
+#### [NEW] Views:
+- `admin/budget/packages/recap.blade.php` — Preview rekapan di browser
+- `admin/budget/packages/invoice.blade.php` — Preview invoice HPS di browser
+
+---
+
+### Fase 5: Route & Navigation Update
+
+#### [MODIFY] [web.php](file:///E:/projeck%20git/kapor/routes/web.php)
+- Tambah route group `admin/budget/`
+- Routes: years CRUD, packages CRUD, package-items CRUD, recap export
+
+#### [MODIFY] Layout navigation
+- Tambah menu "Rencana Anggaran" di sidebar admin
+
+---
+
+## Rekomendasi Perbaikan Logika
+
+> [!TIP]
+> **Beberapa poin penting yang perlu diperbaiki dari proses saat ini:**
+
+1. **Pisahkan item per varian**, bukan per generik. Saat ini seeder hanya punya "Kemeja (PDH/PDL)" — terlalu umum. Seharusnya setiap variant punya entry sendiri: "PDH POLRI PRIA", "PDH PNS WANITA", dll. Ini memudahkan pencocokan otomatis dan perhitungan harga yang berbeda per item.
+
+2. **Harga per item, bukan per paket**. Harga di master data (`kapor_items.price`) sebagai harga default. Jika ada negosiasi harga khusus untuk paket tertentu, gunakan `package_items.custom_price`.
+
+3. **Satker yang TANPA data personel detail**: Jika satker hanya punya `polri_count`/`pns_count` tanpa detail per-orang, sistem tetap bisa menghitung "jumlah penerima" tapi TIDAK bisa breakdown per ukuran. Solusi: beri peringatan di UI jika data ukuran belum lengkap.
+
+4. **Versioning/Snapshot**: Ketika paket di-finalize, simpan snapshot harga dan jumlah saat itu sebagai "lock". Jadi jika harga atau jumlah personel berubah kemudian, data anggaran yang sudah difinalisasi tetap valid.
+
+5. **Kategori barang perlu diperluas**: Tambah "Jilbab" sebagai kategori tersendiri (bukan bagian dari Tutup Kepala saja), karena di rekapan PDF ada folder khusus "JILBAB".
+
+6. **Sub-kategori / Group Label untuk Invoice**: Dari invoice terlihat barang dikelompokkan per sub-kategori (PDL PNS, PDL POLRI, PAKAIAN RESINTELPAM, dll). Perlu field `invoice_group` di `kapor_items` untuk pengelompokan otomatis di invoice.
+
+7. **Harga Topi PNS berbeda per golongan**: GOL 4 = Rp 108.000, GOL 3 = Rp 103.000, GOL 2 = Rp 98.000, GOL 1 = Rp 93.000. Artinya satu jenis barang (Topi PNS) perlu dipecah jadi beberapa entry per golongan, masing-masing dengan harga sendiri.
+
+8. **Info penandatangan invoice**: Perlu disimpan di database (tabel settings atau tabel baru) agar bisa di-edit oleh admin tanpa hardcode.
+
+---
+
+## Prioritas Implementasi
+
+| Prioritas | Fase | Estimasi |
+|---|---|---|
+| 🔴 P0 | Fase 1: Perkuat Data Item (harga, satuan) | 1-2 hari |
+| 🔴 P0 | Fase 2: Tahun Anggaran & Paket | 2-3 hari |
+| 🟡 P1 | Fase 3: Wizard Pemilihan Barang | 3-5 hari |
+| 🟡 P1 | Fase 4: Perhitungan & Rekapan | 3-5 hari |
+| 🟢 P2 | Fase 5: Route & Navigation | 1 hari |
+
+**Total estimasi: 10-16 hari kerja**
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- Setelah setiap fase, jalankan `php artisan test` dari root proyek untuk memastikan tidak ada regresi
+- Tambah Feature test baru untuk:
+  - `BudgetYearControllerTest` — CRUD tahun anggaran
+  - `BudgetPackageControllerTest` — CRUD paket
+  - `BudgetCalculationServiceTest` — unit test perhitungan jumlah penerima & biaya
+
+### Manual Verification (Browser)
+- **Fase 1**: Buka halaman Data Item Kapor (`/admin/kapor-items`), tambah item baru dengan harga → verifikasi tampil di tabel
+- **Fase 2**: Buka halaman Rencana Anggaran (`/admin/budget`), buat tahun anggaran → buat paket → verifikasi flow
+- **Fase 3**: Dalam paket, pilih barang → pilih satker → verifikasi preview menampilkan data benar
+- **Fase 4**: Finalize paket → export Excel/PDF → bandingkan format dengan contoh di `DATA KAPOR/REKAPAN/`
+
+> [!NOTE]
+> Rencana ini sangat besar. Saya **merekomendasikan implementasi bertahap (fase per fase)** dimulai dari Fase 1. Setelah setiap fase selesai dan diuji, kita lanjut ke fase berikutnya. Ini memastikan kualitas dan memudahkan debugging.
