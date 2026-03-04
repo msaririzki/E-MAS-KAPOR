@@ -75,12 +75,14 @@ class DashboardController extends Controller
         $satkerStats = Satker::query()
             ->selectRaw('satkers.*')
             ->withCount(['personnels as total_personnel'])
-            ->withCount(['personnels as submitted_count' => function ($q) {
-                // Sinkron dengan PersonnelController: data lengkap = kapor_sizes + rank_id + nrp
-                $q->whereNotNull('kapor_sizes')
-                  ->whereNotNull('rank_id')
-                  ->whereNotNull('nrp');
-            }])
+            ->withCount([
+                'personnels as submitted_count' => function ($q) {
+                    // Sinkron dengan PersonnelController: data lengkap = kapor_sizes + rank_id + nrp
+                    $q->whereNotNull('kapor_sizes')
+                        ->whereNotNull('rank_id')
+                        ->whereNotNull('nrp');
+                }
+            ])
             ->where(function ($query) use ($poldaId) {
                 $query->whereNull('parent_id')->orWhere('parent_id', $poldaId);
             })
@@ -100,6 +102,9 @@ class DashboardController extends Controller
     {
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
 
+        $totalPolri = Satker::sum('polri_count');
+        $totalPns = Satker::sum('pns_count');
+
         $submittedCount = Personnel::whereNotNull('kapor_sizes')
             ->whereNotNull('rank_id')
             ->whereNotNull('nrp')
@@ -107,11 +112,14 @@ class DashboardController extends Controller
         $totalPersonnel = Personnel::count();
 
         $stats = [
+            'total_polri' => $totalPolri,
+            'total_pns' => $totalPns,
             'total_personnel' => $totalPersonnel,
             'total_satkers' => Satker::count(),
             'total_submissions' => $submittedCount,
             'personnel_submitted' => $submittedCount,
             'personnel_pending' => $totalPersonnel - $submittedCount,
+            'fill_rate' => $totalPersonnel > 0 ? round(($submittedCount / $totalPersonnel) * 100) : 0,
             'fiscal_year' => $fiscalYear,
         ];
 
@@ -124,6 +132,9 @@ class DashboardController extends Controller
         $satkerId = $user->satker_id;
         $satker = Satker::find($satkerId);
 
+        $totalPolri = $satker->polri_count ?? 0;
+        $totalPns = $satker->pns_count ?? 0;
+
         $totalPersonnel = Personnel::where('satker_id', $satkerId)->count();
         $submittedCount = Personnel::where('satker_id', $satkerId)
             ->whereNotNull('kapor_sizes')
@@ -133,9 +144,11 @@ class DashboardController extends Controller
 
         $stats = [
             'satker_name' => $satker->name ?? '-',
+            'total_polri' => $totalPolri,
+            'total_pns' => $totalPns,
             'total_personnel' => $totalPersonnel,
-            'submitted' => $submittedCount,
-            'pending' => $totalPersonnel - $submittedCount,
+            'personnel_submitted' => $submittedCount,
+            'personnel_pending' => $totalPersonnel - $submittedCount,
             'fill_rate' => $totalPersonnel > 0 ? round(($submittedCount / $totalPersonnel) * 100) : 0,
             'fiscal_year' => $fiscalYear,
         ];
@@ -144,8 +157,8 @@ class DashboardController extends Controller
             ->where('satker_id', $satkerId)
             ->where(function ($q) {
                 $q->whereNull('kapor_sizes')
-                  ->orWhereNull('rank_id')
-                  ->orWhereNull('nrp');
+                    ->orWhereNull('rank_id')
+                    ->orWhereNull('nrp');
             })
             ->limit(20)
             ->get();
@@ -163,7 +176,7 @@ class DashboardController extends Controller
 
         if ($personnel) {
             $kaporSizes = $personnel->kapor_sizes ?? [];
-            $hasSubmitted = ! empty($kaporSizes);
+            $hasSubmitted = !empty($kaporSizes);
         }
 
         return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'fiscalYear'));
