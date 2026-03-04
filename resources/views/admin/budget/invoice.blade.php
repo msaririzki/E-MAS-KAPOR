@@ -10,7 +10,7 @@
 @endsection
 
 @section('content')
-<div class="page-header">
+<div class="page-header no-print">
     <div class="page-header-row">
         <div>
             <h1 style="font-size: 22px; font-weight: 700;">Invoice HPS</h1>
@@ -18,7 +18,7 @@
         </div>
         <div style="display: flex; gap: 8px;">
             <a href="{{ route('admin.budget.recap', $budgetPackage) }}" class="btn btn-outline">
-                <i class="ri-arrow-left-line"></i> Kembali ke Rekapan
+                <i class="ri-arrow-left-line"></i> Kembali
             </a>
             <button class="btn btn-primary" onclick="window.print()">
                 <i class="ri-printer-line"></i> Cetak / PDF
@@ -27,8 +27,8 @@
     </div>
 </div>
 
-{{-- Settings Modal Toggle --}}
-<details class="settings-panel" style="margin-bottom: 16px;">
+{{-- Settings Panel --}}
+<details class="settings-panel no-print" style="margin-bottom: 16px;">
     <summary class="btn btn-outline btn-sm" style="cursor: pointer;">
         <i class="ri-settings-4-line"></i> Pengaturan Penandatangan
     </summary>
@@ -57,104 +57,140 @@
                     <input type="text" name="location" value="{{ $settings->location }}" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>Nama Organisasi</label>
+                    <label>Organisasi</label>
                     <input type="text" name="organization_name" value="{{ $settings->organization_name }}" class="form-control">
                 </div>
             </div>
             <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 10px;">
-                <i class="ri-save-line"></i> Simpan Pengaturan
+                <i class="ri-save-line"></i> Simpan
             </button>
         </form>
     </div>
 </details>
 
-{{-- Invoice Document --}}
-<div class="invoice-document" id="invoiceDocument">
-    {{-- Header --}}
-    <div class="invoice-header">
-        <div class="invoice-logo-area">
-            <img src="{{ asset('images/polri-logo.png') }}" alt="Logo" class="invoice-logo" onerror="this.style.display='none'">
-        </div>
-        <div class="invoice-header-text">
-            <h2>{{ $settings->header_title }}</h2>
-            <h3>{{ $settings->organization_name }}</h3>
-        </div>
+{{-- ==================== INVOICE DOCUMENT ==================== --}}
+<div class="invoice-doc" id="invoiceDocument">
+
+    {{-- ===== KOP SURAT (MENGGUNAKAN GAMBAR & TEKS KIRI) ===== --}}
+    <div style="text-align: center; width: 320px; margin-bottom: 25px; margin-left: 0;">
+        @php
+            $kopPath = public_path('kop suratt.png');
+            $kopBase64 = '';
+            if(file_exists($kopPath)) {
+                $kopType = pathinfo($kopPath, PATHINFO_EXTENSION);
+                $kopData = file_get_contents($kopPath);
+                $kopBase64 = 'data:image/' . $kopType . ';base64,' . base64_encode($kopData);
+            }
+        @endphp
+        @if($kopBase64)
+            <img src="{{ $kopBase64 }}" alt="Kop Surat" style="width: 80px; height: auto; margin-bottom: 8px;">
+        @else
+            <img src="{{ asset('kop suratt.png') }}" alt="Kop Surat" style="width: 80px; height: auto; margin-bottom: 8px;">
+        @endif
+        
+        <div style="font-size: 11px; font-weight: normal; font-family: Arial, sans-serif;">KEPOLISIAN NEGARA REPUBLIK INDONESIA</div>
+        <div style="font-size: 11px; font-weight: normal; font-family: Arial, sans-serif;">DAERAH NUSA TENGGARA BARAT</div>
+        <div style="font-size: 11px; font-weight: normal; font-family: Arial, sans-serif;">BIRO LOGISTIK</div>
+        <div style="font-size: 10px; font-family: Arial, sans-serif;">Jalan langko No. 77 Mataram 83114</div>
+        <div style="border-top: 1px solid #000; height: 1px; margin: 4px 0 2px 0;"></div>
     </div>
 
-    <div class="invoice-separator"></div>
+    {{-- ===== JUDUL ===== --}}
+    <div class="hps-title">HARGA PERKIRAAN SENDIRI</div>
 
-    {{-- Document Title --}}
-    <div class="invoice-title">
-        <h2>HARGA PERKIRAAN SENDIRI (HPS)</h2>
-    </div>
-
-    {{-- Info Table --}}
-    <table class="invoice-info">
-        <tr><td width="180">Satuan Kerja</td><td width="10">:</td><td>{{ $settings->organization_name }}</td></tr>
-        <tr><td>Pekerjaan</td><td>:</td><td>{{ $settings->work_type }} {{ $budgetPackage->name }} T.A. {{ $budgetPackage->budgetYear->year }}</td></tr>
-        <tr><td>Jenis Pekerjaan</td><td>:</td><td>Pengadaan Barang</td></tr>
-        <tr><td>Lokasi</td><td>:</td><td>{{ $settings->location }}</td></tr>
-        <tr><td>Tahun Anggaran</td><td>:</td><td>{{ $budgetPackage->budgetYear->year }}</td></tr>
+    {{-- ===== INFO PEKERJAAN ===== --}}
+    <table class="info-tbl">
+        <tr>
+            <td class="info-lbl">SATUAN KERJA</td>
+            <td class="info-sep">:</td>
+            <td class="info-val">BIRO LOGISTIK POLDA NTB</td>
+        </tr>
+        <tr>
+            <td class="info-lbl">PEKERJAAN</td>
+            <td class="info-sep">:</td>
+            <td class="info-val">E-PURCHASING</td>
+        </tr>
+        <tr>
+            <td class="info-lbl">JENIS PEKERJAAN</td>
+            <td class="info-sep">:</td>
+            <td class="info-val">KAPOR POLRI DAN PNS {{ strtoupper($budgetPackage->name) }} BERUPA<br>
+                {{ strtoupper($budgetPackage->description ?? 'PAKAIAN DINAS, TOPI LAPANGAN PATI, TOPI LAPANGAN PNS, JILBAB DAN PAKAIAN OLAHRAGA') }}
+                POLDA NTB T.A. {{ $budgetPackage->budgetYear->year }}
+            </td>
+        </tr>
+        <tr>
+            <td class="info-lbl">LOKASI</td>
+            <td class="info-sep">:</td>
+            <td class="info-val">Jalan langko No. 77 Mataram 83114</td>
+        </tr>
     </table>
 
-    {{-- Main Table --}}
-    <table class="invoice-table">
+    {{-- ===== TABEL HPS ===== --}}
+    <table class="hps-tbl">
         <thead>
-            <tr>
-                <th style="width: 40px;">NO</th>
-                <th>JENIS BARANG / JASA</th>
-                <th style="width: 70px;">SATUAN</th>
-                <th style="width: 80px; text-align: right;">VOLUME</th>
-                <th style="width: 120px; text-align: right;">HARGA SATUAN (Rp)</th>
-                <th style="width: 140px; text-align: right;">JUMLAH HARGA (Rp)</th>
+            <tr class="hps-hdr">
+                <th class="col-no">NO</th>
+                <th class="col-nama">JENIS BARANG/JASA</th>
+                <th class="col-satuan">SATUAN UNIT</th>
+                <th class="col-vol">VOLUME</th>
+                <th class="col-harga">HARGA<br>SATUAN<br>(Rp)</th>
+                <th class="col-jumlah">JUMLAH HARGA (Rp)</th>
+            </tr>
+            <tr class="hps-colnum">
+                <td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>
             </tr>
         </thead>
         <tbody>
-            @php $no = 1; $currentGroup = ''; @endphp
+            @php $no = 1; @endphp
             @foreach($grouped_items as $group => $groupItems)
-                {{-- Group Header --}}
-                <tr class="group-header">
-                    <td colspan="6"><strong>{{ strtoupper($group) }}</strong></td>
-                </tr>
-                @foreach($groupItems as $item)
-                <tr>
-                    <td style="text-align: center;">{{ $no++ }}</td>
-                    <td>{{ $item['item_name'] }}</td>
-                    <td style="text-align: center;">{{ $item['unit'] }}</td>
-                    <td style="text-align: right;">{{ number_format($item['qty']) }}</td>
-                    <td style="text-align: right;">{{ number_format($item['price'], 0, ',', '.') }}</td>
-                    <td style="text-align: right;">{{ number_format($item['total'], 0, ',', '.') }}</td>
-                </tr>
-                @endforeach
-                {{-- Group Subtotal --}}
-                <tr class="subtotal-row">
-                    <td colspan="3" style="text-align: right;"><strong>Subtotal {{ $group }}</strong></td>
-                    <td style="text-align: right;"><strong>{{ number_format(collect($groupItems)->sum('qty')) }}</strong></td>
-                    <td></td>
-                    <td style="text-align: right;"><strong>{{ number_format(collect($groupItems)->sum('total'), 0, ',', '.') }}</strong></td>
-                </tr>
+            <tr class="grp-hdr">
+                <td colspan="6">{{ strtoupper($group) }}</td>
+            </tr>
+            @foreach($groupItems as $item)
+            <tr>
+                <td class="c">{{ $no++ }}</td>
+                <td class="nama">&nbsp;&nbsp;- {{ strtoupper($item['item_name']) }}</td>
+                <td class="c">{{ strtoupper($item['unit']) }}</td>
+                <td class="r">{{ number_format($item['qty'], 0, ',', '.') }}</td>
+                <td class="r">{{ number_format($item['price'], 0, ',', '.') }}</td>
+                <td class="r">{{ number_format($item['total'], 0, ',', '.') }}</td>
+            </tr>
+            @endforeach
             @endforeach
         </tbody>
         <tfoot>
-            <tr class="grand-total-row">
-                <td colspan="3" style="text-align: right;"><strong>GRAND TOTAL</strong></td>
-                <td style="text-align: right;"><strong>{{ number_format($grand_qty) }}</strong></td>
-                <td></td>
-                <td style="text-align: right;"><strong>{{ number_format($grand_total, 0, ',', '.') }}</strong></td>
+            <tr class="jml-row">
+                <td colspan="3" class="c"><strong>JUMLAH</strong></td>
+                <td colspan="2"></td>
+                <td class="r"><strong>{{ number_format($grand_total, 0, ',', '.') }}</strong></td>
             </tr>
         </tfoot>
     </table>
 
-    {{-- Footer / Signature --}}
-    <div class="invoice-footer">
-        <div class="signature-block">
-            <p>{{ $settings->location }}, {{ now()->translatedFormat('d F Y') }}</p>
-            <p class="sig-title">{{ $settings->signatory_title }}</p>
-            <div class="sig-space"></div>
-            <p class="sig-name"><strong><u>{{ $settings->signatory_name ?: '.............................' }}</u></strong></p>
-            <p class="sig-rank">{{ $settings->signatory_rank }} {{ $settings->signatory_nrp ? 'NRP. ' . $settings->signatory_nrp : '' }}</p>
+    {{-- ===== TANDA TANGAN (posisi kanan, format resmi) ===== --}}
+    <div class="ttd-area">
+        <div class="ttd-box">
+            @php
+                $bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            @endphp
+            <div style="margin-bottom: 15px;">
+                {{ $settings->location }},&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $bulanIndo[now()->month - 1] }} {{ $budgetPackage->budgetYear->year }}
+            </div>
+            <p>a.n {{ strtoupper($settings->organization_name) }}</p>
+            <p class="ttd-jabatan">{{ strtoupper($settings->signatory_title) }}</p>
+
+            <div class="ttd-ruang"></div>
+
+            <p class="ttd-nama"><u><strong>{{ $settings->signatory_name ?: '.............................' }}</strong></u></p>
+            @if($settings->signatory_rank)
+            <p class="ttd-kecil">{{ $settings->signatory_rank }}</p>
+            @endif
+            @if($settings->signatory_nrp)
+            <p class="ttd-kecil">NRP. {{ $settings->signatory_nrp }}</p>
+            @endif
         </div>
     </div>
+
 </div>
 @endsection
 
@@ -162,7 +198,6 @@
 <style>
     .page-header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 
-    /* Settings Panel */
     .settings-panel { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; }
     .settings-panel summary { padding: 12px 16px; list-style: none; }
     .settings-panel summary::-webkit-details-marker { display: none; }
@@ -171,51 +206,135 @@
     .settings-grid .form-group label { font-size: 11px; font-weight: 600; color: #6B7280; text-transform: uppercase; }
     .settings-grid .form-control { width: 100%; padding: 6px 10px; border: 1px solid #D1D5DB; border-radius: 6px; font-size: 13px; }
 
-    /* Invoice Document */
-    .invoice-document {
-        background: #fff; border: 1px solid #D1D5DB; border-radius: 0;
-        padding: 40px 50px; max-width: 900px; margin: 0 auto;
-        font-family: 'Times New Roman', Times, serif; font-size: 12px; color: #000;
+    /* ============= INVOICE DOCUMENT ============= */
+    .invoice-doc {
+        background: #fff;
+        border: 1px solid #bbb;
+        padding: 50px 60px;
+        max-width: 850px;
+        margin: 0 auto;
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 12px;
+        color: #000;
+        line-height: 1.4;
     }
 
-    .invoice-header { display: flex; align-items: center; gap: 20px; text-align: center; justify-content: center; }
-    .invoice-logo { width: 60px; height: 60px; }
-    .invoice-header-text h2 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0; }
-    .invoice-header-text h3 { font-size: 13px; font-weight: 600; margin: 4px 0 0; }
-    .invoice-separator { border-bottom: 3px double #000; margin: 12px 0 20px; }
+    /* --- KOP SURAT --- */
+    .kop-table { width: 100%; border: none; border-collapse: collapse; }
+    .kop-table td { border: none; padding: 0; vertical-align: middle; }
+    .kop-logo-cell { width: 60px; text-align: left; }
+    .kop-logo-img { width: 50px; height: auto; }
+    .kop-text-cell { text-align: center; }
+    .kop-1 { font-size: 14px; font-weight: 700; letter-spacing: 3px; }
+    .kop-2 { font-size: 13px; font-weight: 700; }
+    .kop-3 { font-size: 12px; font-weight: 700; }
+    .kop-4 { font-size: 11px; }
+    .kop-line {
+        border: none;
+        border-top: 1px solid #000;
+        margin: 4px 0 0;
+        padding-top: 1px;
+        border-bottom: 2px solid #000;
+        height: 0;
+        margin-bottom: 20px;
+    }
 
-    .invoice-title { text-align: center; margin-bottom: 20px; }
-    .invoice-title h2 { font-size: 15px; font-weight: 700; text-decoration: underline; }
+    /* --- JUDUL --- */
+    .hps-title {
+        text-align: center;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 16px;
+    }
 
-    .invoice-info { margin-bottom: 20px; border: none; }
-    .invoice-info td { padding: 2px 4px; font-size: 12px; vertical-align: top; border: none; }
+    /* --- INFO --- */
+    .info-tbl { border: none; border-collapse: collapse; margin-bottom: 16px; }
+    .info-tbl td { border: none; padding: 1px 4px; font-size: 12px; vertical-align: top; }
+    .info-lbl { font-weight: 700; width: 145px; white-space: nowrap; }
+    .info-sep { width: 10px; font-weight: 700; }
+    .info-val { font-weight: 700; }
 
-    .invoice-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    .invoice-table th, .invoice-table td { border: 1px solid #000; padding: 4px 8px; }
-    .invoice-table thead { background: #F3F4F6; }
-    .invoice-table th { font-size: 10px; font-weight: 700; text-transform: uppercase; text-align: center; }
-    .group-header td { background: #F9FAFB; font-size: 11px; padding: 6px 8px; }
-    .subtotal-row td { background: #FAFAFA; border-top: 1px solid #666; }
-    .grand-total-row td { background: #FEF2F2; font-size: 12px; border-top: 2px solid #000; }
+    /* --- TABEL HPS --- */
+    .hps-tbl {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+        margin-bottom: 0;
+    }
+    .hps-tbl th, .hps-tbl td {
+        border: 1px solid #000;
+        padding: 3px 5px;
+        color: #000 !important;
+    }
+    .hps-hdr th {
+        text-align: center;
+        font-weight: 700;
+        font-size: 10px;
+        vertical-align: middle;
+        background: #f5f5f5;
+        color: #000 !important;
+    }
+    .col-no { width: 30px; }
+    .col-nama { }
+    .col-satuan { width: 70px; }
+    .col-vol { width: 55px; }
+    .col-harga { width: 85px; }
+    .col-jumlah { width: 115px; }
 
-    .invoice-footer { margin-top: 40px; display: flex; justify-content: flex-end; }
-    .signature-block { text-align: center; min-width: 250px; }
-    .signature-block p { margin: 4px 0; font-size: 12px; }
-    .sig-title { font-weight: 600; }
-    .sig-space { height: 60px; }
-    .sig-name { font-size: 13px; }
-    .sig-rank { font-size: 11px; }
+    .hps-colnum td {
+        text-align: center;
+        font-weight: 700;
+        font-size: 10px;
+        padding: 2px;
+        background: #f5f5f5;
+        color: #000 !important;
+    }
 
-    /* Print Styles */
+    .grp-hdr td {
+        font-weight: 700;
+        font-size: 11px;
+        padding: 3px 5px;
+    }
+    .nama { font-size: 11px; }
+    .c { text-align: center; }
+    .r { text-align: right; }
+
+    .jml-row td {
+        border-top: 2px solid #000;
+        padding: 4px 5px;
+        font-size: 11px;
+    }
+
+    /* --- TANDA TANGAN (kanan) --- */
+    .ttd-area {
+        margin-top: 30px;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .ttd-box {
+        text-align: center;
+        font-size: 12px;
+        min-width: 280px;
+    }
+    .ttd-tanggal { border: none; border-collapse: collapse; margin: 0 auto; }
+    .ttd-tanggal td { border: none; padding: 0; font-size: 12px; white-space: nowrap; }
+    .ttd-box p { margin: 2px 0; }
+    .ttd-jabatan { font-weight: 700; }
+    .ttd-ruang { height: 70px; }
+    .ttd-nama { font-size: 12px; }
+    .ttd-kecil { font-size: 11px; }
+
+    /* ---------- PRINT ---------- */
     @media print {
-        .page-header, .settings-panel, .sidebar, .topbar, .navbar { display: none !important; }
-        .main-content { margin: 0 !important; padding: 0 !important; }
-        .invoice-document { border: none; padding: 20px; max-width: 100%; box-shadow: none; }
+        .no-print, .sidebar, .topbar, nav, .navbar, header { display: none !important; }
+        .main-content, .content-area, .page-content { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+        .invoice-doc { border: none; padding: 20px 30px; margin: 0; max-width: 100%; box-shadow: none; }
+        body { background: #fff !important; }
+        @page { margin: 15mm; }
     }
-
     @media (max-width: 768px) {
         .settings-grid { grid-template-columns: 1fr; }
-        .invoice-document { padding: 20px; }
+        .invoice-doc { padding: 20px; font-size: 10px; }
     }
 </style>
 @endsection

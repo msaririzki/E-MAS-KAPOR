@@ -99,8 +99,8 @@
             <i class="ri-file-excel-line"></i>
         </div>
         <div class="export-info">
-            <h4>Export CSV</h4>
-            <p>Download rekapan dalam format CSV</p>
+            <h4>Export Excel Rekapan</h4>
+            <p>Download format Excel (.xlsx)</p>
         </div>
         <i class="ri-download-line" style="color: #D1D5DB; font-size: 18px;"></i>
     </a>

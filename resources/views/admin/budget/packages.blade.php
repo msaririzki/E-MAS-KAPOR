@@ -63,7 +63,7 @@
         <div class="package-stats">
             <div class="pkg-stat">
                 <i class="ri-shirt-line"></i>
-                <span>0 Item</span>
+                <span>{{ $package->items()->count() }} Barang</span>
             </div>
             <div class="pkg-stat">
                 <i class="ri-money-dollar-circle-line"></i>

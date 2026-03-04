@@ -1,0 +1,163 @@
+<?php
+
+namespace App\Exports;
+
+use App\Models\PackageItem;
+use App\Models\BudgetPackage;
+use App\Models\Personnel;
+use App\Models\Satker;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+
+class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvents
+{
+    protected $packageItem;
+    protected $sheetName;
+    protected $budgetPackage;
+
+    public function __construct(PackageItem $packageItem, string $sheetName, BudgetPackage $budgetPackage)
+    {
+        $this->packageItem = $packageItem;
+        // Trim just in case
+        $this->sheetName = strlen($sheetName) > 31 ? substr($sheetName, 0, 28) . '...' : $sheetName;
+        $this->budgetPackage = $budgetPackage;
+    }
+
+    public function title(): string
+    {
+        return $this->sheetName;
+    }
+
+    private function getSizeKey()
+    {
+        $name = strtoupper($this->packageItem->kaporItem->item_name);
+        
+        if (str_contains($name, 'TOPI') || str_contains($name, 'PET') || str_contains($name, 'BARET') || str_contains($name, 'PECI')) return 'topi';
+        if (str_contains($name, 'JILBAB')) return 'jilbab';
+        if (str_contains($name, 'CELANA') || str_contains($name, 'ROK')) return 'celana';
+        if (str_contains($name, 'SEPATU OLAHRAGA')) return 'sepatu_olahraga';
+        if (str_contains($name, 'SEPATU')) return 'sepatu_dinas';
+        if (str_contains($name, 'JAKET')) return 'jaket';
+        if (str_contains($name, 'OLAHRAGA')) return 'olahraga';
+        if (str_contains($name, 'SABUK')) return 'sabuk';
+
+        return 'kemeja';
+    }
+
+    public function view(): View
+    {
+        $kaporItem = $this->packageItem->kaporItem;
+        $sizeKey = $this->getSizeKey();
+        
+        // Dapatkan semua ukuran yang mungkin untuk item ini dari master data
+        $availableSizes = $kaporItem->sizes()->orderBy('sort_order')->pluck('size_label')->toArray();
+        if (empty($availableSizes)) {
+            // Fallback kalau item tidak punya ukuran standard
+            $availableSizes = ['-'];
+        }
+
+        $matrix = [];
+        $totalPerSize = array_fill_keys($availableSizes, 0);
+        $totalPerSize['UNKNOWN'] = 0; // Untuk yang ukurannya kosong/tidak standard
+        $grandTotal = 0;
+
+        // Load recipients dan build query per satker
+        $this->packageItem->load('recipients.satker');
+
+        foreach ($this->packageItem->recipients as $recipient) {
+            $filters = $recipient->recipient_filters ?? [];
+            $satker = $recipient->satker;
+
+            $query = Personnel::where('satker_id', $satker->id)
+                              ->where('is_active', true);
+
+            // Apply filters (sama dengan PackageItemRecipient->calculateMatchedCount)
+            if (!empty($filters['personnel_type'])) {
+                $mappedTypes = array_map(function ($t) {
+                    $lower = strtolower($t);
+                    if ($lower === 'polri') return 'Polri';
+                    if ($lower === 'pns') return 'PNS';
+                    if ($lower === 'pppk') return 'PPPK';
+                    return $t;
+                }, $filters['personnel_type']);
+                $query->whereIn('personnel_type', $mappedTypes);
+            }
+
+            if (!empty($filters['gender'])) {
+                $query->whereIn('gender', $filters['gender']);
+            }
+
+            if (!empty($filters['rank_categories'])) {
+                $query->whereHas('rank', function ($q) use ($filters) {
+                    $q->whereIn('category', $filters['rank_categories']);
+                });
+            }
+
+            // Hitung Group By size (mengambil array JSON kapor_sizes)
+            $personnels = $query->get(['kapor_sizes']);
+            
+            $row = [
+                'satker_name' => $satker->name,
+                'sizes' => array_fill_keys($availableSizes, 0),
+                'unknown' => 0,
+                'row_total' => 0,
+            ];
+
+            foreach ($personnels as $p) {
+                // Ambil nilai dari JSON (jika ada)
+                $sizes = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
+                $sizeVal = $sizes[$sizeKey] ?? null;
+                $sizeValStr = (string)$sizeVal;
+                
+                if (empty($sizeValStr) || $sizeValStr == '-' || $sizeValStr == 'null') {
+                    $row['unknown']++;
+                    $totalPerSize['UNKNOWN']++;
+                } else if (in_array($sizeValStr, $availableSizes)) {
+                    $row['sizes'][$sizeValStr]++;
+                    $totalPerSize[$sizeValStr]++;
+                } else {
+                     // Jika ada size yang tidak tercatat di standard, masukkan ke unknown agar tidak hilang
+                    $row['unknown']++;
+                    $totalPerSize['UNKNOWN']++;
+                }
+                
+                $row['row_total']++;
+                $grandTotal++;
+            }
+
+            // Hanya tampilkan baris satker kalau jumlahnya > 0
+            if ($row['row_total'] > 0) {
+                $matrix[] = $row;
+            }
+        }
+
+        return view('admin.exports.recap_sheet', [
+            'packageItem' => $this->packageItem,
+            'kaporItem' => $kaporItem,
+            'budgetPackage' => $this->budgetPackage,
+            'availableSizes' => $availableSizes,
+            'matrix' => $matrix,
+            'totalPerSize' => $totalPerSize,
+            'grandTotal' => $grandTotal,
+        ]);
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function(AfterSheet $event) {
+                // Formatting optional bisa ditaruh di sini
+                // Contoh: Bikin Header Tebal
+                $event->sheet->getDelegate()->getStyle('A6:Z8')->getFont()->setBold(true);
+            },
+        ];
+    }
+}

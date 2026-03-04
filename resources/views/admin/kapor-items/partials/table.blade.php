@@ -7,7 +7,7 @@
                 <th>KATEGORI</th>
                 <th>HARGA SATUAN</th>
                 <th>SATUAN</th>
-                <th>GROUP INVOICE</th>
+                <th>KELOMPOK INVOICE / HPS</th>
                 <th>STATUS</th>
                 <th style="border-top-right-radius: 12px; text-align: center;">AKSI</th>
             </tr>

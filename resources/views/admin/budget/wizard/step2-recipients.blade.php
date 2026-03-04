@@ -275,8 +275,48 @@
         }
     }
 
-    // Init: toggle rank options on page load
+    // Pre-populate filters from database
+    const savedFilters = @json(
+        $budgetPackage->items->mapWithKeys(function($item) {
+            // Ambil filter dari recipient pertama (semua recipients punya filter sama per item)
+            $firstRecipient = $item->recipients->first();
+            return [$item->id => $firstRecipient ? ($firstRecipient->recipient_filters ?? []) : []];
+        })
+    );
+
+    // Init: pre-check filter pills and toggle rank options on page load
     document.addEventListener('DOMContentLoaded', function() {
+        // Pre-check filter pills berdasarkan data tersimpan
+        Object.keys(savedFilters).forEach(itemId => {
+            const filters = savedFilters[itemId];
+            if (!filters || Object.keys(filters).length === 0) return;
+
+            // Pre-check personnel_type
+            if (filters.personnel_type && Array.isArray(filters.personnel_type)) {
+                filters.personnel_type.forEach(val => {
+                    const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="personnel_type"][data-value="${val.toLowerCase()}"]`);
+                    if (cb) cb.checked = true;
+                });
+            }
+
+            // Pre-check gender
+            if (filters.gender && Array.isArray(filters.gender)) {
+                filters.gender.forEach(val => {
+                    const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="gender"][data-value="${val}"]`);
+                    if (cb) cb.checked = true;
+                });
+            }
+
+            // Pre-check rank_categories
+            if (filters.rank_categories && Array.isArray(filters.rank_categories)) {
+                filters.rank_categories.forEach(val => {
+                    const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="rank_categories"][data-value="${val}"]`);
+                    if (cb) cb.checked = true;
+                });
+            }
+        });
+
+        // Toggle rank visibility berdasarkan tipe personel yang tercheck
         @foreach($budgetPackage->items as $item)
             toggleRankOptions({{ $item->id }});
         @endforeach

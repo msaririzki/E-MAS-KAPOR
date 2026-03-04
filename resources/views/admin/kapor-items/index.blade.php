@@ -230,7 +230,7 @@
                         <label>KHUSUS GENDER</label>
                         <div class="custom-select-wrapper">
                             <select name="gender_specific" class="form-input" style="appearance: auto;">
-                                <option value="">Semua (Unisex)</option>
+                                <option value="">Semua Gender</option>
                                 <option value="L">Pria</option>
                                 <option value="P">Wanita</option>
                             </select>
@@ -254,7 +254,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>GROUP INVOICE / HPS</label>
+                    <label>KELOMPOK INVOICE / HPS</label>
                     <input type="text" name="invoice_group" class="form-input" placeholder="Contoh: PDL POLRI, TOPI LAPANGAN PNS, JILBAB POLRI DAN PNS">
                     <p style="font-size: 11px; color: #6B7280; margin-top: 4px;">Digunakan untuk pengelompokan barang di dokumen Invoice/HPS</p>
                 </div>
@@ -303,7 +303,7 @@
                         <label>KHUSUS GENDER</label>
                         <div class="custom-select-wrapper">
                             <select name="gender_specific" id="edit_gender" class="form-input" style="appearance: auto;">
-                                <option value="">Semua (Unisex)</option>
+                                <option value="">Semua Gender</option>
                                 <option value="L">Pria</option>
                                 <option value="P">Wanita</option>
                             </select>
@@ -327,7 +327,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>GROUP INVOICE / HPS</label>
+                    <label>KELOMPOK INVOICE / HPS</label>
                     <input type="text" name="invoice_group" id="edit_invoice_group" class="form-input" placeholder="Contoh: PDL POLRI">
                 </div>
                 <div class="form-group">
