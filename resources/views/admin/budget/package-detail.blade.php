@@ -94,7 +94,7 @@
         </div>
         <i class="ri-arrow-right-s-line" style="color: #D1D5DB; font-size: 18px;"></i>
     </a>
-    <a href="{{ route('admin.budget.export-csv', $budgetPackage) }}" class="export-card">
+    <a href="{{ route('admin.budget.export-csv', $budgetPackage) }}" class="export-card" data-download data-estimate="10">
         <div class="export-icon" style="background: #D1FAE5; color: #059669;">
             <i class="ri-file-excel-line"></i>
         </div>
@@ -103,6 +103,24 @@
             <p>Download format Excel (.xlsx)</p>
         </div>
         <i class="ri-download-line" style="color: #D1D5DB; font-size: 18px;"></i>
+        <div class="export-loading">
+            <div class="export-spinner"></div>
+            <span class="export-loading-text">Memproses...</span>
+        </div>
+    </a>
+    <a href="{{ route('admin.budget.export-detail', $budgetPackage) }}" class="export-card" data-download data-estimate="20">
+        <div class="export-icon" style="background: #EDE9FE; color: #7C3AED;">
+            <i class="ri-team-line"></i>
+        </div>
+        <div class="export-info">
+            <h4>Export Detail Penerima</h4>
+            <p>Daftar nominatif per personel (.xlsx)</p>
+        </div>
+        <i class="ri-download-line" style="color: #D1D5DB; font-size: 18px;"></i>
+        <div class="export-loading">
+            <div class="export-spinner"></div>
+            <span class="export-loading-text">Memproses...</span>
+        </div>
     </a>
 </div>
 @endif
@@ -185,9 +203,9 @@
     .wizard-step-stat .stat-label { font-size: 11px; color: #9CA3AF; text-transform: uppercase; font-weight: 600; }
     .wizard-arrow { font-size: 20px; color: #D1D5DB; flex-shrink: 0; }
 
-    .export-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .export-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .export-card {
-        display: flex; align-items: center; gap: 12px;
+        display: flex; align-items: center; gap: 12px; position: relative;
         background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
         padding: 14px 16px; text-decoration: none; color: inherit; transition: all 0.2s;
     }
@@ -199,6 +217,60 @@
     .export-info { flex: 1; }
     .export-info h4 { font-size: 13px; font-weight: 700; color: #111827; }
     .export-info p { font-size: 11px; color: #9CA3AF; margin-top: 1px; }
+
+    /* ══ Loading overlay untuk export cards ══ */
+    .export-card .export-loading {
+        display: none;
+        position: absolute; inset: 0;
+        background: rgba(255,255,255,0.92);
+        border-radius: 12px;
+        align-items: center; justify-content: center; gap: 10px;
+        z-index: 5;
+    }
+    .export-card.is-loading .export-loading {
+        display: flex;
+    }
+    .export-card.is-loading {
+        pointer-events: none;
+    }
+    .export-spinner {
+        width: 20px; height: 20px;
+        border: 3px solid #E5E7EB;
+        border-top-color: #B91C1C;
+        border-radius: 50%;
+        animation: exportSpin 0.7s linear infinite;
+    }
+    @keyframes exportSpin {
+        to { transform: rotate(360deg); }
+    }
+    .export-loading-text {
+        font-size: 12px; font-weight: 600; color: #6B7280;
+    }
+
     @media (max-width: 768px) { .export-actions { grid-template-columns: 1fr; } }
 </style>
 @endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Semua tombol export yang berupa download (bukan navigasi)
+    document.querySelectorAll('.export-card[data-download]').forEach(function(card) {
+        card.addEventListener('click', function(e) {
+            // Jangan block navigasi — file tetap didownload
+            // Tapi tampilkan loading overlay
+            card.classList.add('is-loading');
+
+            // Hilangkan loading setelah estimasi selesai
+            // Karena file download tidak bisa dideteksi via JS,
+            // gunakan timer berdasarkan ukuran data (min 3 detik, maks 30 detik)
+            var estimatedSeconds = parseInt(card.dataset.estimate || '5');
+            setTimeout(function() {
+                card.classList.remove('is-loading');
+            }, estimatedSeconds * 1000);
+        });
+    });
+});
+</script>
+@endsection
+

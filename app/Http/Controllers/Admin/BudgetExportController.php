@@ -75,4 +75,14 @@ class BudgetExportController extends Controller
         $filename = 'Rekapan_' . str_replace(' ', '_', $budgetPackage->name) . '_' . $budgetPackage->budgetYear->year . '.xlsx';
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PackageRecapExport($budgetPackage), $filename);
     }
+
+    /**
+     * Export detail penerima sebagai Excel (daftar nominatif per personel)
+     */
+    public function exportDetailExcel(BudgetPackage $budgetPackage)
+    {
+        $budgetPackage->load('budgetYear');
+        $filename = 'Detail_Penerima_' . str_replace(' ', '_', $budgetPackage->name) . '_' . $budgetPackage->budgetYear->year . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PackageDetailExport($budgetPackage), $filename);
+    }
 }

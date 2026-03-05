@@ -161,6 +161,7 @@ Route::middleware(['auth', 'role:admin|superadmin'])->prefix('admin')->name('adm
         Route::get('/packages/{budgetPackage}/recap', [\App\Http\Controllers\Admin\BudgetExportController::class, 'previewRecap'])->name('recap');
         Route::get('/packages/{budgetPackage}/invoice', [\App\Http\Controllers\Admin\BudgetExportController::class, 'previewInvoice'])->name('invoice');
         Route::get('/packages/{budgetPackage}/export-csv', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportRecapExcel'])->name('export-csv');
+        Route::get('/packages/{budgetPackage}/export-detail', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportDetailExcel'])->name('export-detail');
         Route::post('/invoice-settings', [\App\Http\Controllers\Admin\BudgetExportController::class, 'updateSettings'])->name('update-settings');
     });
 });
