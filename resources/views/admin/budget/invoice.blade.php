@@ -71,8 +71,8 @@
 {{-- ==================== INVOICE DOCUMENT ==================== --}}
 <div class="invoice-doc" id="invoiceDocument">
 
-    {{-- ===== KOP SURAT (MENGGUNAKAN GAMBAR & TEKS KIRI) ===== --}}
-    <div style="text-align: center; width: 320px; margin-bottom: 25px; margin-left: 0;">
+    {{-- ===== KOP SURAT (RATA KIRI, GARIS MENGIKUTI TEKS TERPANJANG) ===== --}}
+    <div class="kop-wrapper">
         @php
             $kopPath = public_path('kop suratt.png');
             $kopBase64 = '';
@@ -83,20 +83,21 @@
             }
         @endphp
         @if($kopBase64)
-            <img src="{{ $kopBase64 }}" alt="Kop Surat" style="width: 80px; height: auto; margin-bottom: 8px;">
+            <img src="{{ $kopBase64 }}" alt="Kop Surat" class="kop-logo">
         @else
-            <img src="{{ asset('kop suratt.png') }}" alt="Kop Surat" style="width: 80px; height: auto; margin-bottom: 8px;">
+            <img src="{{ asset('kop suratt.png') }}" alt="Kop Surat" class="kop-logo">
         @endif
         
-        <div style="font-size: 11px; font-weight: normal; font-family: Arial, sans-serif;">KEPOLISIAN NEGARA REPUBLIK INDONESIA</div>
-        <div style="font-size: 11px; font-weight: normal; font-family: Arial, sans-serif;">DAERAH NUSA TENGGARA BARAT</div>
-        <div style="font-size: 11px; font-weight: normal; font-family: Arial, sans-serif;">BIRO LOGISTIK</div>
-        <div style="font-size: 10px; font-family: Arial, sans-serif;">Jalan langko No. 77 Mataram 83114</div>
-        <div style="border-top: 1px solid #000; height: 1px; margin: 4px 0 2px 0;"></div>
+        <div class="kop-text-line kop-text-bold">KEPOLISIAN NEGARA REPUBLIK INDONESIA</div>
+        <div class="kop-text-line kop-text-bold">DAERAH NUSA TENGGARA BARAT</div>
+        <div class="kop-text-line kop-text-bold">BIRO LOGISTIK</div>
+        <div class="kop-text-line kop-text-addr">Jalan langko No. 77 Mataram 83114</div>
+        <div class="kop-divider"></div>
     </div>
 
     {{-- ===== JUDUL ===== --}}
     <div class="hps-title">HARGA PERKIRAAN SENDIRI</div>
+
 
     {{-- ===== INFO PEKERJAAN ===== --}}
     <table class="info-tbl">
@@ -174,7 +175,7 @@
                 $bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
             @endphp
             <div style="margin-bottom: 15px;">
-                {{ $settings->location }},&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $bulanIndo[now()->month - 1] }} {{ $budgetPackage->budgetYear->year }}
+                {{ $settings->location }},<span style="display:inline-block; width: 25px;"></span>{{ $bulanIndo[now()->month - 1] }} {{ $budgetPackage->budgetYear->year }}
             </div>
             <p>a.n {{ strtoupper($settings->organization_name) }}</p>
             <p class="ttd-jabatan">{{ strtoupper($settings->signatory_title) }}</p>
@@ -219,24 +220,34 @@
         line-height: 1.4;
     }
 
-    /* --- KOP SURAT --- */
-    .kop-table { width: 100%; border: none; border-collapse: collapse; }
-    .kop-table td { border: none; padding: 0; vertical-align: middle; }
-    .kop-logo-cell { width: 60px; text-align: left; }
-    .kop-logo-img { width: 50px; height: auto; }
-    .kop-text-cell { text-align: center; }
-    .kop-1 { font-size: 14px; font-weight: 700; letter-spacing: 3px; }
-    .kop-2 { font-size: 13px; font-weight: 700; }
-    .kop-3 { font-size: 12px; font-weight: 700; }
-    .kop-4 { font-size: 11px; }
-    .kop-line {
-        border: none;
-        border-top: 1px solid #000;
-        margin: 4px 0 0;
-        padding-top: 1px;
-        border-bottom: 2px solid #000;
-        height: 0;
-        margin-bottom: 20px;
+    /* --- KOP SURAT (rata kiri, garis mengikuti teks terpanjang) --- */
+    .kop-wrapper {
+        display: inline-block;
+        text-align: center;
+        margin-bottom: 25px;
+        /* inline-block membuat lebar otomatis mengikuti konten terpanjang */
+    }
+    .kop-logo {
+        width: 70px;
+        height: auto;
+        margin-bottom: 6px;
+    }
+    .kop-text-line {
+        font-family: Arial, sans-serif;
+        font-size: 11px;
+        white-space: nowrap;
+        line-height: 1.5;
+    }
+    .kop-text-bold {
+        font-weight: normal;
+    }
+    .kop-text-addr {
+        font-size: 10px;
+    }
+    .kop-divider {
+        border-top: 2px solid #000;
+        margin-top: 6px;
+        margin-bottom: 0;
     }
 
     /* --- JUDUL --- */
@@ -271,7 +282,7 @@
         font-weight: 700;
         font-size: 10px;
         vertical-align: middle;
-        background: #f5f5f5;
+        background: #D9D9D9;
         color: #000 !important;
     }
     .col-no { width: 30px; }
@@ -286,7 +297,7 @@
         font-weight: 700;
         font-size: 10px;
         padding: 2px;
-        background: #f5f5f5;
+        background: #D9D9D9;
         color: #000 !important;
     }
 
@@ -294,6 +305,8 @@
         font-weight: 700;
         font-size: 11px;
         padding: 3px 5px;
+        background: #E8E8E8 !important;
+        color: #000 !important;
     }
     .nama { font-size: 11px; }
     .c { text-align: center; }
