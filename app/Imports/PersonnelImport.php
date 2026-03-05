@@ -71,6 +71,8 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'IPDA.' => 'IPDA',
 
             // ── BINTARA ──
+            'BINTARA' => 'BRIGADIR', // kategori BINTARA → default ke BRIGADIR
+            'BA BRIMOB' => 'BRIGADIR', // Bintara Brimob → default ke BRIGADIR
             'AIPTU.' => 'AIPTU',
             'AIPDA.' => 'AIPDA',
             'BRIPKA.' => 'BRIPKA',
@@ -412,7 +414,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         return false;
     }
 
-    public static function findRankWithCorrection(string $rankName, Collection $ranks, string $golongan = ''): array
+    public static function findRankWithCorrection(string $rankName, Collection &$ranks, string $golongan = '', bool $isSiswaSatker = false): array
     {
         $upperInput = strtoupper(trim($rankName));
 
@@ -467,6 +469,19 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $rank = $ranks->get($upperInput);
         if ($rank) {
             return ['rank' => $rank, 'corrected' => false, 'original' => $rankName, 'corrected_to' => null];
+        }
+
+        // --- AUTO-CREATE UNTUK SATKER SISWA ---
+        // Jika satker adalah SISWA, KITA LEWATI SEMUA KOREKSI (Correction Map & Levenshtein)
+        // dan langsung buat rank baru sesuai input asli dari Excel (AKPOL tetap AKPOL, dll)
+        if ($isSiswaSatker && !empty($upperInput)) {
+            $newRank = \App\Models\Rank::create([
+                'name' => $upperInput,
+                'category' => 'SISWA',
+                'sort_order' => 50,
+            ]);
+            $ranks->put(strtoupper($upperInput), $newRank);
+            return ['rank' => $newRank, 'corrected' => false, 'original' => $rankName, 'corrected_to' => null];
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -626,6 +641,14 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $preview = [];
         $seenNrps = []; // Track NRPs untuk deteksi duplikat
 
+        $isSiswaSatker = false;
+        if ($this->satkerId) {
+            $satker = \App\Models\Satker::find($this->satkerId);
+            if ($satker && strtoupper($satker->code) === 'SISWA') {
+                $isSiswaSatker = true;
+            }
+        }
+
         // Auto-detect apakah file punya 2 kolom NO (double-NO)
         $offset = self::detectColumnOffset($rows);
 
@@ -717,10 +740,42 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 continue;
             }
 
+            // 1a2. Abaikan baris header kategori ukuran kapor (TUTUP KEPALA, KEMEJA, CELANA, dll)
+            // Di beberapa satker (RUMKIT), baris ini muncul di area data personel dengan NO numerik
+            // dan kolom pangkat terisi kode ukuran (PRIA, 14=2, K=3, dll) — bukan data personel asli.
+            $kaporCategories = [
+                'tutup kepala', 'tutup badan', 'tutup kaki',
+                'kemeja', 'kemeja pria', 'kemeja wanita',
+                'celana', 'celana pria', 'celana wanita',
+                'baju', 'baju pria', 'baju wanita',
+                'sepatu', 'sepatu pdh', 'sepatu pdl', 'sepatu pdh/pdl',
+                'sepatu olahraga', 'sepatu pria pdh', 'wanita pria pdh',
+                'sepatu pria olahraga', 'wanita pria olahraga',
+                't-shirt', 't shirt', 't-shirt/olahraga', 't shirt/olahraga',
+                't-shirt pria', 't-shirt wanita', 't shirt pria', 't shirt wanita',
+                't-shirt/olahraga pria dan wanita', 't-shirt/olahraga pria & wanita',
+                'jaket', 'sabuk', 'jilbab',
+                'topi bintara', 'topi', 'kaos kaki',
+            ];
+            if (in_array($nameLower, $kaporCategories)) {
+                continue;
+            }
+
             // 1b. Abaikan baris rekapitulasi: jika golongan berisi "JUMLAH" atau "TOTAL"
             // Baris rekap biasanya: Nama="SD"/"JUMLAH", Golongan="JUMLAH" — ini bukan data personel
             $golLower = strtolower($golongan);
             if ($golLower === 'jumlah' || $golLower === 'total' || $golLower === 'sub total' || $golLower === 'sub jumlah') {
+                continue;
+            }
+
+            // 1c. Abaikan baris rekapitulasi: jika keterangan (KET) atau jenis kelamin (JK) berisi "JUMLAH"/"TOTAL"
+            // Di beberapa satker (DIT Tahti), baris rekap ukuran kapor punya:
+            // - Layout pendek (8 kolom): Nama="SD", JK="JUMLAH" (karena JUMLAH ada di indeks kolom gender)
+            // - Layout penuh: KET="JUMLAH"
+            $ketLower = strtolower($keterangan);
+            $genderLower = strtolower($genderRaw);
+            if ($ketLower === 'jumlah' || $ketLower === 'total' || $ketLower === 'sub total' || $ketLower === 'sub jumlah'
+                || $genderLower === 'jumlah' || $genderLower === 'total' || $genderLower === 'sub total' || $genderLower === 'sub jumlah') {
                 continue;
             }
 
@@ -760,7 +815,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $gender = ($genderRaw === 'W') ? 'P' : 'L';
 
             // Koreksi pangkat (sekarang menyertakan golongan untuk PPPK)
-            $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan);
+            $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan, $isSiswaSatker);
 
             // Ukuran kapor (kolom I-Q, index 8-16, ditambah offset jika double-NO)
             $sizes = [

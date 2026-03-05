@@ -42,6 +42,7 @@ class SatkerSeeder extends Seeder
             ['name' => 'SETUM', 'code' => 'SETUM', 'parent_id' => $polda->id, 'sort_order' => 26],
             ['name' => 'RUMKIT', 'code' => 'RUMKIT', 'parent_id' => $polda->id, 'sort_order' => 27],
             ['name' => 'SPKT', 'code' => 'SPKT-POLDA', 'parent_id' => $polda->id, 'sort_order' => 28],
+            ['name' => 'SISWA', 'code' => 'SISWA', 'parent_id' => $polda->id, 'sort_order' => 29],
         ];
 
         foreach ($satkerPolda as $s) {
