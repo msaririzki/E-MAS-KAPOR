@@ -128,6 +128,8 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PEMBTU' => 'Pembina Tingkat I',
             'PEMB TU' => 'Pembina Tingkat I',
             'PEMBINA TK.I' => 'Pembina Tingkat I',
+            'PEMBINA TK.1' => 'Pembina Tingkat I',
+            'PEMBINA TK1' => 'Pembina Tingkat I',
             'PEMBINA TK. I' => 'Pembina Tingkat I',
             'PEMBINA TK I' => 'Pembina Tingkat I',
             'PEMBINA TKT I' => 'Pembina Tingkat I',
@@ -145,6 +147,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PEN TU' => 'Penata Tingkat I',
             'PNTA TK I' => 'Penata Tingkat I',
             'PENATA TK.I' => 'Penata Tingkat I',
+            'PENATA TK.1' => 'Penata Tingkat I',
             'PENATA TK. I' => 'Penata Tingkat I',
             'PENATA TK I' => 'Penata Tingkat I',
             'PENATA TKT I' => 'Penata Tingkat I',
@@ -168,16 +171,24 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PENDA TK. I' => 'Penata Muda Tingkat I',
             'PENDA TK 1' => 'Penata Muda Tingkat I',
             'PENDA TK.I' => 'Penata Muda Tingkat I',
+            'PENDA TK.1' => 'Penata Muda Tingkat I',
+            'PENDA. TK. I' => 'Penata Muda Tingkat I',
+            'PENDA. TK.I' => 'Penata Muda Tingkat I',
+            'PENDA. TK I' => 'Penata Muda Tingkat I',
+            'PENDA. TK.1' => 'Penata Muda Tingkat I',
+            'PENDA. TK 1' => 'Penata Muda Tingkat I',
+            'PENDA. I' => 'Penata Muda Tingkat I',
+            'PENDA. 1' => 'Penata Muda Tingkat I',
             'PEN DATU' => 'Penata Muda Tingkat I',
             'PNTA MDU TK I' => 'Penata Muda Tingkat I',
             'PENATA MD TK I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TK.I' => 'Penata Muda Tingkat I',
+            'PENATA MUDA TK.1' => 'Penata Muda Tingkat I',
             'PENATA MUDA TK. I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TK I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TKT I' => 'Penata Muda Tingkat I',
             'PENATA MUDA TINGKAT 1' => 'Penata Muda Tingkat I',
             'PENATA MUDA TK 1' => 'Penata Muda Tingkat I',
-            'PENATA MUDA TK.1' => 'Penata Muda Tingkat I',
             'PENATA MDU TK I' => 'Penata Muda Tingkat I',
 
             // Penata Muda (PENDA)
@@ -192,6 +203,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PENGTU' => 'Pengatur Tingkat I',
             'PENG TU' => 'Pengatur Tingkat I',
             'PENGATUR TK.I' => 'Pengatur Tingkat I',
+            'PENGATUR TK.1' => 'Pengatur Tingkat I',
             'PENGATUR TK. I' => 'Pengatur Tingkat I',
             'PENGATUR TK I' => 'Pengatur Tingkat I',
             'PENGATUR TK. I/II.D' => 'Pengatur Tingkat I',
@@ -216,15 +228,17 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'PENGDATU' => 'Pengatur Muda Tingkat I',
             'PENGDA I' => 'Pengatur Muda Tingkat I',
             'PENGDA 1' => 'Pengatur Muda Tingkat I',
+            'PENGDA TK.I' => 'Pengatur Muda Tingkat I',
+            'PENGDA TK.1' => 'Pengatur Muda Tingkat I',
             'PENG DATU' => 'Pengatur Muda Tingkat I',
             'PENGATUR MD TK I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TK.I' => 'Pengatur Muda Tingkat I',
+            'PENGATUR MUDA TK.1' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TK. I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TK I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TKT I' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TINGKAT 1' => 'Pengatur Muda Tingkat I',
             'PENGATUR MUDA TK 1' => 'Pengatur Muda Tingkat I',
-            'PENGATUR MUDA TK.1' => 'Pengatur Muda Tingkat I',
             'PENGATUR MDU TK I' => 'Pengatur Muda Tingkat I',
 
             // Pengatur Muda (PENGDA)
@@ -238,6 +252,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'JURTU' => 'Juru Tingkat I',
             'JUR TU' => 'Juru Tingkat I',
             'JURU TK.I' => 'Juru Tingkat I',
+            'JURU TK.1' => 'Juru Tingkat I',
             'JURU TK. I' => 'Juru Tingkat I',
             'JURU TK I' => 'Juru Tingkat I',
             'JURU TKT I' => 'Juru Tingkat I',
@@ -251,9 +266,12 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'JURDATU' => 'Juru Muda Tingkat I',
             'JURDA I' => 'Juru Muda Tingkat I',
             'JURDA 1' => 'Juru Muda Tingkat I',
+            'JURDA TK.I' => 'Juru Muda Tingkat I',
+            'JURDA TK.1' => 'Juru Muda Tingkat I',
             'JUR DATU' => 'Juru Muda Tingkat I',
             'JURU MD TK I' => 'Juru Muda Tingkat I',
             'JURU MUDA TK.I' => 'Juru Muda Tingkat I',
+            'JURU MUDA TK.1' => 'Juru Muda Tingkat I',
             'JURU MUDA TK. I' => 'Juru Muda Tingkat I',
             'JURU MUDA TK I' => 'Juru Muda Tingkat I',
             'JURU MUDA TKT I' => 'Juru Muda Tingkat I',
@@ -679,7 +697,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             // Personel asli selalu punya nomor urut (1, 2, 3, ...)
             // Baris header/catatan (TUTUP KEPALA, BAJU PRIA, dll) tidak punya nomor urut
             // Untuk double-NO, cek kedua kolom NO
-            $hasNumericNo = is_numeric($no) || ($offset > 0 && is_numeric(trim($row[1] ?? '')));
+            // Tambahan: NO yg berisi rumus Excel (=A23+1) juga valid — artinya baris personel
+            $hasNumericNo = is_numeric($no) 
+                || ($offset > 0 && is_numeric(trim($row[1] ?? '')))
+                || str_starts_with($no, '=');
             if (empty($rankInput) && !$hasNumericNo) {
                 continue;
             }
@@ -692,7 +713,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 continue;
             }
             // Cegah false positive, misal ada orang bernama "Total", hanya tolak bila namanya persis "JUMLAH" atau "TOTAL"
-            if ($nameLower === 'jumlah' || $nameLower === 'total') {
+            if ($nameLower === 'jumlah' || $nameLower === 'total' || $nameLower === 'dst' || $nameLower === 'dst.') {
                 continue;
             }
 
@@ -728,10 +749,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     continue;
                 }
 
-                // Abaikan jika NRP berupa angka float (misal "15.5") atau terlampau pendek (< 5 karakter)
-                // Filter is_numeric($nrp) dihapus untuk berjaga-jaga NIP mengandung karakter aneh tapi valid
+                // NRP terlampau pendek (< 4 karakter) dianggap bukan NRP valid
+                // Bersihkan saja, JANGAN skip baris — personel tetap perlu diimport
                 if (strlen($nrp) < 4) {
-                    continue;
+                    $nrp = '';
                 }
             }
 
