@@ -142,6 +142,9 @@
             </tr>
         </thead>
         <tbody>
+            <tr class="empty-row">
+                <td colspan="6" style="padding: 4px 0; font-size: 8px; line-height: 8px;">&nbsp;</td>
+            </tr>
             @php $no = 1; @endphp
             @foreach($grouped_items as $group => $groupItems)
             <tr class="grp-hdr">
