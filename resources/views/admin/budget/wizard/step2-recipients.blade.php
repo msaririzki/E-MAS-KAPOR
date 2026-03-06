@@ -48,13 +48,13 @@
                 <div class="wizard-step-number"><i class="ri-check-line"></i></div>
                 <div class="wizard-step-title">
                     <h3>Pilih Barang</h3>
-                    <p>Item berhasil dipilih</p>
+                    <p>Barang berhasil dipilih</p>
                 </div>
             </div>
             <div class="wizard-step-body">
                 <div class="stat-value">
                     <span class="num">{{ $budgetPackage->items->count() }}</span>
-                    <span class="label">Item</span>
+                    <span class="label">Barang</span>
                 </div>
                 <i class="ri-checkbox-circle-fill wizard-step-arrow" style="color: #10B981; background: transparent;"></i>
             </div>
@@ -83,7 +83,7 @@
             <div class="wizard-step-header">
                 <div class="wizard-step-number">3</div>
                 <div class="wizard-step-title">
-                    <h3>Preview & Hitung</h3>
+                    <h3>Pratinjau & Hitung</h3>
                     <p>Ringkasan total & anggaran</p>
                 </div>
             </div>

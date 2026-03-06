@@ -58,7 +58,7 @@
             <div class="wizard-step-body">
                 <div class="stat-value">
                     <span class="num" id="statSelectedCount">{{ count($selectedIds) }}</span>
-                    <span class="label">Item Terpilih</span>
+                    <span class="label">Barang Terpilih</span>
                 </div>
                 <div class="active-indicator">Sedang Berlangsung</div>
             </div>
@@ -87,7 +87,7 @@
             <div class="wizard-step-header">
                 <div class="wizard-step-number">3</div>
                 <div class="wizard-step-title">
-                    <h3>Preview & Hitung</h3>
+                    <h3>Pratinjau & Hitung</h3>
                     <p>Ringkasan total & anggaran</p>
                 </div>
             </div>
@@ -125,7 +125,7 @@
         </div>
         <h2 class="category-title">
             {{ $category }}
-            <span class="category-badge">{{ $items->count() }} Item</span>
+            <span class="category-badge">{{ $items->count() }} Barang</span>
         </h2>
     </div>
     
@@ -157,7 +157,7 @@
                             {{ $item->gender_specific === 'L' ? 'Pria' : 'Wanita' }}
                         </span>
                     @else
-                        <span class="badge badge-neutral badge-sm"><i class="ri-user-line"></i> Unisex</span>
+                        <span class="badge badge-neutral badge-sm"><i class="ri-user-line"></i> Semua Gender</span>
                     @endif
                     
                     @if($item->invoice_group)
@@ -271,7 +271,6 @@
 @endsection
 
 @section('styles')
-<style>
     /* ── Utilities ── */
     .text-brand { color: #C62828; }
     .badge { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; border-radius: 6px; }
@@ -512,5 +511,4 @@
 
     /* Search Input Focus */
     #searchInput:focus { border-color: #C62828; box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.1); }
-</style>
 @endsection

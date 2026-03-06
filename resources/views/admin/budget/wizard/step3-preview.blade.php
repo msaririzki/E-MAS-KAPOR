@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Preview - ' . $budgetPackage->name)
+@section('title', 'Pratinjau - ' . $budgetPackage->name)
 @section('breadcrumb')
     <a href="{{ route('admin.budget.index') }}">Rencana Anggaran</a>
     <span class="sep">/</span>
     <a href="{{ route('admin.budget.show-package', $budgetPackage) }}">{{ $budgetPackage->name }}</a>
     <span class="sep">/</span>
-    <span class="current">Preview</span>
+    <span class="current">Pratinjau</span>
 @endsection
 
 @section('content')
@@ -21,7 +21,7 @@
         <div class="package-hero-content">
             <div class="package-title-wrapper" style="justify-content: space-between; width: 100%;">
                 <div>
-                    <h1 class="package-title">Preview & Hitung Anggaran</h1>
+                    <h1 class="package-title">Pratinjau & Hitung Anggaran</h1>
                     <p class="package-desc" style="margin-top: 6px;">
                         Ringkasan seluruh item yang dipilih, penerima, dan total anggaran yang dibutuhkan.
                     </p>
@@ -45,13 +45,13 @@
                 <div class="wizard-step-number"><i class="ri-check-line"></i></div>
                 <div class="wizard-step-title">
                     <h3>Pilih Barang</h3>
-                    <p>Item berhasil dipilih</p>
+                    <p>Barang berhasil dipilih</p>
                 </div>
             </div>
             <div class="wizard-step-body">
                 <div class="stat-value">
                     <span class="num">{{ $budgetPackage->items->count() }}</span>
-                    <span class="label">Item</span>
+                    <span class="label">Barang</span>
                 </div>
                 <i class="ri-checkbox-circle-fill wizard-step-arrow" style="color: #10B981; background: transparent;"></i>
             </div>
@@ -80,7 +80,7 @@
             <div class="wizard-step-header">
                 <div class="wizard-step-number">3</div>
                 <div class="wizard-step-title">
-                    <h3>Preview & Hitung</h3>
+                    <h3>Pratinjau & Hitung</h3>
                     <p>Ringkasan total & anggaran</p>
                 </div>
             </div>
@@ -89,7 +89,7 @@
                     <span class="num" style="color: #C62828; font-size: 20px;">Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
                     <span class="label">Total Anggaran (Estimasi)</span>
                 </div>
-                <div class="active-indicator">Review Final</div>
+                <div class="active-indicator">Tinjauan Akhir</div>
             </div>
         </div>
     </div>
