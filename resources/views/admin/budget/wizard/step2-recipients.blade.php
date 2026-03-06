@@ -72,7 +72,7 @@
             <div class="wizard-step-body">
                 <div class="stat-value">
                     <span class="num">{{ $budgetPackage->items->sum(fn($i) => $i->recipients->count()) }}</span>
-                    <span class="label">Satker</span>
+                    <span class="label">Satker &bull; {{ number_format($budgetPackage->items->sum(fn($i) => $i->recipients->sum('matched_count')), 0, ',', '.') }} Personel</span>
                 </div>
                 <div class="active-indicator">Sedang Berlangsung</div>
             </div>
@@ -261,6 +261,7 @@
 @endsection
 
 @section('styles')
+<style>
     /* ── Utilities ── */
     .text-brand { color: #C62828; }
     .badge-sm { padding: 3px 8px; font-size: 10.5px; border-radius: 6px; }
@@ -497,6 +498,7 @@
     .auto-save-status.error { opacity: 1; visibility: visible; transform: translateY(0); color: #EF4444; border-color: #FECACA; background: #FEF2F2; }
     
     .spinner { display: inline-block; animation: spin 1s linear infinite; }
+</style>
 @endsection
 
 @section('scripts')

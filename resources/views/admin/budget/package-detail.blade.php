@@ -66,7 +66,7 @@
             <div class="wizard-step-body">
                 <div class="stat-value">
                     <span class="num">{{ $budgetPackage->items->sum(fn($i) => $i->recipients->count()) }}</span>
-                    <span class="label">Satker</span>
+                    <span class="label">Satker &bull; {{ number_format($budgetPackage->items->sum(fn($i) => $i->recipients->sum('matched_count')), 0, ',', '.') }} Personel</span>
                 </div>
                 <i class="ri-arrow-right-line wizard-step-arrow"></i>
             </div>

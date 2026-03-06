@@ -76,7 +76,7 @@
             <div class="wizard-step-body">
                 <div class="stat-value">
                     <span class="num">--</span>
-                    <span class="label">Satker</span>
+                    <span class="label">Satker &bull; -- Personel</span>
                 </div>
                 <i class="ri-lock-line wizard-step-arrow" id="step2Icon"></i>
             </div>
@@ -177,7 +177,7 @@
 @endforeach
 
 <script>
-    const toggleUrl = "{{ route('admin.budget.wizard.toggle-item', $budgetPackage) }}";
+    const toggleUrl = "{{ route('admin.budget.wizard.toggle-item', $budgetPackage, false) }}";
     const csrfToken = "{{ csrf_token() }}";
 
     async function toggleItem(itemId, el) {
@@ -196,6 +196,16 @@
                 },
                 body: JSON.stringify({ kapor_item_id: itemId })
             });
+
+            if (!resp.ok) {
+                let errorMsg = 'Server error: ' + resp.status;
+                try {
+                    const errData = await resp.json();
+                    errorMsg = errData.message || errorMsg;
+                } catch(e) {}
+                throw new Error(errorMsg);
+            }
+
             const data = await resp.json();
 
             // Update Class
@@ -233,9 +243,8 @@
                 step2Icon.style.color = '#CBD5E1';
             }
         } catch (err) {
-            console.error('Error:', err);
-            // Show toast or alert for error
-            alert('Terjadi kesalahan saat menyimpan perubahan. Silakan coba lagi.');
+            console.error('Toggle error:', err);
+            alert('Gagal menyimpan perubahan: ' + err.message);
         } finally {
             el.classList.remove('loading');
         }
@@ -271,6 +280,7 @@
 @endsection
 
 @section('styles')
+<style>
     /* ── Utilities ── */
     .text-brand { color: #C62828; }
     .badge { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; border-radius: 6px; }
@@ -511,4 +521,5 @@
 
     /* Search Input Focus */
     #searchInput:focus { border-color: #C62828; box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.1); }
+</style>
 @endsection

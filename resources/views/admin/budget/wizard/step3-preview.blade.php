@@ -69,7 +69,7 @@
             <div class="wizard-step-body">
                 <div class="stat-value">
                     <span class="num">{{ $budgetPackage->items->sum(fn($i) => $i->recipients->count()) }}</span>
-                    <span class="label">Satker</span>
+                    <span class="label">Satker &bull; {{ number_format($budgetPackage->items->sum(fn($i) => $i->recipients->sum('matched_count')), 0, ',', '.') }} Personel</span>
                 </div>
                 <i class="ri-checkbox-circle-fill wizard-step-arrow" style="color: #10B981; background: transparent;"></i>
             </div>
@@ -220,6 +220,7 @@
 @endsection
 
 @section('styles')
+<style>
     /* ── Hero Section & Wizard (Copied from Step 2) ── */
     .package-hero {
         background: #ffffff;
@@ -439,4 +440,5 @@
         .wizard-track { grid-template-columns: 1fr; }
         .stat-grid { grid-template-columns: 1fr; }
     }
+</style>
 @endsection
