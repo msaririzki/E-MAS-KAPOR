@@ -86,8 +86,17 @@ class PackageItemController extends Controller
         // Flatten semua satker untuk pilihan
         $allSatkers = Satker::orderBy('name')->get();
 
+        // Ambil semua keterangan unik dari personel aktif
+        $allKeterangan = Personnel::where('is_active', true)
+            ->whereNotNull('keterangan')
+            ->where('keterangan', '!=', '')
+            ->selectRaw('keterangan, COUNT(*) as jumlah')
+            ->groupBy('keterangan')
+            ->orderBy('keterangan')
+            ->get();
+
         return view('admin.budget.wizard.step2-recipients', compact(
-            'budgetPackage', 'allSatkers'
+            'budgetPackage', 'allSatkers', 'allKeterangan'
         ));
     }
 

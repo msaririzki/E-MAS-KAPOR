@@ -128,9 +128,14 @@
                             <i class="ri-building-4-line text-brand"></i>
                             <h4 class="section-label">Pilih Satker Penerima</h4>
                         </div>
-                        <button type="button" class="btn-select-all" onclick="toggleAllSatkers({{ $item->id }})">
-                            Pilih Semua
-                        </button>
+                        <div style="display: flex; gap: 6px;">
+                            <button type="button" class="btn-select-all btn-select-polres" onclick="togglePolresSatkers({{ $item->id }})">
+                                Polres
+                            </button>
+                            <button type="button" class="btn-select-all" onclick="toggleAllSatkers({{ $item->id }})">
+                                Pilih Semua
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="satker-checkboxes custom-scrollbar" id="satker-list-{{ $item->id }}">
@@ -163,15 +168,14 @@
                                            onchange="toggleRankOptions({{ $item->id }})">
                                     <span>Polri</span>
                                 </label>
-                                <label class="pill-check">
+                                <label class="pill-check pill-pns-pppk">
                                     <input type="checkbox" class="filter-input" data-filter="personnel_type" data-value="pns" data-item="{{ $item->id }}"
-                                           onchange="toggleRankOptions({{ $item->id }})">
-                                    <span>PNS</span>
-                                </label>
-                                <label class="pill-check">
-                                    <input type="checkbox" class="filter-input" data-filter="personnel_type" data-value="pppk" data-item="{{ $item->id }}"
-                                           onchange="toggleRankOptions({{ $item->id }})">
-                                    <span>PPPK</span>
+                                           onchange="toggleRankOptions({{ $item->id }}); syncPnsPppk(this, {{ $item->id }})" style="display:none;">
+                                    <input type="checkbox" class="filter-input pppk-hidden" data-filter="personnel_type" data-value="pppk" data-item="{{ $item->id }}"
+                                           onchange="toggleRankOptions({{ $item->id }})" style="display:none;">
+                                    <input type="checkbox" class="pill-visual-toggle"
+                                           onchange="syncPnsPppkVisual(this, {{ $item->id }})">
+                                    <span>PNS/PPPK</span>
                                 </label>
                             </div>
                         </div>
@@ -193,7 +197,7 @@
 
                         {{-- Kategori Pangkat --}}
                         <div class="filter-item" id="rank-group-{{ $item->id }}">
-                            <label class="filter-label">Kategori Pangkat</label>
+                            <label class="filter-label">Kategori Golongan</label>
                             <div class="filter-pills" id="rank-pills-{{ $item->id }}">
                                 {{-- Pangkat Polri --}}
                                 <label class="pill-check rank-pill polri-rank" data-type="polri">
@@ -228,12 +232,41 @@
                             </div>
                         </div>
 
-                        {{-- Keterangan (Dinamis per satker) --}}
+                        {{-- Keterangan (Dropdown multi-select dengan pencarian) --}}
                         <div class="filter-item" id="keterangan-group-{{ $item->id }}">
-                            <label class="filter-label">Keterangan <span class="optional-text">(Pilih satker dulu)</span></label>
-                            <div class="keterangan-pills-container" id="keterangan-pills-{{ $item->id }}">
-                                <span style="font-size: 12px; color: #94A3B8; font-style: italic;">Centang satker untuk melihat pilihan keterangan.</span>
+                            <label class="filter-label">Keterangan</label>
+                            <div class="ket-dropdown" id="ket-dropdown-{{ $item->id }}">
+                                <button type="button" class="ket-dropdown-trigger" onclick="toggleKetDropdown({{ $item->id }})">
+                                    <span class="ket-trigger-text" id="ket-trigger-text-{{ $item->id }}">
+                                        <i class="ri-filter-3-line"></i> Pilih Keterangan...
+                                    </span>
+                                    <i class="ri-arrow-down-s-line ket-arrow"></i>
+                                </button>
+                                <div class="ket-dropdown-panel" id="ket-panel-{{ $item->id }}">
+                                    <div class="ket-search-wrap">
+                                        <i class="ri-search-line"></i>
+                                        <input type="text" class="ket-search-input" placeholder="Cari keterangan..." oninput="filterKetOptions({{ $item->id }}, this.value)">
+                                    </div>
+                                    <div class="ket-options-list custom-scrollbar">
+                                        @forelse($allKeterangan as $ket)
+                                        <label class="ket-option" data-label="{{ strtolower($ket->keterangan) }}">
+                                            <input type="checkbox" class="filter-input" data-filter="keterangan" data-value="{{ $ket->keterangan }}" data-item="{{ $item->id }}">
+                                            <div class="ket-option-check"><i class="ri-check-line"></i></div>
+                                            <span class="ket-option-name">{{ $ket->keterangan }}</span>
+                                            <span class="ket-option-count">{{ $ket->jumlah }}</span>
+                                        </label>
+                                        @empty
+                                        <div class="ket-empty">Tidak ada data keterangan.</div>
+                                        @endforelse
+                                    </div>
+                                    <div class="ket-footer">
+                                        <button type="button" class="ket-clear-btn" onclick="clearKetFilter({{ $item->id }})">Reset</button>
+                                        <button type="button" class="ket-apply-btn" onclick="toggleKetDropdown({{ $item->id }})">Tutup</button>
+                                    </div>
+                                </div>
                             </div>
+                            {{-- Selected tags --}}
+                            <div class="ket-selected-tags" id="ket-tags-{{ $item->id }}"></div>
                         </div>
                     </div>
                 </div>
@@ -513,6 +546,15 @@
 <script>
     // Global debounce timeouts
     let saveTimeouts = {};
+    // Sync PNS/PPPK visual toggle → kedua hidden checkbox
+    function syncPnsPppkVisual(visualCb, itemId) {
+        const label = visualCb.closest('.pill-pns-pppk');
+        const pnsCb = label.querySelector('input[data-value="pns"]');
+        const pppkCb = label.querySelector('input[data-value="pppk"]');
+        pnsCb.checked = visualCb.checked;
+        pppkCb.checked = visualCb.checked;
+        toggleRankOptions(itemId);
+    }
 
     // Dinamis: tampilkan/sembunyikan rank options berdasarkan tipe personil
     function toggleRankOptions(itemId) {
@@ -548,72 +590,31 @@
         });
     }
 
-    // Load keterangan unik dari satker yang dipilih untuk item tertentu
-    async function loadKeteranganForItem(itemId) {
-        const container = document.getElementById('keterangan-pills-' + itemId);
-        const satkerList = document.getElementById('satker-list-' + itemId);
-        const checkedSatkers = satkerList.querySelectorAll('input[type="checkbox"]:checked');
+    // Toggle Polres Satkers saja
+    function togglePolresSatkers(itemId) {
+        const container = document.getElementById('satker-list-' + itemId);
+        const labels = container.querySelectorAll('.satker-checkbox');
+        const btn = document.querySelector(`button[onclick="togglePolresSatkers(${itemId})"]`);
 
-        if (checkedSatkers.length === 0) {
-            container.innerHTML = '<span style="font-size: 12px; color: #94A3B8; font-style: italic;">Centang satker untuk melihat pilihan keterangan.</span>';
-            return;
-        }
-
-        container.innerHTML = '<span style="font-size: 12px; color: #94A3B8;"><i class="ri-loader-4-line spinner"></i> Memuat keterangan...</span>';
-
-        try {
-            // Ambil keterangan dari semua satker yang dipilih
-            const allKeterangan = {};
-            const promises = Array.from(checkedSatkers).map(async (cb) => {
-                const resp = await fetch(`/admin/budget/satker-keterangan/${cb.value}`, {
-                    headers: { 'Accept': 'application/json' }
-                });
-                const data = await resp.json();
-                data.forEach(item => {
-                    if (allKeterangan[item.value]) {
-                        allKeterangan[item.value] += item.count;
-                    } else {
-                        allKeterangan[item.value] = item.count;
-                    }
-                });
-            });
-
-            await Promise.all(promises);
-
-            // Ambil keterangan yang sudah dipilih sebelumnya
-            const existingChecked = [];
-            container.querySelectorAll('input.filter-input:checked').forEach(cb => {
-                existingChecked.push(cb.dataset.value);
-            });
-
-            const keys = Object.keys(allKeterangan).sort();
-            if (keys.length === 0) {
-                container.innerHTML = '<span style="font-size: 12px; color: #94A3B8; font-style: italic;">Tidak ada data keterangan di satker terpilih.</span>';
-                return;
+        // Cari checkbox yang satker-nya mengandung "POLRES"
+        const polresCheckboxes = [];
+        labels.forEach(label => {
+            const name = label.querySelector('.satker-name')?.textContent?.trim().toUpperCase() || '';
+            if (name.includes('POLRES') || name.includes('POLRESTA')) {
+                polresCheckboxes.push(label.querySelector('input[type="checkbox"]'));
             }
+        });
 
-            let html = '';
-            keys.forEach(ket => {
-                const isChecked = existingChecked.includes(ket) ? 'checked' : '';
-                html += `
-                    <label class="pill-check pill-keterangan">
-                        <input type="checkbox" class="filter-input" data-filter="keterangan" data-value="${ket}" data-item="${itemId}" ${isChecked}>
-                        <span>${ket} <small class="ket-count">(${allKeterangan[ket]})</small></span>
-                    </label>`;
-            });
-            container.innerHTML = html;
+        // Cek apakah semua polres sudah tercentang
+        const allChecked = polresCheckboxes.every(cb => cb.checked);
+        polresCheckboxes.forEach(cb => { cb.checked = !allChecked; });
 
-            // Attach event listeners ke pill baru
-            container.querySelectorAll('input.filter-input').forEach(input => {
-                input.addEventListener('change', () => {
-                    if (saveTimeouts[itemId]) clearTimeout(saveTimeouts[itemId]);
-                    saveTimeouts[itemId] = setTimeout(() => saveRecipients(itemId), 500);
-                });
-            });
-        } catch (err) {
-            console.error('Error loading keterangan:', err);
-            container.innerHTML = '<span style="font-size: 12px; color: #EF4444;">Gagal memuat keterangan.</span>';
-        }
+        // Update tombol
+        btn.textContent = allChecked ? 'Polres' : 'Batal Polres';
+        btn.classList.toggle('active', !allChecked);
+
+        // Trigger auto-save
+        saveRecipients(itemId);
     }
 
     // Toggle Semua Satker (Check/Uncheck All)
@@ -644,9 +645,7 @@
             btn.classList.remove('active');
         }
         
-        // Load keterangan untuk satker yang dipilih
-        loadKeteranganForItem(itemId);
-
+        
         // Trigger auto-save immediately
         saveRecipients(itemId);
     }
@@ -781,6 +780,11 @@
                     const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="personnel_type"][data-value="${val.toLowerCase()}"]`);
                     if (cb) cb.checked = true;
                 });
+                // Sync visual toggle PNS/PPPK
+                if (filters.personnel_type.some(v => v.toLowerCase() === 'pns' || v.toLowerCase() === 'pppk')) {
+                    const visualToggle = document.querySelector(`#item-card-${itemId} .pill-pns-pppk .pill-visual-toggle`);
+                    if (visualToggle) visualToggle.checked = true;
+                }
             }
 
             // Pre-check gender
@@ -805,19 +809,18 @@
             toggleRankOptions({{ $item->id }});
         @endforeach
 
-        // Load keterangan untuk item yang sudah punya satker terpilih
+        // Pre-check keterangan dari filter tersimpan
         @foreach($budgetPackage->items as $item)
             @if($item->recipients->count() > 0)
-                loadKeteranganForItem({{ $item->id }}).then(() => {
-                    // Pre-check keterangan dari filter tersimpan
-                    const filters = savedFilters[{{ $item->id }}];
-                    if (filters && filters.keterangan && Array.isArray(filters.keterangan)) {
-                        filters.keterangan.forEach(val => {
-                            const cb = document.querySelector(`input.filter-input[data-item="{{ $item->id }}"][data-filter="keterangan"][data-value="${val}"]`);
-                            if (cb) cb.checked = true;
-                        });
-                    }
-                });
+            (function() {
+                const filters = savedFilters[{{ $item->id }}];
+                if (filters && filters.keterangan && Array.isArray(filters.keterangan)) {
+                    filters.keterangan.forEach(val => {
+                        const cb = document.querySelector(`input.filter-input[data-item="{{ $item->id }}"][data-filter="keterangan"][data-value="${val}"]`);
+                        if (cb) cb.checked = true;
+                    });
+                }
+            })();
             @endif
         @endforeach
 
@@ -831,11 +834,6 @@
                     // Cek jika ini adalah input tipe personil untuk toggle tampilan rank
                     if (input.dataset.filter === 'personnel_type') {
                         toggleRankOptions(itemId);
-                    }
-
-                    // Cek jika ini adalah satker checkbox, load keterangan
-                    if (!input.dataset.filter && input.name && input.name.startsWith('satker_')) {
-                        loadKeteranganForItem(itemId);
                     }
                     
                     // Clear existing delay
@@ -852,11 +850,185 @@
         });
     });
 </script>
+<script>
+    // ── Keterangan Dropdown Functions ──
+    function toggleKetDropdown(itemId) {
+        const panel = document.getElementById('ket-panel-' + itemId);
+        const dropdown = document.getElementById('ket-dropdown-' + itemId);
+        const isOpen = panel.classList.contains('open');
+
+        // Tutup semua dropdown lain
+        document.querySelectorAll('.ket-dropdown-panel.open').forEach(p => p.classList.remove('open'));
+        document.querySelectorAll('.ket-dropdown.active').forEach(d => d.classList.remove('active'));
+
+        if (!isOpen) {
+            panel.classList.add('open');
+            dropdown.classList.add('active');
+            panel.querySelector('.ket-search-input').focus();
+        }
+    }
+
+    function filterKetOptions(itemId, query) {
+        const panel = document.getElementById('ket-panel-' + itemId);
+        const options = panel.querySelectorAll('.ket-option');
+        const q = query.toLowerCase().trim();
+
+        options.forEach(opt => {
+            const label = opt.dataset.label || '';
+            opt.style.display = label.includes(q) ? '' : 'none';
+        });
+    }
+
+    function clearKetFilter(itemId) {
+        const panel = document.getElementById('ket-panel-' + itemId);
+        panel.querySelectorAll('.filter-input[data-filter="keterangan"]:checked').forEach(cb => {
+            cb.checked = false;
+        });
+        updateKetTrigger(itemId);
+        // Trigger save
+        if (saveTimeouts[itemId]) clearTimeout(saveTimeouts[itemId]);
+        saveTimeouts[itemId] = setTimeout(() => saveRecipients(itemId), 500);
+    }
+
+    function updateKetTrigger(itemId) {
+        const panel = document.getElementById('ket-panel-' + itemId);
+        const trigger = document.getElementById('ket-trigger-text-' + itemId);
+        const tagsContainer = document.getElementById('ket-tags-' + itemId);
+        const checked = panel.querySelectorAll('.filter-input[data-filter="keterangan"]:checked');
+        const count = checked.length;
+
+        if (count === 0) {
+            trigger.innerHTML = '<i class="ri-filter-3-line"></i> Pilih Keterangan...';
+            tagsContainer.innerHTML = '';
+        } else {
+            trigger.innerHTML = `<i class="ri-check-double-line"></i> ${count} keterangan dipilih`;
+            // Render tags
+            let html = '';
+            checked.forEach(cb => {
+                html += `<span class="ket-tag">${cb.dataset.value} <button type="button" onclick="removeKetTag(${itemId}, '${cb.dataset.value}')">&times;</button></span>`;
+            });
+            tagsContainer.innerHTML = html;
+        }
+    }
+
+    function removeKetTag(itemId, value) {
+        const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="keterangan"][data-value="${value}"]`);
+        if (cb) {
+            cb.checked = false;
+            updateKetTrigger(itemId);
+            if (saveTimeouts[itemId]) clearTimeout(saveTimeouts[itemId]);
+            saveTimeouts[itemId] = setTimeout(() => saveRecipients(itemId), 500);
+        }
+    }
+
+    // Close dropdown saat klik di luar
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.ket-dropdown')) {
+            document.querySelectorAll('.ket-dropdown-panel.open').forEach(p => p.classList.remove('open'));
+            document.querySelectorAll('.ket-dropdown.active').forEach(d => d.classList.remove('active'));
+        }
+    });
+
+    // Attach change listeners ke keterangan checkboxes
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.ket-option input.filter-input[data-filter="keterangan"]').forEach(cb => {
+            cb.addEventListener('change', function() {
+                updateKetTrigger(this.dataset.item);
+            });
+        });
+
+        // Update trigger text pada load berdasarkan pre-check
+        @foreach($budgetPackage->items as $item)
+            updateKetTrigger({{ $item->id }});
+        @endforeach
+    });
+</script>
 <style>
     @keyframes spin { 100% { transform: rotate(360deg); } }
-    .keterangan-pills-container { display: flex; flex-wrap: wrap; gap: 6px; }
-    .pill-keterangan span { font-size: 12px; }
-    .pill-keterangan .ket-count { color: #94A3B8; font-weight: 400; }
-    .pill-keterangan input:checked + span .ket-count { color: inherit; opacity: 0.7; }
+
+    /* ── Keterangan Dropdown ── */
+    .ket-dropdown { position: relative; }
+    .ket-dropdown-trigger {
+        display: flex; align-items: center; justify-content: space-between;
+        width: 100%; padding: 8px 12px;
+        background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px;
+        font-size: 12.5px; color: #475569; cursor: pointer;
+        transition: all 0.2s;
+    }
+    .ket-dropdown-trigger:hover { border-color: #C62828; background: #FEF2F2; }
+    .ket-dropdown.active .ket-dropdown-trigger { border-color: #C62828; box-shadow: 0 0 0 3px rgba(198,40,40,0.08); }
+    .ket-trigger-text { display: flex; align-items: center; gap: 6px; }
+    .ket-trigger-text i { font-size: 14px; }
+    .ket-arrow { font-size: 16px; color: #94A3B8; transition: transform 0.2s; }
+    .ket-dropdown.active .ket-arrow { transform: rotate(180deg); }
+
+    .ket-dropdown-panel {
+        display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+        background: #fff; border: 1px solid #E2E8F0; border-radius: 10px;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05);
+        z-index: 50; overflow: hidden;
+    }
+    .ket-dropdown-panel.open { display: block; }
+
+    .ket-search-wrap {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 12px; border-bottom: 1px solid #F1F5F9;
+    }
+    .ket-search-wrap i { color: #94A3B8; font-size: 15px; }
+    .ket-search-input {
+        border: none; outline: none; width: 100%;
+        font-size: 12.5px; color: #334155; background: transparent;
+    }
+    .ket-search-input::placeholder { color: #CBD5E1; }
+
+    .ket-options-list { max-height: 200px; overflow-y: auto; padding: 4px 0; }
+    .ket-option {
+        display: flex; align-items: center; gap: 8px;
+        padding: 7px 12px; cursor: pointer; font-size: 12.5px;
+        transition: background 0.15s;
+    }
+    .ket-option:hover { background: #F8FAFC; }
+    .ket-option input { display: none; }
+    .ket-option-check {
+        width: 18px; height: 18px; border-radius: 4px;
+        border: 1.5px solid #CBD5E1; display: flex; align-items: center; justify-content: center;
+        font-size: 11px; color: transparent; transition: all 0.15s; flex-shrink: 0;
+    }
+    .ket-option input:checked ~ .ket-option-check {
+        background: #C62828; border-color: #C62828; color: #fff;
+    }
+    .ket-option-name { flex: 1; color: #334155; font-weight: 500; }
+    .ket-option input:checked ~ .ket-option-name { color: #C62828; font-weight: 600; }
+    .ket-option-count {
+        font-size: 11px; color: #94A3B8; background: #F1F5F9;
+        padding: 1px 6px; border-radius: 4px; font-weight: 600;
+    }
+    .ket-empty { padding: 16px; text-align: center; color: #94A3B8; font-size: 12px; }
+
+    .ket-footer {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 8px 12px; border-top: 1px solid #F1F5F9; background: #FAFBFC;
+    }
+    .ket-clear-btn, .ket-apply-btn {
+        padding: 4px 12px; border-radius: 6px; font-size: 11px;
+        font-weight: 600; cursor: pointer; border: none; transition: all 0.15s;
+    }
+    .ket-clear-btn { background: #F1F5F9; color: #64748B; }
+    .ket-clear-btn:hover { background: #E2E8F0; }
+    .ket-apply-btn { background: #C62828; color: #fff; }
+    .ket-apply-btn:hover { background: #B71C1C; }
+
+    /* Selected tags */
+    .ket-selected-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .ket-tag {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: #FEF2F2; color: #C62828; border: 1px solid #FECACA;
+        padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    }
+    .ket-tag button {
+        background: none; border: none; color: #C62828; font-size: 14px;
+        cursor: pointer; padding: 0 2px; line-height: 1; opacity: 0.6;
+    }
+    .ket-tag button:hover { opacity: 1; }
 </style>
 @endsection
