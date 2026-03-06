@@ -96,7 +96,7 @@ class PackageItemController extends Controller
     public function saveRecipients(Request $request, PackageItem $packageItem)
     {
         $validated = $request->validate([
-            'satker_ids' => 'required|array',
+            'satker_ids' => 'present|array',
             'satker_ids.*' => 'exists:satkers,id',
             'filters' => 'nullable|array',
         ]);
@@ -115,21 +115,34 @@ class PackageItemController extends Controller
             }
         }
 
-        foreach ($validated['satker_ids'] as $satkerId) {
-            $recipient = PackageItemRecipient::create([
-                'package_item_id' => $packageItem->id,
-                'satker_id' => $satkerId,
-                'recipient_filters' => $filters,
-            ]);
-            $recipient->calculateMatchedCount();
+        if (!empty($validated['satker_ids'])) {
+            foreach ($validated['satker_ids'] as $satkerId) {
+                $recipient = PackageItemRecipient::create([
+                    'package_item_id' => $packageItem->id,
+                    'satker_id' => $satkerId,
+                    'recipient_filters' => $filters,
+                ]);
+                $recipient->calculateMatchedCount();
+            }
         }
 
         // Update calculated values on package item
         $this->recalculatePackageItem($packageItem);
 
+        // Load satker relation so we can return recipient details to UI
+        $packageItem->load('recipients.satker');
+        
+        $recipientsDetail = $packageItem->recipients->map(function ($r) {
+            return [
+                'satker_name' => $r->satker->name,
+                'count' => $r->matched_count,
+            ];
+        });
+
         return response()->json([
             'success' => true,
             'total_recipients' => $packageItem->recipients()->sum('matched_count'),
+            'recipients_detail' => $recipientsDetail,
         ]);
     }
 

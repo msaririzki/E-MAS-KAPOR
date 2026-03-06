@@ -10,160 +10,187 @@
 @endsection
 
 @section('content')
-<div class="page-header">
-    <div class="page-header-row">
-        <div>
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-                <a href="{{ route('admin.budget.show-year', $budgetPackage->budgetYear) }}" class="btn btn-ghost btn-sm" style="padding: 4px 8px;">
-                    <i class="ri-arrow-left-line"></i>
-                </a>
-                <h1 style="font-size: 22px; font-weight: 700;">{{ $budgetPackage->name }}</h1>
-                <span class="badge" style="background: {{ $budgetPackage->status_color['bg'] }}; color: {{ $budgetPackage->status_color['text'] }};">
+
+{{-- Hero Section --}}
+<div class="package-hero">
+    <div class="package-hero-inner">
+        <div class="package-hero-back">
+            <a href="{{ route('admin.budget.show-year', $budgetPackage->budgetYear) }}" class="btn-back">
+                <i class="ri-arrow-left-line"></i>
+            </a>
+        </div>
+        <div class="package-hero-content">
+            <div class="package-title-wrapper">
+                <h1 class="package-title">{{ $budgetPackage->name }}</h1>
+                <span class="badge badge-package" style="background: {{ $budgetPackage->status_color['bg'] }}; color: {{ $budgetPackage->status_color['text'] }}; border: 1px solid {{ str_replace(')', ', 0.2)', str_replace('rgb', 'rgba', $budgetPackage->status_color['text'])) }};">
                     {{ $budgetPackage->status_label }}
                 </span>
             </div>
-            <p style="color: #6B7280; font-size: 14px; margin-left: 40px;">
-                {{ $budgetPackage->budgetYear->name }} — {{ $budgetPackage->description ?? 'Belum ada deskripsi' }}
+            <p class="package-desc">
+                <i class="ri-calendar-event-line"></i> Tahun Anggaran {{ $budgetPackage->budgetYear->name }} &nbsp; <span class="dot-sep">&bull;</span> &nbsp; {{ $budgetPackage->description ?? 'Tidak ada deskripsi' }}
             </p>
         </div>
     </div>
 </div>
 
-{{-- Wizard Navigation --}}
-<div class="wizard-actions">
-    <a href="{{ route('admin.budget.wizard.step1', $budgetPackage) }}" class="wizard-action-card">
-        <div class="wizard-step-number">1</div>
-        <div class="wizard-step-info">
-            <h3>Pilih Barang</h3>
-            <p>Pilih item kapor yang akan disertakan dalam paket ini</p>
-        </div>
-        <div class="wizard-step-stat">
-            <span class="stat-num">{{ $budgetPackage->items->count() }}</span>
-            <span class="stat-label">Item Dipilih</span>
-        </div>
-        <i class="ri-arrow-right-s-line wizard-arrow"></i>
-    </a>
+{{-- Wizard Steps Container --}}
+<div class="wizard-steps-container">
+    <div class="wizard-track">
+        {{-- Step 1 --}}
+        <a href="{{ route('admin.budget.wizard.step1', $budgetPackage) }}" class="wizard-step-card">
+            <div class="wizard-step-header">
+                <div class="wizard-step-number">1</div>
+                <div class="wizard-step-title">
+                    <h3>Pilih Barang</h3>
+                    <p>Pilih item kapor yang disertakan</p>
+                </div>
+            </div>
+            <div class="wizard-step-body">
+                <div class="stat-value">
+                    <span class="num">{{ $budgetPackage->items->count() }}</span>
+                    <span class="label">Item</span>
+                </div>
+                <i class="ri-arrow-right-line wizard-step-arrow"></i>
+            </div>
+        </a>
 
-    <a href="{{ route('admin.budget.wizard.step2', $budgetPackage) }}" class="wizard-action-card {{ $budgetPackage->items->count() == 0 ? 'disabled' : '' }}">
-        <div class="wizard-step-number">2</div>
-        <div class="wizard-step-info">
-            <h3>Tentukan Penerima</h3>
-            <p>Pilih satker & filter personil per item</p>
-        </div>
-        <div class="wizard-step-stat">
-            <span class="stat-num">{{ $budgetPackage->items->sum(fn($i) => $i->recipients->count()) }}</span>
-            <span class="stat-label">Satker Terpilih</span>
-        </div>
-        <i class="ri-arrow-right-s-line wizard-arrow"></i>
-    </a>
+        {{-- Step 2 --}}
+        <a href="{{ route('admin.budget.wizard.step2', $budgetPackage) }}" class="wizard-step-card {{ $budgetPackage->items->count() == 0 ? 'disabled' : '' }}">
+            <div class="wizard-step-header">
+                <div class="wizard-step-number">2</div>
+                <div class="wizard-step-title">
+                    <h3>Tentukan Penerima</h3>
+                    <p>Pilih satker & filter personil</p>
+                </div>
+            </div>
+            <div class="wizard-step-body">
+                <div class="stat-value">
+                    <span class="num">{{ $budgetPackage->items->sum(fn($i) => $i->recipients->count()) }}</span>
+                    <span class="label">Satker</span>
+                </div>
+                <i class="ri-arrow-right-line wizard-step-arrow"></i>
+            </div>
+        </a>
 
-    <a href="{{ route('admin.budget.wizard.step3', $budgetPackage) }}" class="wizard-action-card {{ $budgetPackage->items->count() == 0 ? 'disabled' : '' }}">
-        <div class="wizard-step-number">3</div>
-        <div class="wizard-step-info">
-            <h3>Preview & Hitung</h3>
-            <p>Ringkasan total barang, penerima, dan anggaran</p>
-        </div>
-        <div class="wizard-step-stat">
-            <span class="stat-num">{{ $budgetPackage->formatted_budget }}</span>
-            <span class="stat-label">Total Anggaran</span>
-        </div>
-        <i class="ri-arrow-right-s-line wizard-arrow"></i>
-    </a>
-</div>
-
-{{-- Export Actions --}}
-@if($budgetPackage->items->count() > 0)
-<div class="export-actions" style="margin-top: 20px;">
-    <a href="{{ route('admin.budget.recap', $budgetPackage) }}" class="export-card">
-        <div class="export-icon" style="background: #EFF6FF; color: #3B82F6;">
-            <i class="ri-file-list-3-line"></i>
-        </div>
-        <div class="export-info">
-            <h4>Rekapan</h4>
-            <p>Lihat rekapan lengkap per item & satker</p>
-        </div>
-        <i class="ri-arrow-right-s-line" style="color: #D1D5DB; font-size: 18px;"></i>
-    </a>
-    <a href="{{ route('admin.budget.invoice', $budgetPackage) }}" class="export-card">
-        <div class="export-icon" style="background: #FEF3C7; color: #D97706;">
-            <i class="ri-file-text-line"></i>
-        </div>
-        <div class="export-info">
-            <h4>Invoice HPS</h4>
-            <p>Generate Harga Perkiraan Sendiri (HPS)</p>
-        </div>
-        <i class="ri-arrow-right-s-line" style="color: #D1D5DB; font-size: 18px;"></i>
-    </a>
-    <a href="{{ route('admin.budget.export-csv', $budgetPackage) }}" class="export-card" data-download data-estimate="10">
-        <div class="export-icon" style="background: #D1FAE5; color: #059669;">
-            <i class="ri-file-excel-line"></i>
-        </div>
-        <div class="export-info">
-            <h4>Export Excel Rekapan</h4>
-            <p>Download format Excel (.xlsx)</p>
-        </div>
-        <i class="ri-download-line" style="color: #D1D5DB; font-size: 18px;"></i>
-        <div class="export-loading">
-            <div class="export-spinner"></div>
-            <span class="export-loading-text">Memproses...</span>
-        </div>
-    </a>
-    <a href="{{ route('admin.budget.export-detail', $budgetPackage) }}" class="export-card" data-download data-estimate="20">
-        <div class="export-icon" style="background: #EDE9FE; color: #7C3AED;">
-            <i class="ri-team-line"></i>
-        </div>
-        <div class="export-info">
-            <h4>Export Detail Penerima</h4>
-            <p>Daftar nominatif per personel (.xlsx)</p>
-        </div>
-        <i class="ri-download-line" style="color: #D1D5DB; font-size: 18px;"></i>
-        <div class="export-loading">
-            <div class="export-spinner"></div>
-            <span class="export-loading-text">Memproses...</span>
-        </div>
-    </a>
-</div>
-@endif
-
-{{-- Summary Table if items exist --}}
-@if($budgetPackage->items->count() > 0)
-<div class="card" style="margin-top: 24px;">
-    <div class="card-head">
-        <h3>Item dalam Paket</h3>
+        {{-- Step 3 --}}
+        <a href="{{ route('admin.budget.wizard.step3', $budgetPackage) }}" class="wizard-step-card {{ $budgetPackage->items->count() == 0 ? 'disabled' : '' }}">
+            <div class="wizard-step-header">
+                <div class="wizard-step-number">3</div>
+                <div class="wizard-step-title">
+                    <h3>Preview & Hitung</h3>
+                    <p>Ringkasan total & anggaran</p>
+                </div>
+            </div>
+            <div class="wizard-step-body">
+                <div class="stat-value highlight">
+                    <span class="num">{{ $budgetPackage->formatted_budget }}</span>
+                    <span class="label">Total Anggaran</span>
+                </div>
+                <i class="ri-arrow-right-line wizard-step-arrow"></i>
+            </div>
+        </a>
     </div>
-    <div class="card-body flush">
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>NO</th>
-                        <th>NAMA ITEM</th>
-                        <th>KATEGORI</th>
-                        <th>HARGA</th>
-                        <th>QTY</th>
-                        <th>TOTAL</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($budgetPackage->items as $idx => $item)
-                    <tr>
-                        <td>{{ $idx + 1 }}</td>
-                        <td style="font-weight: 600;">{{ $item->kaporItem->item_name }}</td>
-                        <td><span class="badge badge-neutral">{{ $item->kaporItem->category }}</span></td>
-                        <td>{{ $item->formatted_price }}</td>
-                        <td>{{ $item->calculated_qty }}</td>
-                        <td style="font-weight: 600;">{{ $item->formatted_total }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-                <tfoot>
-                    <tr style="background: #F9FAFB;">
-                        <td colspan="4" style="font-weight: 700; text-align: right;">GRAND TOTAL</td>
-                        <td style="font-weight: 700;">{{ $budgetPackage->items->sum('calculated_qty') }}</td>
-                        <td style="font-weight: 700; color: #B91C1C;">{{ $budgetPackage->formatted_budget }}</td>
-                    </tr>
-                </tfoot>
-            </table>
+</div>
+
+@if($budgetPackage->items->count() > 0)
+<div class="layout-grid">
+    {{-- Left Column: Summary Table --}}
+    <div class="layout-main">
+        <div class="card premium-card">
+            <div class="card-head">
+                <div class="card-title-with-icon">
+                    <div class="title-icon"><i class="ri-list-check-3"></i></div>
+                    <h3>Item dalam Paket</h3>
+                </div>
+            </div>
+            <div class="card-body flush">
+                <div class="table-wrap custom-scrollbar">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th width="5%">NO</th>
+                                <th>NAMA ITEM</th>
+                                <th>KATEGORI</th>
+                                <th class="text-right">HARGA (Rp)</th>
+                                <th class="text-center">QTY</th>
+                                <th class="text-right">TOTAL (Rp)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($budgetPackage->items as $idx => $item)
+                            <tr>
+                                <td class="text-center text-muted">{{ $idx + 1 }}</td>
+                                <td>
+                                    <span class="item-name">{{ $item->kaporItem->item_name }}</span>
+                                </td>
+                                <td><span class="badge badge-neutral badge-sm">{{ $item->kaporItem->category }}</span></td>
+                                <td class="text-right text-muted">{{ str_replace('Rp ', '', $item->formatted_price) }}</td>
+                                <td class="text-center font-semibold">{{ number_format($item->calculated_qty, 0, ',', '.') }}</td>
+                                <td class="text-right font-bold text-dark">{{ str_replace('Rp ', '', $item->formatted_total) }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-total-row">
+                                <td colspan="4" class="text-right">GRAND TOTAL KESELURUHAN</td>
+                                <td class="text-center qty-total">{{ number_format($budgetPackage->items->sum('calculated_qty'), 0, ',', '.') }}</td>
+                                <td class="text-right grand-total">{{ $budgetPackage->formatted_budget }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Right Column: Export Actions --}}
+    <div class="layout-sidebar">
+        <div class="action-panel">
+            <div class="panel-header">
+                <h3>Aksi & Ekspor</h3>
+                <p>Opsi cetak dan unduh data paket</p>
+            </div>
+            <div class="export-actions-grid">
+                <a href="{{ route('admin.budget.recap', $budgetPackage) }}" class="export-btn export-blue">
+                    <div class="export-icon"><i class="ri-file-list-3-line"></i></div>
+                    <div class="export-info">
+                        <h4>Rekapan HTML</h4>
+                        <p>Lihat di browser</p>
+                    </div>
+                </a>
+                
+                <a href="{{ route('admin.budget.invoice', $budgetPackage) }}" class="export-btn export-orange">
+                    <div class="export-icon"><i class="ri-file-text-line"></i></div>
+                    <div class="export-info">
+                        <h4>Invoice HPS</h4>
+                        <p>Generate format HPS</p>
+                    </div>
+                </a>
+
+                <div class="export-divider"><span>Format Excel</span></div>
+
+                <a href="{{ route('admin.budget.export-csv', $budgetPackage) }}" class="export-btn export-green" data-download data-estimate="10">
+                    <div class="export-icon"><i class="ri-file-excel-line"></i></div>
+                    <div class="export-info">
+                        <h4>Export Rekapan</h4>
+                        <p>Unduh file .xlsx</p>
+                    </div>
+                    <div class="export-loading">
+                        <i class="ri-loader-4-line spinner"></i>
+                    </div>
+                </a>
+                
+                <a href="{{ route('admin.budget.export-detail', $budgetPackage) }}" class="export-btn export-purple" data-download data-estimate="20">
+                    <div class="export-icon"><i class="ri-team-line"></i></div>
+                    <div class="export-info">
+                        <h4>Export Nominatif</h4>
+                        <p>Detail penerima per personil</p>
+                    </div>
+                    <div class="export-loading">
+                        <i class="ri-loader-4-line spinner"></i>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -172,105 +199,458 @@
 
 @section('styles')
 <style>
-    .wizard-actions {
-        display: flex; flex-direction: column; gap: 12px;
+    /* ── Utilities ── */
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-muted { color: #64748B; }
+    .text-dark { color: #0F172A; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .dot-sep { color: #94A3B8; }
+
+    /* ── Hero Section ── */
+    .package-hero {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+        position: relative;
+        overflow: hidden;
     }
-    .wizard-action-card {
-        display: flex; align-items: center; gap: 16px;
-        background: #fff; border: 1px solid #E5E7EB; border-radius: 14px;
-        padding: 20px 24px; text-decoration: none; color: inherit;
-        transition: all 0.2s; cursor: pointer;
+    .package-hero::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 4px;
+        background: linear-gradient(90deg, #C62828, #E53935, #EF5350);
     }
-    .wizard-action-card:hover {
-        border-color: #B91C1C; box-shadow: 0 4px 12px rgba(185,28,28,0.08);
-        transform: translateY(-1px);
+    .package-hero-inner {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
     }
-    .wizard-action-card.disabled {
-        opacity: 0.5; pointer-events: none;
+    .btn-back {
+        display: flex;
+        align-items: center; justify-content: center;
+        width: 40px; height: 40px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        color: #475569;
+        font-size: 20px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    .btn-back:hover {
+        background: #C62828;
+        color: #ffffff;
+        border-color: #C62828;
+        transform: translateX(-2px);
+    }
+    .package-hero-content {
+        flex: 1;
+    }
+    .package-title-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+    .package-title {
+        font-size: 24px;
+        font-weight: 800;
+        color: #0F172A;
+        letter-spacing: -0.5px;
+        margin: 0;
+    }
+    .badge-package {
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .package-desc {
+        color: #64748B;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        margin: 0;
+    }
+    .package-desc i {
+        margin-right: 6px;
+        color: #94A3B8;
+        font-size: 16px;
+    }
+
+    /* ── Wizard Steps ── */
+    .wizard-steps-container {
+        margin-bottom: 24px;
+    }
+    .wizard-track {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+    .wizard-step-card {
+        background: #ffffff;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 20px;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .wizard-step-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0; right: 0;
+        width: 100px; height: 100px;
+        background: linear-gradient(135deg, transparent, rgba(198, 40, 40, 0.03));
+        border-radius: 100%;
+        transform: translate(30%, 30%);
+        transition: transform 0.3s;
+    }
+    .wizard-step-card:hover {
+        border-color: #C62828;
+        box-shadow: 0 10px 15px -3px rgba(198, 40, 40, 0.08), 0 4px 6px -4px rgba(198, 40, 40, 0.04);
+        transform: translateY(-2px);
+    }
+    .wizard-step-card:hover::after {
+        transform: translate(10%, 10%);
+        background: linear-gradient(135deg, transparent, rgba(198, 40, 40, 0.08));
+    }
+    .wizard-step-card.disabled {
+        opacity: 0.6;
+        pointer-events: none;
+        background: #F8FAFC;
+    }
+    .wizard-step-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        margin-bottom: 24px;
     }
     .wizard-step-number {
-        width: 40px; height: 40px; border-radius: 50%;
-        background: linear-gradient(135deg, #B91C1C, #DC2626);
-        color: #fff; font-size: 16px; font-weight: 800;
-        display: flex; align-items: center; justify-content: center;
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        background: #FEF2F2;
+        color: #C62828;
+        font-size: 16px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
+        border: 1px solid #FECACA;
     }
-    .wizard-step-info { flex: 1; }
-    .wizard-step-info h3 { font-size: 15px; font-weight: 700; color: #111827; }
-    .wizard-step-info p { font-size: 13px; color: #6B7280; margin-top: 2px; }
-    .wizard-step-stat { text-align: right; min-width: 100px; }
-    .wizard-step-stat .stat-num { display: block; font-size: 18px; font-weight: 700; color: #111827; }
-    .wizard-step-stat .stat-label { font-size: 11px; color: #9CA3AF; text-transform: uppercase; font-weight: 600; }
-    .wizard-arrow { font-size: 20px; color: #D1D5DB; flex-shrink: 0; }
+    .wizard-step-card:hover .wizard-step-number {
+        background: #C62828;
+        color: #ffffff;
+        border-color: #C62828;
+    }
+    .wizard-step-title h3 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1E293B;
+        margin: 0 0 2px 0;
+    }
+    .wizard-step-title p {
+        font-size: 12px;
+        color: #64748B;
+        margin: 0;
+        line-height: 1.4;
+    }
+    .wizard-step-body {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-top: auto;
+    }
+    .wizard-step-body .stat-value {
+        display: flex;
+        flex-direction: column;
+    }
+    .wizard-step-body .stat-value .num {
+        font-size: 22px;
+        font-weight: 800;
+        color: #0F172A;
+        line-height: 1;
+        margin-bottom: 4px;
+        letter-spacing: -0.5px;
+    }
+    .wizard-step-body .stat-value.highlight .num {
+        color: #C62828;
+    }
+    .wizard-step-body .stat-value .label {
+        font-size: 11px;
+        color: #94A3B8;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .wizard-step-arrow {
+        font-size: 20px;
+        color: #CBD5E1;
+        background: #F8FAFC;
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        transition: all 0.2s;
+    }
+    .wizard-step-card:hover .wizard-step-arrow {
+        color: #C62828;
+        background: #FEF2F2;
+        transform: translateX(3px);
+    }
 
-    .export-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-    .export-card {
-        display: flex; align-items: center; gap: 12px; position: relative;
-        background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
-        padding: 14px 16px; text-decoration: none; color: inherit; transition: all 0.2s;
+    /* ── Layout Grid (Table + Sidebar) ── */
+    .layout-grid {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 24px;
+        align-items: start;
     }
-    .export-card:hover { border-color: #B91C1C; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .export-icon {
-        width: 36px; height: 36px; border-radius: 8px;
-        display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
-    }
-    .export-info { flex: 1; }
-    .export-info h4 { font-size: 13px; font-weight: 700; color: #111827; }
-    .export-info p { font-size: 11px; color: #9CA3AF; margin-top: 1px; }
 
-    /* ══ Loading overlay untuk export cards ══ */
-    .export-card .export-loading {
-        display: none;
-        position: absolute; inset: 0;
-        background: rgba(255,255,255,0.92);
+    /* ── Premium Card & Table ── */
+    .premium-card {
+        border-color: #E2E8F0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .card-title-with-icon {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .title-icon {
+        width: 32px; height: 32px;
+        background: #EFF6FF;
+        color: #3B82F6;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px;
+    }
+    .premium-card .card-head h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0F172A;
+        margin: 0;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    .modern-table thead th {
+        background: #F8FAFC;
+        padding: 12px 16px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #E2E8F0;
+        border-top: 1px solid #E2E8F0;
+    }
+    .modern-table tbody td {
+        padding: 14px 16px;
+        font-size: 13.5px;
+        border-bottom: 1px solid #F1F5F9;
+        color: #334155;
+        vertical-align: middle;
+    }
+    .modern-table tbody tr:hover td {
+        background: #F8FAFC;
+    }
+    .item-name {
+        font-weight: 600;
+        color: #1E293B;
+    }
+    .badge-sm {
+        padding: 2px 6px;
+        font-size: 10.5px;
+        border-radius: 4px;
+    }
+
+    .table-total-row {
+        background: #F8FAFC;
+    }
+    .table-total-row td {
+        padding: 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #475569;
+        border-top: 2px solid #E2E8F0;
+    }
+    .qty-total {
+        color: #0F172A;
+        font-size: 14px;
+    }
+    .grand-total {
+        color: #C62828;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    /* ── Export Action Panel ── */
+    .action-panel {
+        background: #ffffff;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .panel-header {
+        margin-bottom: 16px;
+    }
+    .panel-header h3 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0F172A;
+        margin: 0 0 4px 0;
+    }
+    .panel-header p {
+        font-size: 12px;
+        color: #64748B;
+        margin: 0;
+    }
+    .export-actions-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .export-divider {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 8px 0;
+        color: #94A3B8;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .export-divider::before, .export-divider::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px dashed #E2E8F0;
+    }
+    .export-divider span {
+        padding: 0 10px;
+    }
+
+    .export-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px;
+        background: #ffffff;
+        border: 1px solid #E2E8F0;
         border-radius: 12px;
-        align-items: center; justify-content: center; gap: 10px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+    }
+    .export-btn:hover {
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transform: translateY(-1px);
+    }
+    .export-icon {
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+        transition: transform 0.2s;
+    }
+    .export-btn:hover .export-icon {
+        transform: scale(1.1);
+    }
+    .export-info {
+        flex: 1;
+    }
+    .export-info h4 {
+        font-size: 13px; font-weight: 700; color: #1E293B; margin: 0 0 2px 0;
+    }
+    .export-info p {
+        font-size: 12px; color: #64748B; margin: 0;
+    }
+
+    /* Color Variants for Export Cards */
+    .export-blue:hover { background: #EFF6FF; border-color: #BFDBFE; }
+    .export-blue .export-icon { background: #DBEAFE; color: #3B82F6; }
+    
+    .export-orange:hover { background: #FFF7ED; border-color: #FED7AA; }
+    .export-orange .export-icon { background: #FFEDD5; color: #F97316; }
+
+    .export-green:hover { background: #F0FDF4; border-color: #BBF7D0; }
+    .export-green .export-icon { background: #DCFCE7; color: #22C55E; }
+
+    .export-purple:hover { background: #FAF5FF; border-color: #E9D5FF; }
+    .export-purple .export-icon { background: #F3E8FF; color: #A855F7; }
+
+    /* Loading overlay */
+    .export-btn .export-loading {
+        position: absolute; inset: 0;
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(2px);
+        display: none; align-items: center; justify-content: center;
+        border-radius: 12px;
         z-index: 5;
     }
-    .export-card.is-loading .export-loading {
-        display: flex;
+    .export-btn.is-loading { pointer-events: none; }
+    .export-btn.is-loading .export-loading { display: flex; }
+    .spinner {
+        font-size: 24px; color: #C62828;
+        animation: spin 1s linear infinite;
     }
-    .export-card.is-loading {
-        pointer-events: none;
-    }
-    .export-spinner {
-        width: 20px; height: 20px;
-        border: 3px solid #E5E7EB;
-        border-top-color: #B91C1C;
-        border-radius: 50%;
-        animation: exportSpin 0.7s linear infinite;
-    }
-    @keyframes exportSpin {
-        to { transform: rotate(360deg); }
-    }
-    .export-loading-text {
-        font-size: 12px; font-weight: 600; color: #6B7280;
-    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
 
-    @media (max-width: 768px) { .export-actions { grid-template-columns: 1fr; } }
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .layout-grid { grid-template-columns: 1fr; }
+        .wizard-track { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+        .action-panel { display: flex; flex-direction: column; }
+        .export-actions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .export-divider { grid-column: 1 / -1; }
+    }
+    @media (max-width: 768px) {
+        .wizard-track { grid-template-columns: 1fr; }
+        .package-title-wrapper { flex-direction: column; align-items: flex-start; gap: 4px; }
+    }
 </style>
 @endsection
 
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Semua tombol export yang berupa download (bukan navigasi)
-    document.querySelectorAll('.export-card[data-download]').forEach(function(card) {
-        card.addEventListener('click', function(e) {
-            // Jangan block navigasi — file tetap didownload
-            // Tapi tampilkan loading overlay
-            card.classList.add('is-loading');
-
-            // Hilangkan loading setelah estimasi selesai
-            // Karena file download tidak bisa dideteksi via JS,
-            // gunakan timer berdasarkan ukuran data (min 3 detik, maks 30 detik)
-            var estimatedSeconds = parseInt(card.dataset.estimate || '5');
+    // Download Loading State
+    document.querySelectorAll('.export-btn[data-download]').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            btn.classList.add('is-loading');
+            var estimatedSeconds = parseInt(btn.dataset.estimate || '5');
             setTimeout(function() {
-                card.classList.remove('is-loading');
+                btn.classList.remove('is-loading');
             }, estimatedSeconds * 1000);
         });
     });
 });
 </script>
 @endsection
+
 
