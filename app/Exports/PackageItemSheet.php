@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Models\PackageItem;
 use App\Models\BudgetPackage;
+use App\Models\InvoiceSetting;
 use App\Models\Personnel;
 use App\Models\Satker;
 use Illuminate\Contracts\View\View;
@@ -22,6 +23,7 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
     protected $packageItem;
     protected $sheetName;
     protected $budgetPackage;
+    protected $matrixCount = 0;
 
     public function __construct(PackageItem $packageItem, string $sheetName, BudgetPackage $budgetPackage)
     {
@@ -139,6 +141,9 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
             }
         }
 
+        $this->matrixCount = count($matrix);
+        $settings = InvoiceSetting::getSettings();
+
         return view('admin.exports.recap_sheet', [
             'packageItem' => $this->packageItem,
             'kaporItem' => $kaporItem,
@@ -147,6 +152,7 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
             'matrix' => $matrix,
             'totalPerSize' => $totalPerSize,
             'grandTotal' => $grandTotal,
+            'settings' => $settings,
         ]);
     }
 
@@ -154,9 +160,85 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                // Formatting optional bisa ditaruh di sini
-                // Contoh: Bikin Header Tebal
-                $event->sheet->getDelegate()->getStyle('A6:Z8')->getFont()->setBold(true);
+                $sheet = $event->sheet->getDelegate();
+
+                // ═══ HITUNG POSISI BARIS ═══
+                // Baris 1-3: Kop surat (pojok kiri)
+                // Baris 4: kosong
+                // Baris 5: Judul dokumen
+                // Baris 6: kosong
+                // Baris 7-8: Header tabel (2 baris)
+                $headerStartRow = 7;
+                $firstDataRow = $headerStartRow + 2; // baris 9
+                $lastDataRow = $firstDataRow + max($this->matrixCount, 0) - 1;
+                $footerRow = $lastDataRow + 1;
+
+                // Hitung jumlah kolom
+                $totalSizeCols = 0;
+                foreach ($this->packageItem->kaporItem->sizes as $s) {
+                    $totalSizeCols++;
+                }
+                // NO + SATKER + sizes + UNKNOWN + JML = 2 + totalSizeCols + 1 + 1
+                $totalCols = 2 + $totalSizeCols + 1 + 1;
+                $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($totalCols);
+
+                // ═══ DEFAULT FONT ═══
+                $sheet->getParent()->getDefaultStyle()->getFont()->setName('Calibri')->setSize(10);
+
+                // ═══ KOP SURAT (Baris 1-3: bold, font 11, pojok kiri A-C) ═══
+                $sheet->getStyle('A1:C3')->getFont()->setBold(true)->setSize(11);
+                $sheet->getStyle('A1:C3')->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                // Garis bawah kop surat
+                $sheet->getStyle('A3:C3')->getBorders()->getBottom()
+                    ->setBorderStyle(Border::BORDER_MEDIUM)
+                    ->getColor()->setRGB('000000');
+
+                // ═══ JUDUL DOKUMEN (Baris 5: bold, font 11, underline, center) ═══
+                $sheet->getStyle("A5:{$lastColLetter}5")->getFont()->setBold(true)->setSize(11)->setUnderline(true);
+                $sheet->getStyle("A5:{$lastColLetter}5")->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                // ═══ HEADER TABEL (Baris 7-8) ═══
+                $headerRange = "A{$headerStartRow}:{$lastColLetter}" . ($headerStartRow + 1);
+                $sheet->getStyle($headerRange)->getFont()->setBold(true)->setSize(10);
+                $sheet->getStyle($headerRange)->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(Alignment::VERTICAL_CENTER);
+
+                // ═══ BORDER TABEL ═══
+                $fullTableRange = "A{$headerStartRow}:{$lastColLetter}{$footerRow}";
+                $sheet->getStyle($fullTableRange)->getBorders()->getAllBorders()
+                    ->setBorderStyle(Border::BORDER_THIN)
+                    ->getColor()->setRGB('000000');
+
+                // ═══ FOOTER TOTAL ═══
+                $sheet->getStyle("A{$footerRow}:{$lastColLetter}{$footerRow}")->getFont()->setBold(true)->setSize(10);
+                $sheet->getStyle("A{$footerRow}:{$lastColLetter}{$footerRow}")->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+                // ═══ TANDA TANGAN (pojok kanan, centered) ═══
+                $ttdStartRow = $footerRow + 2;
+                // Hitung kolom F-H equivalent (3 kolom terakhir)
+                $ttdStartCol = max($totalCols - 2, 1);
+                $ttdStartColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($ttdStartCol);
+
+                for ($r = $ttdStartRow; $r <= $ttdStartRow + 8; $r++) {
+                    $sheet->getStyle("{$ttdStartColLetter}{$r}:{$lastColLetter}{$r}")->getAlignment()
+                        ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                }
+                // Jabatan bold
+                $jabatanRow = $ttdStartRow + 2;
+                $sheet->getStyle("{$ttdStartColLetter}{$jabatanRow}")->getFont()->setBold(true);
+                // Nama bold + underline
+                $namaRow = $ttdStartRow + 7;
+                $sheet->getStyle("{$ttdStartColLetter}{$namaRow}")->getFont()->setBold(true)->setUnderline(true);
+
+                // ═══ COLUMN WIDTHS ═══
+                $sheet->getColumnDimension('A')->setWidth(6);   // NO
+                $sheet->getColumnDimension('B')->setWidth(30);  // SATKER
             },
         ];
     }

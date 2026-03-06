@@ -220,7 +220,6 @@
 @endsection
 
 @section('styles')
-<style>
     /* ── Hero Section & Wizard (Copied from Step 2) ── */
     .package-hero {
         background: #ffffff;
@@ -440,5 +439,4 @@
         .wizard-track { grid-template-columns: 1fr; }
         .stat-grid { grid-template-columns: 1fr; }
     }
-</style>
 @endsection

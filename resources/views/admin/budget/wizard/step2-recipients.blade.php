@@ -261,7 +261,6 @@
 @endsection
 
 @section('styles')
-<style>
     /* ── Utilities ── */
     .text-brand { color: #C62828; }
     .badge-sm { padding: 3px 8px; font-size: 10.5px; border-radius: 6px; }
@@ -498,7 +497,6 @@
     .auto-save-status.error { opacity: 1; visibility: visible; transform: translateY(0); color: #EF4444; border-color: #FECACA; background: #FEF2F2; }
     
     .spinner { display: inline-block; animation: spin 1s linear infinite; }
-</style>
 @endsection
 
 @section('scripts')
