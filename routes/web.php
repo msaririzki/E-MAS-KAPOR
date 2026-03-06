@@ -157,6 +157,9 @@ Route::middleware(['auth', 'role:admin|superadmin'])->prefix('admin')->name('adm
         // Item operations
         Route::delete('/package-items/{packageItem}', [\App\Http\Controllers\Admin\PackageItemController::class, 'removeItem'])->name('wizard.remove-item');
 
+        // API: Ambil keterangan unik per satker
+        Route::get('/satker-keterangan/{satker}', [\App\Http\Controllers\Admin\PackageItemController::class, 'getSatkerKeterangan'])->name('wizard.satker-keterangan');
+
         // Export & Invoice
         Route::get('/packages/{budgetPackage}/recap', [\App\Http\Controllers\Admin\BudgetExportController::class, 'previewRecap'])->name('recap');
         Route::get('/packages/{budgetPackage}/invoice', [\App\Http\Controllers\Admin\BudgetExportController::class, 'previewInvoice'])->name('invoice');

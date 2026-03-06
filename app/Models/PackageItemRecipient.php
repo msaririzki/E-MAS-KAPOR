@@ -73,6 +73,11 @@ class PackageItemRecipient extends Model
             });
         }
 
+        // Filter berdasarkan keterangan
+        if (!empty($filters['keterangan'])) {
+            $query->whereIn('keterangan', $filters['keterangan']);
+        }
+
         $count = $query->count();
         $this->update(['matched_count' => $count]);
 

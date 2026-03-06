@@ -227,6 +227,14 @@
                                 </label>
                             </div>
                         </div>
+
+                        {{-- Keterangan (Dinamis per satker) --}}
+                        <div class="filter-item" id="keterangan-group-{{ $item->id }}">
+                            <label class="filter-label">Keterangan <span class="optional-text">(Pilih satker dulu)</span></label>
+                            <div class="keterangan-pills-container" id="keterangan-pills-{{ $item->id }}">
+                                <span style="font-size: 12px; color: #94A3B8; font-style: italic;">Centang satker untuk melihat pilihan keterangan.</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -503,6 +511,9 @@
 
 @section('scripts')
 <script>
+    // Global debounce timeouts
+    let saveTimeouts = {};
+
     // Dinamis: tampilkan/sembunyikan rank options berdasarkan tipe personil
     function toggleRankOptions(itemId) {
         const polriChecked = document.querySelector(`input[data-item="${itemId}"][data-value="polri"]`)?.checked;
@@ -537,6 +548,74 @@
         });
     }
 
+    // Load keterangan unik dari satker yang dipilih untuk item tertentu
+    async function loadKeteranganForItem(itemId) {
+        const container = document.getElementById('keterangan-pills-' + itemId);
+        const satkerList = document.getElementById('satker-list-' + itemId);
+        const checkedSatkers = satkerList.querySelectorAll('input[type="checkbox"]:checked');
+
+        if (checkedSatkers.length === 0) {
+            container.innerHTML = '<span style="font-size: 12px; color: #94A3B8; font-style: italic;">Centang satker untuk melihat pilihan keterangan.</span>';
+            return;
+        }
+
+        container.innerHTML = '<span style="font-size: 12px; color: #94A3B8;"><i class="ri-loader-4-line spinner"></i> Memuat keterangan...</span>';
+
+        try {
+            // Ambil keterangan dari semua satker yang dipilih
+            const allKeterangan = {};
+            const promises = Array.from(checkedSatkers).map(async (cb) => {
+                const resp = await fetch(`/admin/budget/satker-keterangan/${cb.value}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await resp.json();
+                data.forEach(item => {
+                    if (allKeterangan[item.value]) {
+                        allKeterangan[item.value] += item.count;
+                    } else {
+                        allKeterangan[item.value] = item.count;
+                    }
+                });
+            });
+
+            await Promise.all(promises);
+
+            // Ambil keterangan yang sudah dipilih sebelumnya
+            const existingChecked = [];
+            container.querySelectorAll('input.filter-input:checked').forEach(cb => {
+                existingChecked.push(cb.dataset.value);
+            });
+
+            const keys = Object.keys(allKeterangan).sort();
+            if (keys.length === 0) {
+                container.innerHTML = '<span style="font-size: 12px; color: #94A3B8; font-style: italic;">Tidak ada data keterangan di satker terpilih.</span>';
+                return;
+            }
+
+            let html = '';
+            keys.forEach(ket => {
+                const isChecked = existingChecked.includes(ket) ? 'checked' : '';
+                html += `
+                    <label class="pill-check pill-keterangan">
+                        <input type="checkbox" class="filter-input" data-filter="keterangan" data-value="${ket}" data-item="${itemId}" ${isChecked}>
+                        <span>${ket} <small class="ket-count">(${allKeterangan[ket]})</small></span>
+                    </label>`;
+            });
+            container.innerHTML = html;
+
+            // Attach event listeners ke pill baru
+            container.querySelectorAll('input.filter-input').forEach(input => {
+                input.addEventListener('change', () => {
+                    if (saveTimeouts[itemId]) clearTimeout(saveTimeouts[itemId]);
+                    saveTimeouts[itemId] = setTimeout(() => saveRecipients(itemId), 500);
+                });
+            });
+        } catch (err) {
+            console.error('Error loading keterangan:', err);
+            container.innerHTML = '<span style="font-size: 12px; color: #EF4444;">Gagal memuat keterangan.</span>';
+        }
+    }
+
     // Toggle Semua Satker (Check/Uncheck All)
     function toggleAllSatkers(itemId) {
         const container = document.getElementById('satker-list-' + itemId);
@@ -565,6 +644,9 @@
             btn.classList.remove('active');
         }
         
+        // Load keterangan untuk satker yang dipilih
+        loadKeteranganForItem(itemId);
+
         // Trigger auto-save immediately
         saveRecipients(itemId);
     }
@@ -723,9 +805,23 @@
             toggleRankOptions({{ $item->id }});
         @endforeach
 
-        // EVENT LISTENERS FOR AUTO-SAVE
-        let saveTimeouts = {};
+        // Load keterangan untuk item yang sudah punya satker terpilih
+        @foreach($budgetPackage->items as $item)
+            @if($item->recipients->count() > 0)
+                loadKeteranganForItem({{ $item->id }}).then(() => {
+                    // Pre-check keterangan dari filter tersimpan
+                    const filters = savedFilters[{{ $item->id }}];
+                    if (filters && filters.keterangan && Array.isArray(filters.keterangan)) {
+                        filters.keterangan.forEach(val => {
+                            const cb = document.querySelector(`input.filter-input[data-item="{{ $item->id }}"][data-filter="keterangan"][data-value="${val}"]`);
+                            if (cb) cb.checked = true;
+                        });
+                    }
+                });
+            @endif
+        @endforeach
 
+        // EVENT LISTENERS FOR AUTO-SAVE
         document.querySelectorAll('.recipient-card').forEach(card => {
             const itemId = card.id.replace('item-card-', '');
             const inputs = card.querySelectorAll('input[type="checkbox"]');
@@ -735,6 +831,11 @@
                     // Cek jika ini adalah input tipe personil untuk toggle tampilan rank
                     if (input.dataset.filter === 'personnel_type') {
                         toggleRankOptions(itemId);
+                    }
+
+                    // Cek jika ini adalah satker checkbox, load keterangan
+                    if (!input.dataset.filter && input.name && input.name.startsWith('satker_')) {
+                        loadKeteranganForItem(itemId);
                     }
                     
                     // Clear existing delay
@@ -753,5 +854,9 @@
 </script>
 <style>
     @keyframes spin { 100% { transform: rotate(360deg); } }
+    .keterangan-pills-container { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pill-keterangan span { font-size: 12px; }
+    .pill-keterangan .ket-count { color: #94A3B8; font-weight: 400; }
+    .pill-keterangan input:checked + span .ket-count { color: inherit; opacity: 0.7; }
 </style>
 @endsection

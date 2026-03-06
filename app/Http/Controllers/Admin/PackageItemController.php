@@ -7,6 +7,7 @@ use App\Models\BudgetPackage;
 use App\Models\KaporItem;
 use App\Models\PackageItem;
 use App\Models\PackageItemRecipient;
+use App\Models\Personnel;
 use App\Models\Satker;
 use Illuminate\Http\Request;
 
@@ -216,5 +217,26 @@ class PackageItemController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Item berhasil dihapus dari paket');
+    }
+
+    /**
+     * API: Ambil daftar keterangan unik per satker
+     */
+    public function getSatkerKeterangan(Satker $satker)
+    {
+        $keteranganList = Personnel::where('satker_id', $satker->id)
+            ->where('is_active', true)
+            ->whereNotNull('keterangan')
+            ->where('keterangan', '!=', '')
+            ->selectRaw('keterangan, COUNT(*) as jumlah')
+            ->groupBy('keterangan')
+            ->orderBy('keterangan')
+            ->get()
+            ->map(fn($row) => [
+                'value' => $row->keterangan,
+                'count' => $row->jumlah,
+            ]);
+
+        return response()->json($keteranganList);
     }
 }
