@@ -16,7 +16,7 @@ RUN npm run build
 # ============================================================
 # STAGE 2: PHP Application
 # ============================================================
-FROM php:8.2-fpm
+FROM php:8.3-fpm
 
 ARG HOST_UID=1000
 ARG HOST_GID=1000
@@ -67,6 +67,9 @@ COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
 
 # Copy hasil build frontend dari stage 1
 COPY --from=node-builder /app/public/build ./public/build
+
+# Setup git safe directory ownership configuration for composer
+RUN git config --global --add safe.directory /var/www/html
 
 # Install PHP dependencies (production only)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
