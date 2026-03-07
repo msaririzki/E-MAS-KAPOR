@@ -106,6 +106,35 @@
                          placeholder="Contoh: 08123456789">
                      @error('phone') <span class="error-msg">{{ $message }}</span> @enderror
                  </div>
+                 <div class="form-group-simple">
+                     <label>Satker (Untuk Admin Satker / Personil)</label>
+                     <div class="custom-select form-input-simple @error('satker_id') is-invalid @enderror" 
+                          onclick="toggleDropdown(this)" id="satkerSelect">
+                         <div class="select-trigger">
+                             <span id="satkerLabel">
+                                 @if(old('satker_id'))
+                                     {{ $satkers->firstWhere('id', old('satker_id'))->name ?? '— Pilih Satker —' }}
+                                 @else
+                                     — Pilih Satker —
+                                 @endif
+                             </span>
+                             <i class="ri-arrow-down-s-line"></i>
+                         </div>
+                         <div class="custom-options" style="background: #fff !important;">
+                             <div class="options-scroll">
+                                 <div class="option" onclick="setSelectValue('satker_id', '', '— Pilih Satker —', this)">— Pilih Satker —</div>
+                                 @foreach($satkers as $satker)
+                                     <div class="option {{ old('satker_id') == $satker->id ? 'selected' : '' }}" 
+                                          onclick="setSelectValue('satker_id', '{{ $satker->id }}', '{{ $satker->name }}', this)">
+                                         {{ $satker->name }}
+                                     </div>
+                                 @endforeach
+                             </div>
+                         </div>
+                         <input type="hidden" name="satker_id" id="satker_id_input" value="{{ old('satker_id') }}">
+                     </div>
+                     @error('satker_id') <span class="error-msg">{{ $message }}</span> @enderror
+                 </div>
              </div>
  
              <div class="form-actions-simple">
@@ -1126,6 +1155,24 @@
             // Mark as selected in dropdown
             document.querySelectorAll('#editRoleSelect .option').forEach(opt => {
                 opt.classList.toggle('selected', opt.getAttribute('data-value') === roleName);
+            });
+        }
+
+        // Set Custom Select for Satker
+        const satkerInput = document.getElementById('edit_satker');
+        const satkerLabel = document.getElementById('edit_satker_label');
+        if (user.satker_id && user.satker) {
+            satkerInput.value = user.satker_id;
+            satkerLabel.innerText = user.satker.name;
+            
+            document.querySelectorAll('#editSatkerSelect .option').forEach(opt => {
+                opt.classList.toggle('selected', opt.getAttribute('data-value') == user.satker_id);
+            });
+        } else {
+            satkerInput.value = '';
+            satkerLabel.innerText = '— Kosongkan —';
+            document.querySelectorAll('#editSatkerSelect .option').forEach(opt => {
+                opt.classList.toggle('selected', opt.getAttribute('data-value') == '');
             });
         }
 

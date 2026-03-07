@@ -49,7 +49,8 @@ class UserController extends Controller
         $perPage = $request->get('per_page', 10);
         $users = $query->latest()->paginate($perPage)->withQueryString();
 
-        $satkers = Satker::orderBy('name')->get();
+        // Order by ID, but put 'SISWA' (id 40) just before 'POLRESTA MATARAM' (id 30)
+        $satkers = Satker::orderByRaw('CASE WHEN id = 40 THEN 29.5 ELSE id END ASC')->get();
         $roles = Role::where('name', '!=', 'personil')->get();
 
         // Calculate Stats
@@ -78,6 +79,7 @@ class UserController extends Controller
             'email' => $request->email ?? null,
             'password' => Hash::make($validated['password']),
             'is_active' => true, // Default active for new users
+            'satker_id' => $validated['satker_id'] ?? null,
         ]);
 
         $user->assignRole($validated['role']);
@@ -100,6 +102,7 @@ class UserController extends Controller
             'phone' => $validated['phone'],
             'email' => $validated['email'],
             'is_active' => $request->has('is_active'),
+            'satker_id' => $validated['satker_id'] ?? null,
         ];
 
         if (! empty($validated['password'])) {

@@ -60,6 +60,29 @@
                         </div>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Satker (Untuk Admin Satker / Personil)</label>
+                        <div class="custom-select form-input" onclick="toggleDropdown(this)" id="editSatkerSelect">
+                            <div class="select-trigger">
+                                <span id="edit_satker_label">— Pilih Satker —</span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </div>
+                            <div class="custom-options" style="background: #fff !important;">
+                                <div class="options-scroll">
+                                    <div class="option" onclick="setSelectValue('edit_satker', '', '— Kosongkan —', this)" data-value="">— Kosongkan —</div>
+                                    @foreach($satkers as $satker)
+                                        <div class="option" onclick="setSelectValue('edit_satker', '{{ $satker->id }}', '{{ $satker->name }}', this)"
+                                             data-value="{{ $satker->id }}">
+                                            {{ $satker->name }}
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <input type="hidden" name="satker_id" id="edit_satker">
+                        </div>
+                    </div>
+                </div>
                 <div class="form-group" style="margin-top:10px;">
                     <label class="checkbox-container">
                         <input type="checkbox" name="is_active" id="edit_is_active" value="1">

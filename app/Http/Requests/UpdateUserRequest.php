@@ -30,6 +30,7 @@ class UpdateUserRequest extends FormRequest
             'password' => 'nullable|string|min:8',
             'role' => 'required|exists:roles,name',
             'is_active' => 'boolean',
+            'satker_id' => 'nullable|exists:satkers,id',
         ];
     }
 }

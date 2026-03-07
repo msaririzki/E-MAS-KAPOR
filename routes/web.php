@@ -51,30 +51,13 @@ Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')-
 // â”€â”€ Admin Satker Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope::class])->prefix('admin-satker')->name('admin-satker.')->group(function () {
-    Route::get('/personil', function () {
-        return view('admin-satker.personnel.index');
-    }
-    )->name('personnel.index');
-
-    Route::get('/personil/{id}', function ($id) {
-        return view('admin-satker.personnel.show', compact('id'));
-    }
-    )->name('personnel.show');
-
-    Route::get('/monitor', function () {
-        return view('admin-satker.monitor');
-    }
-    )->name('monitor');
-
-    Route::get('/export', function () {
-        return 'Export Data Satker';
-    }
-    )->name('export');
+    Route::get('/monitor', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'monitor'])->name('monitor');
+    Route::get('/reports', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'reports'])->name('reports');
 });
 
 // â”€â”€ Admin Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-Route::middleware(['auth', 'role:admin|superadmin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin|superadmin|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
     // User Management
     Route::get('/users/template', [\App\Http\Controllers\UserController::class, 'downloadTemplate'])->name('users.template');
     Route::post('/users/import', [\App\Http\Controllers\UserController::class, 'import'])->name('users.import');

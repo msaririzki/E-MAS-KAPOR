@@ -284,6 +284,13 @@ class PersonnelController extends Controller
             'satker_id' => 'required|exists:satkers,id',
         ]);
 
+        $user = auth()->user();
+
+        // Admin satker hanya boleh import ke satkernya sendiri
+        if ($user->hasRole('admin_satker') && (int) $request->satker_id !== (int) $user->satker_id) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk satker tersebut.');
+        }
+
         try {
             $import = new PersonnelImport($request->satker_id);
             $collection = Excel::toCollection($import, $request->file('file'));
@@ -420,6 +427,10 @@ class PersonnelController extends Controller
      */
     public function exportPersonnel(Request $request)
     {
+        // Increase memory and time limits for heavy export operations
+        set_time_limit(0);
+        ini_set('memory_limit', '512M');
+
         $user = auth()->user();
 
         if ($user->hasRole('admin_satker')) {

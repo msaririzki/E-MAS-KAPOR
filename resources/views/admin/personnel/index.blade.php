@@ -519,6 +519,10 @@
         <form action="{{ route('admin.personnel.import') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="modal-body" style="padding: 24px;">
+                @if(auth()->user()->hasRole('admin_satker'))
+                    {{-- For Admin Satker, automatically use their own satker_id --}}
+                    <input type="hidden" name="satker_id" id="import_satker_id" value="{{ auth()->user()->satker_id }}">
+                @else
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label style="font-weight: 700; color: #374151;">PILIH SATUAN KERJA (SATKER) TUJUAN <span style="color: #EF4444;">*</span></label>
                     
@@ -536,6 +540,7 @@
 
                     <p style="font-size: 12px; color: #6B7280; margin-top: 4px;">Pilih satker yang sesuai dengan isi file yang akan diimport.</p>
                 </div>
+                @endif
                 
                 <script>
                     function openCustomSatkerDropdown() {

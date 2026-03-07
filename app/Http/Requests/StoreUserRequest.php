@@ -27,6 +27,7 @@ class StoreUserRequest extends FormRequest
             'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:8',
             'role' => 'required|exists:roles,name',
+            'satker_id' => 'nullable|exists:satkers,id',
         ];
     }
 }

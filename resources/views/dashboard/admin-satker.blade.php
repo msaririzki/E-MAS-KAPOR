@@ -75,7 +75,7 @@
                     style="width:{{ $pct }}%;"></div>
             </div>
             <div style="margin-top:12px; font-size:13px; color:#64748B;">
-                {{ $stats['submitted'] }} dari {{ $stats['total_personnel'] }} personil telah mengisi data kapor.
+                {{ $stats['personnel_submitted'] }} dari {{ $stats['total_personnel'] }} personil telah mengisi data kapor.
             </div>
         </div>
     </div>
@@ -104,7 +104,7 @@
                             <tr>
                                 <td>{{ $idx + 1 }}</td>
                                 <td style="font-weight:600;">{{ $p->full_name }}</td>
-                                <td>{{ $p->user->nrp_nip ?? '-' }}</td>
+                                <td>{{ ($p->user->nrp_nip && !str_starts_with($p->user->nrp_nip, 'TEMP-')) ? $p->user->nrp_nip : '-' }}</td>
                                 <td>{{ $p->rank->name ?? '-' }}</td>
                                 <td><span class="badge badge-warning"><i class="ri-time-line"></i> Belum Input</span></td>
                             </tr>

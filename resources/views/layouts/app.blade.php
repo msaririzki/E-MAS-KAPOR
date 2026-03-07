@@ -1023,13 +1023,17 @@
             @if(auth()->user()->hasRole('admin_satker'))
                 <div class="nav-section">
                     <div class="nav-section-label">Satker Saya</div>
-                    <a href="{{ route('admin-satker.personnel.index') }}"
-                        class="nav-link {{ request()->routeIs('admin-satker.personnel.*') ? 'active' : '' }}">
-                        <i class="ri-team-line"></i> Personil
+                    <a href="{{ route('admin.personnel.index') }}"
+                        class="nav-link {{ request()->routeIs('admin.personnel.*') ? 'active' : '' }}">
+                        <i class="ri-team-line"></i> Data Personel
                     </a>
                     <a href="{{ route('admin-satker.monitor') }}"
                         class="nav-link {{ request()->routeIs('admin-satker.monitor') ? 'active' : '' }}">
                         <i class="ri-eye-line"></i> Monitoring
+                    </a>
+                    <a href="{{ route('admin-satker.reports') }}"
+                        class="nav-link {{ request()->routeIs('admin-satker.reports') ? 'active' : '' }}">
+                        <i class="ri-bar-chart-grouped-line"></i> Laporan
                     </a>
                 </div>
             @endif
