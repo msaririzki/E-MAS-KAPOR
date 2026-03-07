@@ -1186,15 +1186,6 @@
         openModal('deleteModal');
     }
 
-    // Auto-hide alerts
-    var flash = document.getElementById('flashMsg');
-    if (flash) {
-        setTimeout(function() {
-            flash.style.opacity = '0';
-            flash.style.transition = 'opacity 0.3s';
-            setTimeout(function() { flash.remove(); }, 300);
-        }, 5000);
-    }
 
     // Live Search Debounce
     let searchTimeout;
