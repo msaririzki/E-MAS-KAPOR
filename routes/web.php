@@ -25,8 +25,9 @@ Route::middleware(['auth', 'satker.scope'])->group(function () {
 
     Route::get('/profile', function () {
         return view('profile.index');
-    }
-    )->name('profile');
+    })->name('profile');
+
+    Route::post('/profile/theme', [\App\Http\Controllers\Admin\ProfileController::class, 'updateTheme'])->name('profile.updateTheme');
 });
 
 // â”€â”€ Personil Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

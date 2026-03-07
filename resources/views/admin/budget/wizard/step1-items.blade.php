@@ -25,6 +25,11 @@
             <div class="package-title-wrapper" style="justify-content: space-between; width: 100%;">
                 <div>
                     <h1 class="package-title">Pilih Barang untuk {{ $budgetPackage->name }}</h1>
+                    @if($budgetPackage->description)
+                    <p class="package-desc" style="margin-top: 6px; font-weight: 500; color: #475569;">
+                        <strong>Deskripsi Paket:</strong> {{ $budgetPackage->description }}
+                    </p>
+                    @endif
                     <p class="package-desc" style="margin-top: 6px;">
                         Klik item untuk menambah/menghapus dari paket. Item yang terpilih akan ditandai.
                     </p>

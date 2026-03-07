@@ -14,10 +14,10 @@
             <div class="page-header-actions">
                 {{-- Filter Tahun Anggaran --}}
                 <div
-                    style="display:flex;align-items:center;gap:8px;margin-right:8px;background:#fff;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--slate-200);">
+                    style="display:flex;align-items:center;gap:8px;margin-right:8px;background:var(--input-bg);padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);">
                     <i class="ri-calendar-line" style="color:var(--brand);"></i>
                     <select onchange="window.location.href='?year='+this.value"
-                        style="border:none;outline:none;font-size:13px;font-weight:600;color:var(--slate-700);cursor:pointer;background:transparent;">
+                        style="border:none;outline:none;font-size:13px;font-weight:600;color:var(--text-main);cursor:pointer;background:transparent;">
                         @foreach($availableYears as $year)
                             <option value="{{ $year }}" {{ $fiscalYear == $year ? 'selected' : '' }}>
                                 TA {{ $year }} {{ $year == $defaultYear ? '(Aktif)' : '' }}
@@ -150,7 +150,7 @@
                                         $badgeCls = $pct >= 80 ? 'badge-success' : ($pct >= 50 ? 'badge-warning' : 'badge-danger');
                                     @endphp
                                     <tr>
-                                        <td style="text-align:center;color:var(--slate-400);font-size:12px;">{{ $index + 1 }}
+                                        <td style="text-align:center;color:var(--text-muted);font-size:12px;">{{ $index + 1 }}
                                         </td>
                                         <td style="font-weight:600;font-size:12px;">{{ $s->name }}</td>
                                         <td style="text-align:center;font-weight:700;font-size:12px;">
@@ -163,7 +163,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" style="text-align:center;color:var(--slate-400);padding:32px;">Belum ada
+                                        <td colspan="8" style="text-align:center;color:var(--text-muted);padding:32px;">Belum ada
                                             data.</td>
                                     </tr>
                                 @endforelse
@@ -179,7 +179,7 @@
                                     $grandBadgeCls = $grandPct >= 80 ? 'badge-success' : ($grandPct >= 50 ? 'badge-warning' : 'badge-danger');
                                 @endphp
                                 <tfoot>
-                                    <tr style="background:var(--slate-50);border-top:2px solid var(--slate-200);">
+                                    <tr style="background:var(--bg-body);border-top:2px solid var(--border-color);">
                                         <td style="text-align:center;"></td>
                                         <td style="font-weight:700;">TOTAL</td>
                                         <td style="text-align:center;font-weight:700;">{{ number_format($grandTotal) }}</td>
@@ -217,7 +217,7 @@
                                         <td>
                                             <div style="display:flex;flex-direction:column;">
                                                 <span style="font-weight:600;font-size:12px;">{{ $ru->name }}</span>
-                                                <span style="font-size:10px;color:var(--slate-400);">{{ $ru->nrp_nip }}</span>
+                                                <span style="font-size:10px;color:var(--text-muted);">{{ $ru->nrp_nip }}</span>
                                             </div>
                                         </td>
                                         <td>
@@ -239,32 +239,32 @@
                 </div>
                 <div class="card-body">
                     <div
-                        style="background:var(--slate-50); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--slate-200); margin-bottom:12px;">
-                        <div style="font-size:13px; font-style:italic; color:var(--slate-600); margin-bottom:8px;">"Sistem
+                        style="background:var(--bg-body); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-bottom:12px;">
+                        <div style="font-size:13px; font-style:italic; color:var(--text-muted); margin-bottom:8px;">"Sistem
                             E-MAS KAPOR ini sangat memudahkan kami dalam melakukan pendataan ukuran kaporlap anggota secara
                             real-time. Cepat dan transparan."</div>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <div
                                 style="width:30px; height:30px; border-radius:50%; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">
                                 KS</div>
-                            <div style="font-size:12px; font-weight:600; color:var(--slate-800); line-height:1.2;">Kombes
+                            <div style="font-size:12px; font-weight:600; color:var(--text-main); line-height:1.2;">Kombes
                                 Pol Satria <br><span
-                                    style="font-size:10px; font-weight:normal; color:var(--slate-500);">Biro Logistik</span>
+                                    style="font-size:10px; font-weight:normal; color:var(--text-muted);">Biro Logistik</span>
                             </div>
                         </div>
                     </div>
 
                     <div
-                        style="background:var(--slate-50); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--slate-200);">
-                        <div style="font-size:13px; font-style:italic; color:var(--slate-600); margin-bottom:8px;">"Aplikasi
+                        style="background:var(--bg-body); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                        <div style="font-size:13px; font-style:italic; color:var(--text-muted); margin-bottom:8px;">"Aplikasi
                             yang sangat membantu! Admin satker tidak perlu lagi merekap data personil secara manual
                             menggunakan Excel."</div>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <div
                                 style="width:30px; height:30px; border-radius:50%; background:var(--info); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">
                                 BR</div>
-                            <div style="font-size:12px; font-weight:600; color:var(--slate-800); line-height:1.2;">Bripda
-                                Rizky <br><span style="font-size:10px; font-weight:normal; color:var(--slate-500);">Admin
+                            <div style="font-size:12px; font-weight:600; color:var(--text-main); line-height:1.2;">Bripda
+                                Rizky <br><span style="font-size:10px; font-weight:normal; color:var(--text-muted);">Admin
                                     Satker</span></div>
                         </div>
                     </div>

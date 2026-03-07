@@ -13,9 +13,9 @@
     <div class="page-header-row">
         <div>
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-                <h1 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0;">Data Satuan Kerja</h1>
+                <h1 style="font-size: 24px; font-weight: 700; color: var(--text-main); margin: 0;">Data Satuan Kerja</h1>
             </div>
-            <p style="color: #6B7280; font-size: 14px;">Kelola data satuan kerja dan jumlah personil di lingkungan Polda NTB</p>
+            <p style="color: var(--text-muted); font-size: 14px;">Kelola data satuan kerja dan jumlah personil di lingkungan Polda NTB</p>
         </div>
         <div class="page-header-actions">
             <button class="btn btn-primary btn-maroon" onclick="openModal('addModal')">
@@ -67,8 +67,8 @@
 
 {{-- Data Table --}}
 <div class="table-container shadow-sm">
-    <div class="card-header-simple" style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 16px 20px; border-bottom: 1px solid #F3F4F6;">
-        <h3 style="font-size: 16px; font-weight: 700; color: #111827; margin: 0;">
+    <div class="card-header-simple" style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 16px 20px; border-bottom: 1px solid var(--border-color);">
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin: 0;">
             <i class="ri-list-check-2" style="margin-right: 8px; color: #B91C1C;"></i> Daftar Satker
         </h3>
         <span class="role-pill">{{ $satkers->count() }} Satker Terdaftar</span>
@@ -87,9 +87,9 @@
         <tbody>
             @forelse($satkers as $index => $satker)
             <tr>
-                <td style="text-align: center; color: #9CA3AF; font-size: 13px; font-weight: 600;">{{ $index + 1 }}</td>
+                <td style="text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 600;">{{ $index + 1 }}</td>
                 <td>
-                    <span style="font-weight: 600; color: #111827;">{{ $satker->name }}</span>
+                    <span style="font-weight: 600; color: var(--text-main);">{{ $satker->name }}</span>
                 </td>
                 <td style="text-align: center;">
                     <form method="POST" action="{{ route($routePrefix . '.satkers.update-personnel', $satker) }}" class="inline-personnel-form" id="form-{{ $satker->id }}">
@@ -113,7 +113,7 @@
                     </form>
                 </td>
                 <td style="text-align: center;">
-                    <span style="font-weight: 700; color: #4B5563; background: #F9FAFB; padding: 4px 12px; border-radius: 6px; font-size: 13px;">
+                    <span style="font-weight: 700; color: var(--text-main); background: var(--bg-body); padding: 4px 12px; border-radius: 6px; font-size: 13px;">
                         {{ number_format($satker->polri_count + $satker->pns_count) }}
                     </span>
                 </td>
@@ -135,7 +135,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="6" style="text-align: center; padding: 48px; color: #9CA3AF;">
+                <td colspan="6" style="text-align: center; padding: 48px; color: var(--text-muted);">
                     <i class="ri-building-2-line" style="font-size: 48px; display: block; margin-bottom: 12px; opacity: 0.3;"></i>
                     Belum ada data satuan kerja ditemukan.
                 </td>
@@ -144,12 +144,12 @@
         </tbody>
         @if($satkers->isNotEmpty())
         <tfoot>
-            <tr style="background: #FAFAFA; border-top: 2px solid #F3F4F6;">
+            <tr style="background: var(--bg-body); border-top: 2px solid var(--border-color);">
                 <td></td>
-                <td style="font-weight: 700; color: #111827;">REKAPITULASI TOTAL</td>
+                <td style="font-weight: 700; color: var(--text-main);">REKAPITULASI TOTAL</td>
                 <td style="text-align: center; font-weight: 800; color: #B91C1C;">{{ number_format($satkers->sum('polri_count')) }}</td>
                 <td style="text-align: center; font-weight: 800; color: #B91C1C;">{{ number_format($satkers->sum('pns_count')) }}</td>
-                <td style="text-align: center; font-weight: 800; color: #111827; background: #F3F4F6;">{{ number_format($satkers->sum('polri_count') + $satkers->sum('pns_count')) }}</td>
+                <td style="text-align: center; font-weight: 800; color: var(--text-main); background: var(--hover-bg);">{{ number_format($satkers->sum('polri_count') + $satkers->sum('pns_count')) }}</td>
                 <td></td>
             </tr>
         </tfoot>
@@ -160,29 +160,29 @@
 {{-- Modal Tambah --}}
 <div class="modal-overlay" id="addModal">
     <div class="modal shadow-xl" style="max-width: 450px;">
-        <div class="modal-header" style="border-bottom: 1px solid #F3F4F6; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 18px; font-weight: 700; color: #111827; margin: 0;">Tambah Satker Baru</h3>
+        <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0;">Tambah Satker Baru</h3>
             <button class="modal-close" onclick="closeModal('addModal')"><i class="ri-close-line"></i></button>
         </div>
         <form method="POST" action="{{ route($routePrefix . '.satkers.store') }}">
             @csrf
             <div class="modal-body" style="padding: 24px;">
                 <div class="form-group-simple" style="margin-bottom: 16px;">
-                    <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">Nama Satuan Kerja</label>
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Nama Satuan Kerja</label>
                     <input type="text" name="name" class="form-input-simple" placeholder="Masukkan nama satker..." required style="height: 46px;">
                 </div>
                 <div class="form-grid-2">
                     <div class="form-group-simple">
-                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">Jml POLRI</label>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Jml POLRI</label>
                         <input type="number" name="polri_count" class="form-input-simple" value="0" min="0" style="height: 46px;">
                     </div>
                     <div class="form-group-simple">
-                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">Jml PNS/P3K</label>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Jml PNS/P3K</label>
                         <input type="number" name="pns_count" class="form-input-simple" value="0" min="0" style="height: 46px;">
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-top: 1px solid #F3F4F6; display: flex; justify-content: flex-end; gap: 12px; border-radius: 0 0 16px 16px;">
+            <div class="modal-footer" style="padding: 16px 24px; background: var(--hover-bg); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; border-radius: 0 0 16px 16px;">
                 <button type="button" class="btn-simple btn-outline-simple" onclick="closeModal('addModal')">Batal</button>
                 <button type="submit" class="btn-simple btn-maroon-simple" style="padding: 0 24px;">Simpan Satker</button>
             </div>
@@ -193,8 +193,8 @@
 {{-- Modal Edit --}}
 <div class="modal-overlay" id="editModal">
     <div class="modal shadow-xl" style="max-width: 450px;">
-        <div class="modal-header" style="border-bottom: 1px solid #F3F4F6; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 18px; font-weight: 700; color: #111827; margin: 0;">Edit Data Satker</h3>
+        <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0;">Edit Data Satker</h3>
             <button class="modal-close" onclick="closeModal('editModal')"><i class="ri-close-line"></i></button>
         </div>
         <form method="POST" id="editForm">
@@ -202,21 +202,21 @@
             @method('PUT')
             <div class="modal-body" style="padding: 24px;">
                 <div class="form-group-simple" style="margin-bottom: 16px;">
-                    <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">Nama Satuan Kerja</label>
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Nama Satuan Kerja</label>
                     <input type="text" name="name" id="edit_name" class="form-input-simple" required style="height: 46px;">
                 </div>
                 <div class="form-grid-2">
                     <div class="form-group-simple">
-                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">Jml POLRI</label>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Jml POLRI</label>
                         <input type="number" name="polri_count" id="edit_polri_count" class="form-input-simple" min="0" style="height: 46px;">
                     </div>
                     <div class="form-group-simple">
-                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px;">Jml PNS/P3K</label>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Jml PNS/P3K</label>
                         <input type="number" name="pns_count" id="edit_pns_count" class="form-input-simple" min="0" style="height: 46px;">
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-top: 1px solid #F3F4F6; display: flex; justify-content: flex-end; gap: 12px; border-radius: 0 0 16px 16px;">
+            <div class="modal-footer" style="padding: 16px 24px; background: var(--hover-bg); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; border-radius: 0 0 16px 16px;">
                 <button type="button" class="btn-simple btn-outline-simple" onclick="closeModal('editModal')">Batal</button>
                 <button type="submit" class="btn-simple btn-maroon-simple" style="padding: 0 24px;">Simpan Perubahan</button>
             </div>
@@ -240,29 +240,29 @@
 
     /* Stats Grid */
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: #fff; border: 1px solid #F3F4F6; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; transition: transform 0.2s; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; transition: transform 0.2s; }
     .stat-card:hover { transform: translateY(-3px); }
     .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
     .icon-blue { background: #EBF5FF; color: #3B82F6; }
     .icon-green { background: #F0FDF4; color: #22C55E; }
     .icon-orange { background: #FFF7ED; color: #F97316; }
     .icon-purple { background: #F5F3FF; color: #8B5CF6; }
-    .stat-label { font-size: 13px; color: #6B7280; display: block; }
-    .stat-number { font-size: 20px; font-weight: 700; color: #111827; }
+    .stat-label { font-size: 13px; color: var(--text-muted); display: block; }
+    .stat-number { font-size: 20px; font-weight: 700; color: var(--text-main); }
 
     /* Table Container */
-    .table-container { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #F3F4F6; transition: box-shadow 0.3s; }
+    .table-container { background: var(--bg-card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); transition: box-shadow 0.3s; }
     .table-container:hover { box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); }
     .user-table { width: 100%; border-collapse: collapse; }
-    .user-table th { background: #FAFAFA; padding: 12px 20px; text-align: left; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; border-bottom: 1px solid #F3F4F6; }
-    .user-table td { padding: 14px 20px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+    .user-table th { background: var(--bg-body); padding: 12px 20px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
+    .user-table td { padding: 14px 20px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
 
     /* Inline Input */
     .input-inline {
-        height: 32px; border: 1px solid #E2E8F0; border-radius: 8px; background: #F8FAFC;
-        font-size: 13px; font-weight: 600; color: #1F2937; outline: none; transition: all 0.2s;
+        height: 32px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--input-bg);
+        font-size: 13px; font-weight: 600; color: var(--text-main); outline: none; transition: all 0.2s;
     }
-    .input-inline:focus { border-color: #B91C1C; background: #fff; box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.05); }
+    .input-inline:focus { border-color: #B91C1C; background: var(--bg-card); box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.05); }
 
     .btn-save-inline {
         background: none; border: none; color: #10B981; font-size: 24px; cursor: pointer;
@@ -273,7 +273,7 @@
     /* Pills & Actions */
     .role-pill { background: #FEF2F2; color: #B91C1C; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1px solid #FEE2E2; }
     .action-buttons { display: flex; gap: 8px; }
-    .btn-icon { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #E5E7EB; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+    .btn-icon { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
     .btn-icon.blue { color: #3B82F6; }
     .btn-icon.blue:hover { background: #3B82F6; border-color: #3B82F6; color: #fff; }
     .btn-icon.red { color: #EF4444; }
@@ -299,7 +299,7 @@
 
     /* ── Toast Notifications ───────────────────────────── */
     .toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
-    .toast { min-width: 320px; max-width: 450px; background: #fff; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #E5E7EB; animation: toast-slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; position: relative; overflow: hidden; }
+    .toast { min-width: 320px; max-width: 450px; background: var(--bg-card); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid var(--border-color); animation: toast-slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; position: relative; overflow: hidden; }
     .toast::after { content: ''; position: absolute; bottom: 0; left: 0; height: 3px; width: 100%; background: currentColor; opacity: 0.3; animation: toast-progress 4s linear forwards; }
     .toast.success { border-left: 4px solid #10B981; color: #10B981; }
     .toast.error { border-left: 4px solid #EF4444; color: #EF4444; }
@@ -307,10 +307,10 @@
     .toast.success .toast-icon { background: #DCFCE7; color: #10B981; }
     .toast.error .toast-icon { background: #FEF2F2; color: #EF4444; }
     .toast-content { flex: 1; }
-    .toast-title { display: block; font-weight: 700; font-size: 14px; color: #111827; margin-bottom: 2px; }
-    .toast-message { font-size: 13px; color: #6B7280; }
-    .toast-close { color: #9CA3AF; cursor: pointer; font-size: 18px; transition: color 0.2s; }
-    .toast-close:hover { color: #4B5563; }
+    .toast-title { display: block; font-weight: 700; font-size: 14px; color: var(--text-main); margin-bottom: 2px; }
+    .toast-message { font-size: 13px; color: var(--text-muted); }
+    .toast-close { color: var(--text-muted); cursor: pointer; font-size: 18px; transition: color 0.2s; }
+    .toast-close:hover { color: var(--text-main); }
     @keyframes toast-slide-in { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     @keyframes toast-fade-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
     @keyframes toast-progress { from { width: 100%; } to { width: 0%; } }

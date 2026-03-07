@@ -79,12 +79,15 @@ class PackageItemController extends Controller
 
         // Ambil semua satker level atas (parent_id null = Polda level)
         $satkers = Satker::whereNull('parent_id')
-            ->with('children')
+            ->with(['children' => function ($q) {
+                $q->orderBy('sort_order')->orderBy('name');
+            }])
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
         // Flatten semua satker untuk pilihan
-        $allSatkers = Satker::orderBy('name')->get();
+        $allSatkers = Satker::orderBy('sort_order')->orderBy('name')->get();
 
         // Ambil semua keterangan unik dari personel aktif
         $allKeterangan = Personnel::where('is_active', true)

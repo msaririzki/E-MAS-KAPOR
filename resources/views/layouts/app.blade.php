@@ -70,6 +70,16 @@
             --radius: 10px;
             --radius-sm: 6px;
             --radius-lg: 14px;
+            
+            /* Global Layout Variables (Default Light) */
+            --bg-body: var(--slate-50);
+            --bg-card: #ffffff;
+            --bg-header: rgba(255, 255, 255, 0.85);
+            --text-main: var(--slate-800);
+            --text-muted: var(--slate-500);
+            --border-color: var(--slate-200);
+            --input-bg: var(--slate-50);
+            --hover-bg: var(--slate-50);
         }
 
         * {
@@ -80,12 +90,111 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--slate-50);
-            color: var(--slate-800);
+            background: var(--bg-body);
+            color: var(--text-main);
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
             font-size: 14px;
             line-height: 1.5;
+        }
+
+        /* ── Global Theme Overrides (Gen Z / Modern Aesthetics) ──────────────────── */
+        
+        /* Theme: Matcha Minimalist (Organic & Soft) */
+        body.theme-matcha {
+            --brand: #65a30d;           /* Lime/Matcha Green */
+            --brand-light: #84cc16;
+            --brand-lighter: #a3e635;
+            --brand-bg: #ecfccb;
+            --accent: #14b8a6;          /* Teal */
+            --sidebar-bg: #FAFAF9;      /* Warm white */
+            --sidebar-border: rgba(0, 0, 0, 0.05);
+            --sidebar-active-bg: rgba(101, 163, 13, 0.1);
+            --sidebar-active-text: #65a30d;
+            --sidebar-badge-bg: var(--brand);
+            --sidebar-badge-text: #ffffff;
+        }
+        /* Specific override for Matcha since sidebar is light */
+        body.theme-matcha .sidebar {
+            color: var(--slate-700);
+        }
+        body.theme-matcha .sidebar-brand {
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        body.theme-matcha .nav-link {
+            color: var(--slate-500);
+        }
+        body.theme-matcha .nav-link.active {
+            color: var(--brand);
+        }
+        body.theme-matcha .nav-link i {
+            color: var(--slate-400);
+        }
+        body.theme-matcha .nav-link.active i {
+            color: var(--brand);
+        }
+        body.theme-matcha .sidebar-footer {
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* Theme: Cyber Neon (Dark Mode & Vibrant) */
+        body.theme-cyber {
+            --brand: #a855f7;           /* Neon Purple */
+            --brand-light: #c084fc;
+            --brand-lighter: #d8b4fe;
+            --brand-bg: rgba(168, 85, 247, 0.15);
+            --accent: #06b6d4;          /* Cyan */
+            --sidebar-bg: #020617;      /* Extremely dark slate */
+            --sidebar-border: rgba(168, 85, 247, 0.2);
+            --sidebar-active-bg: rgba(6, 182, 212, 0.15); /* Cyan Bg */
+            --sidebar-active-text: #22d3ee; /* Neon Cyan text */
+            --sidebar-badge-bg: linear-gradient(135deg, #a855f7, #06b6d4);
+            --sidebar-badge-text: #ffffff;
+            
+            /* Dark Mode Layout Adjustments */
+            --bg-body: #020617;
+            --bg-card: #0f172a;
+            --bg-header: rgba(15, 23, 42, 0.85);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
+            --input-bg: #020617;
+            --hover-bg: #1e293b;
+            
+            /* Re-map some semantic colors for better dark mode visibility */
+            --slate-50: #1e293b;
+            --slate-100: #334155;
+            --slate-200: #475569;
+        }
+
+        /* Theme: Monochrome Brutalist (Strict B&W + Orange Accent) */
+        body.theme-monochrome {
+            --brand: #000000;           /* Pure black buttons */
+            --brand-light: #262626;
+            --brand-lighter: #525252;
+            --brand-bg: #f5f5f5;
+            --accent: #ea580c;          /* Safety Orange */
+            --sidebar-bg: #000000;      /* Pure black sidebar */
+            --sidebar-border: rgba(255, 255, 255, 0.1);
+            --sidebar-active-bg: #ffffff;
+            --sidebar-active-text: #000000;
+            --sidebar-badge-bg: #ea580c; /* Orange badges */
+            --sidebar-badge-text: #ffffff;
+        }
+
+        /* Theme: Twilight Lavender (Soft Dark Mode) */
+        body.theme-twilight {
+            --brand: #8b5cf6;           /* Violet */
+            --brand-light: #a78bfa;
+            --brand-lighter: #c4b5fd;
+            --brand-bg: #f5f3ff;
+            --accent: #f472b6;          /* Pink */
+            --sidebar-bg: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
+            --sidebar-border: rgba(255, 255, 255, 0.08);
+            --sidebar-active-bg: rgba(244, 114, 182, 0.15);
+            --sidebar-active-text: #f472b6;
+            --sidebar-badge-bg: linear-gradient(135deg, #8b5cf6, #f472b6);
+            --sidebar-badge-text: #ffffff;
         }
 
         /* ── Sidebar ─────────────────────────────────────────── */
@@ -95,13 +204,13 @@
             left: 0;
             bottom: 0;
             width: var(--sidebar-w);
-            background: #111827;
+            background: var(--sidebar-bg, #111827);
             color: #fff;
             z-index: 100;
             display: flex;
             flex-direction: column;
             transition: all .25s cubic-bezier(.4, 0, .2, 1);
-            border-right: 1px solid rgba(255, 255, 255, .06);
+            border-right: 1px solid var(--sidebar-border, rgba(255, 255, 255, .06));
         }
 
         .sidebar-brand {
@@ -188,25 +297,30 @@
         }
 
         .nav-link.active {
-            background: rgba(198, 40, 40, .15);
-            color: var(--brand-lighter);
+            background: var(--sidebar-active-bg, rgba(255, 255, 255, .1));
+            color: var(--sidebar-active-text, #fff);
+            font-weight: 600;
+        }
+
+        .nav-link.active i {
+            color: var(--sidebar-active-text, #fff);
+            font-weight: 500;
         }
 
         .nav-link.active::before {
             content: '';
             position: absolute;
-            left: 0;
-            top: 6px;
-            bottom: 6px;
-            width: 3px;
-            background: var(--brand-light);
-            border-radius: 0 3px 3px 0;
+            left: -10px;
+            top: 2px;
+            bottom: 2px;
+            width: 4px;
+            background: var(--sidebar-active-text, var(--brand));
+            border-radius: 0 4px 4px 0;
         }
 
         .nav-link i {
-            font-size: 17px;
+            font-size: 18px;
             width: 20px;
-            text-align: center;
             flex-shrink: 0;
         }
 
@@ -214,8 +328,8 @@
             margin-left: auto;
             font-size: 10px;
             font-weight: 700;
-            background: var(--brand);
-            color: #fff;
+            background: var(--sidebar-badge-bg, var(--brand));
+            color: var(--sidebar-badge-text, #fff);
             padding: 1px 7px;
             border-radius: 10px;
             min-width: 20px;
@@ -246,13 +360,13 @@
             width: 32px;
             height: 32px;
             border-radius: 8px;
-            background: linear-gradient(135deg, var(--brand), var(--brand-light));
+            background: var(--sidebar-badge-bg, linear-gradient(135deg, var(--brand), var(--brand-light)));
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 12px;
             font-weight: 700;
-            color: #fff;
+            color: var(--sidebar-badge-text, #fff);
             flex-shrink: 0;
         }
 
@@ -275,10 +389,10 @@
 
         .header {
             height: var(--header-h);
-            background: rgba(255, 255, 255, .85);
+            background: var(--bg-header);
             backdrop-filter: blur(12px) saturate(180%);
             -webkit-backdrop-filter: blur(12px) saturate(180%);
-            border-bottom: 1px solid var(--slate-200);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -300,7 +414,7 @@
             border: none;
             font-size: 20px;
             cursor: pointer;
-            color: var(--slate-600);
+            color: var(--text-muted);
             padding: 4px;
         }
 
@@ -309,11 +423,11 @@
             align-items: center;
             gap: 6px;
             font-size: 13px;
-            color: var(--slate-500);
+            color: var(--text-muted);
         }
 
         .breadcrumb a {
-            color: var(--slate-400);
+            color: var(--text-muted);
             text-decoration: none;
         }
 
@@ -326,7 +440,7 @@
         }
 
         .breadcrumb .current {
-            color: var(--slate-700);
+            color: var(--text-main);
             font-weight: 600;
         }
 
@@ -353,23 +467,23 @@
         .search-input {
             width: 100%;
             padding: 7px 12px 7px 36px;
-            border: 1px solid var(--slate-200);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-sm);
             font-size: 13px;
             font-family: inherit;
-            background: var(--slate-50);
-            color: var(--slate-700);
+            background: var(--input-bg);
+            color: var(--text-main);
             outline: none;
             transition: all .15s;
         }
 
         .search-input::placeholder {
-            color: var(--slate-400);
+            color: var(--text-muted);
         }
 
         .search-input:focus {
             border-color: var(--brand-lighter);
-            background: #fff;
+            background: var(--bg-card);
             box-shadow: 0 0 0 3px rgba(198, 40, 40, .08);
         }
 
@@ -402,7 +516,7 @@
             border-radius: var(--radius-sm);
             border: none;
             background: transparent;
-            color: var(--slate-500);
+            color: var(--text-muted);
             font-size: 18px;
             cursor: pointer;
             transition: all .15s;
@@ -410,8 +524,8 @@
         }
 
         .header-btn:hover {
-            background: var(--slate-100);
-            color: var(--slate-700);
+            background: var(--hover-bg);
+            color: var(--text-main);
         }
 
         .header-btn .dot {
@@ -476,8 +590,8 @@
             position: absolute;
             top: calc(100% + 4px);
             right: 0;
-            background: #fff;
-            border: 1px solid var(--slate-200);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius);
             box-shadow: var(--shadow-lg);
             min-width: 200px;
@@ -496,7 +610,7 @@
             padding: 8px 12px;
             border-radius: var(--radius-sm);
             font-size: 13px;
-            color: var(--slate-600);
+            color: var(--text-main);
             text-decoration: none;
             border: none;
             background: none;
@@ -507,8 +621,8 @@
         }
 
         .dropdown-item:hover {
-            background: var(--slate-50);
-            color: var(--slate-800);
+            background: var(--hover-bg);
+            color: var(--brand); /* highlight */
         }
 
         .dropdown-item i {
@@ -546,12 +660,12 @@
             font-size: 22px;
             font-weight: 700;
             letter-spacing: -.3px;
-            color: var(--slate-900);
+            color: var(--text-main);
         }
 
         .page-header p {
             font-size: 13px;
-            color: var(--slate-500);
+            color: var(--text-muted);
             margin-top: 2px;
         }
 
@@ -577,15 +691,14 @@
         }
 
         .stat-card {
-            background: #fff;
-            border-radius: var(--radius);
-            padding: 20px 22px;
-            border: 1px solid var(--slate-200);
-            transition: box-shadow .2s;
-        }
-
-        .stat-card:hover {
-            box-shadow: var(--shadow-md);
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            transition: all .3s cubic-bezier(.4, 0, .2, 1);
+            position: relative;
+            overflow: hidden;
+            color: var(--text-main);
         }
 
         .stat-top {
@@ -637,15 +750,21 @@
 
         /* ── Card ─────────────────────────────────────────── */
         .card {
-            background: #fff;
-            border-radius: var(--radius);
-            border: 1px solid var(--slate-200);
-            margin-bottom: 20px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: box-shadow 0.3s ease;
+            color: var(--text-main);
+        }
+        .card:hover {
+            box-shadow: 0 8px 16px -4px rgba(0,0,0,0.05);
         }
 
         .card-head {
             padding: 16px 20px;
-            border-bottom: 1px solid var(--slate-100);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -654,7 +773,7 @@
         .card-head h3 {
             font-size: 14px;
             font-weight: 700;
-            color: var(--slate-800);
+            color: var(--text-main);
         }
 
         .card-head .card-actions {
@@ -681,29 +800,31 @@
         }
 
         thead th {
-            background: var(--slate-50);
+            background: var(--bg-body);
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: .7px;
-            color: var(--slate-500);
+            color: var(--text-muted);
             font-weight: 600;
             text-align: left;
             padding: 6px 12px;
-            border-bottom: 1px solid var(--slate-200);
+            border-bottom: 1px solid var(--border-color);
             white-space: nowrap;
         }
 
         tbody td {
             padding: 5px 12px;
             font-size: 13px;
-            border-bottom: 1px solid var(--slate-100);
+            border-bottom: 1px solid var(--border-color);
             vertical-align: middle;
+            color: var(--text-main);
         }
 
         tfoot td {
             padding: 6px 12px;
             font-size: 13px;
             vertical-align: middle;
+            color: var(--text-main);
         }
 
         tbody tr:last-child td {
@@ -711,7 +832,7 @@
         }
 
         tbody tr:hover td {
-            background: var(--slate-50);
+            background: var(--hover-bg);
         }
 
         .cell-user {
@@ -734,13 +855,13 @@
 
         .cell-name {
             font-weight: 600;
-            color: var(--slate-800);
+            color: var(--text-main);
             font-size: 13px;
         }
 
         .cell-sub {
             font-size: 11.5px;
-            color: var(--slate-400);
+            color: var(--text-muted);
         }
 
         /* ── Badge ─────────────────────────────────────────── */
@@ -850,14 +971,14 @@
         }
 
         .btn-outline {
-            background: #fff;
-            border: 1px solid var(--slate-200);
-            color: var(--slate-700);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
         }
 
         .btn-outline:hover {
-            border-color: var(--slate-300);
-            background: var(--slate-50);
+            border-color: var(--slate-400);
+            background: var(--hover-bg);
         }
 
         .btn-sm {
@@ -987,7 +1108,7 @@
     </style>
 </head>
 
-<body>
+<body class="{{ auth()->user()->theme ?? '' }}">
     {{-- ═══ Sidebar ═══ --}}
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">

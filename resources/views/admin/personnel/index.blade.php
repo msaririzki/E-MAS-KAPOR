@@ -950,8 +950,8 @@
                             <label class="selection-card">
                                 <input type="radio" name="personnel_type" value="PNS" {{ old('personnel_type') == 'PNS' ? 'checked' : '' }} onclick="filterRanks('PNS')">
                                 <div class="card-content">
-                                    <span class="card-title">PNS</span>
-                                    <span class="card-desc">Pegawai Negeri</span>
+                                    <span class="card-title">PNS/PPPK</span>
+                                    <span class="card-desc">Pegawai Negeri & PPPK</span>
                                 </div>
                                 <div class="card-check"><i class="ri-check-line"></i></div>
                             </label>
@@ -1473,8 +1473,8 @@
                             <label class="selection-card">
                                 <input type="radio" name="personnel_type" id="edit_type_pns" value="PNS" {{ old('modal_type') == 'edit' && old('personnel_type') == 'PNS' ? 'checked' : '' }} onclick="filterRanksEdit('PNS')">
                                 <div class="card-content">
-                                    <span class="card-title">PNS</span>
-                                    <span class="card-desc">Pegawai Negeri</span>
+                                    <span class="card-title">PNS/PPPK</span>
+                                    <span class="card-desc">Pegawai Negeri & PPPK</span>
                                 </div>
                                 <div class="card-check"><i class="ri-check-line"></i></div>
                             </label>
@@ -2947,7 +2947,7 @@
         
         // Type Badge Style
         const typeEl = document.getElementById('detail_type');
-        typeEl.innerText = p.personnel_type;
+        typeEl.innerText = p.personnel_type === 'PNS' ? 'PNS/PPPK' : p.personnel_type;
         if(p.personnel_type === 'Polri') {
              typeEl.style.background = '#EFF6FF'; typeEl.style.color = '#3B82F6'; typeEl.style.borderColor = '#DBEAFE';
         } else {
