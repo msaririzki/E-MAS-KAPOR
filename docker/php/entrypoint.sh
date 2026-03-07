@@ -3,9 +3,9 @@ set -e
 
 echo "==> [Entrypoint] Memulai setup aplikasi..."
 
-# 1. Setup .env jika belum ada
-if [ ! -f /var/www/html/.env ]; then
-    echo "==> [Entrypoint] Membuat .env dari .env.example..."
+# 1. Setup .env jika belum ada atau kosong (0 bytes)
+if [ ! -s /var/www/html/.env ]; then
+    echo "==> [Entrypoint] Membuat/mengisi .env dari .env.example..."
     cp /var/www/html/.env.example /var/www/html/.env
 fi
 
