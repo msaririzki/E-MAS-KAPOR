@@ -12,6 +12,8 @@ services:
     environment:
       # Kita arahkan agar env Laravel connect ke MariaDB di docker ini
       DB_HOST: db
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-Ndekutaok987..}
     volumes:
       # public: shared dengan Nginx agar bisa serve file statis
       - app-public:/var/www/html/public
@@ -36,6 +38,8 @@ services:
     command: php artisan queue:work --queue=default --sleep=3 --tries=3 --timeout=120
     environment:
       DB_HOST: db
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-Ndekutaok987..}
     volumes:
       - app-public:/var/www/html/public
       - app-storage:/var/www/html/storage

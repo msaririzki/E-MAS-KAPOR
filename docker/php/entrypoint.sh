@@ -27,13 +27,28 @@ if [ ! -f /var/www/html/public/index.php ]; then
     chown -R www-data:www-data /var/www/html/public
 fi
 
-# 4. Tunggu MariaDB siap
-if [ "$DB_CONNECTION" = "mysql" ] || [ "$DB_CONNECTION" = "mariadb" ]; then
+# 4. Tunggu MariaDB siap menggunakan PHP PDO
+if [ "$DB_CONNECTION" = "mysql" ] || [ "$DB_CONNECTION" = "mariadb" ] || [ -n "$DB_HOST" ]; then
     echo "==> [Entrypoint] Menunggu database $DB_HOST siap..."
-    while ! mysqladmin ping -h"$DB_HOST" --silent; do
-        sleep 2
-    done
-    echo "==> [Entrypoint] Database siap!"
+    php -r "
+      \$host = getenv('DB_HOST') ?: '127.0.0.1';
+      \$db = getenv('DB_DATABASE') ?: 'kapor';
+      \$user = getenv('DB_USERNAME') ?: 'root';
+      \$pass = getenv('DB_PASSWORD') ?: '';
+      \$port = getenv('DB_PORT') ?: '3306';
+      
+      for (\$i=0; \$i<30; \$i++) {
+          try {
+              new PDO(\"mysql:host=\$host;port=\$port;dbname=\$db\", \$user, \$pass);
+              echo \"==> [Entrypoint] Database siap!\\n\";
+              exit(0);
+          } catch (PDOException \$e) {
+              sleep(2);
+          }
+      }
+      echo \"==> [WARN] Database timeout atau credential salah.\\n\";
+      exit(1);
+    " || exit 1
 fi
 
 # 5. Jalankan migrasi database
