@@ -78,6 +78,11 @@ class PackageItemRecipient extends Model
             $query->whereIn('keterangan', $filters['keterangan']);
         }
 
+        // Filter berdasarkan golongan PNS/PPPK
+        if (!empty($filters['golongan'])) {
+            $query->whereIn('golongan', $filters['golongan']);
+        }
+
         $count = $query->count();
         $this->update(['matched_count' => $count]);
 

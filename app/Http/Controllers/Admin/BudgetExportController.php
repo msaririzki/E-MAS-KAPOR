@@ -81,6 +81,9 @@ class BudgetExportController extends Controller
      */
     public function exportDetailExcel(BudgetPackage $budgetPackage)
     {
+        set_time_limit(0);
+        ini_set('memory_limit', '2G');
+
         $budgetPackage->load('budgetYear');
         $filename = 'Detail_Penerima_' . str_replace(' ', '_', $budgetPackage->name) . '_' . $budgetPackage->budgetYear->year . '.xlsx';
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PackageDetailExport($budgetPackage), $filename);

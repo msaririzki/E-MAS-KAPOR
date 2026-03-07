@@ -220,14 +220,22 @@
                                     <input type="checkbox" class="filter-input" data-filter="rank_categories" data-value="TAMTAMA" data-item="{{ $item->id }}">
                                     <span>TAMTAMA</span>
                                 </label>
-                                {{-- Pangkat PNS/PPPK --}}
+                                {{-- Golongan PNS/PPPK --}}
                                 <label class="pill-check rank-pill pns-rank" data-type="pns">
-                                    <input type="checkbox" class="filter-input" data-filter="rank_categories" data-value="PNS" data-item="{{ $item->id }}">
-                                    <span>PNS</span>
+                                    <input type="checkbox" class="filter-input" data-filter="golongan" data-value="1" data-item="{{ $item->id }}">
+                                    <span>GOL 1</span>
                                 </label>
-                                <label class="pill-check rank-pill pns-rank" data-type="pppk">
-                                    <input type="checkbox" class="filter-input" data-filter="rank_categories" data-value="PPPK" data-item="{{ $item->id }}">
-                                    <span>PPPK</span>
+                                <label class="pill-check rank-pill pns-rank" data-type="pns">
+                                    <input type="checkbox" class="filter-input" data-filter="golongan" data-value="2" data-item="{{ $item->id }}">
+                                    <span>GOL 2</span>
+                                </label>
+                                <label class="pill-check rank-pill pns-rank" data-type="pns">
+                                    <input type="checkbox" class="filter-input" data-filter="golongan" data-value="3" data-item="{{ $item->id }}">
+                                    <span>GOL 3</span>
+                                </label>
+                                <label class="pill-check rank-pill pns-rank" data-type="pns">
+                                    <input type="checkbox" class="filter-input" data-filter="golongan" data-value="4" data-item="{{ $item->id }}">
+                                    <span>GOL 4</span>
                                 </label>
                             </div>
                         </div>

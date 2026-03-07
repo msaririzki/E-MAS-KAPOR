@@ -6,26 +6,28 @@ use App\Models\PackageItem;
 use App\Models\BudgetPackage;
 use App\Models\InvoiceSetting;
 use App\Models\Personnel;
-use Illuminate\Contracts\View\View;
-use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 
-class PackageDetailSheet implements FromView, WithTitle, WithEvents
+class PackageDetailSheet implements FromArray, WithTitle, WithEvents
 {
     protected $packageItem;
     protected $sheetName;
     protected $budgetPackage;
     protected $personnelCount = 0;
+    protected $rows = [];
 
     public function __construct(PackageItem $packageItem, string $sheetName, BudgetPackage $budgetPackage)
     {
         $this->packageItem = $packageItem;
         $this->sheetName = strlen($sheetName) > 31 ? substr($sheetName, 0, 28) . '...' : $sheetName;
         $this->budgetPackage = $budgetPackage;
+        $this->buildData();
     }
 
     public function title(): string
@@ -49,19 +51,32 @@ class PackageDetailSheet implements FromView, WithTitle, WithEvents
         return 'kemeja';
     }
 
-    public function view(): View
+    private function buildData(): void
     {
-        // Perbesar memory limit untuk data besar (12.000+ personel)
-        ini_set('memory_limit', '512M');
-        ini_set('max_execution_time', '300');
+        ini_set('memory_limit', '2G');
+        set_time_limit(0);
 
         $kaporItem = $this->packageItem->kaporItem;
         $sizeKey = $this->getSizeKey();
 
         $this->packageItem->load('recipients.satker');
+        $settings = InvoiceSetting::getSettings();
 
-        $personnelList = [];
-        $grandTotal = 0;
+        // Kop surat
+        $this->rows[] = [$settings->organization_name ?? 'KEPOLISIAN NEGARA REPUBLIK INDONESIA', '', ''];
+        $this->rows[] = [$settings->header_title ?? 'DAERAH NUSA TENGGARA BARAT', '', ''];
+        $this->rows[] = ['BIRO LOGISTIK', '', ''];
+        $this->rows[] = ['']; // Baris kosong
+
+        // Judul
+        $this->rows[] = ['DAFTAR NOMINATIF PENERIMA ' . strtoupper($kaporItem->item_name)];
+        $this->rows[] = [strtoupper($this->budgetPackage->name) . ' T.A. ' . ($this->budgetPackage->budgetYear->year ?? '')];
+        $this->rows[] = ['']; // Baris kosong
+
+        // Header tabel
+        $this->rows[] = ['NO', 'NAMA', 'NRP/NIP', 'PANGKAT/GOL', 'JABATAN', 'SATKER', 'JK', 'UKURAN'];
+
+        $no = 0;
 
         foreach ($this->packageItem->recipients as $recipient) {
             $filters = $recipient->recipient_filters ?? [];
@@ -92,8 +107,16 @@ class PackageDetailSheet implements FromView, WithTitle, WithEvents
                 });
             }
 
+            if (!empty($filters['keterangan'])) {
+                $query->whereIn('keterangan', $filters['keterangan']);
+            }
+
+            if (!empty($filters['golongan'])) {
+                $query->whereIn('golongan', $filters['golongan']);
+            }
+
             // Chunk untuk hemat memori
-            $query->with('rank:id,name')->chunk(500, function ($personnels) use ($satker, $sizeKey, &$personnelList, &$grandTotal) {
+            $query->with('rank:id,name')->chunk(500, function ($personnels) use ($satker, $sizeKey, &$no) {
                 foreach ($personnels as $p) {
                     $sizes = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
                     $sizeVal = $sizes[$sizeKey] ?? null;
@@ -103,32 +126,48 @@ class PackageDetailSheet implements FromView, WithTitle, WithEvents
                         $sizeValStr = '-';
                     }
 
-                    $personnelList[] = [
-                        'full_name'   => $p->full_name,
-                        'nrp'         => $p->nrp ?? '-',
-                        'rank_name'   => $p->rank?->name ?? '-',
-                        'jabatan'     => $p->jabatan ?? '-',
-                        'satker_name' => $satker->name,
-                        'gender'      => $p->gender === 'L' ? 'Laki-laki' : 'Perempuan',
-                        'size'        => $sizeValStr,
+                    $no++;
+                    $this->rows[] = [
+                        $no,
+                        $p->full_name,
+                        "'" . ($p->nrp ?? '-'), // Prefix ' agar NRP tidak jadi angka
+                        $p->rank?->name ?? '-',
+                        $p->jabatan ?? '-',
+                        $satker->name,
+                        $p->gender === 'L' ? 'Laki-laki' : 'Perempuan',
+                        $sizeValStr,
                     ];
-
-                    $grandTotal++;
                 }
             });
+
+            gc_collect_cycles();
         }
 
-        $this->personnelCount = $grandTotal;
-        $settings = InvoiceSetting::getSettings();
+        $this->personnelCount = $no;
 
-        return view('admin.exports.detail_sheet', [
-            'packageItem'   => $this->packageItem,
-            'kaporItem'     => $kaporItem,
-            'budgetPackage' => $this->budgetPackage,
-            'personnelList' => $personnelList,
-            'grandTotal'    => $grandTotal,
-            'settings'      => $settings,
-        ]);
+        // Footer total
+        $this->rows[] = ['', 'TOTAL', '', '', '', '', '', $no . ' Personel'];
+
+        // Baris kosong
+        $this->rows[] = [''];
+        $this->rows[] = [''];
+
+        // Tanda tangan
+        $this->rows[] = ['', '', '', '', '', ($settings->location ?? 'Mataram') . ', ' . now()->translatedFormat('d F Y')];
+        $this->rows[] = ['', '', '', '', '', $settings->signatory_title ?? 'Kabag RenMin'];
+        $this->rows[] = [''];
+        $this->rows[] = ['', '', '', '', '', $settings->signatory_rank ?? ''];
+        $this->rows[] = [''];
+        $this->rows[] = [''];
+        $this->rows[] = [''];
+        $this->rows[] = [''];
+        $this->rows[] = ['', '', '', '', '', $settings->signatory_name ?? ''];
+        $this->rows[] = ['', '', '', '', '', 'NRP. ' . ($settings->signatory_nrp ?? '')];
+    }
+
+    public function array(): array
+    {
+        return $this->rows;
     }
 
     public function registerEvents(): array
@@ -138,11 +177,6 @@ class PackageDetailSheet implements FromView, WithTitle, WithEvents
                 $sheet = $event->sheet->getDelegate();
 
                 // ═══ HITUNG POSISI BARIS ═══
-                // Baris 1-3: Kop surat (pojok kiri, A-C — colspan di HTML)
-                // Baris 4: kosong
-                // Baris 5-6: Judul dokumen (colspan di HTML)
-                // Baris 7: kosong
-                // Baris 8: Header tabel
                 $headerRow = 8;
                 $firstDataRow = $headerRow + 1;
                 $lastDataRow = $headerRow + max($this->personnelCount, 0);
@@ -151,18 +185,25 @@ class PackageDetailSheet implements FromView, WithTitle, WithEvents
                 // ═══ DEFAULT FONT ═══
                 $sheet->getParent()->getDefaultStyle()->getFont()->setName('Calibri')->setSize(10);
 
-                // ═══ KOP SURAT (Baris 1-3: bold, font 11 — merge handled by colspan) ═══
+                // ═══ KOP SURAT (Baris 1-3) ═══
                 $sheet->getStyle('A1:C3')->getFont()->setBold(true)->setSize(11);
                 $sheet->getStyle('A1:C3')->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
+                // Merge kop surat
+                $sheet->mergeCells('A1:H1');
+                $sheet->mergeCells('A2:H2');
+                $sheet->mergeCells('A3:H3');
+
                 // Garis bawah kop surat
-                $sheet->getStyle('A3:C3')->getBorders()->getBottom()
+                $sheet->getStyle('A3:H3')->getBorders()->getBottom()
                     ->setBorderStyle(Border::BORDER_MEDIUM)
                     ->getColor()->setRGB('000000');
 
-                // ═══ JUDUL DOKUMEN (Baris 5-6: bold, font 11, underline — merge by colspan) ═══
+                // ═══ JUDUL DOKUMEN (Baris 5-6) ═══
+                $sheet->mergeCells('A5:H5');
+                $sheet->mergeCells('A6:H6');
                 $sheet->getStyle('A5:H6')->getFont()->setBold(true)->setSize(11)->setUnderline(true);
                 $sheet->getStyle('A5:H6')->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -175,7 +216,7 @@ class PackageDetailSheet implements FromView, WithTitle, WithEvents
                     ->setVertical(Alignment::VERTICAL_CENTER);
                 $sheet->getRowDimension($headerRow)->setRowHeight(22);
 
-                // ═══ DATA ROWS (tidak bold) ═══
+                // ═══ DATA ROWS ═══
                 if ($this->personnelCount > 0) {
                     $dataRange = "A{$firstDataRow}:H{$lastDataRow}";
                     $sheet->getStyle($dataRange)->getFont()->setBold(false)->setSize(10);
@@ -196,22 +237,20 @@ class PackageDetailSheet implements FromView, WithTitle, WithEvents
                 $sheet->getStyle("A{$footerRow}:H{$footerRow}")->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // ═══ BORDER TABEL (hitam tipis) ═══
+                // ═══ BORDER TABEL ═══
                 $fullTableRange = "A{$headerRow}:H{$footerRow}";
                 $sheet->getStyle($fullTableRange)->getBorders()->getAllBorders()
                     ->setBorderStyle(Border::BORDER_THIN)
                     ->getColor()->setRGB('000000');
 
-                // ═══ TANDA TANGAN (F-H, centered — merge by colspan) ═══
+                // ═══ TANDA TANGAN ═══
                 $ttdStartRow = $footerRow + 2;
                 for ($r = $ttdStartRow; $r <= $ttdStartRow + 8; $r++) {
                     $sheet->getStyle("F{$r}:H{$r}")->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 }
-                // Jabatan bold
-                $jabatanRow = $ttdStartRow + 2;
+                $jabatanRow = $ttdStartRow + 1;
                 $sheet->getStyle("F{$jabatanRow}")->getFont()->setBold(true);
-                // Nama bold + underline
                 $namaRow = $ttdStartRow + 7;
                 $sheet->getStyle("F{$namaRow}")->getFont()->setBold(true)->setUnderline(true);
 

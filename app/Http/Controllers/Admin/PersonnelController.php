@@ -277,7 +277,7 @@ class PersonnelController extends Controller
     public function import(Request $request)
     {
         set_time_limit(0);
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '2G');
 
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv|max:51200', // max 50MB
@@ -460,7 +460,7 @@ class PersonnelController extends Controller
     public function importUpdate(Request $request)
     {
         set_time_limit(0);
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '2G');
 
         $request->validate([
             'file'      => 'required|mimes:xlsx,xls,csv|max:51200',
@@ -635,7 +635,7 @@ class PersonnelController extends Controller
     {
         // Pastikan cukup waktu dan memori untuk data besar
         set_time_limit(0);
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '2G');
 
         $request->validate([
             'satker_id' => 'required|exists:satkers,id',

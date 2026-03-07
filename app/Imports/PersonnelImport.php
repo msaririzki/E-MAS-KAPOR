@@ -920,7 +920,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
     public function saveFromPreviewData(array $rows, int $satkerId): array
     {
         set_time_limit(0);
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '2G');
 
         $satker = Satker::findOrFail($satkerId);
         $successCount = 0;
