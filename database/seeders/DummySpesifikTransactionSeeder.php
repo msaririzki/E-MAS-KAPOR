@@ -47,7 +47,7 @@ class DummySpesifikTransactionSeeder extends Seeder
 
         // 3. Buat Paket Anggaran Baru Khusus Order Dummy Spesifik Ini
         $this->command->info('Membuat Paket Rencana Anggaran Spesifik...');
-        $year = BudgetYear::firstOrCreate(['year' => 2026], ['is_active' => true]);
+        $year = BudgetYear::firstOrCreate(['year' => 2026], ['name' => 'Tahun Anggaran 2026', 'is_active' => true]);
         $package = BudgetPackage::create([
             'budget_year_id' => $year->id,
             'name' => 'PAKET PENGADAAN SPESIFIK ' . rand(100, 999),
