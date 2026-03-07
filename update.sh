@@ -1,6 +1,16 @@
 #!/bin/bash
 set -e
 
+# Pastikan file .env ada sebagai file, bukan jadi folder gara-gara volume docker-compose
+if [ ! -f ".env" ]; then
+    if [ -d ".env" ]; then
+        echo "==> MENGHAPUS folder .env yang tidak sengaja terbuat oleh Docker..."
+        rm -rf .env
+    fi
+    echo "==> MENGUPDATE: Membuat file .env kosong agar terisi otomatis dari .env.example..."
+    touch .env
+fi
+
 echo "==> Menarik perubahan kode terbaru..."
 git pull origin main
 
