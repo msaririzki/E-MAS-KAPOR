@@ -1,0 +1,83 @@
+services:
+  app:
+    image: "${COMPOSE_PROJECT_NAME:-kapor}-app:latest"
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      network: host
+      args:
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+    working_dir: /var/www/html
+    environment:
+      # Kita arahkan agar env Laravel connect ke MariaDB di docker ini
+      DB_HOST: db
+    volumes:
+      # public: shared dengan Nginx agar bisa serve file statis
+      - app-public:/var/www/html/public
+      # storage & database: persistent data
+      - app-storage:/var/www/html/storage
+      # .env dari host langsung di-mount
+      - ./.env:/var/www/html/.env
+      # --- Kode PHP di-mount dari host agar git pull langsung berpengaruh ---
+      - ./app:/var/www/html/app:ro
+      - ./config:/var/www/html/config:ro
+      - ./database:/var/www/html/database
+      - ./resources/views:/var/www/html/resources/views:ro
+      - ./routes:/var/www/html/routes:ro
+      - ./docker/php/custom.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  queue:
+    image: "${COMPOSE_PROJECT_NAME:-kapor}-app:latest"
+    working_dir: /var/www/html
+    command: php artisan queue:work --queue=default --sleep=3 --tries=3 --timeout=120
+    environment:
+      DB_HOST: db
+    volumes:
+      - app-public:/var/www/html/public
+      - app-storage:/var/www/html/storage
+      - ./.env:/var/www/html/.env
+      - ./app:/var/www/html/app:ro
+      - ./config:/var/www/html/config:ro
+      - ./database:/var/www/html/database
+      - ./resources/views:/var/www/html/resources/views:ro
+      - ./routes:/var/www/html/routes:ro
+      - ./docker/php/custom.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+    depends_on:
+      - app
+      - db
+    restart: unless-stopped
+
+  web:
+    image: nginx:1.27-alpine
+    ports:
+      - "${WEB_PORT:-8001}:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # Nginx baca file statis dari volume yang sama dengan app
+      - app-public:/var/www/html/public:ro
+      - app-storage:/var/www/html/storage:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10.11
+    environment:
+      MYSQL_DATABASE: kapor
+      MYSQL_USER: root
+      # Ganti password sesuai dengan yang ada di .env (Ndekutaok987..)
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Ndekutaok987..}
+    volumes:
+      - db-data:/var/lib/mysql
+    ports:
+      - "${DB_PORT_EXTERNAL:-3307}:3306"
+    restart: unless-stopped
+
+volumes:
+  app-public:
+  app-storage:
+  db-data:
