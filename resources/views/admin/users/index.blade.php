@@ -963,6 +963,106 @@
         from { width: 100%; }
         to { width: 0%; }
     }
+
+    /* ── Modal overrides for consistency ───────────────────────── */
+    .modal-overlay {
+        display: flex; position: fixed; inset: 0; background: rgba(0,0,0,0);
+        z-index: 2000; align-items: center; justify-content: center;
+        backdrop-filter: blur(0px);
+        visibility: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+    }
+    .modal-overlay.open { 
+        visibility: visible;
+        background: rgba(0,0,0,.5);
+        backdrop-filter: blur(4px);
+        pointer-events: auto;
+    }
+    .modal {
+        background: #fff; border-radius: 16px; width: 95%; max-width: 650px;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); 
+        overflow: visible;
+        transform: scale(0.9) translateY(20px);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .modal-overlay.open .modal {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid #F3F4F6; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 24px; }
+    .modal-footer { padding: 20px 24px; border-top: 1px solid #F3F4F6; display: flex; justify-content: flex-end; gap: 12px; }
+    
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px; }
+    .form-group { margin-bottom: 16px; }
+
+    /* File Upload Styling */
+    .file-upload-wrapper { width: 100%; }
+    .file-upload-label {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 30px 20px; border: 2px dashed #E5E7EB; border-radius: 12px;
+        background: #F9FAFB; cursor: pointer; transition: all 0.2s ease;
+        text-align: center; gap: 8px;
+    }
+    .file-upload-label:hover { border-color: #B91C1C; background: #FEF2F2; }
+    .file-upload-label i { font-size: 32px; color: #9CA3AF; transition: color 0.2s; }
+    .file-upload-label:hover i { color: #B91C1C; }
+    .file-upload-label span { font-size: 14px; color: #4B5563; font-weight: 600; }
+    .file-upload-label small { font-size: 11px; color: #9CA3AF; }
+
+    /* Button Styling */
+    .btn-modal {
+        padding: 0 24px;
+        height: 44px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        border: none;
+    }
+    .btn-modal-maroon {
+        background: #B91C1C;
+        color: #fff;
+        box-shadow: 0 4px 6px -1px rgba(185, 28, 28, 0.2);
+    }
+    .btn-modal-maroon:hover {
+        background: #991B1B;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 10px -1px rgba(185, 28, 28, 0.3);
+    }
+    .btn-modal-outline {
+        background: #fff;
+        color: #374151;
+        border: 1px solid #E5E7EB;
+    }
+    .btn-modal-outline:hover {
+        background: #F9FAFB;
+        border-color: #D1D5DB;
+        color: #111827;
+    }
+
+    /* Password Toggle Styling */
+    .password-wrapper { position: relative; display: flex; align-items: center; }
+    .password-toggle {
+        position: absolute; right: 10px;
+        background: none; border: none;
+        color: #9CA3AF; cursor: pointer;
+        padding: 5px; font-size: 18px;
+        display: flex; align-items: center; justify-content: center;
+        transition: color 0.2s;
+    }
+    .password-toggle:hover { color: #4B5563; }
+
+    @media (max-width: 640px) {
+        .form-row { grid-template-columns: 1fr; gap: 16px; }
+        .modal { width: 92%; max-width: none; margin: 10px; }
+    }
 </style>
 @endsection
 
