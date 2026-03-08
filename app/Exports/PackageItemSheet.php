@@ -2,34 +2,35 @@
 
 namespace App\Exports;
 
-use App\Models\PackageItem;
 use App\Models\BudgetPackage;
 use App\Models\InvoiceSetting;
+use App\Models\PackageItem;
 use App\Models\Personnel;
 use App\Models\Satker;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
-use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvents
+class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitle
 {
     protected $packageItem;
+
     protected $sheetName;
+
     protected $budgetPackage;
+
     protected $matrixCount = 0;
 
     public function __construct(PackageItem $packageItem, string $sheetName, BudgetPackage $budgetPackage)
     {
         $this->packageItem = $packageItem;
         // Trim just in case
-        $this->sheetName = strlen($sheetName) > 31 ? substr($sheetName, 0, 28) . '...' : $sheetName;
+        $this->sheetName = strlen($sheetName) > 31 ? substr($sheetName, 0, 28).'...' : $sheetName;
         $this->budgetPackage = $budgetPackage;
     }
 
@@ -41,15 +42,31 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
     private function getSizeKey()
     {
         $name = strtoupper($this->packageItem->kaporItem->item_name);
-        
-        if (str_contains($name, 'TOPI') || str_contains($name, 'PET') || str_contains($name, 'BARET') || str_contains($name, 'PECI')) return 'topi';
-        if (str_contains($name, 'JILBAB')) return 'jilbab';
-        if (str_contains($name, 'CELANA') || str_contains($name, 'ROK')) return 'celana';
-        if (str_contains($name, 'SEPATU OLAHRAGA')) return 'sepatu_olahraga';
-        if (str_contains($name, 'SEPATU')) return 'sepatu_dinas';
-        if (str_contains($name, 'JAKET')) return 'jaket';
-        if (str_contains($name, 'OLAHRAGA')) return 'olahraga';
-        if (str_contains($name, 'SABUK')) return 'sabuk';
+
+        if (str_contains($name, 'TOPI') || str_contains($name, 'PET') || str_contains($name, 'BARET') || str_contains($name, 'PECI')) {
+            return 'topi';
+        }
+        if (str_contains($name, 'JILBAB')) {
+            return 'jilbab';
+        }
+        if (str_contains($name, 'CELANA') || str_contains($name, 'ROK')) {
+            return 'celana';
+        }
+        if (str_contains($name, 'SEPATU OLAHRAGA')) {
+            return 'sepatu_olahraga';
+        }
+        if (str_contains($name, 'SEPATU')) {
+            return 'sepatu_dinas';
+        }
+        if (str_contains($name, 'JAKET')) {
+            return 'jaket';
+        }
+        if (str_contains($name, 'OLAHRAGA')) {
+            return 'olahraga';
+        }
+        if (str_contains($name, 'SABUK')) {
+            return 'sabuk';
+        }
 
         return 'kemeja';
     }
@@ -58,7 +75,7 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
     {
         $kaporItem = $this->packageItem->kaporItem;
         $sizeKey = $this->getSizeKey();
-        
+
         // Dapatkan semua ukuran yang mungkin untuk item ini dari master data
         $availableSizes = $kaporItem->sizes()->orderBy('sort_order')->pluck('size_label')->toArray();
         if (empty($availableSizes)) {
@@ -79,25 +96,32 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
             $satker = $recipient->satker;
 
             $query = Personnel::where('satker_id', $satker->id)
-                              ->where('is_active', true);
+                ->where('is_active', true);
 
             // Apply filters (sama dengan PackageItemRecipient->calculateMatchedCount)
-            if (!empty($filters['personnel_type'])) {
+            if (! empty($filters['personnel_type'])) {
                 $mappedTypes = array_map(function ($t) {
                     $lower = strtolower($t);
-                    if ($lower === 'polri') return 'Polri';
-                    if ($lower === 'pns') return 'PNS';
-                    if ($lower === 'pppk') return 'PPPK';
+                    if ($lower === 'polri') {
+                        return 'Polri';
+                    }
+                    if ($lower === 'pns') {
+                        return 'PNS';
+                    }
+                    if ($lower === 'pppk') {
+                        return 'PPPK';
+                    }
+
                     return $t;
                 }, $filters['personnel_type']);
                 $query->whereIn('personnel_type', $mappedTypes);
             }
 
-            if (!empty($filters['gender'])) {
+            if (! empty($filters['gender'])) {
                 $query->whereIn('gender', $filters['gender']);
             }
 
-            if (!empty($filters['rank_categories'])) {
+            if (! empty($filters['rank_categories'])) {
                 $query->whereHas('rank', function ($q) use ($filters) {
                     $q->whereIn('category', $filters['rank_categories']);
                 });
@@ -105,7 +129,7 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
 
             // Hitung Group By size (mengambil array JSON kapor_sizes)
             $personnels = $query->get(['kapor_sizes']);
-            
+
             $row = [
                 'satker_name' => $satker->name,
                 'sizes' => array_fill_keys($availableSizes, 0),
@@ -117,20 +141,20 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
                 // Ambil nilai dari JSON (jika ada)
                 $sizes = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
                 $sizeVal = $sizes[$sizeKey] ?? null;
-                $sizeValStr = (string)$sizeVal;
-                
+                $sizeValStr = (string) $sizeVal;
+
                 if (empty($sizeValStr) || $sizeValStr == '-' || $sizeValStr == 'null') {
                     $row['unknown']++;
                     $totalPerSize['UNKNOWN']++;
-                } else if (in_array($sizeValStr, $availableSizes)) {
+                } elseif (in_array($sizeValStr, $availableSizes)) {
                     $row['sizes'][$sizeValStr]++;
                     $totalPerSize[$sizeValStr]++;
                 } else {
-                     // Jika ada size yang tidak tercatat di standard, masukkan ke unknown agar tidak hilang
+                    // Jika ada size yang tidak tercatat di standard, masukkan ke unknown agar tidak hilang
                     $row['unknown']++;
                     $totalPerSize['UNKNOWN']++;
                 }
-                
+
                 $row['row_total']++;
                 $grandTotal++;
             }
@@ -159,7 +183,7 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
                 // ═══ HITUNG POSISI BARIS ═══
@@ -202,7 +226,7 @@ class PackageItemSheet implements FromView, WithTitle, ShouldAutoSize, WithEvent
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // ═══ HEADER TABEL (Baris 7-8) ═══
-                $headerRange = "A{$headerStartRow}:{$lastColLetter}" . ($headerStartRow + 1);
+                $headerRange = "A{$headerStartRow}:{$lastColLetter}".($headerStartRow + 1);
                 $sheet->getStyle($headerRange)->getFont()->setBold(true)->setSize(10);
                 $sheet->getStyle($headerRange)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)

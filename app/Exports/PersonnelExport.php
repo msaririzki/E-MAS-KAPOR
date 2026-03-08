@@ -15,6 +15,7 @@ use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 class PersonnelExport implements WithMultipleSheets
 {
     protected ?array $satkerIds;
+
     protected string $satkerName;
 
     /**
@@ -30,11 +31,15 @@ class PersonnelExport implements WithMultipleSheets
     public function sheets(): array
     {
         $query = Personnel::with(['rank', 'satker'])
-            ->orderBy('satker_id')
-            ->orderByRaw("COALESCE((SELECT sort_order FROM ranks WHERE ranks.id = personnels.rank_id), 999)")
-            ->orderBy('full_name');
+            ->leftJoin('satkers', 'personnels.satker_id', '=', 'satkers.id')
+            ->select('personnels.*')
+            ->orderByRaw("CASE WHEN satkers.code = 'POLDA-NTB' THEN 1 ELSE 0 END ASC")
+            ->orderBy('satkers.sort_order')
+            ->orderBy('satkers.name')
+            ->orderByRaw('COALESCE((SELECT sort_order FROM ranks WHERE ranks.id = personnels.rank_id), 999)')
+            ->orderBy('personnels.full_name');
 
-        if (!empty($this->satkerIds)) {
+        if (! empty($this->satkerIds)) {
             $query->whereIn('satker_id', $this->satkerIds);
         }
 
@@ -43,7 +48,7 @@ class PersonnelExport implements WithMultipleSheets
         // Pisahkan berdasarkan tipe rank:
         // PNS/ASN jika rank category mengandung angka Golongan (I, II, III, IV) atau type 'pns'
         $polri = $all->filter(fn ($p) => $this->isPolri($p));
-        $pns   = $all->filter(fn ($p) => !$this->isPolri($p));
+        $pns = $all->filter(fn ($p) => ! $this->isPolri($p));
 
         return [
             new PersonnelSheetExport($polri, $this->satkerName, 'Data Polri'),
@@ -61,13 +66,15 @@ class PersonnelExport implements WithMultipleSheets
      */
     protected function isPolri(Personnel $p): bool
     {
-        if (!$p->rank) {
+        if (! $p->rank) {
             // Tidak ada rank — cek dari field golongan personel
             $golongan = strtoupper($p->golongan ?? '');
+
             return $golongan !== 'PNS' && $golongan !== 'ASN';
         }
 
         $category = strtoupper($p->rank->category ?? '');
+
         return $category !== 'PNS';
     }
 }

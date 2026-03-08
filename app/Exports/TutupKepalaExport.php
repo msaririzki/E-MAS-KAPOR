@@ -65,7 +65,7 @@ class TutupKepalaExport implements FromCollection, ShouldAutoSize, WithEvents, W
 
     public function collection()
     {
-        $satkers = Satker::orderBy('name')->get();
+        $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
         $data = [];
         $no = 1;
 

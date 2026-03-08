@@ -122,13 +122,13 @@ class PackageItemController extends Controller
 
         // Bersihkan filter kosong
         if (is_array($filters)) {
-            $filters = array_filter($filters, fn($v) => !empty($v));
+            $filters = array_filter($filters, fn ($v) => ! empty($v));
             if (empty($filters)) {
                 $filters = null;
             }
         }
 
-        if (!empty($validated['satker_ids'])) {
+        if (! empty($validated['satker_ids'])) {
             foreach ($validated['satker_ids'] as $satkerId) {
                 $recipient = PackageItemRecipient::create([
                     'package_item_id' => $packageItem->id,
@@ -144,7 +144,7 @@ class PackageItemController extends Controller
 
         // Load satker relation so we can return recipient details to UI
         $packageItem->load('recipients.satker');
-        
+
         $recipientsDetail = $packageItem->recipients->map(function ($r) {
             return [
                 'satker_name' => $r->satker->name,
@@ -244,7 +244,7 @@ class PackageItemController extends Controller
             ->groupBy('keterangan')
             ->orderBy('keterangan')
             ->get()
-            ->map(fn($row) => [
+            ->map(fn ($row) => [
                 'value' => $row->keterangan,
                 'count' => $row->jumlah,
             ]);

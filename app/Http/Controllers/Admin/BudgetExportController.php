@@ -62,7 +62,7 @@ class BudgetExportController extends Controller
         ]);
 
         $settings = InvoiceSetting::getSettings();
-        $settings->update(array_filter($validated, fn($v) => $v !== null));
+        $settings->update(array_filter($validated, fn ($v) => $v !== null));
 
         return redirect()->back()->with('success', 'Pengaturan invoice berhasil disimpan');
     }
@@ -72,7 +72,8 @@ class BudgetExportController extends Controller
      */
     public function exportRecapExcel(BudgetPackage $budgetPackage)
     {
-        $filename = 'Rekapan_' . str_replace(' ', '_', $budgetPackage->name) . '_' . $budgetPackage->budgetYear->year . '.xlsx';
+        $filename = 'Rekapan_'.str_replace(' ', '_', $budgetPackage->name).'_'.$budgetPackage->budgetYear->year.'.xlsx';
+
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PackageRecapExport($budgetPackage), $filename);
     }
 
@@ -85,7 +86,8 @@ class BudgetExportController extends Controller
         ini_set('memory_limit', '2G');
 
         $budgetPackage->load('budgetYear');
-        $filename = 'Detail_Penerima_' . str_replace(' ', '_', $budgetPackage->name) . '_' . $budgetPackage->budgetYear->year . '.xlsx';
+        $filename = 'Detail_Penerima_'.str_replace(' ', '_', $budgetPackage->name).'_'.$budgetPackage->budgetYear->year.'.xlsx';
+
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PackageDetailExport($budgetPackage), $filename);
     }
 }

@@ -81,7 +81,7 @@ class DashboardController extends Controller
                     $q->whereNotNull('kapor_sizes')
                         ->whereNotNull('rank_id')
                         ->whereNotNull('nrp');
-                }
+                },
             ])
             ->where(function ($query) use ($poldaId) {
                 $query->whereNull('parent_id')->orWhere('parent_id', $poldaId);
@@ -176,7 +176,7 @@ class DashboardController extends Controller
 
         if ($personnel) {
             $kaporSizes = $personnel->kapor_sizes ?? [];
-            $hasSubmitted = !empty($kaporSizes);
+            $hasSubmitted = ! empty($kaporSizes);
         }
 
         return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'fiscalYear'));

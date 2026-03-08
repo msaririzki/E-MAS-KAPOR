@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\KaporItem;
 use App\Models\BudgetPackage;
 use App\Models\BudgetYear;
+use App\Models\KaporItem;
 use App\Models\PackageItem;
 use App\Models\PackageItemRecipient;
 use App\Models\Satker;
+use Illuminate\Database\Seeder;
 
 class DummyRealisticSeeder extends Seeder
 {
@@ -25,128 +25,128 @@ class DummyRealisticSeeder extends Seeder
         return [
             // ============ TUTUP KEPALA ============
             // Topi Lapangan Polri → Khusus jabatan tertentu
-            'TOPI LAPANGAN PATI BINTANG 2'      => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['PATI']],
-            'TOPI LAPANGAN PATI BINTANG 1'      => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['PATI']],
-            'TOPI LAPANGAN PAMEN'               => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['PAMEN']],
-            'TOPI LAPANGAN PAMA'                => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['PAMA']],
-            'TOPI LAPANGAN BINTARA'             => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['BINTARA']],
+            'TOPI LAPANGAN PATI BINTANG 2' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['PATI']],
+            'TOPI LAPANGAN PATI BINTANG 1' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['PATI']],
+            'TOPI LAPANGAN PAMEN' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['PAMEN']],
+            'TOPI LAPANGAN PAMA' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['PAMA']],
+            'TOPI LAPANGAN BINTARA' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['BINTARA']],
 
             // Peci Korpri PNS → PNS saja (cowok, unisex karena peci)
-            'PECI KORPRI PNS'                   => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
+            'PECI KORPRI PNS' => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
 
             // Pet Lantas → Polri Lantas, pria/wanita sesuai nama
-            'PET LANTAS PRIA PAMEN'             => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => ['PAMEN']],
-            'PET LANTAS PRIA PAMA'              => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => ['PAMA']],
-            'PET LANTAS PRIA BINTARA'           => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => ['BINTARA']],
-            'PET LANTAS WANITA PAMEN'           => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => ['PAMEN']],
-            'PET LANTAS WANITA PAMA'            => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => ['PAMA']],
-            'PET LANTAS WANITA BINTARA'         => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => ['BINTARA']],
+            'PET LANTAS PRIA PAMEN' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => ['PAMEN']],
+            'PET LANTAS PRIA PAMA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => ['PAMA']],
+            'PET LANTAS PRIA BINTARA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => ['BINTARA']],
+            'PET LANTAS WANITA PAMEN' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => ['PAMEN']],
+            'PET LANTAS WANITA PAMA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => ['PAMA']],
+            'PET LANTAS WANITA BINTARA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => ['BINTARA']],
 
             // Baret → Polri, divisi spesifik, semua gender
-            'BARET + EMBLEM SAMAPTA'            => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
-            'BARET + EMBLEM SATWA'              => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
-            'BARET + EMBLEM PROVOST'            => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
-            'BARET + EMBLEM BRIMOB'             => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
-            'BARET + EMBLEM POLAIR'             => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
-            'BARET + EMBLEM RESKRIM'            => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
-            'BARET + EMBLEM YANMA'              => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'BARET + EMBLEM SAMAPTA' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'BARET + EMBLEM SATWA' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'BARET + EMBLEM PROVOST' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'BARET + EMBLEM BRIMOB' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'BARET + EMBLEM POLAIR' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'BARET + EMBLEM RESKRIM' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'BARET + EMBLEM YANMA' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
 
             // Topi Lapangan PNS → PNS sesuai golongan
-            'TOPI LAPANGAN PNS GOL 4'           => ['personnel_type' => ['PNS'],  'gender' => [],    'rank_categories' => ['GOLONGAN IV']],
-            'TOPI LAPANGAN PNS GOL 3'           => ['personnel_type' => ['PNS'],  'gender' => [],    'rank_categories' => ['GOLONGAN III']],
-            'TOPI LAPANGAN PNS GOL 2'           => ['personnel_type' => ['PNS'],  'gender' => [],    'rank_categories' => ['GOLONGAN II']],
-            'TOPI LAPANGAN PNS GOL 1'           => ['personnel_type' => ['PNS'],  'gender' => [],    'rank_categories' => ['GOLONGAN I']],
+            'TOPI LAPANGAN PNS GOL 4' => ['personnel_type' => ['PNS'],  'gender' => [],    'rank_categories' => ['GOLONGAN IV']],
+            'TOPI LAPANGAN PNS GOL 3' => ['personnel_type' => ['PNS'],  'gender' => [],    'rank_categories' => ['GOLONGAN III']],
+            'TOPI LAPANGAN PNS GOL 2' => ['personnel_type' => ['PNS'],  'gender' => [],    'rank_categories' => ['GOLONGAN II']],
+            'TOPI LAPANGAN PNS GOL 1' => ['personnel_type' => ['PNS'],  'gender' => [],    'rank_categories' => ['GOLONGAN I']],
 
             // Jilbab → Polri & PNS Wanita saja
-            'JILBAB POLRI DAN PNS'              => ['personnel_type' => ['Polri','PNS'], 'gender' => ['P'], 'rank_categories' => []],
+            'JILBAB POLRI DAN PNS' => ['personnel_type' => ['Polri', 'PNS'], 'gender' => ['P'], 'rank_categories' => []],
 
             // ============ TUTUP BADAN ============
-            'JAKET POLRI'                       => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
-            'PAKAIAN KORPRI PNS PRIA'           => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
-            'PAKAIAN KORPRI PNS WANITA'         => ['personnel_type' => ['PNS'],  'gender' => ['P'], 'rank_categories' => []],
+            'JAKET POLRI' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'PAKAIAN KORPRI PNS PRIA' => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
+            'PAKAIAN KORPRI PNS WANITA' => ['personnel_type' => ['PNS'],  'gender' => ['P'], 'rank_categories' => []],
 
             // PDL PNS → PNS pria/wanita
-            'PDL PNS PRIA'                      => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
-            'PDL PNS WANITA'                    => ['personnel_type' => ['PNS'],  'gender' => ['P'], 'rank_categories' => []],
-            'PDH PNS PRIA'                      => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
-            'PDH PNS WANITA'                    => ['personnel_type' => ['PNS'],  'gender' => ['P'], 'rank_categories' => []],
-            'PDU PNS PRIA'                      => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
-            'PDU PNS WANITA'                    => ['personnel_type' => ['PNS'],  'gender' => ['P'], 'rank_categories' => []],
+            'PDL PNS PRIA' => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
+            'PDL PNS WANITA' => ['personnel_type' => ['PNS'],  'gender' => ['P'], 'rank_categories' => []],
+            'PDH PNS PRIA' => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
+            'PDH PNS WANITA' => ['personnel_type' => ['PNS'],  'gender' => ['P'], 'rank_categories' => []],
+            'PDU PNS PRIA' => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
+            'PDU PNS WANITA' => ['personnel_type' => ['PNS'],  'gender' => ['P'], 'rank_categories' => []],
 
             // PDL/PDH Polri pria/wanita
-            'PDH POLRI PRIA'                    => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDH POLRI WANITA'                  => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
-            'PDL I POLRI PRIA'                  => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDL I POLRI WANITA'                => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDH POLRI PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDH POLRI WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDL I POLRI PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDL I POLRI WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // PDL Polantas → Polri Lantas pria/wanita
-            'PDL I POLANTAS PRIA'               => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDL I POLANTAS WANITA'             => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDL I POLANTAS PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDL I POLANTAS WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // PDL II Polri Two Tone → Polri Staf
-            'PDL II POLRI TWO TONE PRIA'        => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDL II POLRI TWO TONE WANITA'      => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDL II POLRI TWO TONE PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDL II POLRI TWO TONE WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // PDL II Tactical Brimob → Polri Brimob
-            'PDL II TACTICAL COKLAT BRIMOB PRIA'   => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDL II TACTICAL COKLAT BRIMOB PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
             'PDL II TACTICAL COKLAT BRIMOB WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
-            'PDL II TACTICAL HIJAU BRIMOB PRIA'    => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDL II TACTICAL HIJAU BRIMOB WANITA'  => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
-            'PDL II TACTICAL HITAM BRIMOB PRIA'    => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDL II TACTICAL HITAM BRIMOB WANITA'  => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDL II TACTICAL HIJAU BRIMOB PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDL II TACTICAL HIJAU BRIMOB WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDL II TACTICAL HITAM BRIMOB PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDL II TACTICAL HITAM BRIMOB WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // PDL II Tactical Loreng
-            'PDL II TACTICAL LORENG BIRU AIRUD PRIA'   => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDL II TACTICAL LORENG BIRU AIRUD PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
             'PDL II TACTICAL LORENG BIRU AIRUD WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
-            'PDL II TACTICAL LORENG BRIMOB PRIA'       => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDL II TACTICAL LORENG BRIMOB WANITA'     => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDL II TACTICAL LORENG BRIMOB PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDL II TACTICAL LORENG BRIMOB WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // PDL II Biru Airud
-            'PDL II BIRU AIRUD PRIA'            => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDL II BIRU AIRUD WANITA'          => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDL II BIRU AIRUD PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDL II BIRU AIRUD WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // PDL II Provos
-            'PDL II PROVOS PRIA'                => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDL II PROVOS WANITA'              => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDL II PROVOS PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDL II PROVOS WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // PDU Polri
-            'PDU I/III POLRI PRIA'              => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDU I/III POLRI WANITA'            => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
-            'PDU IV POLRI PRIA'                 => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'PDU IV POLRI WANITA'               => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDU I/III POLRI PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDU I/III POLRI WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'PDU IV POLRI PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PDU IV POLRI WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // Pakaian Resintelpam → Polri Reskrim/Intel/Paminal/Sikum
-            'PAKAIAN LENGAN PENDEK RESINTELPAM PRIA'    => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'PAKAIAN LENGAN PENDEK RESINTELPAM PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
             'PAKAIAN LENGAN PANJANG RESINTELPAM WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // Humas → Polri Humas
-            'HUMAS LENGAN PANJANG PRIA'         => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'HUMAS LENGAN PANJANG WANITA'       => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'HUMAS LENGAN PANJANG PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'HUMAS LENGAN PANJANG WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // Opsnal TIK
-            'OPSNAL TIK LENGAN PENDEK PRIA'     => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'OPSNAL TIK LENGAN PANJANG WANITA'  => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'OPSNAL TIK LENGAN PENDEK PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'OPSNAL TIK LENGAN PANJANG WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
 
             // Pakaian Olahraga → Polri & PNS semua
-            'PAKAIAN OLAHRAGA PRIA'             => ['personnel_type' => ['Polri','PNS'], 'gender' => ['L'], 'rank_categories' => []],
-            'PAKAIAN OLAHRAGA WANITA'           => ['personnel_type' => ['Polri','PNS'], 'gender' => ['P'], 'rank_categories' => []],
+            'PAKAIAN OLAHRAGA PRIA' => ['personnel_type' => ['Polri', 'PNS'], 'gender' => ['L'], 'rank_categories' => []],
+            'PAKAIAN OLAHRAGA WANITA' => ['personnel_type' => ['Polri', 'PNS'], 'gender' => ['P'], 'rank_categories' => []],
 
             // Rompi & T-Shirt → Polri semua
-            'ROMPI KESELAMATAN HIJAU STABILO'   => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
-            'T-SHIRT'                           => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'ROMPI KESELAMATAN HIJAU STABILO' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'T-SHIRT' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
 
             // ============ TUTUP KAKI ============
-            'SEPATU DISHAR PNS PRIA'            => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
-            'SEPATU DISHAR PNS WANITA'          => ['personnel_type' => ['PNS'],  'gender' => ['P'], 'rank_categories' => []],
-            'SEPATU PDL I LANTAS POLRI PRIA'    => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'SEPATU PDL I LANTAS POLRI WANITA'  => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
-            'SEPATU PDL II PATI'                => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['PATI']],
-            'SEPATU PDL II PAMEN, PAMA, BINTARA DAN TAMATAMA' => ['personnel_type' => ['Polri'], 'gender' => [], 'rank_categories' => ['PAMEN','PAMA','BINTARA','TAMTAMA']],
-            'SEPATU PDL II PROVOST'             => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
-            'SEPATU TACTICAL RESINTEL PRIA'     => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
-            'SEPATU TACTICAL RESINTEL WANITA'   => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
-            'SEPATU OLAHRAGA'                   => ['personnel_type' => ['Polri','PNS'], 'gender' => [], 'rank_categories' => []],
-            'KAOS KAKI OLAHRAGA'                => ['personnel_type' => ['Polri','PNS'], 'gender' => [], 'rank_categories' => []],
+            'SEPATU DISHAR PNS PRIA' => ['personnel_type' => ['PNS'],  'gender' => ['L'], 'rank_categories' => []],
+            'SEPATU DISHAR PNS WANITA' => ['personnel_type' => ['PNS'],  'gender' => ['P'], 'rank_categories' => []],
+            'SEPATU PDL I LANTAS POLRI PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'SEPATU PDL I LANTAS POLRI WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'SEPATU PDL II PATI' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => ['PATI']],
+            'SEPATU PDL II PAMEN, PAMA, BINTARA DAN TAMATAMA' => ['personnel_type' => ['Polri'], 'gender' => [], 'rank_categories' => ['PAMEN', 'PAMA', 'BINTARA', 'TAMTAMA']],
+            'SEPATU PDL II PROVOST' => ['personnel_type' => ['Polri'], 'gender' => [],    'rank_categories' => []],
+            'SEPATU TACTICAL RESINTEL PRIA' => ['personnel_type' => ['Polri'], 'gender' => ['L'], 'rank_categories' => []],
+            'SEPATU TACTICAL RESINTEL WANITA' => ['personnel_type' => ['Polri'], 'gender' => ['P'], 'rank_categories' => []],
+            'SEPATU OLAHRAGA' => ['personnel_type' => ['Polri', 'PNS'], 'gender' => [], 'rank_categories' => []],
+            'KAOS KAKI OLAHRAGA' => ['personnel_type' => ['Polri', 'PNS'], 'gender' => [], 'rank_categories' => []],
         ];
     }
 
@@ -176,7 +176,7 @@ class DummyRealisticSeeder extends Seeder
             $satkers = Satker::inRandomOrder()->limit(6)->get();
         }
         $satkerIds = $satkers->pluck('id')->toArray();
-        $this->command->info('Satker ditemukan: ' . $satkers->pluck('name')->join(', '));
+        $this->command->info('Satker ditemukan: '.$satkers->pluck('name')->join(', '));
 
         // 3. Buat Paket
         $year = BudgetYear::firstOrCreate(['year' => 2026], ['is_active' => true]);
@@ -184,9 +184,9 @@ class DummyRealisticSeeder extends Seeder
             'budget_year_id' => $year->id,
             'name' => 'PAKET DUMMY REALISTIS',
             'description' => 'Dummy 4 Tutup Kepala, 4 Tutup Badan, 4 Tutup Kaki — filter sesuai peruntukan resmi',
-            'status' => 'DRAFT'
+            'status' => 'DRAFT',
         ]);
-        $this->command->info('Paket dibuat: ' . $package->name);
+        $this->command->info('Paket dibuat: '.$package->name);
 
         // 4. Ambil filter map
         $filterMap = $this->getItemFilterMap();
@@ -219,8 +219,9 @@ class DummyRealisticSeeder extends Seeder
 
         foreach ($selectedItemNames as $itemName) {
             $kaporItem = KaporItem::where('item_name', $itemName)->first();
-            if (!$kaporItem) {
+            if (! $kaporItem) {
                 $this->command->warn("Item tidak ditemukan: {$itemName}, dilewati.");
+
                 continue;
             }
 
@@ -234,7 +235,7 @@ class DummyRealisticSeeder extends Seeder
             $filters = $filterMap[$itemName] ?? [
                 'personnel_type' => [],
                 'gender' => [],
-                'rank_categories' => []
+                'rank_categories' => [],
             ];
 
             // Pilih 3-6 satker secara acak dari target
@@ -246,7 +247,7 @@ class DummyRealisticSeeder extends Seeder
                 $recipient = PackageItemRecipient::create([
                     'package_item_id' => $packageItem->id,
                     'satker_id' => $sid,
-                    'recipient_filters' => $filters
+                    'recipient_filters' => $filters,
                 ]);
                 $recipient->calculateMatchedCount();
             }

@@ -76,7 +76,7 @@ class KaporRekapExport implements FromCollection, ShouldAutoSize, WithEvents, Wi
 
     public function collection()
     {
-        $satkers = Satker::orderBy('name')->get();
+        $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
         $data = [];
         $no = 1;
 

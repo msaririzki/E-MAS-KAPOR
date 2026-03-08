@@ -56,11 +56,11 @@ class PackageItem extends Model
 
     public function getFormattedPriceAttribute(): string
     {
-        return 'Rp ' . number_format($this->effective_price, 0, ',', '.');
+        return 'Rp '.number_format($this->effective_price, 0, ',', '.');
     }
 
     public function getFormattedTotalAttribute(): string
     {
-        return 'Rp ' . number_format((float) $this->calculated_total, 0, ',', '.');
+        return 'Rp '.number_format((float) $this->calculated_total, 0, ',', '.');
     }
 }

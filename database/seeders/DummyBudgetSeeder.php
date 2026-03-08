@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\KaporItem;
 use App\Models\BudgetPackage;
 use App\Models\BudgetYear;
+use App\Models\KaporItem;
 use App\Models\PackageItem;
 use App\Models\PackageItemRecipient;
 use App\Models\Satker;
+use Illuminate\Database\Seeder;
 
 class DummyBudgetSeeder extends Seeder
 {
@@ -20,8 +20,8 @@ class DummyBudgetSeeder extends Seeder
         // 1. Update kapor prices if empty
         $this->command->info('Memperbarui harga Item KAPOR secara dummy...');
         $items = KaporItem::all();
-        foreach($items as $item) {
-            if (!$item->price || $item->price == 0) {
+        foreach ($items as $item) {
+            if (! $item->price || $item->price == 0) {
                 // Harga random kelipatan 5000: antara 50k s/d 1jt
                 $item->price = rand(10, 200) * 5000;
                 $item->save();
@@ -44,28 +44,29 @@ class DummyBudgetSeeder extends Seeder
             $satkerIds = Satker::inRandomOrder()->limit(5)->pluck('id')->toArray();
             if (empty($satkerIds)) {
                 $this->command->error('Tabel Satker kosong, tidak bisa lanjut.');
+
                 return;
             }
         }
 
-        // 3. Buat Paket Anggaran 
+        // 3. Buat Paket Anggaran
         $this->command->info('Membuat Paket Anggaran Dummy...');
         $year = BudgetYear::firstOrCreate(['year' => 2026], ['is_active' => true]);
         $package = BudgetPackage::create([
             'budget_year_id' => $year->id,
-            'name' => 'PAKET PENGADAAN LENGKAP DUMMY ' . rand(100, 999),
+            'name' => 'PAKET PENGADAAN LENGKAP DUMMY '.rand(100, 999),
             'description' => 'Simulasi Rencana Pengadaan (Dibuat lewat script Seeder)',
-            'status' => 'DRAFT'
+            'status' => 'DRAFT',
         ]);
 
         // 4. Pilih 4 Kapor per Kategori & Buat Transaksi Pembelian
         $categories = KaporItem::select('category')->distinct()->pluck('category');
 
         $this->command->info('Membuat transaksi (Tujuan Personel) 4 Item per Kategori...');
-        foreach($categories as $category) {
+        foreach ($categories as $category) {
             $catItems = KaporItem::where('category', $category)->inRandomOrder()->limit(4)->get();
-            
-            foreach($catItems as $index => $cItem) {
+
+            foreach ($catItems as $index => $cItem) {
                 // Tambahkan Item ke Paket
                 $packageItem = PackageItem::create([
                     'budget_package_id' => $package->id,
@@ -76,9 +77,9 @@ class DummyBudgetSeeder extends Seeder
                 $gender = null;
                 $personnelType = null;
                 $rankCats = [];
-                
+
                 $nameUpper = strtoupper($cItem->name);
-                
+
                 if (str_contains($nameUpper, 'WANITA') || str_contains($nameUpper, 'POLWAN') || str_contains($nameUpper, 'JILBAB') || str_contains($nameUpper, 'ROK')) {
                     $gender = 'Wanita';
                 } elseif (str_contains($nameUpper, 'PRIA') || str_contains($nameUpper, 'POLKI') || str_contains($nameUpper, 'CELANA')) {
@@ -97,7 +98,7 @@ class DummyBudgetSeeder extends Seeder
                     $rankCats = ['PATI'];
                 } elseif (str_contains($nameUpper, 'GOL 3') || str_contains($nameUpper, 'GOL 4')) {
                     $personnelType = 'PNS';
-                    $rankCats = ['GOLONGAN III', 'GOLONGAN IV']; 
+                    $rankCats = ['GOLONGAN III', 'GOLONGAN IV'];
                 }
 
                 // Kalau tetap kosong (Unisex / All)
@@ -111,18 +112,18 @@ class DummyBudgetSeeder extends Seeder
                 // Pilih Kombinasi Satker (Setiap item diberikan 2 hingga 4 satker)
                 $numSatkers = rand(2, 4);
                 $chosenKeys = (array) array_rand(array_flip($satkerIds), min($numSatkers, count($satkerIds)));
-                
+
                 $filters = [
                     'personnel_type' => $personnelType ? [$personnelType] : [],
                     'gender' => $gender ? [$gender === 'Pria' ? 'L' : 'P'] : [],
-                    'rank_categories' => $rankCats
+                    'rank_categories' => $rankCats,
                 ];
 
-                foreach($chosenKeys as $sid) {
+                foreach ($chosenKeys as $sid) {
                     $recipient = PackageItemRecipient::create([
                         'package_item_id' => $packageItem->id,
                         'satker_id' => $sid,
-                        'recipient_filters' => $filters
+                        'recipient_filters' => $filters,
                     ]);
                     $recipient->calculateMatchedCount();
                 }

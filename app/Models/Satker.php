@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,21 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Satker extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('order_polda_ntb_last', function (Builder $builder) {
+            $query = $builder->getQuery();
+            $orders = $query->orders ?? [];
+
+            array_unshift($orders, [
+                'type' => 'Raw',
+                'sql' => "CASE WHEN satkers.code = 'POLDA-NTB' THEN 1 ELSE 0 END ASC",
+            ]);
+
+            $query->orders = $orders;
+        });
+    }
 
     protected $fillable = [
         'name',
