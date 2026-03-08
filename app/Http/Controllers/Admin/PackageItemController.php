@@ -95,7 +95,7 @@ class PackageItemController extends Controller
             ->where('keterangan', '!=', '')
             ->selectRaw('keterangan, COUNT(*) as jumlah')
             ->groupBy('keterangan')
-            ->orderBy('keterangan')
+            ->orderByDesc('jumlah')
             ->get();
 
         return view('admin.budget.wizard.step2-recipients', compact(

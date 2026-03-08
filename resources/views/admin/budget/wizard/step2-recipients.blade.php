@@ -168,12 +168,10 @@
                                            onchange="toggleRankOptions({{ $item->id }})">
                                     <span>Polri</span>
                                 </label>
-                                <label class="pill-check pill-pns-pppk">
-                                    <input type="checkbox" class="filter-input" data-filter="personnel_type" data-value="pns" data-item="{{ $item->id }}"
-                                           onchange="toggleRankOptions({{ $item->id }}); syncPnsPppk(this, {{ $item->id }})" style="display:none;">
-                                    <input type="checkbox" class="filter-input pppk-hidden" data-filter="personnel_type" data-value="pppk" data-item="{{ $item->id }}"
-                                           onchange="toggleRankOptions({{ $item->id }})" style="display:none;">
-                                    <input type="checkbox" class="pill-visual-toggle"
+                                <label class="pill-check pill-pns-pppk" for="toggle-pns-pppk-{{ $item->id }}">
+                                    <input type="checkbox" class="filter-input pns-hidden" data-filter="personnel_type" data-value="pns" data-item="{{ $item->id }}" style="display:none;">
+                                    <input type="checkbox" class="filter-input pppk-hidden" data-filter="personnel_type" data-value="pppk" data-item="{{ $item->id }}" style="display:none;">
+                                    <input type="checkbox" class="pill-visual-toggle" id="toggle-pns-pppk-{{ $item->id }}"
                                            onchange="syncPnsPppkVisual(this, {{ $item->id }})">
                                     <span>PNS/PPPK</span>
                                 </label>
@@ -258,7 +256,7 @@
                                     <div class="ket-options-list custom-scrollbar">
                                         @forelse($allKeterangan as $ket)
                                         <label class="ket-option" data-label="{{ strtolower($ket->keterangan) }}">
-                                            <input type="checkbox" class="filter-input" data-filter="keterangan" data-value="{{ $ket->keterangan }}" data-item="{{ $item->id }}">
+                                            <input type="checkbox" class="filter-input ket-checkbox" data-filter="keterangan" data-value="{{ $ket->keterangan }}" data-item="{{ $item->id }}">
                                             <div class="ket-option-check"><i class="ri-check-line"></i></div>
                                             <span class="ket-option-name">{{ $ket->keterangan }}</span>
                                             <span class="ket-option-count">{{ $ket->jumlah }}</span>
@@ -273,6 +271,7 @@
                                     </div>
                                 </div>
                             </div>
+                            
                             {{-- Selected tags --}}
                             <div class="ket-selected-tags" id="ket-tags-{{ $item->id }}"></div>
                         </div>
@@ -424,10 +423,11 @@
     .active-indicator { font-size: 11px; font-weight: 700; color: #C62828; background: #FEF2F2; padding: 4px 10px; border-radius: 12px; }
 
     /* ── Recipient Cards ── */
-    .premium-card { border-color: #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
+    .premium-card { border-color: #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); border-radius: 16px; margin-bottom: 24px; position: relative; }
     .recipient-card-header {
         display: flex; justify-content: space-between; align-items: center;
         padding: 20px 24px; background: #fff; border-bottom: 1px solid #F1F5F9;
+        border-radius: 16px 16px 0 0;
     }
     .recipient-item-info .info-top { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
     .item-price { font-size: 14px; font-weight: 600; color: #475569; }
@@ -559,9 +559,14 @@
         const label = visualCb.closest('.pill-pns-pppk');
         const pnsCb = label.querySelector('input[data-value="pns"]');
         const pppkCb = label.querySelector('input[data-value="pppk"]');
+        
         pnsCb.checked = visualCb.checked;
         pppkCb.checked = visualCb.checked;
+        
         toggleRankOptions(itemId);
+        
+        // Dispatch 'change' event manually so the auto-save listener triggers
+        pnsCb.dispatchEvent(new Event('change'));
     }
 
     // Dinamis: tampilkan/sembunyikan rank options berdasarkan tipe personil
@@ -883,7 +888,7 @@
 
         options.forEach(opt => {
             const label = opt.dataset.label || '';
-            opt.style.display = label.includes(q) ? '' : 'none';
+            opt.style.display = label.includes(q) ? 'flex' : 'none';
         });
     }
 
@@ -987,7 +992,6 @@
         border: none; outline: none; width: 100%;
         font-size: 12.5px; color: #334155; background: transparent;
     }
-    .ket-search-input::placeholder { color: #CBD5E1; }
 
     .ket-options-list { max-height: 200px; overflow-y: auto; padding: 4px 0; }
     .ket-option {
@@ -995,18 +999,13 @@
         padding: 7px 12px; cursor: pointer; font-size: 12.5px;
         transition: background 0.15s;
     }
-    .ket-option:hover { background: #F8FAFC; }
     .ket-option input { display: none; }
     .ket-option-check {
         width: 18px; height: 18px; border-radius: 4px;
         border: 1.5px solid #CBD5E1; display: flex; align-items: center; justify-content: center;
         font-size: 11px; color: transparent; transition: all 0.15s; flex-shrink: 0;
     }
-    .ket-option input:checked ~ .ket-option-check {
-        background: #C62828; border-color: #C62828; color: #fff;
-    }
     .ket-option-name { flex: 1; color: #334155; font-weight: 500; }
-    .ket-option input:checked ~ .ket-option-name { color: #C62828; font-weight: 600; }
     .ket-option-count {
         font-size: 11px; color: #94A3B8; background: #F1F5F9;
         padding: 1px 6px; border-radius: 4px; font-weight: 600;
@@ -1022,9 +1021,17 @@
         font-weight: 600; cursor: pointer; border: none; transition: all 0.15s;
     }
     .ket-clear-btn { background: #F1F5F9; color: #64748B; }
-    .ket-clear-btn:hover { background: #E2E8F0; }
     .ket-apply-btn { background: #C62828; color: #fff; }
     .ket-apply-btn:hover { background: #B71C1C; }
+
+    .ket-search-input::placeholder { color: #CBD5E1; }
+
+    .ket-option:hover { background: #F8FAFC; border-color: #E2E8F0; }
+    .ket-option input:checked ~ .ket-option-check { background: #C62828 !important; border-color: #C62828 !important; }
+    .ket-option input:checked ~ .ket-option-check i { display: block !important; color: #fff; }
+    .ket-option input:checked ~ .ket-option-name { color: #C62828 !important; font-weight: 600 !important; }
+    
+    .ket-clear-btn:hover { background: #E2E8F0 !important; }
 
     /* Selected tags */
     .ket-selected-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
