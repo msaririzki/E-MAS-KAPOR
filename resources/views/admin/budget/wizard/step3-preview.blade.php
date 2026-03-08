@@ -4,9 +4,11 @@
 @section('breadcrumb')
     <a href="{{ route('admin.budget.index') }}">Rencana Anggaran</a>
     <span class="sep">/</span>
+    <a href="{{ route('admin.budget.show-year', $budgetPackage->budgetYear) }}">{{ $budgetPackage->budgetYear->name }}</a>
+    <span class="sep">/</span>
     <a href="{{ route('admin.budget.show-package', $budgetPackage) }}">{{ $budgetPackage->name }}</a>
     <span class="sep">/</span>
-    <span class="current">Pratinjau</span>
+    <span class="current">Tahap 3: Pratinjau</span>
 @endsection
 
 @section('content')
@@ -220,7 +222,6 @@
 @endsection
 
 @section('styles')
-<style>
     /* ── Hero Section & Wizard (Copied from Step 2) ── */
     .package-hero {
         background: #ffffff;
@@ -440,5 +441,4 @@
         .wizard-track { grid-template-columns: 1fr; }
         .stat-grid { grid-template-columns: 1fr; }
     }
-</style>
 @endsection
