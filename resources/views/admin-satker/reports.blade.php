@@ -4,13 +4,22 @@
 @section('breadcrumb', 'Laporan')
 
 @section('content')
-<div class="page-header">
+{{-- Print-only Header (KOP) --}}
+<div class="print-only print-header" style="display: none; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
+    <div style="text-align: center;">
+        <h2 style="margin: 0; font-size: 18px; text-transform: uppercase; font-weight: 800;">LAPORAN DATA PERSONEL & UKURAN KAPOR</h2>
+        <h3 style="margin: 5px 0 0 0; font-size: 16px; font-weight: 700;">{{ strtoupper($stats['satker_name']) }} — TA {{ $stats['fiscal_year'] }}</h3>
+        <p style="margin: 5px 0 0 0; font-size: 11px; color: #333;">Dicetak pada: {{ now()->format('d/m/Y H:i') }}</p>
+    </div>
+</div>
+
+<div class="page-header no-print">
     <div class="page-header-row">
         <div>
-            <h1 style="font-size: 22px; font-weight: 700; letter-spacing: -.3px; color: #0F172A;">
-                <i class="ri-file-list-3-line" style="margin-right: 6px; color: var(--brand);"></i> Laporan Data Personel & Ukuran Kapor
+            <h1>
+                <i class="ri-file-list-3-line no-print" style="margin-right: 6px; color: var(--brand);"></i> Laporan Data Personel & Ukuran Kapor
             </h1>
-            <p style="font-size: 13px; color: #64748B; margin-top: 2px;">
+            <p>
                 {{ $stats['satker_name'] }} — TA {{ $stats['fiscal_year'] }}
             </p>
         </div>
@@ -26,7 +35,7 @@
 </div>
 
 {{-- Summary Bar --}}
-<div style="background: #fff; border: 1px solid var(--slate-200); border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+<div class="summary-bar no-print" style="background: #fff; border: 1px solid var(--slate-200); border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
     <div style="display: flex; align-items: center; gap: 8px;">
         <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--brand);"></div>
         <span style="font-size: 13px; color: #64748B;">Total:</span>
@@ -65,7 +74,7 @@
 
 {{-- Main Data Table --}}
 <div class="card">
-    <div style="padding: 14px 20px; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between;">
+    <div class="card-header no-print" style="padding: 14px 20px; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between;">
         <h3 style="font-size: 14px; font-weight: 700; color: #1E293B; display: flex; align-items: center; gap: 8px;">
             <i class="ri-table-line" style="color: var(--brand);"></i>
             Data Personel & Ukuran Kapor — {{ $stats['satker_name'] }}
@@ -167,10 +176,8 @@
             </table>
         </div>
     </div>
-</div>
-
 {{-- Legend --}}
-<div style="margin-top: 12px; padding: 12px 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; display: flex; align-items: center; gap: 20px; font-size: 12px; color: #64748B;">
+<div class="legend no-print" style="margin-top: 12px; padding: 12px 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; display: flex; align-items: center; gap: 20px; font-size: 12px; color: #64748B;">
     <span style="font-weight: 700; color: #334155;">Keterangan:</span>
     <div style="display: flex; align-items: center; gap: 6px;">
         <div style="width: 14px; height: 14px; border-radius: 3px; background: #FFFBEB; border: 1px solid #FDE68A;"></div>
@@ -186,11 +193,122 @@
 
 @section('styles')
 @media print {
-    .sidebar, .header, .overlay, .page-header-actions { display: none !important; }
-    .main { margin-left: 0 !important; }
-    .content { padding: 0 !important; max-width: 100% !important; }
-    .card { border: none !important; box-shadow: none !important; }
-    table { font-size: 9px !important; }
-    thead th { background: #e8e8e8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* 1. GLOBAL UI HIDING - Menghilangkan elemen navigasi & UI web */
+    nav, aside, header, footer, 
+    #sidebar, .sidebar, .header, .topbar, .overlay,
+    .no-print, .breadcrumb, .breadcrumb-container, .page-header,
+    .page-header-actions, .mobile-nav-toggle, .btn-menu-toggle,
+    .summary-bar, .legend, .card-header, .header-right {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        overflow: hidden !important;
+    }
+
+    /* 2. LAYOUT RESET - Gunakan seluruh lebar kertas */
+    html, body {
+        background-color: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .main {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        left: 0 !important;
+        position: static !important;
+        display: block !important;
+    }
+
+    .content {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+        width: 100% !important;
+    }
+
+    /* 3. PRINT HEADER (KOP) */
+    .print-only {
+        display: block !important;
+        visibility: visible !important;
+        text-align: center !important;
+        margin-bottom: 20px !important;
+    }
+
+    .print-header {
+        border-bottom: 3px double #000 !important;
+        padding-bottom: 15px !important;
+    }
+
+    /* 4. TABLE OPTIMIZATION - Agar muat di A4 Landscape */
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .card-body {
+        padding: 0 !important;
+    }
+
+    .table-wrap {
+        overflow: visible !important;
+        width: 100% !important;
+    }
+
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        border: 1.5px solid #000 !important;
+        font-family: Arial, sans-serif !important;
+        font-size: 7.5pt !important; /* Font diperkecil agar kolom muat */
+        color: #000 !important;
+        table-layout: auto !important;
+    }
+
+    th, td {
+        border: 1px solid #000 !important;
+        padding: 3px 2px !important; /* Padding minimal */
+        text-align: left !important;
+        vertical-align: middle !important;
+        word-wrap: break-word !important;
+    }
+
+    thead th {
+        background-color: #f3f4f6 !important;
+        font-weight: bold !important;
+        text-align: center !important;
+        text-transform: uppercase !important;
+    }
+
+    /* Row Backgrounds */
+    tr[style*="background: #F1F5F9"] {
+        background-color: #e5e7eb !important;
+        font-weight: bold !important;
+    }
+
+    tr[style*="background: #FFFBEB"] {
+        background-color: #ffffca !important;
+    }
+
+    /* Page Breaks */
+    tr {
+        page-break-inside: avoid !important;
+    }
+
+    @page {
+        size: A4 landscape;
+        margin: 1cm 0.7cm;
+    }
 }
 @endsection
