@@ -48,6 +48,6 @@ class BudgetYear extends Model
     {
         $total = $this->packages()->sum('total_budget');
 
-        return 'Rp ' . number_format((float) $total, 0, ',', '.');
+        return 'Rp '.number_format((float) $total, 0, ',', '.');
     }
 }

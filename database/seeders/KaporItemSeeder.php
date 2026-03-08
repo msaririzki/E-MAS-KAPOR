@@ -118,8 +118,8 @@ class KaporItemSeeder extends Seeder
         foreach ($items as $itemData) {
             $sizesConfig = $itemData['sizes_config'];
             unset($itemData['sizes_config']);
-            
-            // Format category if needed, ensure invoice_group is set correctly as category 
+
+            // Format category if needed, ensure invoice_group is set correctly as category
             $itemData['invoice_group'] = $itemData['category'];
 
             // Create Item

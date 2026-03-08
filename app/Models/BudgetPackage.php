@@ -54,7 +54,7 @@ class BudgetPackage extends Model
 
     public function getFormattedBudgetAttribute(): string
     {
-        return 'Rp ' . number_format((float) $this->total_budget, 0, ',', '.');
+        return 'Rp '.number_format((float) $this->total_budget, 0, ',', '.');
     }
 
     public function getStatusLabelAttribute(): string

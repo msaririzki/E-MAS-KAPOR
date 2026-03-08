@@ -98,13 +98,13 @@ class PersonnelController extends Controller
         if ($isIncompleteFilter) {
             $query->where(function ($q) {
                 $q->whereNull('personnels.kapor_sizes')
-                  ->orWhereNull('personnels.rank_id')
-                  ->orWhereNull('personnels.nrp');
+                    ->orWhereNull('personnels.rank_id')
+                    ->orWhereNull('personnels.nrp');
             });
             // Kelompokkan berdasarkan satker agar tidak tercampur
             if ($sort !== 'satker') {
                 $query->leftJoin('satkers', 'personnels.satker_id', '=', 'satkers.id')
-                      ->select('personnels.*');
+                    ->select('personnels.*');
             }
             $query->orderBy('satkers.name', 'asc')->orderBy('personnels.full_name', 'asc');
         }
@@ -114,7 +114,7 @@ class PersonnelController extends Controller
         $personnels = $query->paginate($perPage)->withQueryString();
 
         $ranks = Rank::orderBy('sort_order')->get();
-        $satkers = Satker::orderBy('name')->get();
+        $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
         $bagians = Personnel::whereNotNull('bagian')->distinct()->pluck('bagian');
 
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
@@ -436,23 +436,23 @@ class PersonnelController extends Controller
         if ($user->hasRole('admin_satker')) {
             // Admin satker: paksa ke satkernya sendiri
             $satker = Satker::find($user->satker_id);
-            $satkerIds  = [$user->satker_id];
+            $satkerIds = [$user->satker_id];
             $satkerName = $satker?->name ?? 'SATKER';
         } else {
             // Admin: bisa pilih satker atau semua
             $satkerIdParam = $request->get('satker_id');
             if ($satkerIdParam && $satkerIdParam !== 'all') {
-                $satker     = Satker::findOrFail($satkerIdParam);
-                $satkerIds  = [$satker->id];
+                $satker = Satker::findOrFail($satkerIdParam);
+                $satkerIds = [$satker->id];
                 $satkerName = $satker->name;
             } else {
-                $satkerIds  = null; // semua
+                $satkerIds = null; // semua
                 $satkerName = 'SEMUA SATKER';
             }
         }
 
         $safeName = preg_replace('/[\\/:*?"<>|]/', '_', $satkerName);
-        $fileName = 'Data_Personel_' . $safeName . '_' . date('Ymd') . '.xlsx';
+        $fileName = 'Data_Personel_'.$safeName.'_'.date('Ymd').'.xlsx';
 
         AuditLogger::log(
             'Export Data Personel',
@@ -474,7 +474,7 @@ class PersonnelController extends Controller
         ini_set('memory_limit', '2G');
 
         $request->validate([
-            'file'      => 'required|mimes:xlsx,xls,csv|max:51200',
+            'file' => 'required|mimes:xlsx,xls,csv|max:51200',
             'satker_id' => 'required|exists:satkers,id',
         ]);
 
@@ -486,7 +486,7 @@ class PersonnelController extends Controller
         }
 
         try {
-            $import     = new PersonnelUpdateImport((int) $request->satker_id);
+            $import = new PersonnelUpdateImport((int) $request->satker_id);
             $collection = Excel::toCollection($import, $request->file('file'));
 
             $dataRows = collect();
@@ -496,24 +496,24 @@ class PersonnelController extends Controller
 
             $preview = $import->generatePreview($dataRows);
 
-            $coll          = collect($preview);
+            $coll = collect($preview);
             // Hanya hitung baris yang benar-benar BERUBAH (bukan no_change) untuk angka "update"
-            $totalUpdate   = $coll->where('action', 'update')->whereIn('status', ['update', 'corrected'])->count();
-            $totalNew      = $coll->where('action', 'new')->whereNotIn('status', ['error'])->count();
-            $totalError    = $coll->where('status', 'error')->count();
+            $totalUpdate = $coll->where('action', 'update')->whereIn('status', ['update', 'corrected'])->count();
+            $totalNew = $coll->where('action', 'new')->whereNotIn('status', ['error'])->count();
+            $totalError = $coll->where('status', 'error')->count();
             $totalNoChange = $coll->where('status', 'no_change')->count();
-            $totalCorrected= $coll->where('status', 'corrected')->count();
+            $totalCorrected = $coll->where('status', 'corrected')->count();
 
             session([
-                'update_import_preview'   => $preview,
+                'update_import_preview' => $preview,
                 'update_import_satker_id' => $request->satker_id,
-                'update_import_stats'     => [
-                    'update'    => $totalUpdate,
-                    'new'       => $totalNew,
-                    'error'     => $totalError,
+                'update_import_stats' => [
+                    'update' => $totalUpdate,
+                    'new' => $totalNew,
+                    'error' => $totalError,
                     'no_change' => $totalNoChange,
                     'corrected' => $totalCorrected,
-                    'total'     => count($preview),
+                    'total' => count($preview),
                 ],
             ]);
 
@@ -527,7 +527,7 @@ class PersonnelController extends Controller
 
             return redirect()->route('admin.personnel.import-update-preview');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memproses file: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memproses file: '.$e->getMessage());
         }
     }
 
@@ -536,9 +536,9 @@ class PersonnelController extends Controller
      */
     public function importUpdatePreview()
     {
-        $preview  = session('update_import_preview');
+        $preview = session('update_import_preview');
         $satkerId = session('update_import_satker_id');
-        $stats    = session('update_import_stats');
+        $stats = session('update_import_stats');
 
         if (! $preview || ! $satkerId) {
             return redirect()->route('admin.personnel.index')
@@ -546,7 +546,7 @@ class PersonnelController extends Controller
         }
 
         $satker = Satker::find($satkerId);
-        $ranks  = Rank::orderBy('sort_order')->get();
+        $ranks = Rank::orderBy('sort_order')->get();
 
         return view('admin.personnel.import_update_preview', compact('preview', 'satker', 'stats', 'ranks'));
     }
@@ -559,7 +559,7 @@ class PersonnelController extends Controller
         set_time_limit(0);
 
         $satkerId = session('update_import_satker_id');
-        $preview  = session('update_import_preview');
+        $preview = session('update_import_preview');
 
         if (! $satkerId || ! $preview) {
             return redirect()->route('admin.personnel.index')
@@ -576,7 +576,7 @@ class PersonnelController extends Controller
 
         try {
             $importer = new PersonnelUpdateImport((int) $satkerId);
-            $results  = $importer->saveUpdateFromPreview($preview);
+            $results = $importer->saveUpdateFromPreview($preview);
 
             session()->forget(['update_import_preview', 'update_import_satker_id', 'update_import_stats']);
 
@@ -598,12 +598,12 @@ class PersonnelController extends Controller
 
             if ($results['error_count'] > 0) {
                 return redirect()->route('admin.personnel.index')
-                    ->with('warning', $message . " Gagal: {$results['error_count']}.");
+                    ->with('warning', $message." Gagal: {$results['error_count']}.");
             }
 
             return redirect()->route('admin.personnel.index')->with('success', $message);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan data: '.$e->getMessage());
         }
     }
 

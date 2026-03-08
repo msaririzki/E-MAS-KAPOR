@@ -50,36 +50,43 @@ class PackageItemRecipient extends Model
 
         // Filter berdasarkan personnel_type (Polri/PNS)
         // DB stores 'Polri' / 'PNS', filter may come as lowercase
-        if (!empty($filters['personnel_type'])) {
+        if (! empty($filters['personnel_type'])) {
             $mappedTypes = array_map(function ($t) {
                 $lower = strtolower($t);
-                if ($lower === 'polri') return 'Polri';
-                if ($lower === 'pns') return 'PNS';
-                if ($lower === 'pppk') return 'PPPK';
+                if ($lower === 'polri') {
+                    return 'Polri';
+                }
+                if ($lower === 'pns') {
+                    return 'PNS';
+                }
+                if ($lower === 'pppk') {
+                    return 'PPPK';
+                }
+
                 return $t;
             }, $filters['personnel_type']);
             $query->whereIn('personnel_type', $mappedTypes);
         }
 
         // Filter berdasarkan gender (L/P)
-        if (!empty($filters['gender'])) {
+        if (! empty($filters['gender'])) {
             $query->whereIn('gender', $filters['gender']);
         }
 
         // Filter berdasarkan rank categories
-        if (!empty($filters['rank_categories'])) {
+        if (! empty($filters['rank_categories'])) {
             $query->whereHas('rank', function ($q) use ($filters) {
                 $q->whereIn('category', $filters['rank_categories']);
             });
         }
 
         // Filter berdasarkan keterangan
-        if (!empty($filters['keterangan'])) {
+        if (! empty($filters['keterangan'])) {
             $query->whereIn('keterangan', $filters['keterangan']);
         }
 
         // Filter berdasarkan golongan PNS/PPPK
-        if (!empty($filters['golongan'])) {
+        if (! empty($filters['golongan'])) {
             $query->whereIn('golongan', $filters['golongan']);
         }
 

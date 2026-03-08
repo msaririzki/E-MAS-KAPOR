@@ -2,30 +2,33 @@
 
 namespace App\Exports;
 
-use App\Models\PackageItem;
 use App\Models\BudgetPackage;
 use App\Models\InvoiceSetting;
+use App\Models\PackageItem;
 use App\Models\Personnel;
 use Maatwebsite\Excel\Concerns\FromArray;
-use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 
-class PackageDetailSheet implements FromArray, WithTitle, WithEvents
+class PackageDetailSheet implements FromArray, WithEvents, WithTitle
 {
     protected $packageItem;
+
     protected $sheetName;
+
     protected $budgetPackage;
+
     protected $personnelCount = 0;
+
     protected $rows = [];
 
     public function __construct(PackageItem $packageItem, string $sheetName, BudgetPackage $budgetPackage)
     {
         $this->packageItem = $packageItem;
-        $this->sheetName = strlen($sheetName) > 31 ? substr($sheetName, 0, 28) . '...' : $sheetName;
+        $this->sheetName = strlen($sheetName) > 31 ? substr($sheetName, 0, 28).'...' : $sheetName;
         $this->budgetPackage = $budgetPackage;
         $this->buildData();
     }
@@ -39,14 +42,30 @@ class PackageDetailSheet implements FromArray, WithTitle, WithEvents
     {
         $name = strtoupper($this->packageItem->kaporItem->item_name);
 
-        if (str_contains($name, 'TOPI') || str_contains($name, 'PET') || str_contains($name, 'BARET') || str_contains($name, 'PECI')) return 'topi';
-        if (str_contains($name, 'JILBAB')) return 'jilbab';
-        if (str_contains($name, 'CELANA') || str_contains($name, 'ROK')) return 'celana';
-        if (str_contains($name, 'SEPATU OLAHRAGA')) return 'sepatu_olahraga';
-        if (str_contains($name, 'SEPATU')) return 'sepatu_dinas';
-        if (str_contains($name, 'JAKET')) return 'jaket';
-        if (str_contains($name, 'OLAHRAGA')) return 'olahraga';
-        if (str_contains($name, 'SABUK')) return 'sabuk';
+        if (str_contains($name, 'TOPI') || str_contains($name, 'PET') || str_contains($name, 'BARET') || str_contains($name, 'PECI')) {
+            return 'topi';
+        }
+        if (str_contains($name, 'JILBAB')) {
+            return 'jilbab';
+        }
+        if (str_contains($name, 'CELANA') || str_contains($name, 'ROK')) {
+            return 'celana';
+        }
+        if (str_contains($name, 'SEPATU OLAHRAGA')) {
+            return 'sepatu_olahraga';
+        }
+        if (str_contains($name, 'SEPATU')) {
+            return 'sepatu_dinas';
+        }
+        if (str_contains($name, 'JAKET')) {
+            return 'jaket';
+        }
+        if (str_contains($name, 'OLAHRAGA')) {
+            return 'olahraga';
+        }
+        if (str_contains($name, 'SABUK')) {
+            return 'sabuk';
+        }
 
         return 'kemeja';
     }
@@ -69,8 +88,8 @@ class PackageDetailSheet implements FromArray, WithTitle, WithEvents
         $this->rows[] = ['']; // Baris kosong
 
         // Judul
-        $this->rows[] = ['DAFTAR NOMINATIF PENERIMA ' . strtoupper($kaporItem->item_name)];
-        $this->rows[] = [strtoupper($this->budgetPackage->name) . ' T.A. ' . ($this->budgetPackage->budgetYear->year ?? '')];
+        $this->rows[] = ['DAFTAR NOMINATIF PENERIMA '.strtoupper($kaporItem->item_name)];
+        $this->rows[] = [strtoupper($this->budgetPackage->name).' T.A. '.($this->budgetPackage->budgetYear->year ?? '')];
         $this->rows[] = ['']; // Baris kosong
 
         // Header tabel
@@ -83,35 +102,42 @@ class PackageDetailSheet implements FromArray, WithTitle, WithEvents
             $satker = $recipient->satker;
 
             $query = Personnel::where('satker_id', $satker->id)
-                              ->where('is_active', true)
-                              ->select(['id', 'full_name', 'nrp', 'rank_id', 'jabatan', 'gender', 'kapor_sizes', 'personnel_type']);
+                ->where('is_active', true)
+                ->select(['id', 'full_name', 'nrp', 'rank_id', 'jabatan', 'gender', 'kapor_sizes', 'personnel_type']);
 
-            if (!empty($filters['personnel_type'])) {
+            if (! empty($filters['personnel_type'])) {
                 $mappedTypes = array_map(function ($t) {
                     $lower = strtolower($t);
-                    if ($lower === 'polri') return 'Polri';
-                    if ($lower === 'pns') return 'PNS';
-                    if ($lower === 'pppk') return 'PPPK';
+                    if ($lower === 'polri') {
+                        return 'Polri';
+                    }
+                    if ($lower === 'pns') {
+                        return 'PNS';
+                    }
+                    if ($lower === 'pppk') {
+                        return 'PPPK';
+                    }
+
                     return $t;
                 }, $filters['personnel_type']);
                 $query->whereIn('personnel_type', $mappedTypes);
             }
 
-            if (!empty($filters['gender'])) {
+            if (! empty($filters['gender'])) {
                 $query->whereIn('gender', $filters['gender']);
             }
 
-            if (!empty($filters['rank_categories'])) {
+            if (! empty($filters['rank_categories'])) {
                 $query->whereHas('rank', function ($q) use ($filters) {
                     $q->whereIn('category', $filters['rank_categories']);
                 });
             }
 
-            if (!empty($filters['keterangan'])) {
+            if (! empty($filters['keterangan'])) {
                 $query->whereIn('keterangan', $filters['keterangan']);
             }
 
-            if (!empty($filters['golongan'])) {
+            if (! empty($filters['golongan'])) {
                 $query->whereIn('golongan', $filters['golongan']);
             }
 
@@ -120,7 +146,7 @@ class PackageDetailSheet implements FromArray, WithTitle, WithEvents
                 foreach ($personnels as $p) {
                     $sizes = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
                     $sizeVal = $sizes[$sizeKey] ?? null;
-                    $sizeValStr = (string)$sizeVal;
+                    $sizeValStr = (string) $sizeVal;
 
                     if (empty($sizeValStr) || $sizeValStr == '-' || $sizeValStr == 'null') {
                         $sizeValStr = '-';
@@ -130,7 +156,7 @@ class PackageDetailSheet implements FromArray, WithTitle, WithEvents
                     $this->rows[] = [
                         $no,
                         $p->full_name,
-                        "'" . ($p->nrp ?? '-'), // Prefix ' agar NRP tidak jadi angka
+                        "'".($p->nrp ?? '-'), // Prefix ' agar NRP tidak jadi angka
                         $p->rank?->name ?? '-',
                         $p->jabatan ?? '-',
                         $satker->name,
@@ -146,14 +172,14 @@ class PackageDetailSheet implements FromArray, WithTitle, WithEvents
         $this->personnelCount = $no;
 
         // Footer total
-        $this->rows[] = ['', 'TOTAL', '', '', '', '', '', $no . ' Personel'];
+        $this->rows[] = ['', 'TOTAL', '', '', '', '', '', $no.' Personel'];
 
         // Baris kosong
         $this->rows[] = [''];
         $this->rows[] = [''];
 
         // Tanda tangan
-        $this->rows[] = ['', '', '', '', '', ($settings->location ?? 'Mataram') . ', ' . now()->translatedFormat('d F Y')];
+        $this->rows[] = ['', '', '', '', '', ($settings->location ?? 'Mataram').', '.now()->translatedFormat('d F Y')];
         $this->rows[] = ['', '', '', '', '', $settings->signatory_title ?? 'Kabag RenMin'];
         $this->rows[] = [''];
         $this->rows[] = ['', '', '', '', '', $settings->signatory_rank ?? ''];
@@ -162,7 +188,7 @@ class PackageDetailSheet implements FromArray, WithTitle, WithEvents
         $this->rows[] = [''];
         $this->rows[] = [''];
         $this->rows[] = ['', '', '', '', '', $settings->signatory_name ?? ''];
-        $this->rows[] = ['', '', '', '', '', 'NRP. ' . ($settings->signatory_nrp ?? '')];
+        $this->rows[] = ['', '', '', '', '', 'NRP. '.($settings->signatory_nrp ?? '')];
     }
 
     public function array(): array
@@ -173,7 +199,7 @@ class PackageDetailSheet implements FromArray, WithTitle, WithEvents
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
+            AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
                 // ═══ HITUNG POSISI BARIS ═══

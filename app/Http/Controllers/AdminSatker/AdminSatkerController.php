@@ -31,12 +31,12 @@ class AdminSatkerController extends Controller
         $fillRate = $totalPersonnel > 0 ? round(($submittedCount / $totalPersonnel) * 100, 1) : 0;
 
         $stats = [
-            'satker_name'          => $satker->name ?? '-',
-            'total_personnel'      => $totalPersonnel,
-            'personnel_submitted'  => $submittedCount,
-            'personnel_pending'    => $pendingCount,
-            'fill_rate'            => $fillRate,
-            'fiscal_year'          => $fiscalYear,
+            'satker_name' => $satker->name ?? '-',
+            'total_personnel' => $totalPersonnel,
+            'personnel_submitted' => $submittedCount,
+            'personnel_pending' => $pendingCount,
+            'fill_rate' => $fillRate,
+            'fiscal_year' => $fiscalYear,
         ];
 
         // All personnel with status
@@ -49,7 +49,7 @@ class AdminSatkerController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('full_name', 'LIKE', "%{$search}%")
                     ->orWhere('nrp', 'LIKE', "%{$search}%")
-                    ->orWhereHas('rank', fn($rq) => $rq->where('name', 'LIKE', "%{$search}%"))
+                    ->orWhereHas('rank', fn ($rq) => $rq->where('name', 'LIKE', "%{$search}%"))
                     ->orWhere('jabatan', 'LIKE', "%{$search}%");
             });
         }
@@ -89,6 +89,7 @@ class AdminSatkerController extends Controller
             ->sort(function ($a, $b) {
                 $rankA = $a->rank->sort_order ?? 999;
                 $rankB = $b->rank->sort_order ?? 999;
+
                 return $rankA !== $rankB ? ($rankA <=> $rankB) : strcasecmp($a->full_name, $b->full_name);
             })
             ->values();
@@ -97,32 +98,32 @@ class AdminSatkerController extends Controller
         $total = $personnels->count();
         $pria = $personnels->where('gender', 'L')->count();
         $wanita = $personnels->where('gender', 'P')->count();
-        $submitted = $personnels->filter(fn($p) => $p->kapor_sizes && $p->rank_id && $p->nrp)->count();
+        $submitted = $personnels->filter(fn ($p) => $p->kapor_sizes && $p->rank_id && $p->nrp)->count();
         $pending = $total - $submitted;
         $fillRate = $total > 0 ? round(($submitted / $total) * 100, 1) : 0;
 
         $stats = [
-            'satker_name'          => $satker->name ?? '-',
-            'total_personnel'      => $total,
-            'personnel_submitted'  => $submitted,
-            'personnel_pending'    => $pending,
-            'fill_rate'            => $fillRate,
-            'fiscal_year'          => $fiscalYear,
-            'pria'                 => $pria,
-            'wanita'               => $wanita,
+            'satker_name' => $satker->name ?? '-',
+            'total_personnel' => $total,
+            'personnel_submitted' => $submitted,
+            'personnel_pending' => $pending,
+            'fill_rate' => $fillRate,
+            'fiscal_year' => $fiscalYear,
+            'pria' => $pria,
+            'wanita' => $wanita,
         ];
 
         // JSON kapor_sizes key mapping (same as PDF template)
         $jsonMapping = [
-            'topi'            => 'Tutup Kepala',
-            'kemeja'          => 'Kemeja',
-            'celana'          => 'Celana/Rok',
-            'olahraga'        => 'T-Shirt/Olhrg',
-            'sepatu_dinas'    => 'Sepatu Dinas',
+            'topi' => 'Tutup Kepala',
+            'kemeja' => 'Kemeja',
+            'celana' => 'Celana/Rok',
+            'olahraga' => 'T-Shirt/Olhrg',
+            'sepatu_dinas' => 'Sepatu Dinas',
             'sepatu_olahraga' => 'Sepatu Olhrg',
-            'jaket'           => 'Jaket',
-            'sabuk'           => 'Sabuk',
-            'jilbab'          => 'Jilbab',
+            'jaket' => 'Jaket',
+            'sabuk' => 'Sabuk',
+            'jilbab' => 'Jilbab',
         ];
 
         return view('admin-satker.reports', compact('stats', 'satker', 'fiscalYear', 'personnels', 'jsonMapping'));

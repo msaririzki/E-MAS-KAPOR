@@ -50,7 +50,7 @@ class UserController extends Controller
         $users = $query->latest()->paginate($perPage)->withQueryString();
 
         // Order by ID, but put 'SISWA' (id 40) just before 'POLRESTA MATARAM' (id 30)
-        $satkers = Satker::orderByRaw('CASE WHEN id = 40 THEN 29.5 ELSE id END ASC')->get();
+        $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
         $roles = Role::where('name', '!=', 'personil')->get();
 
         // Calculate Stats

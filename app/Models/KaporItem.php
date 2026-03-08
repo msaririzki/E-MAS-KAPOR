@@ -47,7 +47,7 @@ class KaporItem extends Model
             return '-';
         }
 
-        return 'Rp ' . number_format((float) $this->price, 0, ',', '.');
+        return 'Rp '.number_format((float) $this->price, 0, ',', '.');
     }
 
     // ── Relationships ─────────────────────────────────────────

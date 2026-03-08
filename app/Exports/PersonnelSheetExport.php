@@ -2,7 +2,6 @@
 
 namespace App\Exports;
 
-use App\Models\Personnel;
 use App\Models\Setting;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -27,7 +26,9 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithEvents, WithHeadings, WithStyles, WithTitle
 {
     protected Collection $personnels;
+
     protected string $satkerName;
+
     protected string $sheetTitle;
 
     public function __construct(Collection $personnels, string $satkerName, string $sheetTitle)
@@ -45,7 +46,7 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
     public function collection(): Collection
     {
         $rows = collect();
-        $no   = 1;
+        $no = 1;
 
         foreach ($this->personnels as $p) {
             $sizes = is_array($p->kapor_sizes) ? $p->kapor_sizes : [];
@@ -58,7 +59,7 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                 $p->full_name ?? '',                             // B  NAMA
                 $p->rank->name ?? '',                            // C  PANGKAT
                 $p->golongan ?? ($p->rank->category ?? ''),     // D  GOLONGAN
-                "\t" . ($p->nrp ?? ''),                         // E  NRP/NIP — prefix TAB agar Excel baca sebagai teks
+                "\t".($p->nrp ?? ''),                         // E  NRP/NIP — prefix TAB agar Excel baca sebagai teks
                 $p->jabatan ?? '',                               // F  JABATAN
                 $p->bagian ?? '',                                // G  BAG/FUNGSI
                 $genderExcel,                                    // H  JENIS KELAMIN
@@ -98,8 +99,8 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
             ['DAERAH NUSA TENGGARA BARAT'],
             ['BIRO LOGISTIK'],
             [''],
-            ['DATA UKURAN KAPOR PERSONEL ' . strtoupper($this->satkerName)],
-            ['UNTUK DUKUNGAN KAPOR TA. ' . $fiscalYear],
+            ['DATA UKURAN KAPOR PERSONEL '.strtoupper($this->satkerName)],
+            ['UNTUK DUKUNGAN KAPOR TA. '.$fiscalYear],
             [''],
             ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'UKURAN', '', '', '', '', '', '', '', '', 'KETERANGAN'],
             ['', '', '', '', '', '', '', '', 'TUTUP KEPALA', 'TUTUP BADAN', '', '', 'TUTUP KAKI SEPATU', '', 'JAKET', 'SABUK', 'JILBAB', ''],
@@ -110,13 +111,13 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
     public function styles(Worksheet $sheet)
     {
         return [
-            1  => ['font' => ['bold' => true]],
-            2  => ['font' => ['bold' => true]],
-            3  => ['font' => ['bold' => true, 'underline' => true]],
-            5  => ['font' => ['bold' => true, 'size' => 12]],
-            6  => ['font' => ['bold' => true, 'size' => 12, 'underline' => true]],
-            8  => ['font' => ['bold' => true], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]],
-            9  => ['font' => ['bold' => true], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]],
+            1 => ['font' => ['bold' => true]],
+            2 => ['font' => ['bold' => true]],
+            3 => ['font' => ['bold' => true, 'underline' => true]],
+            5 => ['font' => ['bold' => true, 'size' => 12]],
+            6 => ['font' => ['bold' => true, 'size' => 12, 'underline' => true]],
+            8 => ['font' => ['bold' => true], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]],
+            9 => ['font' => ['bold' => true], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]],
             10 => ['font' => ['bold' => true], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER]],
         ];
     }
@@ -131,7 +132,7 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                 // Ini memastikan leading zero (mis. 087701234) tidak hilang
                 $lastDataRow = $sheet->getHighestRow();
                 for ($row = 11; $row <= $lastDataRow; $row++) {
-                    $cell = $sheet->getCell('E' . $row);
+                    $cell = $sheet->getCell('E'.$row);
                     $rawVal = ltrim((string) $cell->getValue(), "\t"); // hapus prefix TAB
                     $cell->setValueExplicit($rawVal, DataType::TYPE_STRING);
                 }
@@ -169,22 +170,22 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
-                            'color'       => ['argb' => '000000'],
+                            'color' => ['argb' => '000000'],
                         ],
                     ],
                 ]);
 
                 // ── Border data rows ──────────────────────────────────────
                 if ($lastDataRow >= 11) {
-                    $sheet->getStyle('A11:R' . $lastDataRow)->applyFromArray([
+                    $sheet->getStyle('A11:R'.$lastDataRow)->applyFromArray([
                         'borders' => [
                             'allBorders' => [
                                 'borderStyle' => Border::BORDER_THIN,
-                                'color'       => ['argb' => 'CCCCCC'],
+                                'color' => ['argb' => 'CCCCCC'],
                             ],
                             'outline' => [
                                 'borderStyle' => Border::BORDER_THIN,
-                                'color'       => ['argb' => '000000'],
+                                'color' => ['argb' => '000000'],
                             ],
                         ],
                     ]);
@@ -205,12 +206,12 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
 
                 // ── Alignment data rows ───────────────────────────────────
                 if ($lastDataRow >= 11) {
-                    $sheet->getStyle('A11:A' . $lastDataRow)
+                    $sheet->getStyle('A11:A'.$lastDataRow)
                         ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('H11:Q' . $lastDataRow)
+                    $sheet->getStyle('H11:Q'.$lastDataRow)
                         ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     // Kolom NRP: left-aligned (teks)
-                    $sheet->getStyle('E11:E' . $lastDataRow)
+                    $sheet->getStyle('E11:E'.$lastDataRow)
                         ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
                 }
             },

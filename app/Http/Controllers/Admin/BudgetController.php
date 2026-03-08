@@ -27,7 +27,7 @@ class BudgetController extends Controller
             'name' => 'nullable|string|max:255',
         ]);
 
-        $validated['name'] = $validated['name'] ?? 'Tahun Anggaran ' . $validated['year'];
+        $validated['name'] = $validated['name'] ?? 'Tahun Anggaran '.$validated['year'];
 
         BudgetYear::create($validated);
 
@@ -37,7 +37,7 @@ class BudgetController extends Controller
     public function updateYear(Request $request, BudgetYear $budgetYear)
     {
         $validated = $request->validate([
-            'year' => 'required|integer|min:2020|max:2050|unique:budget_years,year,' . $budgetYear->id,
+            'year' => 'required|integer|min:2020|max:2050|unique:budget_years,year,'.$budgetYear->id,
             'name' => 'nullable|string|max:255',
             'is_active' => 'boolean',
         ]);
