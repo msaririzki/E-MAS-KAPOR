@@ -55,15 +55,40 @@
                     <p class="help-text">Tahun yang digunakan untuk Dashboard dan perhitungan data saat ini.</p>
                 </div>
 
-                <div class="modern-toggle-group">
+                <div class="modern-toggle-group" style="padding-bottom: 12px; border-bottom: none;">
                     <div class="toggle-info">
-                        <strong>Kunci Sistem (Lock System)</strong>
-                        <span>Cegah personil untuk melakukan input atau perubahan data kapor baru.</span>
+                        <strong>Kunci Sistem Paksa (Force Lock System)</strong>
+                        <span>Tombol Darurat: Jika diaktifkan, sistem akan SELALU TERKUNCI untuk input/perubahan tanpa memedulikan batas rentang tanggal masa pengisian di bawah.</span>
                     </div>
                     <label class="modern-toggle">
                         <input type="checkbox" name="is_system_locked" value="1" {{ $settings['is_system_locked'] ? 'checked' : '' }}>
                         <div class="toggle-slider"></div>
                     </label>
+                </div>
+                
+                <div style="padding: 0 24px 20px 24px; border-bottom: 1px solid var(--border-color);">
+                    <div style="background: var(--bg-body); border-radius: 8px; padding: 16px; border: 1px solid var(--border-color);">
+                        <div style="margin-bottom: 12px;">
+                            <strong style="font-size: 13px; color: var(--text-main); display: block;">Rentang Waktu Masa Pengisian Data</strong>
+                            <span style="font-size: 12px; color: var(--text-muted);">Sistem akan <b>otomatis terkunci</b> apabila tanggal saat ini berada di luar rentang tanggal (Periode Input) ini.</span>
+                        </div>
+                        <div style="display: flex; gap: 16px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Tanggal Mulai</label>
+                                <div class="input-with-icon">
+                                    <i class="ri-calendar-event-line"></i>
+                                    <input type="date" name="input_start_date" class="modern-input" value="{{ $settings['input_start_date'] }}" required>
+                                </div>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Tanggal Ditutup</label>
+                                <div class="input-with-icon">
+                                    <i class="ri-calendar-close-line"></i>
+                                    <input type="date" name="input_end_date" class="modern-input" value="{{ $settings['input_end_date'] }}" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="settings-action-bar">

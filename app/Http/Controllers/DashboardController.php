@@ -8,6 +8,8 @@ use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Spatie\Activitylog\Models\Activity;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -55,6 +57,21 @@ class DashboardController extends Controller
         $pendingCount = $totalPersonnel - $submittedCount;
         $fillRate = $totalPersonnel > 0 ? round(($submittedCount / $totalPersonnel) * 100, 1) : 0;
 
+        // Cek status kunci sistem (Manual & Tanggal)
+        $isLocked = Setting::getValue('is_system_locked', 'false') === 'true';
+        if (!$isLocked) {
+            try {
+                $startDate = Carbon::parse(Setting::getValue('input_start_date', date('Y-02-01')))->startOfDay();
+                $endDate = Carbon::parse(Setting::getValue('input_end_date', date('Y-08-31')))->endOfDay();
+                $now = now();
+                if ($now->lessThan($startDate) || $now->greaterThan($endDate)) {
+                    $isLocked = true;
+                }
+            } catch (\Exception $e) {
+                // Ignore parse errors
+            }
+        }
+
         $stats = [
             'total_users' => User::count(),
             'total_personnel' => $totalPersonnel,
@@ -67,7 +84,7 @@ class DashboardController extends Controller
             'fill_rate' => $fillRate,
             'total_kapor_items' => KaporItem::where('is_active', true)->count(),
             'fiscal_year' => $fiscalYear,
-            'is_locked' => Setting::getValue('is_system_locked', 'false') === 'true',
+            'is_locked' => $isLocked,
         ];
 
         // Fill rate per satker (top-level)
@@ -89,13 +106,35 @@ class DashboardController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        // Recent users
-        $recentUsers = User::with(['roles', 'satker'])
-            ->latest()
-            ->limit(8)
+        // Needs Attention: Incomplete Personnel Limit 5
+        $incompletePersonnel = Personnel::with(['satker'])
+            ->where(function ($q) {
+                $q->whereNull('kapor_sizes')
+                    ->orWhereNull('rank_id')
+                    ->orWhereNull('nrp');
+            })
+            ->inRandomOrder() // So it feels dynamic, or we can use latest()
+            ->limit(5)
             ->get();
 
-        return view('dashboard.superadmin', compact('stats', 'satkerStats', 'recentUsers', 'availableYears', 'fiscalYear', 'defaultYear'));
+        // Activity Log (Spatie)
+        $activities = [];
+        if (class_exists(Activity::class)) {
+            $activities = Activity::with('causer')
+                ->latest()
+                ->limit(6)
+                ->get();
+        }
+
+        return view('dashboard.superadmin', compact(
+            'stats', 
+            'satkerStats', 
+            'availableYears', 
+            'fiscalYear', 
+            'defaultYear',
+            'incompletePersonnel',
+            'activities'
+        ));
     }
 
     private function adminDashboard()

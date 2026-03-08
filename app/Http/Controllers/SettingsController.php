@@ -15,6 +15,8 @@ class SettingsController extends Controller
             'fiscal_year' => Setting::getValue('fiscal_year', date('Y')),
             'is_system_locked' => Setting::getValue('is_system_locked', 'false') === 'true',
             'app_name' => Setting::getValue('app_name', 'SI-KAPOR Polda NTB'),
+            'input_start_date' => Setting::getValue('input_start_date', date('Y-02-01')),
+            'input_end_date' => Setting::getValue('input_end_date', date('Y-08-31')),
         ];
 
         // Get submission stats per year for history
@@ -52,11 +54,20 @@ class SettingsController extends Controller
             'app_name' => 'required|string|max:255',
             'fiscal_year' => 'required|integer|min:2020|max:2099',
             'is_system_locked' => 'nullable|boolean',
+            'input_start_date' => 'nullable|date',
+            'input_end_date' => 'nullable|date|after_or_equal:input_start_date',
         ]);
 
         Setting::setValue('app_name', $validated['app_name']);
         Setting::setValue('fiscal_year', $validated['fiscal_year']);
         Setting::setValue('is_system_locked', $request->has('is_system_locked') ? 'true' : 'false');
+        
+        if (isset($validated['input_start_date'])) {
+            Setting::setValue('input_start_date', $validated['input_start_date']);
+        }
+        if (isset($validated['input_end_date'])) {
+            Setting::setValue('input_end_date', $validated['input_end_date']);
+        }
 
         return redirect()->back()->with('success', 'Pengaturan sistem berhasil diperbarui.');
     }
