@@ -1,16 +1,13 @@
 <table>
-    {{-- ═══ KOP SURAT (pojok kiri, colspan 3) ═══ --}}
+    {{-- ═══ KOP SURAT (full-width, merge seluruh kolom) ═══ --}}
     <tr>
-        <td colspan="3" style="font-weight: bold; text-align: center;">KEPOLISIAN NEGARA REPUBLIK INDONESIA</td>
-        @for($i = 0; $i < count($availableSizes) + 1; $i++)<td></td>@endfor
+        <td colspan="{{ count($availableSizes) + 4 }}" style="font-weight: bold; text-align: center;">KEPOLISIAN NEGARA REPUBLIK INDONESIA</td>
     </tr>
     <tr>
-        <td colspan="3" style="font-weight: bold; text-align: center;">DAERAH NUSA TENGGARA BARAT</td>
-        @for($i = 0; $i < count($availableSizes) + 1; $i++)<td></td>@endfor
+        <td colspan="{{ count($availableSizes) + 4 }}" style="font-weight: bold; text-align: center;">DAERAH NUSA TENGGARA BARAT</td>
     </tr>
     <tr>
-        <td colspan="3" style="font-weight: bold; text-align: center;">{{ strtoupper($settings->organization_name ?? 'BIRO LOGISTIK') }}</td>
-        @for($i = 0; $i < count($availableSizes) + 1; $i++)<td></td>@endfor
+        <td colspan="{{ count($availableSizes) + 4 }}" style="font-weight: bold; text-align: center;">{{ strtoupper($settings->organization_name ?? 'BIRO LOGISTIK') }}</td>
     </tr>
     <tr></tr>
 

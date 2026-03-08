@@ -209,14 +209,17 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 // ═══ DEFAULT FONT ═══
                 $sheet->getParent()->getDefaultStyle()->getFont()->setName('Calibri')->setSize(10);
 
-                // ═══ KOP SURAT (Baris 1-3: bold, font 11, pojok kiri A-C) ═══
-                $sheet->getStyle('A1:C3')->getFont()->setBold(true)->setSize(11);
-                $sheet->getStyle('A1:C3')->getAlignment()
+                // ═══ KOP SURAT (Baris 1-3: bold, font 11, merge seluruh lebar) ═══
+                $sheet->mergeCells("A1:{$lastColLetter}1");
+                $sheet->mergeCells("A2:{$lastColLetter}2");
+                $sheet->mergeCells("A3:{$lastColLetter}3");
+                $sheet->getStyle("A1:{$lastColLetter}3")->getFont()->setBold(true)->setSize(11);
+                $sheet->getStyle("A1:{$lastColLetter}3")->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
                 // Garis bawah kop surat
-                $sheet->getStyle('A3:C3')->getBorders()->getBottom()
+                $sheet->getStyle("A3:{$lastColLetter}3")->getBorders()->getBottom()
                     ->setBorderStyle(Border::BORDER_MEDIUM)
                     ->getColor()->setRGB('000000');
 
