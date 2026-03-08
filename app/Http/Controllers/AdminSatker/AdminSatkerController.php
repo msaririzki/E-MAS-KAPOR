@@ -127,4 +127,12 @@ class AdminSatkerController extends Controller
 
         return view('admin-satker.reports', compact('stats', 'satker', 'fiscalYear', 'personnels', 'jsonMapping'));
     }
+
+    /**
+     * Settings — Pengaturan tema untuk Admin Satker.
+     */
+    public function settings()
+    {
+        return view('admin-satker.settings');
+    }
 }

@@ -1156,6 +1156,10 @@
                         class="nav-link {{ request()->routeIs('admin-satker.reports') ? 'active' : '' }}">
                         <i class="ri-bar-chart-grouped-line"></i> Laporan
                     </a>
+                    <a href="{{ route('admin-satker.settings') }}"
+                        class="nav-link {{ request()->routeIs('admin-satker.settings') ? 'active' : '' }}">
+                        <i class="ri-settings-3-line"></i> Pengaturan
+                    </a>
                 </div>
             @endif
 
