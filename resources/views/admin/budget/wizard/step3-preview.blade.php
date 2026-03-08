@@ -25,7 +25,7 @@
                 <div>
                     <h1 class="package-title">Pratinjau & Hitung Anggaran</h1>
                     <p class="package-desc" style="margin-top: 6px;">
-                        Ringkasan seluruh item yang dipilih, penerima, dan total anggaran yang dibutuhkan.
+                        Tinjauan akhir item, kuantitas personil, dan estimasi anggaran sebelum disimpan.
                     </p>
                 </div>
                 <div>
@@ -98,57 +98,89 @@
 </div>
 
 
-{{-- Detailed Table --}}
-<div class="premium-card">
-    <div class="card-header border-b">
-        <div>
-            <h3 class="card-title">Rincian Paket</h3>
-            <p class="card-subtitle">Daftar item dan estimasi kuantitas yang dibutuhkan</p>
+{{-- Main Summary Table --}}
+<div class="content-panel">
+    <div class="panel-header">
+        <div class="panel-title-wrap">
+            <div class="panel-icon"><i class="ri-file-list-3-line"></i></div>
+            <div>
+                <h3 class="panel-title">Rincian Barang & Kuantitas</h3>
+                <p class="panel-subtitle">Daftar lengkap item yang telah dikonfigurasi penerimanya</p>
+            </div>
         </div>
     </div>
-    <div class="card-body flush">
-        <div class="table-wrap">
-            <table class="modern-table">
+    <div class="panel-body flush">
+        <div class="table-wrap custom-scrollbar">
+            <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="width: 40px;">NO</th>
-                        <th>NAMA BARANG</th>
-                        <th>KATEGORI</th>
-                        <th>SATUAN</th>
-                        <th style="text-align: right;">HARGA</th>
-                        <th style="text-align: center;">QTY</th>
-                        <th style="text-align: right;">TOTAL</th>
+                        <th width="5%" class="text-center">NO</th>
+                        <th width="35%">NAMA BARANG</th>
+                        <th width="15%">KATEGORI</th>
+                        <th width="15%" class="text-right">HARGA (Rp)</th>
+                        <th width="10%" class="text-center">QTY</th>
+                        <th width="20%" class="text-right">TOTAL (Rp)</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($budgetPackage->items as $idx => $item)
-                    <tr>
-                        <td class="text-secondary">{{ $idx + 1 }}</td>
+                    <tr class="item-row {{ $item->recipients->count() > 0 ? 'has-dropdown' : '' }}">
+                        <td class="text-center text-muted">{{ $idx + 1 }}</td>
                         <td>
-                            <div class="item-name">{{ $item->kaporItem->item_name }}</div>
-                            @if($item->recipients->count() > 0)
-                            <div class="item-satker-list">
-                                @foreach($item->recipients as $r)
-                                    <span>{{ $r->satker->name }} ({{ $r->matched_count }})</span>{{ !$loop->last ? ', ' : '' }}
-                                @endforeach
+                            <div class="flex items-center gap-3">
+                                <div class="avatar-icon">
+                                    <i class="ri-shirt-line"></i>
+                                </div>
+                                <div>
+                                    <div class="item-primary-name">{{ $item->kaporItem->item_name }}</div>
+                                    @if($item->recipients->count() > 0)
+                                        <div class="item-meta cursor-pointer" onclick="toggleSatkerList({{ $idx }})">
+                                            <i class="ri-building-4-line"></i> Diberikan ke <strong>{{ $item->recipients->count() }} Satker</strong>
+                                            <i class="ri-arrow-down-s-line" id="icon-satkers-{{ $idx }}" style="font-size: 14px; margin-left: 2px; transition: transform 0.2s;"></i>
+                                        </div>
+                                    @else
+                                        <span class="badge-soft badge-red mt-1">Belum ada penerima</span>
+                                    @endif
+                                </div>
                             </div>
+                        </td>
+                        <td><span class="badge-soft badge-blue">{{ $item->kaporItem->category }}</span></td>
+                        <td class="text-right font-medium text-slate-600">{{ $item->formatted_price }}</td>
+                        <td class="text-center">
+                            @if($item->calculated_qty > 0)
+                                <div class="qty-box">{{ number_format($item->calculated_qty) }}</div>
+                            @else
+                                <span class="text-muted">-</span>
                             @endif
                         </td>
-                        <td><span class="badge badge-neutral badge-sm">{{ $item->kaporItem->category }}</span></td>
-                        <td class="text-secondary">{{ $item->kaporItem->unit ?? 'PCS' }}</td>
-                        <td style="text-align: right;" class="font-medium">{{ $item->formatted_price }}</td>
-                        <td style="text-align: center;">
-                            <span class="qty-badge">{{ number_format($item->calculated_qty) }}</span>
+                        <td class="text-right font-bold text-red-600">
+                            {{ $item->formatted_total }}
                         </td>
-                        <td style="text-align: right;" class="text-red font-bold">{{ $item->formatted_total }}</td>
                     </tr>
+                    @if($item->recipients->count() > 0)
+                    {{-- Full-width Dropdown Satker List (Hidden by default) --}}
+                    <tr id="satkers-{{ $idx }}" class="satker-dropdown-row hidden">
+                        <td colspan="6" style="padding: 0; border-bottom: none;">
+                            <div class="satker-dropdown-wrapper">
+                                <div class="satker-grid">
+                                    @foreach($item->recipients as $r)
+                                        <div class="satker-chip">
+                                            <span class="satker-col" title="{{ $r->satker->name }}">{{ $r->satker->name }}</span>
+                                            <span class="qty-col">{{ $r->matched_count }}</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    @endif
                     @endforeach
                 </tbody>
                 <tfoot>
-                    <tr class="grand-total-row">
-                        <td colspan="5" class="text-right">GRAND TOTAL</td>
-                        <td class="text-center">{{ number_format($totalRecipients) }}</td>
-                        <td class="text-right">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
+                    <tr class="tfoot-total">
+                        <td colspan="4" class="text-right font-bold text-slate-700">TOTAL KESELURUHAN</td>
+                        <td class="text-center font-bold text-slate-900 text-lg">{{ number_format($totalRecipients) }}</td>
+                        <td class="text-right font-bold text-red-700 text-lg">Rp {{ number_format($grandTotal, 0, ',', '.') }}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -156,60 +188,60 @@
     </div>
 </div>
 
-{{-- Per Item Breakdown --}}
-<div class="section-title-wrap" style="margin-top: 32px; margin-bottom: 16px;">
-    <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0;">Breakdown Per Barang</h3>
+{{-- Breakdown Accordion --}}
+<div class="mt-8 mb-4">
+    <h3 class="text-lg font-bold text-slate-800">Rincian Biaya Per Barang</h3>
+    <p class="text-sm text-slate-500">Klik pada setiap barang untuk melihat rincian biaya tiap Satuan Kerja.</p>
 </div>
 
-<div class="breakdown-list">
+<div class="accordion-container">
     @foreach($budgetPackage->items as $item)
     @if($item->recipients->count() > 0)
-    <div class="premium-accordion">
+    <div class="accordion-item collapsed">
         <div class="accordion-header" onclick="this.parentElement.classList.toggle('collapsed')">
-            <div class="accordion-title">
-                <i class="ri-arrow-down-s-line chevron"></i>
-                <div class="title-text">
-                    <span class="name">{{ $item->kaporItem->item_name }}</span>
-                    <span class="sub" style="font-size: 12px; font-weight: 400; color: #64748B; margin-left: 8px;">
-                        {{ $item->recipients->count() }} Satker
-                    </span>
+            <div class="accordion-left">
+                <div class="acc-icon"><i class="ri-price-tag-3-line"></i></div>
+                <div class="acc-title-group">
+                    <h4>{{ $item->kaporItem->item_name }}</h4>
+                    <span class="acc-subtitle">{{ $item->recipients->count() }} Satker Penerima</span>
                 </div>
             </div>
-            <div class="accordion-meta text-red font-bold">
-                {{ $item->formatted_total }}
+            <div class="accordion-right">
+                <div class="acc-total">{{ $item->formatted_total }}</div>
+                <div class="acc-chevron"><i class="ri-arrow-down-s-line"></i></div>
             </div>
         </div>
-        <div class="accordion-body flush">
+        <div class="accordion-content">
             <div class="table-wrap">
-                <table class="modern-table detail-table">
+                <table class="acc-table">
                     <thead>
                         <tr>
-                            <th>SATKER KESATUAN</th>
-                            <th style="text-align: center;">PERSONIL</th>
-                            <th style="text-align: right;">HARGA</th>
-                            <th style="text-align: right;">SUBTOTAL</th>
+                            <th width="40%">SATKER PENERIMA</th>
+                            <th width="20%" class="text-center">JUMLAH PERSONIL</th>
+                            <th width="20%" class="text-right">HARGA (Rp)</th>
+                            <th width="20%" class="text-right">SUBTOTAL (Rp)</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($item->recipients as $r)
                         <tr>
-                            <td class="font-medium text-dark">{{ $r->satker->name }}</td>
-                            <td style="text-align: center;">
-                                <span class="qty-badge neutral">{{ $r->matched_count }}</span>
+                            <td class="font-medium text-slate-700">{{ $r->satker->name }}</td>
+                            <td class="text-center">
+                                <span class="inline-qty">{{ number_format($r->matched_count) }}</span>
                             </td>
-                            <td style="text-align: right;" class="text-secondary">{{ $item->formatted_price }}</td>
-                            <td style="text-align: right;" class="font-medium text-dark">
+                            <td class="text-right text-slate-500">{{ $item->formatted_price }}</td>
+                            <td class="text-right font-semibold text-slate-800">
                                 Rp {{ number_format($r->matched_count * $item->effective_price, 0, ',', '.') }}
                             </td>
                         </tr>
                         @endforeach
                     </tbody>
                     <tfoot>
-                        <tr class="subtotal-row">
-                            <td class="font-bold text-dark text-right">TOTAL</td>
-                            <td style="text-align: center; font-weight: 700;">{{ $item->calculated_qty }}</td>
+                        <tr>
+                            <td class="text-right font-bold text-slate-600">TOTAL KESELURUHAN</td>
+                            <td class="text-center font-bold text-slate-800">{{ number_format($item->calculated_qty) }}</td>
                             <td></td>
-                            <td style="text-align: right; font-weight: 700;" class="text-red">{{ $item->formatted_total }}</td>
+                            <td class="text-right font-bold text-red-600">{{ $item->formatted_total }}</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -222,7 +254,7 @@
 @endsection
 
 @section('styles')
-    /* ── Hero Section & Wizard (Copied from Step 2) ── */
+    /* ── Hero Section & Wizard (Tetap) ── */
     .package-hero {
         background: #ffffff;
         border-radius: 16px;
@@ -234,35 +266,17 @@
         overflow: hidden;
     }
     .package-hero::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0;
+        content: ''; position: absolute; top: 0; left: 0;
         width: 100%; height: 4px;
         background: linear-gradient(90deg, #C62828, #E53935, #EF5350);
     }
-    .package-hero-inner {
-        display: flex;
-        align-items: flex-start;
-        gap: 16px;
-    }
+    .package-hero-inner { display: flex; align-items: flex-start; gap: 16px; }
     .btn-back {
-        display: flex;
-        align-items: center; justify-content: center;
-        width: 40px; height: 40px;
-        background: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        color: #475569;
-        font-size: 20px;
-        transition: all 0.2s;
-        text-decoration: none;
+        display: flex; align-items: center; justify-content: center;
+        width: 40px; height: 40px; background: #F8FAFC; border: 1px solid #E2E8F0;
+        border-radius: 12px; color: #475569; font-size: 20px; transition: all 0.2s; text-decoration: none;
     }
-    .btn-back:hover {
-        background: #C62828;
-        color: #ffffff;
-        border-color: #C62828;
-        transform: translateX(-2px);
-    }
+    .btn-back:hover { background: #C62828; color: #ffffff; border-color: #C62828; transform: translateX(-2px); }
     .package-hero-content { flex: 1; }
     .package-title-wrapper { display: flex; align-items: center; flex-wrap: wrap; }
     .package-title { font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; }
@@ -279,166 +293,266 @@
         background: #B91C1C; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(198, 40, 40, 0.2);
     }
 
-    /* ── Wizard Steps ── */
+    /* ── Wizard Steps (Tetap) ── */
     .wizard-steps-container { margin-bottom: 24px; }
     .wizard-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    
     .wizard-step-card {
-        background: #ffffff;
-        border: 1px solid #E2E8F0;
-        border-radius: 16px;
-        padding: 20px;
-        text-decoration: none;
-        color: inherit;
-        display: flex; flex-direction: column; justify-content: space-between;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative; overflow: hidden;
+        background: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px;
+        text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
     }
-    .wizard-step-card:hover:not(.pending):not(.active) {
-        border-color: #C62828; box-shadow: 0 4px 12px rgba(198, 40, 40, 0.08); transform: translateY(-2px);
-    }
-    
-    /* Completed Step */
     .wizard-step-card.completed { border-color: #BBF7D0; background: #F0FDF4; opacity: 0.8; }
     .wizard-step-card.completed .wizard-step-number { background: #10B981; color: #fff; border-color: #10B981; }
-    .wizard-step-card.completed:hover { opacity: 1; border-color: #22C55E; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1); }
-    
-    /* Active Step */
     .wizard-step-card.active { border-color: #C62828; box-shadow: 0 4px 12px rgba(198, 40, 40, 0.08); transform: translateY(-2px); }
     .wizard-step-card.active::after {
         content: ''; position: absolute; bottom: 0; right: 0; width: 100px; height: 100px;
-        background: linear-gradient(135deg, transparent, rgba(198, 40, 40, 0.05));
-        border-radius: 100%; transform: translate(10%, 10%);
+        background: linear-gradient(135deg, transparent, rgba(198, 40, 40, 0.05)); border-radius: 100%; transform: translate(10%, 10%);
     }
     .wizard-step-card.active .wizard-step-number { background: #C62828; color: #fff; border-color: #C62828; }
-    
-    /* Pending Step */
-    .wizard-step-card.pending { opacity: 0.6; pointer-events: none; background: #F8FAFC; border-style: dashed; }
-    .wizard-step-card.pending .wizard-step-number { background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0; }
-
     .wizard-step-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 24px; position: relative; z-index: 2; }
     .wizard-step-number {
-        width: 36px; height: 36px; border-radius: 10px;
-        font-size: 16px; font-weight: 800;
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0; border: 1px solid transparent;
+        width: 36px; height: 36px; border-radius: 10px; font-size: 16px; font-weight: 800;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid transparent;
     }
     .wizard-step-title h3 { font-size: 15px; font-weight: 700; color: #1E293B; margin: 0 0 2px 0; }
     .wizard-step-title p { font-size: 12px; color: #64748B; margin: 0; line-height: 1.4; }
-    
     .wizard-step-body { display: flex; align-items: flex-end; justify-content: space-between; margin-top: auto; position: relative; z-index: 2; }
     .wizard-step-body .stat-value { display: flex; flex-direction: column; }
     .wizard-step-body .stat-value .num { font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1; margin-bottom: 4px; letter-spacing: -0.5px; }
     .wizard-step-body .stat-value .label { font-size: 11px; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
-    
     .wizard-step-arrow { font-size: 20px; color: #CBD5E1; }
     .active-indicator { font-size: 11px; font-weight: 700; color: #C62828; background: #FEF2F2; padding: 4px 10px; border-radius: 12px; }
 
-    /* ── Summary Stats ── */
+    /* ── Utilities Baru ── */
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .text-muted { color: #94A3B8; }
+    .text-slate-500 { color: #64748B; }
+    .text-slate-600 { color: #475569; }
+    .text-slate-700 { color: #334155; }
+    .text-slate-800 { color: #1E293B; }
+    .text-slate-900 { color: #0F172A; }
+    .text-red-600 { color: #DC2626; }
+    .text-red-700 { color: #B91C1C; }
+    
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .text-xs { font-size: 0.75rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-lg { font-size: 1.125rem; }
+    
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .gap-3 { gap: 0.75rem; }
+    .mt-1 { margin-top: 0.25rem; }
+    .mt-8 { margin-top: 2rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .cursor-pointer { cursor: pointer; }
+    .hidden { display: none !important; }
+
+    /* ── Stat Cards (Baru) ── */
     .stat-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px; margin-top: 20px;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;
     }
     .stat-card {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 20px 24px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        border: 1px solid #E2E8F0;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-        transition: all 0.2s;
+        background: #fff; border: 1px solid #E2E8F0; border-radius: 16px;
+        padding: 20px; display: flex; align-items: center; gap: 16px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02); transition: all 0.2s;
     }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.03); border-color: #CBD5E1; }
-    .stat-card.grand-total-card { border: 1px solid #FECACA; background: #FEF2F2; }
-    .stat-card.grand-total-card:hover { border-color: #FCA5A5; }
-    
+    .stat-card:hover { border-color: #CBD5E1; transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .stat-card.highlight { border-color: #FECACA; background: #FEF2F2; }
     .stat-icon {
-        width: 48px; height: 48px;
-        border-radius: 12px; display: flex; align-items: center; justify-content: center;
+        width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
         font-size: 24px; flex-shrink: 0;
     }
+    .stat-info { display: flex; flex-direction: column; }
     .stat-label { font-size: 13px; font-weight: 600; color: #64748B; margin-bottom: 2px; }
-    .stat-value { font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1.2; }
+    .stat-val { font-size: 22px; font-weight: 800; color: #0F172A; letter-spacing: -0.5px; }
+    .stat-card.highlight .stat-val { color: #DC2626; }
 
-    /* ── Utilities ── */
-    .text-secondary { color: #64748B; }
-    .text-dark { color: #0F172A; }
-    .text-red { color: #C62828; }
-    .text-right { text-align: right; }
-    .text-center { text-align: center; }
-    .font-medium { font-weight: 500; }
-    .font-bold { font-weight: 700; }
-    
-    .badge-sm { padding: 2px 8px; font-size: 10px; border-radius: 6px; }
-
-    /* ── Premium Cards & Tables ── */
-    .premium-card {
-        background: #ffffff; border-radius: 16px; margin-bottom: 24px;
-        border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); overflow: hidden;
+    /* ── Main Panel & Table (Baru) ── */
+    .content-panel {
+        background: #ffffff; border-radius: 16px; border: 1px solid #E2E8F0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden;
     }
-    .card-header { padding: 20px 24px; }
-    .card-header.border-b { border-bottom: 1px solid #F1F5F9; }
-    .card-title { font-size: 16px; font-weight: 700; color: #0F172A; margin: 0 0 4px 0; }
-    .card-subtitle { font-size: 13px; color: #64748B; margin: 0; }
+    .panel-header { padding: 20px 24px; border-bottom: 1px solid #F1F5F9; }
+    .panel-title-wrap { display: flex; align-items: center; gap: 14px; }
+    .panel-icon {
+        width: 36px; height: 36px; border-radius: 10px; background: #FEF2F2; color: #DC2626;
+        display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .panel-title { font-size: 16px; font-weight: 700; color: #0F172A; margin: 0; }
+    .panel-subtitle { font-size: 13px; color: #64748B; margin: 2px 0 0; }
     
-    .modern-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-    .modern-table th {
-        background: #F8FAFC; color: #64748B; font-size: 11px; font-weight: 600;
-        text-transform: uppercase; letter-spacing: 0.5px; padding: 14px 24px;
+    .data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .data-table th {
+        background: #F8FAFC; padding: 14px 20px; font-size: 11px; font-weight: 700;
+        color: #475569; text-transform: uppercase; letter-spacing: 0.5px;
         border-bottom: 1px solid #E2E8F0; text-align: left;
     }
-    .modern-table td {
-        padding: 16px 24px; font-size: 13px; color: #334155;
-        border-bottom: 1px solid #F1F5F9; vertical-align: middle;
+    .data-table td {
+        padding: 16px 20px; font-size: 13.5px; border-bottom: 1px solid #F1F5F9; vertical-align: top;
     }
-    .modern-table tbody tr:hover { background: #F8FAFC; }
-    .modern-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover td { background: #F8FAFC; }
     
-    .item-name { font-weight: 600; color: #0F172A; font-size: 14px; }
-    .item-satker-list { font-size: 11px; color: #94A3B8; margin-top: 4px; line-height: 1.4; }
-    .qty-badge {
-        display: inline-block; padding: 4px 12px; background: #FEF2F2; color: #C62828;
-        border-radius: 20px; font-weight: 700; font-size: 12px;
+    .avatar-icon {
+        width: 32px; height: 32px; border-radius: 50%; background: #F1F5F9;
+        color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 16px;
     }
-    .qty-badge.neutral { background: #F1F5F9; color: #475569; }
+    .item-primary-name { font-weight: 700; color: #1E293B; font-size: 14px; margin-bottom: 2px; }
+    
+    .badge-soft { padding: 4px 8px; font-size: 11px; font-weight: 600; border-radius: 6px; display: inline-flex; }
+    .badge-blue { background: #EFF6FF; color: #2563EB; }
+    .badge-red { background: #FEF2F2; color: #DC2626; }
+    
+    .item-meta {
+        font-size: 12px; color: #64748B; display: inline-flex; align-items: center; gap: 4px;
+        padding: 2px 8px 2px 0; border-radius: 4px; transition: color 0.15s;
+    }
+    .item-meta:hover { color: #0F172A; }
+    .item-meta i.ri-building-4-line { font-size: 14px; color: #94A3B8; }
+    
+    .qty-box {
+        display: inline-block; padding: 4px 12px; background: #F1F5F9; color: #0F172A;
+        border-radius: 8px; font-weight: 700; font-size: 13px;
+    }
+    
+    .satker-dropdown-row {
+        background: #F8FAFC; transition: all 0.2s;
+    }
+    .satker-dropdown-row.hidden { display: none; }
+    
+    .satker-dropdown-wrapper {
+        padding: 16px 20px 24px 64px; /* padding-left disesuaikan agar sejajar teks */
+        border-top: 1px dashed #E2E8F0;
+        border-bottom: 1px solid #E2E8F0;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    }
+    
+    .satker-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;
+    }
+    
+    .satker-chip {
+        display: flex; justify-content: space-between; align-items: center; gap: 8px;
+        background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #E2E8F0;
+        font-size: 12.5px; transition: border-color 0.2s;
+    }
+    .satker-chip:hover { border-color: #CBD5E1; }
+    .satker-col { color: #475569; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .qty-col { font-weight: 700; color: #DC2626; background: #FEF2F2; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; }
+    
+    .tfoot-total td { background: #F8FAFC; border-top: 2px solid #E2E8F0; padding: 18px 20px; }
 
-    /* Footer Grand Total */
-    .grand-total-row td {
-        background: #FEF2F2; color: #C62828; font-weight: 800; font-size: 14px;
-        border-top: 1px solid #FECACA; padding: 18px 24px;
+    /* ── Accordion Breakdown (Baru) ── */
+    .accordion-container { display: flex; flex-direction: column; gap: 12px; }
+    .accordion-item {
+        background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden;
+        transition: all 0.25s ease;
     }
-
-    /* ── Accordion Breakdown ── */
-    .breakdown-list { display: flex; flex-direction: column; gap: 12px; }
-    .premium-accordion {
-        background: #ffffff; border-radius: 12px; border: 1px solid #E2E8F0; transition: all 0.2s;
-    }
-    .premium-accordion:hover { border-color: #CBD5E1; }
+    .accordion-item:hover { border-color: #CBD5E1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
     .accordion-header {
-        padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;
-        cursor: pointer; user-select: none;
+        padding: 18px 20px; display: flex; justify-content: space-between; align-items: center;
+        cursor: pointer; user-select: none; background: #ffffff; transition: background 0.15s;
     }
-    .accordion-title { display: flex; align-items: center; gap: 12px; }
-    .accordion-title .chevron {
-        font-size: 20px; color: #94A3B8; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    .accordion-header:hover { background: #F8FAFC; }
+    
+    .accordion-left { display: flex; align-items: center; gap: 14px; }
+    .acc-icon {
+        width: 36px; height: 36px; border-radius: 10px; background: #F1F5F9; color: #475569;
+        display: flex; align-items: center; justify-content: center; font-size: 18px;
     }
-    .accordion-title .name { font-size: 14px; font-weight: 600; color: #0F172A; }
+    .acc-title-group h4 { font-size: 15px; font-weight: 700; color: #0F172A; margin: 0 0 2px 0; }
+    .acc-subtitle { font-size: 12.5px; color: #64748B; }
     
-    .premium-accordion:not(.collapsed) .accordion-title .chevron { transform: rotate(-180deg); }
-    .premium-accordion:not(.collapsed) .accordion-header { border-bottom: 1px solid #F1F5F9; }
+    .accordion-right { display: flex; align-items: center; gap: 16px; }
+    .acc-total { font-weight: 700; color: #DC2626; font-size: 15px; }
+    .acc-chevron {
+        width: 28px; height: 28px; border-radius: 50%; background: #F8FAFC;
+        display: flex; align-items: center; justify-content: center; color: #94A3B8;
+        font-size: 18px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
     
-    .accordion-body { padding: 0; }
-    .premium-accordion.collapsed .accordion-body { display: none; }
+    .accordion-item:not(.collapsed) { border-color: #CBD5E1; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .accordion-item:not(.collapsed) .accordion-header { border-bottom: 1px solid #E2E8F0; background: #F8FAFC; }
+    .accordion-item:not(.collapsed) .acc-chevron { transform: rotate(-180deg); background: #E2E8F0; color: #475569; }
+    .accordion-item:not(.collapsed) .acc-icon { background: #DC2626; color: #fff; }
     
-    .detail-table th { background: transparent; padding: 12px 20px; border-bottom: 1px solid #F1F5F9; }
-    .detail-table td { padding: 12px 20px; }
-    .subtotal-row td { background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 16px 20px; }
+    .accordion-content { padding: 0; display: block; }
+    .accordion-item.collapsed .accordion-content { display: none; }
+    
+    .acc-table { width: 100%; border-collapse: collapse; }
+    .acc-table th {
+        background: #fff; padding: 12px 20px; font-size: 11px; font-weight: 600;
+        color: #64748B; text-transform: uppercase; border-bottom: 1px solid #E2E8F0;
+        text-align: left;
+    }
+    .acc-table td { padding: 12px 20px; font-size: 13.5px; border-bottom: 1px solid #F1F5F9; }
+    .acc-table tr:hover td { background: #F8FAFC; }
+    .acc-table tfoot td { background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 14px 20px; border-bottom: none; }
+    
+    .inline-qty {
+        display: inline-block; padding: 2px 10px; background: #F1F5F9; color: #0F172A;
+        border-radius: 6px; font-weight: 600; font-size: 13px;
+    }
 
     @media (max-width: 768px) {
-        .wizard-track { grid-template-columns: 1fr; }
-        .stat-grid { grid-template-columns: 1fr; }
+        .stat-grid, .wizard-track { grid-template-columns: 1fr; }
+        .data-table, .acc-table { min-width: 600px; }
+        .table-wrap { overflow-x: auto; }
+        .satker-dropdown-wrapper { padding-left: 16px; }
     }
+@endsection
+
+@section('scripts')
+<script>
+    function toggleSatkerList(idx) {
+        const row = document.getElementById('satkers-' + idx);
+        const icon = document.getElementById('icon-satkers-' + idx);
+        
+        if(row) {
+            if(row.classList.contains('hidden')) {
+                // Tampilkan baris
+                row.classList.remove('hidden');
+                
+                // Efek animasi icon
+                if(icon) icon.style.transform = 'rotate(-180deg)';
+                
+                // Menghilangkan border bottom pada baris di atasnya agar terlihat menyatu
+                const prevRow = row.previousElementSibling;
+                if(prevRow) {
+                    const tds = prevRow.querySelectorAll('td');
+                    tds.forEach(td => td.style.borderBottom = 'none');
+                    prevRow.style.backgroundColor = '#F8FAFC';
+                }
+                
+                // Simple fade in untuk wrapper
+                const wrapper = row.querySelector('.satker-dropdown-wrapper');
+                if(wrapper) {
+                    wrapper.style.opacity = '0';
+                    wrapper.style.transform = 'translateY(-10px)';
+                    wrapper.style.transition = 'all 0.3s ease-out';
+                    setTimeout(() => {
+                        wrapper.style.opacity = '1';
+                        wrapper.style.transform = 'translateY(0)';
+                    }, 10);
+                }
+            } else {
+                // Sembunyikan baris
+                row.classList.add('hidden');
+                
+                if(icon) icon.style.transform = 'rotate(0deg)';
+                
+                // Kembalikan border pada baris aslinya
+                const prevRow = row.previousElementSibling;
+                if(prevRow) {
+                    const tds = prevRow.querySelectorAll('td');
+                    tds.forEach(td => td.style.borderBottom = '');
+                    prevRow.style.backgroundColor = '';
+                }
+            }
+        }
+    }
+</script>
 @endsection

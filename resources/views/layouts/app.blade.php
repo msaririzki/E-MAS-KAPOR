@@ -58,7 +58,7 @@
 
             /* Layout */
             --sidebar-w: 260px;
-            --sidebar-collapsed: 72px;
+            --sidebar-collapsed: 80px;
             --header-h: 56px;
 
             /* Shadows (Stripe-style) */
@@ -303,30 +303,48 @@
         body.theme-sakura .nav-group-children .nav-link.active { background: rgba(236, 72, 153, 0.15) !important; color: var(--brand) !important; }
         body.theme-sakura .nav-group-children .nav-link.active::after { background: var(--brand); box-shadow: 0 0 6px rgba(236, 72, 153, 0.4); }
 
-        /* ── Sidebar ─────────────────────────────────────────── */
+        /* ── Main Layout ── */
         .sidebar {
             position: fixed;
             top: 0;
             left: 0;
-            bottom: 0;
             width: var(--sidebar-w);
-            background: var(--sidebar-bg, #111827);
-            color: #fff;
-            z-index: 100;
+            height: 100vh;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
             display: flex;
             flex-direction: column;
-            transition: all .25s cubic-bezier(.4, 0, .2, 1);
-            border-right: 1px solid var(--sidebar-border, rgba(255, 255, 255, .06));
+            z-index: 100;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        .main {
+            margin-left: var(--sidebar-w);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ── Sidebar ─────────────────────────────────────────── */
         .sidebar-brand {
             height: var(--header-h);
-            padding: 0 20px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, .06);
+            flex-shrink: 0;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .sidebar-brand-link {
             display: flex;
             align-items: center;
             gap: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, .06);
-            flex-shrink: 0;
+            color: inherit;
+            text-decoration: none;
+            overflow: hidden;
         }
 
         .brand-logo {
@@ -337,25 +355,40 @@
             flex-shrink: 0;
         }
 
-        .brand-text {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: -.2px;
+        .sidebar-brand-text {
+            font-size: 15px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: .5px;
+            transition: opacity 0.2s;
         }
 
-        .brand-badge {
-            font-size: 9px;
-            font-weight: 600;
-            background: rgba(255, 255, 255, .1);
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 4px;
-            opacity: .6;
+        .sidebar-toggle-float {
+            position: absolute;
+            right: -12px;
+            top: 16px;
+            width: 24px;
+            height: 24px;
+            background: var(--brand);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            z-index: 101;
+            transition: transform 0.3s;
+            font-size: 16px;
+        }
+        .sidebar-toggle-float:hover {
+            transform: scale(1.1);
         }
 
         .sidebar-nav {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 16px 12px;
         }
 
@@ -367,6 +400,64 @@
             background: rgba(255, 255, 255, .1);
             border-radius: 3px;
         }
+
+        /* Collapsed Sidebar State Modifier */
+        body.collapsed-sidebar .sidebar {
+            width: var(--sidebar-collapsed);
+        }
+        body.collapsed-sidebar .main {
+            margin-left: var(--sidebar-collapsed);
+        }
+        body.collapsed-sidebar .sidebar-brand-text,
+        body.collapsed-sidebar .nav-section-label,
+        body.collapsed-sidebar .nav-badge,
+        body.collapsed-sidebar .group-chevron,
+        body.collapsed-sidebar .user-info {
+            display: none;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        /* Font-size 0 to hide text nodes effectively */
+        body.collapsed-sidebar .nav-link,
+        body.collapsed-sidebar .nav-group-toggle {
+            font-size: 0;
+            white-space: nowrap;
+        }
+        body.collapsed-sidebar .nav-link i,
+        body.collapsed-sidebar .nav-group-toggle i {
+            font-size: 18px;
+        }
+        
+        body.collapsed-sidebar .sidebar-toggle-float {
+            transform: rotate(180deg);
+        }
+        body.collapsed-sidebar .sidebar-toggle-float:hover {
+            transform: rotate(180deg) scale(1.1);
+        }
+        body.collapsed-sidebar .sidebar-brand {
+            padding: 0;
+            justify-content: center;
+        }
+        body.collapsed-sidebar .brand-logo { margin: 0 auto; width: 32px; height: 32px; }
+        
+        body.collapsed-sidebar .sidebar-nav {
+            padding: 20px 8px;
+        }
+        body.collapsed-sidebar .nav-link,
+        body.collapsed-sidebar .nav-group-toggle {
+            justify-content: center;
+            padding: 12px 0;
+            gap: 0;
+        }
+        body.collapsed-sidebar .nav-group-children .nav-link {
+            padding: 10px 0;
+            justify-content: center;
+        }
+        body.collapsed-sidebar .nav-group-children .nav-link::after { display: none; }
+        
+        body.collapsed-sidebar .sidebar-footer { padding: 16px 8px; justify-content: center; }
+        body.collapsed-sidebar .user-avatar { margin: 0 auto; }
 
         /* ── Navigation Label ── */
         .nav-section {
@@ -1382,9 +1473,13 @@
     {{-- ═══ Sidebar ═══ --}}
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <img src="{{ asset('e-mas-kapor.png') }}" alt="Logo E-MAS KAPOR" class="brand-logo">
-            <span class="brand-text">E-MAS KAPOR</span>
-            <span class="brand-badge">v1.0</span>
+            <a href="{{ route('dashboard') }}" class="sidebar-brand-link">
+                <img src="{{ asset('e-mas-kapor.png') }}" alt="Logo" class="brand-logo">
+                <span class="sidebar-brand-text">E-MAS KAPOR</span>
+            </a>
+            <div class="sidebar-toggle-float" onclick="toggleMinimize()" title="Perbesar/Perkecil Sidebar">
+                <i class="ri-arrow-left-s-line"></i>
+            </div>
         </div>
 
         <nav class="sidebar-nav">
@@ -1588,9 +1683,38 @@
 
     <script>
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('overlay').classList.toggle('open');
+            // For Mobile: Slide in/out
+            if(window.innerWidth <= 1024) {
+                document.getElementById('sidebar').classList.toggle('open');
+                document.getElementById('overlay').classList.toggle('open');
+            } else {
+                // Feature if clicked on desktop
+                toggleMinimize();
+            }
         }
+        
+        function toggleMinimize() {
+            const body = document.body;
+            body.classList.toggle('collapsed-sidebar');
+            
+            // Simpan preferensi di localStorage
+            const isCollapsed = body.classList.contains('collapsed-sidebar');
+            localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
+            
+            if(isCollapsed) {
+                // Optional: Close all open nav groups when minifying
+                document.querySelectorAll('.nav-group.open').forEach(g => g.classList.remove('open'));
+            }
+        }
+
+        // Apply saved preference on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const isCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+            if (isCollapsed && window.innerWidth > 1024) {
+                document.body.classList.add('collapsed-sidebar');
+            }
+        });
+
         // Close dropdown when clicking outside
         document.addEventListener('click', function (e) {
             var dd = document.getElementById('userDropdown');
@@ -1599,6 +1723,10 @@
 
         // Accordion toggle for sidebar nav groups
         function toggleNavGroup(btn) {
+            // If sidebar is collapsed, force expand first before opening accordion
+            if (document.body.classList.contains('collapsed-sidebar')) {
+                toggleMinimize();
+            }
             var group = btn.closest('.nav-group');
             group.classList.toggle('open');
         }

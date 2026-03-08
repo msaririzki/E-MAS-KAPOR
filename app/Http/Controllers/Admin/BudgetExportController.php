@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BudgetPackage;
 use App\Models\InvoiceSetting;
+use App\Models\Personnel;
 use App\Services\BudgetCalculationService;
 use Illuminate\Http\Request;
 
@@ -18,16 +19,137 @@ class BudgetExportController extends Controller
     }
 
     /**
-     * Preview Rekapan di browser
+     * Preview Rekapan + Analisis Duplikasi Personil
      */
     public function previewRecap(BudgetPackage $budgetPackage)
     {
-        $data = $this->calcService->calculatePackage($budgetPackage);
-        $budgetPackage->load('budgetYear');
+        $budgetPackage->load([
+            'budgetYear',
+            'items.kaporItem',
+            'items.recipients.satker',
+        ]);
 
-        return view('admin.budget.recap', array_merge($data, [
-            'budgetPackage' => $budgetPackage,
-        ]));
+        // Hitung total anggaran
+        $grandTotal = $budgetPackage->items->sum('calculated_total');
+        $totalItems = $budgetPackage->items->count();
+        $totalRecipients = $budgetPackage->items->sum('calculated_qty');
+
+        // ── Analisis Duplikasi Personil ──
+        $personnelItemMap = [];
+
+        foreach ($budgetPackage->items as $item) {
+            foreach ($item->recipients as $recipient) {
+                $query = Personnel::where('satker_id', $recipient->satker_id)
+                    ->where('is_active', true);
+
+                $filters = $recipient->recipient_filters ?? [];
+
+                if (! empty($filters['personnel_type'])) {
+                    $mappedTypes = array_map(function ($t) {
+                        $lower = strtolower($t);
+                        if ($lower === 'polri') return 'Polri';
+                        if ($lower === 'pns') return 'PNS';
+                        if ($lower === 'pppk') return 'PPPK';
+                        return $t;
+                    }, $filters['personnel_type']);
+                    $query->whereIn('personnel_type', $mappedTypes);
+                }
+
+                if (! empty($filters['gender'])) {
+                    $query->whereIn('gender', $filters['gender']);
+                }
+
+                if (! empty($filters['rank_categories'])) {
+                    $query->whereHas('rank', function ($q) use ($filters) {
+                        $q->whereIn('category', $filters['rank_categories']);
+                    });
+                }
+
+                if (! empty($filters['keterangan'])) {
+                    $query->whereIn('keterangan', $filters['keterangan']);
+                }
+
+                if (! empty($filters['golongan'])) {
+                    $query->whereIn('golongan', $filters['golongan']);
+                }
+
+                $matchedIds = $query->pluck('id')->toArray();
+
+                // Label filter untuk display
+                $filterLabels = [];
+                if (! empty($filters['personnel_type'])) {
+                    $filterLabels = array_merge($filterLabels, $filters['personnel_type']);
+                }
+                if (! empty($filters['gender'])) {
+                    $genderMap = ['L' => 'Pria', 'P' => 'Wanita'];
+                    foreach ($filters['gender'] as $g) {
+                        $filterLabels[] = $genderMap[$g] ?? $g;
+                    }
+                }
+                if (! empty($filters['rank_categories'])) {
+                    $filterLabels = array_merge($filterLabels, $filters['rank_categories']);
+                }
+                if (! empty($filters['keterangan'])) {
+                    $filterLabels = array_merge($filterLabels, $filters['keterangan']);
+                }
+                if (! empty($filters['golongan'])) {
+                    $filterLabels = array_merge($filterLabels, $filters['golongan']);
+                }
+
+                $itemInfo = [
+                    'item_id' => $item->id,
+                    'item_name' => $item->kaporItem->item_name,
+                    'category' => $item->kaporItem->category,
+                    'satker_name' => $recipient->satker->name,
+                    'filters' => $filterLabels,
+                    'price' => $item->effective_price,
+                ];
+
+                foreach ($matchedIds as $pid) {
+                    if (! isset($personnelItemMap[$pid])) {
+                        $personnelItemMap[$pid] = [];
+                    }
+                    $exists = false;
+                    foreach ($personnelItemMap[$pid] as $existing) {
+                        if ($existing['item_id'] === $item->id && $existing['satker_name'] === $recipient->satker->name) {
+                            $exists = true;
+                            break;
+                        }
+                    }
+                    if (! $exists) {
+                        $personnelItemMap[$pid][] = $itemInfo;
+                    }
+                }
+            }
+        }
+
+        // Filter duplikasi (>= 2 barang)
+        $duplicatedIds = array_keys(array_filter($personnelItemMap, fn($items) => count($items) >= 2));
+
+        $duplicates = collect();
+        if (! empty($duplicatedIds)) {
+            $personnels = Personnel::with(['rank', 'satker'])
+                ->whereIn('id', $duplicatedIds)
+                ->orderBy('full_name')
+                ->get();
+
+            foreach ($personnels as $person) {
+                $duplicates->push([
+                    'personnel' => $person,
+                    'items' => $personnelItemMap[$person->id],
+                    'total_items' => count($personnelItemMap[$person->id]),
+                ]);
+            }
+
+            $duplicates = $duplicates->sortByDesc('total_items')->values();
+        }
+
+        $totalDuplicates = $duplicates->count();
+
+        return view('admin.budget.recap', compact(
+            'budgetPackage', 'grandTotal', 'totalItems', 'totalRecipients',
+            'duplicates', 'totalDuplicates'
+        ));
     }
 
     /**
