@@ -13,7 +13,7 @@ class ProfileController extends Controller
     public function updateTheme(Request $request)
     {
         $request->validate([
-            'theme' => 'required|string|in:theme-default,theme-matcha,theme-cyber,theme-monochrome,theme-twilight',
+            'theme' => 'required|string|in:theme-default,theme-matcha,theme-cyber,theme-monochrome,theme-twilight,theme-ocean,theme-sunset,theme-pine,theme-sakura',
         ]);
 
         $user = auth()->user();

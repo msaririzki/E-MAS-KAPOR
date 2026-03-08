@@ -98,15 +98,8 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_satker', 'satker.scope']
     Route::patch('/satkers/{satker}/personnel', [SatkerController::class, 'updatePersonnelCount'])->name('satkers.update-personnel');
     Route::delete('/satkers/{satker}', [SatkerController::class, 'destroy'])->name('satkers.destroy');
 
-    Route::get('/laporan', function () {
-        return view('admin.reports.index');
-    }
-    )->name('reports');
-
-    Route::get('/laporan/export', function () {
-        return 'Export Laporan';
-    }
-    )->name('reports.export');
+    Route::get('/laporan', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('reports');
+    Route::get('/laporan/export', [\App\Http\Controllers\Admin\ReportsController::class, 'export'])->name('reports.export');
 
     // Audit Logs
     Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');

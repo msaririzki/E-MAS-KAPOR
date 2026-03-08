@@ -128,8 +128,8 @@
                     {{-- Matcha --}}
                     <label class="theme-option {{ auth()->user()->theme == 'theme-matcha' ? 'active' : '' }}">
                         <input type="radio" name="theme" value="theme-matcha" {{ auth()->user()->theme == 'theme-matcha' ? 'checked' : '' }} onchange="document.getElementById('themeForm').submit()">
-                        <div class="theme-visual" style="background:#FAFAF9; border: 1px solid #e5e5e5;">
-                            <div class="theme-accent" style="background:#65a30d;"></div>
+                        <div class="theme-visual" style="background:#FAFAF9; border: 1px solid rgba(0,0,0,0.1); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                            <div class="theme-accent" style="background:#65a30d; box-shadow: 0 0 8px rgba(101,163,13,0.3);"></div>
                         </div>
                         <div class="theme-texts">
                             <strong>Matcha Minimalist</strong>
@@ -167,12 +167,64 @@
                     {{-- Twilight --}}
                     <label class="theme-option {{ auth()->user()->theme == 'theme-twilight' ? 'active' : '' }}">
                         <input type="radio" name="theme" value="theme-twilight" {{ auth()->user()->theme == 'theme-twilight' ? 'checked' : '' }} onchange="document.getElementById('themeForm').submit()">
-                        <div class="theme-visual" style="background:linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);">
+                        <div class="theme-visual" style="background:linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border: 1px solid rgba(255,255,255,0.1);">
                             <div class="theme-accent" style="background:#8b5cf6;"></div>
                         </div>
                         <div class="theme-texts">
                             <strong>Twilight Lavender</strong>
                             <span>Ungu Estetik</span>
+                        </div>
+                        <i class="ri-checkbox-circle-fill check-icon"></i>
+                    </label>
+
+                    {{-- Ocean Breeze --}}
+                    <label class="theme-option {{ auth()->user()->theme == 'theme-ocean' ? 'active' : '' }}">
+                        <input type="radio" name="theme" value="theme-ocean" {{ auth()->user()->theme == 'theme-ocean' ? 'checked' : '' }} onchange="document.getElementById('themeForm').submit()">
+                        <div class="theme-visual" style="background:#ffffff; border: 1px solid rgba(14,165,233,0.2); box-shadow: inset 0 4px 12px rgba(14,165,233,0.05);">
+                            <div class="theme-accent" style="background:#0ea5e9; box-shadow: 0 0 10px rgba(14,165,233,0.4);"></div>
+                        </div>
+                        <div class="theme-texts">
+                            <strong>Ocean Breeze</strong>
+                            <span>Putih & Biru Segar</span>
+                        </div>
+                        <i class="ri-checkbox-circle-fill check-icon"></i>
+                    </label>
+
+                    {{-- Sunset Glow --}}
+                    <label class="theme-option {{ auth()->user()->theme == 'theme-sunset' ? 'active' : '' }}">
+                        <input type="radio" name="theme" value="theme-sunset" {{ auth()->user()->theme == 'theme-sunset' ? 'checked' : '' }} onchange="document.getElementById('themeForm').submit()">
+                        <div class="theme-visual" style="background:linear-gradient(160deg, #2a0a18 0%, #17050f 100%);">
+                            <div class="theme-accent" style="background:#f43f5e;"></div>
+                        </div>
+                        <div class="theme-texts">
+                            <strong>Sunset Glow</strong>
+                            <span>Gelap Senja Premium</span>
+                        </div>
+                        <i class="ri-checkbox-circle-fill check-icon"></i>
+                    </label>
+
+                    {{-- Forest Pine --}}
+                    <label class="theme-option {{ auth()->user()->theme == 'theme-pine' ? 'active' : '' }}">
+                        <input type="radio" name="theme" value="theme-pine" {{ auth()->user()->theme == 'theme-pine' ? 'checked' : '' }} onchange="document.getElementById('themeForm').submit()">
+                        <div class="theme-visual" style="background:#064e3b;">
+                            <div class="theme-accent" style="background:#10b981;"></div>
+                        </div>
+                        <div class="theme-texts">
+                            <strong>Forest Pine</strong>
+                            <span>Hijau Zamrud Elegan</span>
+                        </div>
+                        <i class="ri-checkbox-circle-fill check-icon"></i>
+                    </label>
+
+                    {{-- Sakura Pink --}}
+                    <label class="theme-option {{ auth()->user()->theme == 'theme-sakura' ? 'active' : '' }}">
+                        <input type="radio" name="theme" value="theme-sakura" {{ auth()->user()->theme == 'theme-sakura' ? 'checked' : '' }} onchange="document.getElementById('themeForm').submit()">
+                        <div class="theme-visual" style="background:#fff1f2; border: 1px solid rgba(236,72,153,0.2); box-shadow: inset 0 2px 8px rgba(236,72,153,0.05);">
+                            <div class="theme-accent" style="background:#ec4899; box-shadow: 0 0 10px rgba(236,72,153,0.4);"></div>
+                        </div>
+                        <div class="theme-texts">
+                            <strong>Sakura Pink</strong>
+                            <span>Lembut & Manis</span>
                         </div>
                         <i class="ri-checkbox-circle-fill check-icon"></i>
                     </label>
@@ -474,13 +526,32 @@
         border-radius: 8px;
         position: relative;
         overflow: hidden;
-        border: 1px solid rgba(0,0,0,0.05);
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        flex-shrink: 0;
     }
+    
+    /* Simulate a mini sidebar layout */
+    .theme-visual::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: 14px;
+        background: rgba(128, 128, 128, 0.08); 
+        border-left: 1px solid rgba(128, 128, 128, 0.1);
+    }
+
     .theme-accent {
         position: absolute;
-        left: 0; top: 12px; bottom: 12px; width: 4px;
+        left: 0; 
+        top: 10px; 
+        bottom: 10px; 
+        width: 4px;
         border-radius: 0 4px 4px 0;
+        z-index: 10;
+        box-shadow: 1px 0 4px rgba(0,0,0,0.2);
     }
     .theme-texts strong {
         display: block;

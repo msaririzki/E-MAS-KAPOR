@@ -197,6 +197,112 @@
             --sidebar-badge-text: #ffffff;
         }
 
+        /* ── NEW MODERN THEMES ── */
+        
+        /* Theme: Ocean Breeze (Clean Light Mode) */
+        body.theme-ocean {
+            --brand: #0ea5e9;           /* Sky Blue */
+            --brand-light: #38bdf8;
+            --brand-lighter: #7dd3fc;
+            --brand-bg: #e0f2fe;
+            --accent: #14b8a6;          /* Teal */
+            --sidebar-bg: #ffffff;      
+            --sidebar-border: rgba(0, 0, 0, 0.05);
+            --sidebar-active-bg: rgba(14, 165, 233, 0.1);
+            --sidebar-active-text: #0ea5e9;
+            --sidebar-badge-bg: var(--brand);
+            --sidebar-badge-text: #ffffff;
+        }
+        body.theme-ocean .sidebar { color: var(--slate-700); }
+        body.theme-ocean .sidebar-brand { border-bottom: 1px solid rgba(0,0,0,0.05); }
+        body.theme-ocean .nav-link { color: var(--slate-500); border-color: rgba(0,0,0,0.03); background: rgba(0,0,0,0.01); }
+        body.theme-ocean .nav-link:hover { background: rgba(0,0,0,0.03); color: var(--slate-800); }
+        body.theme-ocean .nav-link.active { color: #fff; background: var(--brand); border-color: var(--brand); }
+        body.theme-ocean .nav-link i { color: var(--slate-400); }
+        body.theme-ocean .nav-link:hover i { color: var(--slate-700); }
+        body.theme-ocean .nav-link.active i { color: #fff; }
+        body.theme-ocean .sidebar-footer { border-top: 1px solid rgba(0,0,0,0.05); }
+        body.theme-ocean .nav-section-label { color: var(--slate-400); }
+        body.theme-ocean .nav-group { border-color: rgba(0,0,0,0.05); background: #ffffff; }
+        body.theme-ocean .nav-group-toggle { color: var(--slate-700); }
+        body.theme-ocean .nav-group-toggle:hover { background: rgba(0,0,0,0.02); color: var(--brand); }
+        body.theme-ocean .nav-group-toggle i.group-icon { color: var(--slate-400); }
+        body.theme-ocean .nav-group-toggle:hover i.group-icon { color: var(--brand); }
+        body.theme-ocean .nav-group-toggle .group-chevron { color: var(--slate-300); }
+        body.theme-ocean .nav-group.open { background: rgba(14, 165, 233, 0.02); border-color: rgba(14, 165, 233, 0.1); }
+        body.theme-ocean .nav-group.open > .nav-group-toggle { color: var(--brand); border-bottom-color: rgba(14, 165, 233, 0.05); }
+        body.theme-ocean .nav-group.open > .nav-group-toggle i.group-icon { color: var(--brand); }
+        body.theme-ocean .nav-group-children .nav-link::after { background: var(--slate-300); }
+        body.theme-ocean .nav-group-children .nav-link.active { background: rgba(14, 165, 233, 0.1) !important; color: var(--brand) !important; }
+        body.theme-ocean .nav-group-children .nav-link.active::after { background: var(--brand); box-shadow: 0 0 6px rgba(14, 165, 233, 0.4); }
+
+        /* Theme: Sunset Glow (Warm Dark Mode) */
+        body.theme-sunset {
+            --brand: #f43f5e;           /* Rose/Pink */
+            --brand-light: #fb7185;
+            --brand-lighter: #fda4af;
+            --brand-bg: rgba(244, 63, 94, 0.15);
+            --accent: #f59e0b;          /* Amber/Orange */
+            --sidebar-bg: linear-gradient(160deg, #2a0a18 0%, #17050f 100%);
+            --sidebar-border: rgba(244, 63, 94, 0.2);
+            --sidebar-active-bg: rgba(245, 158, 11, 0.15); /* Orange bg */
+            --sidebar-active-text: #fcd34d;
+            --sidebar-badge-bg: linear-gradient(135deg, #f43f5e, #f59e0b);
+            --sidebar-badge-text: #ffffff;
+        }
+
+        /* Theme: Forest Pine (Elegant Dark Emerald) */
+        body.theme-pine {
+            --brand: #10b981;           /* Emerald */
+            --brand-light: #34d399;
+            --brand-lighter: #6ee7b7;
+            --brand-bg: rgba(16, 185, 129, 0.15);
+            --accent: #fbbf24;          /* Gold/Amber */
+            --sidebar-bg: #064e3b;      /* Very dark emerald */
+            --sidebar-border: rgba(52, 211, 153, 0.15);
+            --sidebar-active-bg: rgba(251, 191, 36, 0.15); /* Gold bg */
+            --sidebar-active-text: #fde68a;
+            --sidebar-badge-bg: #fbbf24;
+            --sidebar-badge-text: #064e3b; /* Dark text for contrast */
+        }
+
+        /* Theme: Sakura Pink (Soft Pastel Light Mode) */
+        body.theme-sakura {
+            --brand: #ec4899;           /* Pink */
+            --brand-light: #f472b6;
+            --brand-lighter: #fbcfe8;
+            --brand-bg: #fdf2f8;
+            --accent: #8b5cf6;          /* Violet */
+            --sidebar-bg: #fff1f2;      /* Rose 50 */
+            --sidebar-border: rgba(244, 114, 182, 0.2);
+            --sidebar-active-bg: rgba(236, 72, 153, 0.1);
+            --sidebar-active-text: #ec4899;
+            --sidebar-badge-bg: var(--brand);
+            --sidebar-badge-text: #ffffff;
+        }
+        body.theme-sakura .sidebar { color: #831843; /* Rose 900 */ }
+        body.theme-sakura .sidebar-brand { border-bottom: 1px solid rgba(244,114,182,0.2); }
+        body.theme-sakura .nav-link { color: #9f1239; /* Rose 800 */ border-color: rgba(244,114,182,0.1); background: rgba(255,255,255,0.4); }
+        body.theme-sakura .nav-link:hover { background: rgba(255,255,255,0.8); color: #831843; }
+        body.theme-sakura .nav-link.active { color: #fff; background: var(--brand); border-color: var(--brand); }
+        body.theme-sakura .nav-link i { color: #be123c; /* Rose 700 */ }
+        body.theme-sakura .nav-link:hover i { color: #831843; }
+        body.theme-sakura .nav-link.active i { color: #fff; }
+        body.theme-sakura .sidebar-footer { border-top: 1px solid rgba(244,114,182,0.2); }
+        body.theme-sakura .nav-section-label { color: #f43f5e; /* Rose 500 */ }
+        body.theme-sakura .nav-group { border-color: rgba(244,114,182,0.2); background: rgba(255,255,255,0.3); }
+        body.theme-sakura .nav-group-toggle { color: #831843; }
+        body.theme-sakura .nav-group-toggle:hover { background: rgba(255,255,255,0.5); color: var(--brand); }
+        body.theme-sakura .nav-group-toggle i.group-icon { color: #be123c; }
+        body.theme-sakura .nav-group-toggle:hover i.group-icon { color: var(--brand); }
+        body.theme-sakura .nav-group-toggle .group-chevron { color: #f472b6; }
+        body.theme-sakura .nav-group.open { background: #ffffff; border-color: rgba(236, 72, 153, 0.3); }
+        body.theme-sakura .nav-group.open > .nav-group-toggle { color: var(--brand); border-bottom-color: rgba(236, 72, 153, 0.1); }
+        body.theme-sakura .nav-group.open > .nav-group-toggle i.group-icon { color: var(--brand); }
+        body.theme-sakura .nav-group-children .nav-link::after { background: #fda4af; }
+        body.theme-sakura .nav-group-children .nav-link.active { background: rgba(236, 72, 153, 0.15) !important; color: var(--brand) !important; }
+        body.theme-sakura .nav-group-children .nav-link.active::after { background: var(--brand); box-shadow: 0 0 6px rgba(236, 72, 153, 0.4); }
+
         /* ── Sidebar ─────────────────────────────────────────── */
         .sidebar {
             position: fixed;
@@ -250,7 +356,7 @@
         .sidebar-nav {
             flex: 1;
             overflow-y: auto;
-            padding: 12px 10px;
+            padding: 16px 12px;
         }
 
         .sidebar-nav::-webkit-scrollbar {
@@ -262,66 +368,201 @@
             border-radius: 3px;
         }
 
+        /* ── Navigation Label ── */
         .nav-section {
-            margin-bottom: 20px;
+            margin-bottom: 2px;
         }
 
         .nav-section-label {
             font-size: 10px;
             text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: var(--slate-500);
-            padding: 0 10px;
-            margin-bottom: 6px;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.4);
+            padding: 0 16px;
+            margin-bottom: 8px;
             font-weight: 600;
         }
 
+        /* ── Collapsible Group ── */
+        .nav-group {
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .nav-group-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .nav-group-toggle:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .nav-group-toggle i.group-icon {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.5);
+            transition: color 0.2s ease;
+        }
+
+        .nav-group-toggle:hover i.group-icon {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .nav-group-toggle .group-chevron {
+            margin-left: auto;
+            font-size: 15px;
+            transition: transform .25s cubic-bezier(.4, 0, .2, 1);
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-group.open {
+            background: rgba(255, 255, 255, 0.08); /* Lighter bg when open */
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .nav-group.open > .nav-group-toggle {
+            color: #fff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Separator line */
+        }
+
+        .nav-group.open > .nav-group-toggle i.group-icon {
+            color: var(--brand-lighter);
+        }
+
+        .nav-group.open > .nav-group-toggle .group-chevron {
+            transform: rotate(180deg);
+            opacity: 1;
+        }
+
+        /* ── Group Children ── */
+        .nav-group-children {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .3s cubic-bezier(.4,0,.2,1);
+        }
+
+        .nav-group.open > .nav-group-children {
+            max-height: 500px;
+        }
+
+        .nav-group-children .nav-link {
+            padding: 10px 14px 10px 42px;
+            position: relative;
+            font-size: 13px;
+        }
+
+        .nav-group-children .nav-link::before {
+            display: none; /* Hide the vertical active line for children */
+        }
+
+        .nav-group-children .nav-link::after {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-50%);
+            transition: all .2s;
+        }
+
+        .nav-group-children .nav-link:hover::after {
+            background: rgba(255, 255, 255, 0.6);
+            transform: translateY(-50%) scale(1.5);
+        }
+
+        .nav-group-children .nav-link.active {
+            background: rgba(255, 255, 255, 0.08) !important; /* Solid block background */
+            color: #fff !important;
+            font-weight: 600;
+            border-radius: 6px; /* Rounded corners */
+            margin: 2px 8px; /* Slight margin so the block doesn't touch the edges */
+            padding: 8px 6px 8px 34px; /* Adjust padding to compensate for margins */
+        }
+
+        .nav-group-children .nav-link.active::after {
+            background: #fff; /* Dot is white */
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+            transform: translateY(-50%) scale(1.5);
+            left: 16px; /* Adjust left position due to new padding and margins */
+        }
+
+        /* ── Single nav link (no group) ── */
         .nav-link {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px 10px;
-            border-radius: var(--radius-sm);
-            color: var(--slate-400);
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            color: rgba(255, 255, 255, 0.85);
             text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
+            font-size: 13.5px;
+            font-weight: 600;
             transition: all .15s ease;
-            margin-bottom: 1px;
+            margin-bottom: 8px;
             position: relative;
         }
 
-        .nav-link:hover {
-            background: rgba(255, 255, 255, .06);
-            color: var(--slate-200);
-        }
-
-        .nav-link.active {
-            background: var(--sidebar-active-bg, rgba(255, 255, 255, .1));
-            color: var(--sidebar-active-text, #fff);
-            font-weight: 600;
-        }
-
-        .nav-link.active i {
-            color: var(--sidebar-active-text, #fff);
+        /* Override for children inside the group so they don't look like boxes */
+        .nav-group-children .nav-link {
+            border: none;
+            background: transparent;
+            border-radius: 0;
+            margin-bottom: 0;
+            color: rgba(255, 255, 255, 0.65);
             font-weight: 500;
         }
 
-        .nav-link.active::before {
-            content: '';
-            position: absolute;
-            left: -10px;
-            top: 2px;
-            bottom: 2px;
-            width: 4px;
-            background: var(--sidebar-active-text, var(--brand));
-            border-radius: 0 4px 4px 0;
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            font-weight: 700;
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
         .nav-link i {
             font-size: 18px;
-            width: 20px;
-            flex-shrink: 0;
+            color: rgba(255, 255, 255, 0.5);
+            transition: color 0.15s ease;
+        }
+
+        .nav-link:hover i {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .nav-link.active i {
+            color: #fff;
+        }
+
+        /* Removed the left border active indicator to match the boxed style */
+        .nav-link.active::before {
+            display: none;
         }
 
         .nav-badge {
@@ -334,6 +575,35 @@
             border-radius: 10px;
             min-width: 20px;
             text-align: center;
+        }
+
+        /* ── Matcha theme overrides for nav-group ── */
+        body.theme-matcha .nav-group-toggle {
+            color: var(--slate-600);
+        }
+        body.theme-matcha .nav-group-toggle:hover,
+        body.theme-matcha .nav-group.open > .nav-group-toggle {
+            background: rgba(101, 163, 13, 0.08);
+            color: var(--slate-800);
+        }
+        body.theme-matcha .nav-link {
+            color: var(--slate-500);
+        }
+        body.theme-matcha .nav-link:hover {
+            color: var(--slate-700);
+            background: rgba(0,0,0,0.03);
+        }
+        body.theme-matcha .nav-section-label {
+            color: var(--slate-400);
+        }
+        body.theme-matcha .nav-group-children .nav-link::after {
+            background: var(--slate-300);
+        }
+        body.theme-matcha .nav-group-children .nav-link:hover::after {
+            background: var(--slate-500);
+        }
+        body.theme-matcha .nav-group-children .nav-link.active::after {
+            background: var(--brand);
         }
 
         .sidebar-footer {
@@ -1118,104 +1388,140 @@
         </div>
 
         <nav class="sidebar-nav">
-            {{-- Main --}}
+            {{-- ── Navigation Label ── --}}
             <div class="nav-section">
-                <div class="nav-section-label">Overview</div>
-                <a href="{{ route('dashboard') }}"
-                    class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <i class="ri-dashboard-3-line"></i> Dashboard
-                </a>
+                <div class="nav-section-label">Navigation</div>
             </div>
 
+            {{-- Dashboard (standalone) --}}
+            <a href="{{ route('dashboard') }}"
+                class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="ri-dashboard-3-line"></i> Dashboard
+            </a>
+
+            {{-- ══ Personil Role ══ --}}
             @if(auth()->user()->hasRole('personil'))
-                <div class="nav-section">
-                    <div class="nav-section-label">Kapor</div>
-                    <a href="{{ route('personil.kapor.index') }}"
-                        class="nav-link {{ request()->routeIs('personil.kapor.index') ? 'active' : '' }}">
-                        <i class="ri-shirt-line"></i> Input Ukuran
-                    </a>
-                    <a href="{{ route('personil.kapor.history') }}"
-                        class="nav-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
-                        <i class="ri-history-line"></i> Riwayat
-                    </a>
+                <div class="nav-group {{ request()->routeIs('personil.kapor.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-shirt-line group-icon"></i> Kapor
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('personil.kapor.index') }}"
+                            class="nav-link {{ request()->routeIs('personil.kapor.index') ? 'active' : '' }}">
+                            Input Ukuran
+                        </a>
+                        <a href="{{ route('personil.kapor.history') }}"
+                            class="nav-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
+                            Riwayat
+                        </a>
+                    </div>
                 </div>
             @endif
 
+            {{-- ══ Admin Satker Role ══ --}}
             @if(auth()->user()->hasRole('admin_satker'))
-                <div class="nav-section">
-                    <div class="nav-section-label">Satker Saya</div>
-                    <a href="{{ route('admin.personnel.index') }}"
-                        class="nav-link {{ request()->routeIs('admin.personnel.*') ? 'active' : '' }}">
-                        <i class="ri-team-line"></i> Data Personel
-                    </a>
-                    <a href="{{ route('admin-satker.monitor') }}"
-                        class="nav-link {{ request()->routeIs('admin-satker.monitor') ? 'active' : '' }}">
-                        <i class="ri-eye-line"></i> Monitoring
-                    </a>
-                    <a href="{{ route('admin-satker.reports') }}"
-                        class="nav-link {{ request()->routeIs('admin-satker.reports') ? 'active' : '' }}">
-                        <i class="ri-bar-chart-grouped-line"></i> Laporan
-                    </a>
-                    <a href="{{ route('admin-satker.settings') }}"
-                        class="nav-link {{ request()->routeIs('admin-satker.settings') ? 'active' : '' }}">
-                        <i class="ri-settings-3-line"></i> Pengaturan
-                    </a>
+                <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin-satker.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-building-2-line group-icon"></i> Satker Saya
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.personnel.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.personnel.*') ? 'active' : '' }}">
+                            Data Personel
+                        </a>
+                        <a href="{{ route('admin-satker.monitor') }}"
+                            class="nav-link {{ request()->routeIs('admin-satker.monitor') ? 'active' : '' }}">
+                            Monitoring
+                        </a>
+                        <a href="{{ route('admin-satker.reports') }}"
+                            class="nav-link {{ request()->routeIs('admin-satker.reports') ? 'active' : '' }}">
+                            Laporan
+                        </a>
+                        <a href="{{ route('admin-satker.settings') }}"
+                            class="nav-link {{ request()->routeIs('admin-satker.settings') ? 'active' : '' }}">
+                            Pengaturan
+                        </a>
+                    </div>
                 </div>
             @endif
 
+            {{-- ══ Admin / Superadmin Roles ══ --}}
             @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
-                <div class="nav-section">
-                    <div class="nav-section-label">Administrasi</div>
-                    <a href="{{ route('admin.users.index') }}"
-                        class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                        <i class="ri-group-line"></i> Manajemen User
-                    </a>
-                    <a href="{{ route('admin.satkers.index') }}"
-                        class="nav-link {{ request()->routeIs('admin.satkers.*') ? 'active' : '' }}">
-                        <i class="ri-building-2-line"></i> Data Satker
-                    </a>
-                    <a href="{{ route('admin.personnel.index') }}"
-                        class="nav-link {{ request()->routeIs('admin.personnel.*') ? 'active' : '' }}">
-                        <i class="ri-team-line"></i> Data Personel
-                    </a>
-                    <a href="{{ route('admin.kapor-items.index') }}"
-                        class="nav-link {{ request()->routeIs('admin.kapor-items.*') ? 'active' : '' }}">
-                        <i class="ri-t-shirt-2-line"></i> Data Item Kapor
-                    </a>
-                    <a href="{{ route('admin.budget.index') }}"
-                        class="nav-link {{ request()->routeIs('admin.budget.*') ? 'active' : '' }}">
-                        <i class="ri-calculator-line"></i> Rencana Anggaran
-                    </a>
-                    <a href="{{ route('admin.reports') }}"
-                        class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
-                        <i class="ri-bar-chart-grouped-line"></i> Laporan
-                    </a>
-                    <a href="{{ route('admin.audit-logs.index') }}"
-                        class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
-                        <i class="ri-shield-user-line"></i> Log Audit
-                    </a>
+                <div class="nav-group {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.satkers.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-shield-user-line group-icon"></i> Administrasi
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.users.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                            Manajemen User
+                        </a>
+                        <a href="{{ route('admin.satkers.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.satkers.*') ? 'active' : '' }}">
+                            Data Satker
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-t-shirt-2-line group-icon"></i> Data Master
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.personnel.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.personnel.*') ? 'active' : '' }}">
+                            Data Personel
+                        </a>
+                        <a href="{{ route('admin.kapor-items.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.kapor-items.*') ? 'active' : '' }}">
+                            Item Kapor
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group {{ request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-bar-chart-grouped-line group-icon"></i> Keuangan & Laporan
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.budget.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.budget.*') ? 'active' : '' }}">
+                            Rencana Anggaran
+                        </a>
+                        <a href="{{ route('admin.reports') }}"
+                            class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
+                            Laporan
+                        </a>
+                        <a href="{{ route('admin.audit-logs.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                            Log Audit
+                        </a>
+                    </div>
                 </div>
             @endif
 
+            {{-- ══ Superadmin Only ══ --}}
             @if(auth()->user()->hasRole('superadmin'))
-                <div class="nav-section">
-                    <div class="nav-section-label">System</div>
-                    <a href="{{ route('superadmin.satkers.index') }}"
-                        class="nav-link {{ request()->routeIs('superadmin.satkers.*') ? 'active' : '' }}">
-                        <i class="ri-organization-chart"></i> Kelola Satker
-                    </a>
-                    <a href="{{ route('superadmin.kapor-items.index') }}"
-                        class="nav-link {{ request()->routeIs('superadmin.kapor-items.*') ? 'active' : '' }}">
-                        <i class="ri-t-shirt-2-line"></i> Item Kapor
-                    </a>
-                    <a href="{{ route('superadmin.settings.index') }}"
-                        class="nav-link {{ request()->routeIs('superadmin.settings.*') ? 'active' : '' }}">
-                        <i class="ri-settings-3-line"></i> Pengaturan
-                    </a>
-                    <a href="{{ route('superadmin.statistics') }}"
-                        class="nav-link {{ request()->routeIs('superadmin.statistics') ? 'active' : '' }}">
-                        <i class="ri-pie-chart-2-line"></i> Statistik
-                    </a>
+                <div class="nav-group {{ request()->routeIs('superadmin.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-settings-4-line group-icon"></i> Sistem
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('superadmin.settings.index') }}"
+                            class="nav-link {{ request()->routeIs('superadmin.settings.*') ? 'active' : '' }}">
+                            Pengaturan
+                        </a>
+                        <a href="{{ route('superadmin.statistics') }}"
+                            class="nav-link {{ request()->routeIs('superadmin.statistics') ? 'active' : '' }}">
+                            Statistik
+                        </a>
+                    </div>
                 </div>
             @endif
         </nav>
@@ -1290,6 +1596,12 @@
             var dd = document.getElementById('userDropdown');
             if (dd && !dd.contains(e.target)) dd.classList.remove('open');
         });
+
+        // Accordion toggle for sidebar nav groups
+        function toggleNavGroup(btn) {
+            var group = btn.closest('.nav-group');
+            group.classList.toggle('open');
+        }
     </script>
     @yield('scripts')
 </body>
