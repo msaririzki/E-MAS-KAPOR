@@ -787,6 +787,13 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 continue;
             }
 
+            // 1d. Abaikan baris jika TIDAK ADA DATA di kolom identitas (Pangkat, Golongan, NRP, Jabatan, Bagian, JK)
+            // Sesuai permintaan user: jika kolom-kolom ini kosong, berarti bukan data personil (biasanya baris header/kategori).
+            $rankIsPlaceholder = empty($rankInput) || preg_match('/^[\-\.]+$/', $rankInput) || (is_numeric($rankInput) && strlen($rankInput) <= 3);
+            if (empty($nrp) && $rankIsPlaceholder && empty($jabatan) && empty($golongan) && empty($bagian) && empty($genderRaw)) {
+                continue;
+            }
+
             // 2. Abaikan baris jika Nama SANGAT PENDEK / berupa angka (seperti baris rekap -> Nama "14", "15", "K")
             // Nama personel asli umumnya >= 2 huruf dan tidak cuma terdiri dari angka.
             if (strlen($fullName) < 2 || is_numeric(str_replace([' ', '.', ','], '', $fullName))) {
