@@ -26,12 +26,17 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
 
     protected $matrixCount = 0;
 
-    public function __construct(PackageItem $packageItem, string $sheetName, BudgetPackage $budgetPackage)
+    protected $filteredSizeCount = 0; // jumlah ukuran setelah difilter gender
+
+    protected $gender; // 'L' = Pria, 'P' = Wanita, null = semua
+
+    public function __construct(PackageItem $packageItem, string $sheetName, BudgetPackage $budgetPackage, ?string $gender = null)
     {
         $this->packageItem = $packageItem;
         // Trim just in case
         $this->sheetName = strlen($sheetName) > 31 ? substr($sheetName, 0, 28).'...' : $sheetName;
         $this->budgetPackage = $budgetPackage;
+        $this->gender = $gender;
     }
 
     public function title(): string
@@ -76,8 +81,20 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
         $kaporItem = $this->packageItem->kaporItem;
         $sizeKey = $this->getSizeKey();
 
-        // Dapatkan semua ukuran yang mungkin untuk item ini dari master data
-        $availableSizes = $kaporItem->sizes()->orderBy('sort_order')->pluck('size_label')->toArray();
+        // Dapatkan ukuran yang sesuai dengan gender sheet ini dari master data
+        // gender = 'L' hanya ambil ukuran pria (gender L atau null)
+        // gender = 'P' hanya ambil ukuran wanita (gender P atau null)
+        $sizesQuery = $kaporItem->sizes()->orderBy('sort_order');
+        if ($this->gender !== null) {
+            $sizesQuery->where(function ($q) {
+                $q->where('gender', $this->gender)
+                  ->orWhereNull('gender');
+            });
+        }
+        $sizeObjects = $sizesQuery->get();
+        $availableSizes = $sizeObjects->pluck('size_label')->toArray();
+        $this->filteredSizeCount = count($availableSizes); // simpan untuk registerEvents()
+
         if (empty($availableSizes)) {
             // Fallback kalau item tidak punya ukuran standard
             $availableSizes = ['-'];
@@ -97,6 +114,11 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
 
             $query = Personnel::where('satker_id', $satker->id)
                 ->where('is_active', true);
+
+            // Filter berdasarkan gender jika ditentukan
+            if ($this->gender !== null) {
+                $query->where('gender', $this->gender);
+            }
 
             // Apply filters (sama dengan PackageItemRecipient->calculateMatchedCount)
             if (! empty($filters['personnel_type'])) {
@@ -168,6 +190,16 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
         $this->matrixCount = count($matrix);
         $settings = InvoiceSetting::getSettings();
 
+        // Sheet pria tidak perlu kolom 'Tdk Diketahui' karena pakai ukuran angka
+        $hideUnknown = ($this->gender === 'L');
+
+        // Label gender untuk judul
+        $genderLabel = match($this->gender) {
+            'L' => 'PRIA',
+            'P' => 'WANITA',
+            default => null,
+        };
+
         return view('admin.exports.recap_sheet', [
             'packageItem' => $this->packageItem,
             'kaporItem' => $kaporItem,
@@ -177,6 +209,8 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             'totalPerSize' => $totalPerSize,
             'grandTotal' => $grandTotal,
             'settings' => $settings,
+            'hideUnknown' => $hideUnknown,
+            'genderLabel' => $genderLabel,
         ]);
     }
 
@@ -197,13 +231,11 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $lastDataRow = $firstDataRow + max($this->matrixCount, 0) - 1;
                 $footerRow = $lastDataRow + 1;
 
-                // Hitung jumlah kolom
-                $totalSizeCols = 0;
-                foreach ($this->packageItem->kaporItem->sizes as $s) {
-                    $totalSizeCols++;
-                }
-                // NO + SATKER + sizes + UNKNOWN + JML = 2 + totalSizeCols + 1 + 1
-                $totalCols = 2 + $totalSizeCols + 1 + 1;
+                // Hitung jumlah kolom dari ukuran yang sudah difilter gender
+                $totalSizeCols = $this->filteredSizeCount;
+                // NO + SATKER + sizes + (UNKNOWN jika bukan pria) + JML
+                $hideUnknown = ($this->gender === 'L');
+                $totalCols = 2 + $totalSizeCols + ($hideUnknown ? 0 : 1) + 1;
                 $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($totalCols);
 
                 // ═══ DEFAULT FONT ═══

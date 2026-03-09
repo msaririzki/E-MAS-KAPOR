@@ -13,8 +13,8 @@
 
     {{-- ═══ JUDUL DOKUMEN ═══ --}}
     <tr>
-        <td colspan="{{ count($availableSizes) + 4 }}" style="font-weight: bold; text-align: center;">
-            REKAP DATA UKURAN {{ strtoupper($kaporItem->item_name) }} POLDA NTB TAHUN {{ $budgetPackage->budgetYear->year }}
+        <td colspan="{{ count($availableSizes) + ($hideUnknown ?? false ? 3 : 4) }}" style="font-weight: bold; text-align: center;">
+            REKAP DATA UKURAN {{ strtoupper($kaporItem->item_name) }}{{ isset($genderLabel) ? ' ' . $genderLabel : '' }} POLDA NTB TAHUN {{ $budgetPackage->budgetYear->year }}
         </td>
     </tr>
     <tr></tr>
@@ -23,7 +23,7 @@
     <tr>
         <th rowspan="2" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">NO</th>
         <th rowspan="2" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">SATKER</th>
-        <th colspan="{{ count($availableSizes) + 1 }}" style="font-weight: bold; border: 1px solid #000; text-align: center;">UKURAN BARANG</th>
+        <th colspan="{{ count($availableSizes) + ($hideUnknown ?? false ? 0 : 1) }}" style="font-weight: bold; border: 1px solid #000; text-align: center;">UKURAN BARANG</th>
         <th rowspan="2" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">JML</th>
     </tr>
     <!-- Table Header Row 2 -->
@@ -31,7 +31,9 @@
         @foreach($availableSizes as $size)
             <th style="font-weight: bold; border: 1px solid #000; text-align: center;">{{ $size }}</th>
         @endforeach
+        @if(!($hideUnknown ?? false))
         <th style="font-weight: bold; border: 1px solid #000; text-align: center;">Tdk Diketahui</th>
+        @endif
     </tr>
 
     <!-- Table Body -->
@@ -43,7 +45,9 @@
         @foreach($availableSizes as $size)
             <td style="border: 1px solid #000; text-align: center;">{{ $row['sizes'][$size] > 0 ? $row['sizes'][$size] : '-' }}</td>
         @endforeach
+        @if(!($hideUnknown ?? false))
         <td style="border: 1px solid #000; text-align: center;">{{ $row['unknown'] > 0 ? $row['unknown'] : '-' }}</td>
+        @endif
         <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $row['row_total'] }}</td>
     </tr>
     @endforeach
@@ -54,13 +58,15 @@
         @foreach($availableSizes as $size)
             <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $totalPerSize[$size] > 0 ? $totalPerSize[$size] : '-' }}</td>
         @endforeach
+        @if(!($hideUnknown ?? false))
         <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $totalPerSize['UNKNOWN'] > 0 ? $totalPerSize['UNKNOWN'] : '-' }}</td>
+        @endif
         <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $grandTotal }}</td>
     </tr>
 
     {{-- ═══ SPASI ═══ --}}
     @php
-        $totalColCount = count($availableSizes) + 4;
+        $totalColCount = count($availableSizes) + ($hideUnknown ?? false ? 3 : 4);
         // Kolom tanda tangan: 3 kolom terakhir
         $ttdStartCol = max($totalColCount - 2, 1);
         $emptyColsBefore = $ttdStartCol - 1;
