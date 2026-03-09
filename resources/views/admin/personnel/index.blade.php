@@ -181,16 +181,73 @@
             <span class="stat-number">{{ number_format($stats['submitted']) }}</span>
         </div>
     </div>
-    <a href="{{ route('admin.personnel.index', ['status' => 'incomplete']) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease;">
+    <style>
+        .stat-card-clickable {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border: 1px solid transparent;
+            overflow: hidden;
+        }
+        .stat-card-clickable::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .stat-card-clickable:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.15), 0 8px 10px -6px rgba(220, 38, 38, 0.1);
+            border-color: rgba(220, 38, 38, 0.2);
+        }
+        .stat-card-clickable:hover::before {
+            opacity: 1;
+        }
+        .stat-card-clickable .action-btn {
+            background: rgba(220, 38, 38, 0.08);
+            color: #DC2626;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 8px 14px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.25s;
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+        .stat-card-clickable:hover .action-btn {
+            background: #DC2626;
+            color: white;
+            border-color: #DC2626;
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
+            transform: translateX(2px);
+        }
+        .stat-card-clickable .action-btn i {
+            font-size: 15px;
+            line-height: 1;
+            transition: transform 0.2s;
+        }
+        .stat-card-clickable:hover .action-btn i {
+            transform: translateX(3px);
+        }
+        .stat-card-clickable:active {
+            transform: translateY(-1px);
+        }
+    </style>
+    <a href="{{ route('admin.personnel.index', ['status' => 'incomplete']) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center;">
         <div class="stat-icon icon-red">
             <i class="ri-close-circle-line"></i>
         </div>
-        <div class="stat-content">
+        <div class="stat-content" style="flex: 1;">
             <span class="stat-label">BELUM INPUT DATA</span>
             <span class="stat-number">{{ number_format($stats['pending']) }}</span>
         </div>
-        <div style="position: absolute; top: 10px; right: 12px;">
-            <i class="ri-arrow-right-s-line" style="font-size: 18px; color: #9CA3AF;"></i>
+        <div style="padding-left: 16px; margin-right: 8px;">
+            <div class="action-btn">
+                Lihat Detail <i class="ri-arrow-right-line"></i>
+            </div>
         </div>
     </a>
 </div>

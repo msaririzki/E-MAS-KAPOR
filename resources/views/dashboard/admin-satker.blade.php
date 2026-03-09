@@ -62,63 +62,112 @@
         </div>
     </div>
 
-    {{-- Progress --}}
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="ri-bar-chart-box-line" style="margin-right:8px; color:var(--accent);"></i> Progres Pengisian
-                {{ $stats['satker_name'] }}</h3>
-        </div>
-        <div class="card-body">
-            @php $pct = $stats['fill_rate']; @endphp
-            <div class="progress" style="height:14px; border-radius:7px;">
-                <div class="progress-bar {{ $pct >= 80 ? 'green' : ($pct >= 50 ? 'yellow' : 'red') }}"
-                    style="width:{{ $pct }}%;"></div>
-            </div>
-            <div style="margin-top:12px; font-size:13px; color:#64748B;">
-                {{ $stats['personnel_submitted'] }} dari {{ $stats['total_personnel'] }} personil telah mengisi data kapor.
-            </div>
-        </div>
-    </div>
+    {{-- Progress & Personil Belum Input in a grid layout (optional, or stacked) --}}
+    <div style="display: flex; flex-direction: column; gap: 24px;">
 
-    {{-- Personil Belum Input --}}
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="ri-alert-line" style="margin-right:8px; color:var(--danger);"></i> Personil Belum Input (Maks. 20)
-            </h3>
-            <a href="{{ route('admin-satker.monitor') }}" class="btn btn-sm btn-outline">Lihat Semua</a>
-        </div>
-        <div class="card-body">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>Nama</th>
-                            <th>NRP/NIP</th>
-                            <th>Pangkat</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($pendingPersonnel as $idx => $p)
-                            <tr>
-                                <td>{{ $idx + 1 }}</td>
-                                <td style="font-weight:600;">{{ $p->full_name }}</td>
-                                <td>{{ ($p->user->nrp_nip && !str_starts_with($p->user->nrp_nip, 'TEMP-')) ? $p->user->nrp_nip : '-' }}</td>
-                                <td>{{ $p->rank->name ?? '-' }}</td>
-                                <td><span class="badge badge-warning"><i class="ri-time-line"></i> Belum Input</span></td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" style="text-align:center; color:var(--success); padding:24px;">
-                                    <i class="ri-check-double-line" style="font-size:24px;display:block;margin-bottom:8px;"></i>
-                                    Semua personil sudah mengisi data kapor! 🎉
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+        {{-- Progress Panel --}}
+        <div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden;">
+            <div class="card-header" style="background: rgba(var(--brand-rgb, 198, 40, 40), 0.03); border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--slate-800); display: flex; align-items: center; gap: 10px;">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--brand-bg); color: var(--brand);">
+                            <i class="ri-bar-chart-box-line" style="font-size: 18px;"></i>
+                        </span>
+                        Progres Pengisian — {{ $stats['satker_name'] }}
+                    </h3>
+                    <p style="margin: 4px 0 0 42px; font-size: 13px; color: var(--slate-500);">
+                        Mendeteksi jumlah personil yang telah melengkapi data kapor.
+                    </p>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 24px;">
+                @php $pct = $stats['fill_rate']; @endphp
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
+                    <div style="font-size: 14px; font-weight: 600; color: var(--slate-700);">
+                        <span style="color: {{ $pct >= 80 ? 'var(--success)' : ($pct >= 50 ? 'var(--warning)' : 'var(--danger)') }}; font-size: 16px;">{{ $stats['personnel_submitted'] }}</span>
+                        <span style="color: var(--slate-400); font-weight: 400; margin: 0 4px;">/</span>
+                        {{ $stats['total_personnel'] }} Personil
+                    </div>
+                    <div style="font-size: 20px; font-weight: 800; color: {{ $pct >= 80 ? 'var(--success)' : ($pct >= 50 ? 'var(--warning)' : 'var(--danger)') }};">
+                        {{ $pct }}%
+                    </div>
+                </div>
+
+                <div class="progress" style="height: 16px; border-radius: 8px; background: var(--slate-100); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                    <div class="progress-bar {{ $pct >= 80 ? 'green' : ($pct >= 50 ? 'yellow' : 'red') }}"
+                        style="width: {{ $pct }}%; height: 100%; transition: width 1s ease-in-out; background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent); background-size: 1rem 1rem;">
+                    </div>
+                </div>
             </div>
         </div>
+
+        {{-- Personil Belum Input Panel --}}
+        <div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden;">
+            <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--slate-800); display: flex; align-items: center; gap: 10px;">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--danger-bg); color: var(--danger);">
+                            <i class="ri-error-warning-line" style="font-size: 18px;"></i>
+                        </span>
+                        Personil Belum Input
+                        @if(count($pendingPersonnel) > 0)
+                        <span style="background: var(--danger); color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">Maks. 20 ditampillkan</span>
+                        @endif
+                    </h3>
+                </div>
+                <a href="{{ route('admin-satker.monitor') }}" class="btn btn-outline" style="border-radius: 8px; font-size: 13px; font-weight: 600; padding: 8px 16px; border-color: var(--slate-200); color: var(--slate-600); display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                    Lihat Monitoring Lengkap <i class="ri-arrow-right-line"></i>
+                </a>
+            </div>
+            
+            <div class="card-body flush">
+                @if(count($pendingPersonnel) > 0)
+                <div class="table-responsive" style="overflow-x: auto;">
+                    <table class="table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: var(--slate-50); border-bottom: 1px solid var(--slate-200);">
+                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px; width: 50px;">No</th>
+                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">Personil</th>
+                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">NRP / NIP</th>
+                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">Pangkat</th>
+                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px; width: 140px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($pendingPersonnel as $idx => $p)
+                                <tr style="border-bottom: 1px solid var(--slate-100); transition: background 0.15s;" onmouseover="this.style.background='var(--slate-50)'" onmouseout="this.style.background='transparent'">
+                                    <td style="padding: 16px 24px; font-size: 13px; color: var(--slate-500);">{{ $idx + 1 }}</td>
+                                    <td style="padding: 16px 24px;">
+                                        <div style="font-weight: 600; color: var(--slate-800); font-size: 14px;">{{ $p->full_name }}</div>
+                                    </td>
+                                    <td style="padding: 16px 24px; font-size: 13px; font-family: 'SFMono-Regular', Consolas, monospace; color: var(--slate-600);">
+                                        {{ ($p->user->nrp_nip && !str_starts_with($p->user->nrp_nip, 'TEMP-')) ? $p->user->nrp_nip : '—' }}
+                                    </td>
+                                    <td style="padding: 16px 24px; font-size: 13px; color: var(--slate-600);">
+                                        {{ $p->rank->name ?? '—' }}
+                                    </td>
+                                    <td style="padding: 16px 24px;">
+                                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; background: var(--warning-bg); color: var(--warning-border); color: #B45309; border: 1px solid var(--warning-border); white-space: nowrap;">
+                                            <i class="ri-time-line"></i> Belum Input
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                    <div style="text-align: center; padding: 60px 20px; background: var(--success-bg); border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+                        <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #ffffff; color: var(--success); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1), 0 2px 4px -1px rgba(16, 185, 129, 0.06); margin-bottom: 16px;">
+                            <i class="ri-checkbox-circle-fill" style="font-size: 32px;"></i>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #065F46;">Kerja Bagus!</h4>
+                        <p style="margin: 0; font-size: 14px; color: #047857;">Semua personil di {{ $stats['satker_name'] }} telah mengisi data kapor. 🎉</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+
     </div>
 @endsection
