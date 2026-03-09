@@ -417,8 +417,47 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $sheet->getStyle("{$ttdStartColLetter}{$namaRow}")->getFont()->setBold(true)->setUnderline(true);
 
                 // ═══ COLUMN WIDTHS ═══
-                $sheet->getColumnDimension('A')->setWidth(6);   // NO
-                $sheet->getColumnDimension('B')->setWidth(30);  // SATKER
+                $sheet->getColumnDimension('A')->setWidth(5);   // NO
+                $sheet->getColumnDimension('B')->setWidth(28);  // SATKER
+                // Ukuran: lebar cukup untuk angka/huruf (4 char)
+                for ($c = 3; $c <= $totalCols - 1; $c++) {
+                    $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                    $sheet->getColumnDimension($colLetter)->setWidth(5.5);
+                }
+                // Kolom JML / terakhir lebih lebar
+                $sheet->getColumnDimension($lastColLetter)->setWidth(6.5);
+
+                // ═══ SETUP HALAMAN CETAK A4 ═══
+                $pageSetup = $sheet->getPageSetup();
+                $pageSetup->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
+                $pageSetup->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+                $pageSetup->setFitToPage(true);
+                $pageSetup->setFitToWidth(1);
+                $pageSetup->setFitToHeight(0);
+
+                // ═══ MARGIN CETAK (dalam inci: 1cm ≈ 0.394 inci) ═══
+                $margins = $sheet->getPageMargins();
+                $margins->setTop(0.5);
+                $margins->setBottom(0.5);
+                $margins->setLeft(0.39);
+                $margins->setRight(0.39);
+                $margins->setHeader(0.2);
+                $margins->setFooter(0.2);
+
+                // ═══ LEBAR KOLOM TANDA TANGAN DIPASTIKAN CUKUP ═══
+                // Pastikan 4 kolom terakhir cukup lebar untuk teks TTD
+                $ttdCols = min(4, $totalCols - 2);
+                $ttdColStart = max(3, $totalCols - $ttdCols + 1);
+                for ($c = $ttdColStart; $c <= $totalCols; $c++) {
+                    $colL = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                    $sheet->getColumnDimension($colL)->setWidth(
+                        max($sheet->getColumnDimension($colL)->getWidth(), 10)
+                    );
+                }
+
+                // ═══ WRAP TEXT untuk semua baris ═══
+                $sheet->getStyle("A1:{$lastColLetter}50")
+                    ->getAlignment()->setWrapText(false);
             },
         ];
     }
