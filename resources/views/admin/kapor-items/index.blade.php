@@ -423,6 +423,149 @@
 
 @endsection
 
+{{-- Modal Kelola Ukuran --}}
+<div id="sizeModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Kelola Ukuran: <span id="sizeModalItemName" style="color:#1D4ED8;"></span></h2>
+            <button class="modal-close" onclick="closeModal('sizeModal')"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="modal-body" style="max-height: 75vh; overflow-y:auto;">
+
+            {{-- Form Tambah Ukuran --}}
+            <div style="background:#F0F9FF; border:1px solid #BAE6FD; border-radius:10px; padding:16px; margin-bottom:20px;">
+                <p style="font-size:12px; font-weight:700; color:#0369A1; margin:0 0 12px;">TAMBAH UKURAN BARU</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end;">
+                    <div class="form-group" style="margin:0;">
+                        <label>LABEL UKURAN</label>
+                        <input type="text" id="newSizeLabel" class="form-input" placeholder="Cth: 28, 30, S, M, XL">
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label>UNTUK GENDER</label>
+                        <select id="newSizeGender" class="form-input" style="appearance:auto;">
+                            <option value="L">Pria (L)</option>
+                            <option value="P">Wanita (P)</option>
+                        </select>
+                    </div>
+                    <button onclick="addSize()" class="btn btn-primary" style="height:40px; white-space:nowrap;">
+                        <i class="ri-add-line"></i> Tambah
+                    </button>
+                </div>
+                <p id="sizeAddError" style="color:#DC2626; font-size:12px; margin:8px 0 0; display:none;"></p>
+            </div>
+
+            {{-- Daftar Ukuran Pria --}}
+            <div style="margin-bottom:20px;">
+                <p style="font-size:12px; font-weight:700; color:#374151; margin:0 0 10px; display:flex; align-items:center; gap:6px;">
+                    <span style="background:#DBEAFE; color:#1D4ED8; padding:2px 8px; border-radius:20px;">&#9794; PRIA</span>
+                </p>
+                <div id="sizeListMale" style="display:flex; flex-wrap:wrap; gap:8px; min-height:40px;">
+                    <span style="color:#9CA3AF; font-size:13px;">Memuat...</span>
+                </div>
+            </div>
+
+            {{-- Daftar Ukuran Wanita --}}
+            <div>
+                <p style="font-size:12px; font-weight:700; color:#374151; margin:0 0 10px; display:flex; align-items:center; gap:6px;">
+                    <span style="background:#FCE7F3; color:#9D174D; padding:2px 8px; border-radius:20px;">&#9792; WANITA</span>
+                </p>
+                <div id="sizeListFemale" style="display:flex; flex-wrap:wrap; gap:8px; min-height:40px;">
+                    <span style="color:#9CA3AF; font-size:13px;">Memuat...</span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('sizeModal')">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentItemId = null;
+
+function openSizeModal(itemId, itemName) {
+    currentItemId = itemId;
+    document.getElementById('sizeModalItemName').textContent = itemName;
+    document.getElementById('sizeAddError').style.display = 'none';
+    document.getElementById('newSizeLabel').value = '';
+    openModal('sizeModal');
+    loadSizes();
+}
+
+function loadSizes() {
+    document.getElementById('sizeListMale').innerHTML = '<span style="color:#9CA3AF;font-size:13px;">Memuat...</span>';
+    document.getElementById('sizeListFemale').innerHTML = '<span style="color:#9CA3AF;font-size:13px;">Memuat...</span>';
+
+    fetch(`/admin/kapor-items/${currentItemId}/sizes`, {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(r => r.json())
+    .then(sizes => {
+        const males   = sizes.filter(s => s.gender === 'L');
+        const females = sizes.filter(s => s.gender === 'P');
+        renderSizes('sizeListMale',   males,   '#1D4ED8', '#EFF6FF');
+        renderSizes('sizeListFemale', females, '#9D174D', '#FDF2F8');
+    })
+    .catch(() => {
+        document.getElementById('sizeListMale').innerHTML = '<span style="color:#DC2626;">Gagal memuat.</span>';
+        document.getElementById('sizeListFemale').innerHTML = '<span style="color:#DC2626;">Gagal memuat.</span>';
+    });
+}
+
+function renderSizes(containerId, sizes, color, bg) {
+    const container = document.getElementById(containerId);
+    if (!sizes.length) {
+        container.innerHTML = '<span style="color:#9CA3AF;font-size:13px;">Belum ada ukuran.</span>';
+        return;
+    }
+    container.innerHTML = sizes.map(s =>
+        `<span style="display:inline-flex;align-items:center;gap:6px;background:${bg};color:${color};border:1px solid ${color}33;padding:4px 10px;border-radius:20px;font-size:13px;font-weight:600;">
+            ${s.size_label}
+            <button onclick="deleteSize(${s.id})" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:14px;line-height:1;padding:0;" title="Hapus">&#10005;</button>
+        </span>`
+    ).join('');
+}
+
+function addSize() {
+    const label  = document.getElementById('newSizeLabel').value.trim();
+    const gender = document.getElementById('newSizeGender').value;
+    const errEl  = document.getElementById('sizeAddError');
+
+    if (!label) { errEl.textContent = 'Label ukuran tidak boleh kosong.'; errEl.style.display='block'; return; }
+    errEl.style.display = 'none';
+
+    fetch(`/admin/kapor-items/${currentItemId}/sizes`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ size_label: label, gender: gender })
+    })
+    .then(async r => {
+        const data = await r.json();
+        if (!r.ok) { errEl.textContent = data.error || 'Gagal menambah ukuran.'; errEl.style.display='block'; return; }
+        document.getElementById('newSizeLabel').value = '';
+        loadSizes();
+    })
+    .catch(() => { errEl.textContent = 'Terjadi kesalahan.'; errEl.style.display='block'; });
+}
+
+function deleteSize(sizeId) {
+    if (!confirm('Hapus ukuran ini?')) return;
+    fetch(`/admin/kapor-items/${currentItemId}/sizes/${sizeId}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(() => loadSizes())
+    .catch(() => alert('Gagal menghapus ukuran.'));
+}
+</script>
+
 @section('styles')
 {{-- Reuse styles from index.blade.php by keeping structure or defining here --}}
 <style>

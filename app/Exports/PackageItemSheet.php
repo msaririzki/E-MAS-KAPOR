@@ -30,13 +30,24 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
 
     protected $gender; // 'L' = Pria, 'P' = Wanita, null = semua
 
-    public function __construct(PackageItem $packageItem, string $sheetName, BudgetPackage $budgetPackage, ?string $gender = null)
+    protected $sizeKeyOverride = null; // Override sizeKey (misal 'celana' untuk sheet celana dari item STEL)
+
+    protected $sizeLabel = null; // Label tambahan (misal 'Celana') untuk judul sheet
+
+    protected $overrideSizes = null; // Override daftar ukuran (array string)
+
+    protected $combinedGender = false; // True = gabung pria+wanita dalam 1 sheet
+
+    public function __construct(PackageItem $packageItem, string $sheetName, BudgetPackage $budgetPackage, ?string $gender = null, ?string $sizeKeyOverride = null, ?string $sizeLabel = null, ?array $overrideSizes = null, bool $combinedGender = false)
     {
         $this->packageItem = $packageItem;
-        // Trim just in case
         $this->sheetName = strlen($sheetName) > 31 ? substr($sheetName, 0, 28).'...' : $sheetName;
         $this->budgetPackage = $budgetPackage;
         $this->gender = $gender;
+        $this->sizeKeyOverride = $sizeKeyOverride;
+        $this->sizeLabel = $sizeLabel;
+        $this->overrideSizes = $overrideSizes;
+        $this->combinedGender = $combinedGender;
     }
 
     public function title(): string
@@ -46,6 +57,11 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
 
     private function getSizeKey()
     {
+        // Jika ada override (misal sheet celana dari item STEL), langsung pakai
+        if ($this->sizeKeyOverride !== null) {
+            return $this->sizeKeyOverride;
+        }
+
         $name = strtoupper($this->packageItem->kaporItem->item_name);
 
         if (str_contains($name, 'TOPI') || str_contains($name, 'PET') || str_contains($name, 'BARET') || str_contains($name, 'PECI')) {
@@ -76,37 +92,16 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
         return 'kemeja';
     }
 
-    public function view(): View
+    /**
+     * Build matrix gabungan untuk sheet olahraga (L dan P di baris yang sama per satker)
+     */
+    private function buildCombinedMatrix(string $sizeKey, array $availableSizes): array
     {
-        $kaporItem = $this->packageItem->kaporItem;
-        $sizeKey = $this->getSizeKey();
-
-        // Dapatkan ukuran yang sesuai dengan gender sheet ini dari master data
-        // gender = 'L' hanya ambil ukuran pria (gender L atau null)
-        // gender = 'P' hanya ambil ukuran wanita (gender P atau null)
-        $sizesQuery = $kaporItem->sizes()->orderBy('sort_order');
-        if ($this->gender !== null) {
-            $sizesQuery->where(function ($q) {
-                $q->where('gender', $this->gender)
-                  ->orWhereNull('gender');
-            });
-        }
-        $sizeObjects = $sizesQuery->get();
-        $availableSizes = $sizeObjects->pluck('size_label')->toArray();
-        $this->filteredSizeCount = count($availableSizes); // simpan untuk registerEvents()
-
-        if (empty($availableSizes)) {
-            // Fallback kalau item tidak punya ukuran standard
-            $availableSizes = ['-'];
-        }
-
         $matrix = [];
-        $totalPerSize = array_fill_keys($availableSizes, 0);
-        $totalPerSize['UNKNOWN'] = 0; // Untuk yang ukurannya kosong/tidak standard
-        $grandTotal = 0;
-
-        // Load recipients dan build query per satker
-        $this->packageItem->load('recipients.satker');
+        $totalPerSizePria = array_fill_keys($availableSizes, 0);
+        $totalPerSizeWanita = array_fill_keys($availableSizes, 0);
+        $grandTotalPria = 0;
+        $grandTotalWanita = 0;
 
         foreach ($this->packageItem->recipients as $recipient) {
             $filters = $recipient->recipient_filters ?? [];
@@ -115,25 +110,12 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             $query = Personnel::where('satker_id', $satker->id)
                 ->where('is_active', true);
 
-            // Filter berdasarkan gender jika ditentukan
-            if ($this->gender !== null) {
-                $query->where('gender', $this->gender);
-            }
-
-            // Apply filters (sama dengan PackageItemRecipient->calculateMatchedCount)
             if (! empty($filters['personnel_type'])) {
                 $mappedTypes = array_map(function ($t) {
                     $lower = strtolower($t);
-                    if ($lower === 'polri') {
-                        return 'Polri';
-                    }
-                    if ($lower === 'pns') {
-                        return 'PNS';
-                    }
-                    if ($lower === 'pppk') {
-                        return 'PPPK';
-                    }
-
+                    if ($lower === 'polri') return 'Polri';
+                    if ($lower === 'pns') return 'PNS';
+                    if ($lower === 'pppk') return 'PPPK';
                     return $t;
                 }, $filters['personnel_type']);
                 $query->whereIn('personnel_type', $mappedTypes);
@@ -149,61 +131,191 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 });
             }
 
-            // Filter keterangan (bagian/jabatan khusus) — wajib sama dengan calculateMatchedCount()
             if (! empty($filters['keterangan'])) {
                 $query->whereIn('keterangan', $filters['keterangan']);
             }
 
-            // Filter golongan PNS/PPPK — wajib sama dengan calculateMatchedCount()
             if (! empty($filters['golongan'])) {
                 $query->whereIn('golongan', $filters['golongan']);
             }
 
-            // Ambil personel yang lolos semua filter (hanya field kapor_sizes yang dibutuhkan)
+            $personnels = $query->get(['gender', 'kapor_sizes']);
+
+            $row = [
+                'satker_name' => $satker->name,
+                'sizes_pria' => array_fill_keys($availableSizes, 0),
+                'total_pria' => 0,
+                'sizes_wanita' => array_fill_keys($availableSizes, 0),
+                'total_wanita' => 0,
+            ];
+
+            foreach ($personnels as $p) {
+                $gen = $p->gender;
+                $sizes = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
+                $sizeVal = $sizes[$sizeKey] ?? null;
+                $sizeValStr = (string) $sizeVal;
+
+                if (! empty($sizeValStr) && $sizeValStr !== '-' && $sizeValStr !== 'null' && in_array($sizeValStr, $availableSizes)) {
+                    if ($gen === 'L') {
+                        $row['sizes_pria'][$sizeValStr]++;
+                        $totalPerSizePria[$sizeValStr]++;
+                        $row['total_pria']++;
+                        $grandTotalPria++;
+                    } elseif ($gen === 'P') {
+                        $row['sizes_wanita'][$sizeValStr]++;
+                        $totalPerSizeWanita[$sizeValStr]++;
+                        $row['total_wanita']++;
+                        $grandTotalWanita++;
+                    }
+                }
+            }
+
+            if ($row['total_pria'] > 0 || $row['total_wanita'] > 0) {
+                $matrix[] = $row;
+            }
+        }
+
+        return compact('matrix', 'totalPerSizePria', 'totalPerSizeWanita', 'grandTotalPria', 'grandTotalWanita');
+    }
+
+    /**
+     * Build matrix data per satker untuk gender tertentu.
+     */
+    private function buildMatrix(string $sizeKey, array $availableSizes, ?string $genderFilter): array
+    {
+        $matrix = [];
+        $totalPerSize = array_fill_keys($availableSizes, 0);
+        $grandTotal = 0;
+
+        foreach ($this->packageItem->recipients as $recipient) {
+            $filters = $recipient->recipient_filters ?? [];
+            $satker = $recipient->satker;
+
+            $query = Personnel::where('satker_id', $satker->id)
+                ->where('is_active', true);
+
+            if ($genderFilter !== null) {
+                $query->where('gender', $genderFilter);
+            }
+
+            if (! empty($filters['personnel_type'])) {
+                $mappedTypes = array_map(function ($t) {
+                    $lower = strtolower($t);
+                    if ($lower === 'polri') return 'Polri';
+                    if ($lower === 'pns') return 'PNS';
+                    if ($lower === 'pppk') return 'PPPK';
+                    return $t;
+                }, $filters['personnel_type']);
+                $query->whereIn('personnel_type', $mappedTypes);
+            }
+
+            if (! empty($filters['gender'])) {
+                $query->whereIn('gender', $filters['gender']);
+            }
+
+            if (! empty($filters['rank_categories'])) {
+                $query->whereHas('rank', function ($q) use ($filters) {
+                    $q->whereIn('category', $filters['rank_categories']);
+                });
+            }
+
+            if (! empty($filters['keterangan'])) {
+                $query->whereIn('keterangan', $filters['keterangan']);
+            }
+
+            if (! empty($filters['golongan'])) {
+                $query->whereIn('golongan', $filters['golongan']);
+            }
+
             $personnels = $query->get(['kapor_sizes']);
 
             $row = [
                 'satker_name' => $satker->name,
                 'sizes' => array_fill_keys($availableSizes, 0),
-                'unknown' => 0,
                 'row_total' => 0,
             ];
 
             foreach ($personnels as $p) {
-                // Ambil nilai dari JSON (jika ada)
                 $sizes = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
                 $sizeVal = $sizes[$sizeKey] ?? null;
                 $sizeValStr = (string) $sizeVal;
 
-                if (empty($sizeValStr) || $sizeValStr == '-' || $sizeValStr == 'null') {
-                    $row['unknown']++;
-                    $totalPerSize['UNKNOWN']++;
-                } elseif (in_array($sizeValStr, $availableSizes)) {
+                if (! empty($sizeValStr) && $sizeValStr !== '-' && $sizeValStr !== 'null' && in_array($sizeValStr, $availableSizes)) {
                     $row['sizes'][$sizeValStr]++;
                     $totalPerSize[$sizeValStr]++;
-                } else {
-                    // Jika ada size yang tidak tercatat di standard, masukkan ke unknown agar tidak hilang
-                    $row['unknown']++;
-                    $totalPerSize['UNKNOWN']++;
                 }
 
                 $row['row_total']++;
                 $grandTotal++;
             }
 
-            // Hanya tampilkan baris satker kalau jumlahnya > 0
             if ($row['row_total'] > 0) {
                 $matrix[] = $row;
             }
         }
 
-        $this->matrixCount = count($matrix);
+        return compact('matrix', 'totalPerSize', 'grandTotal');
+    }
+
+    public function view(): View
+    {
+        $kaporItem = $this->packageItem->kaporItem;
+        $sizeKey = $this->getSizeKey();
+
+        // Tentukan availableSizes
+        if ($this->overrideSizes !== null) {
+            $availableSizes = $this->overrideSizes;
+        } else {
+            $sizesQuery = $kaporItem->sizes()->orderBy('sort_order');
+            if ($this->gender !== null) {
+                $sizesQuery->where(function ($q) {
+                    $q->where('gender', $this->gender)
+                      ->orWhereNull('gender');
+                });
+            } else {
+                // Combined mode: ambil ukuran dari gender pertama (sama untuk kedua gender di olahraga)
+                $sizesQuery->where(function ($q) {
+                    $q->where('gender', 'L')->orWhereNull('gender');
+                });
+            }
+            $sizeObjects = $sizesQuery->get();
+            $availableSizes = $sizeObjects->pluck('size_label')->toArray();
+        }
+        $this->filteredSizeCount = count($availableSizes);
+
+        if (empty($availableSizes)) {
+            $availableSizes = ['-'];
+        }
+
+        $this->packageItem->load('recipients.satker');
         $settings = InvoiceSetting::getSettings();
 
-        // Sheet pria tidak perlu kolom 'Tdk Diketahui' karena pakai ukuran angka
-        $hideUnknown = ($this->gender === 'L');
+        // ── MODE COMBINED (Pria + Wanita dalam 1 sheet, menyamping) ──
+        if ($this->combinedGender) {
+            $data = $this->buildCombinedMatrix($sizeKey, $availableSizes);
 
-        // Label gender untuk judul
+            $this->matrixCount = count($data['matrix']);
+
+            return view('admin.exports.recap_sheet_combined', [
+                'packageItem' => $this->packageItem,
+                'kaporItem' => $kaporItem,
+                'budgetPackage' => $this->budgetPackage,
+                'availableSizes' => $availableSizes,
+                'matrix' => $data['matrix'],
+                'totalPerSizePria' => $data['totalPerSizePria'],
+                'grandTotalPria' => $data['grandTotalPria'],
+                'totalPerSizeWanita' => $data['totalPerSizeWanita'],
+                'grandTotalWanita' => $data['grandTotalWanita'],
+                'settings' => $settings,
+                'sizeLabel' => $this->sizeLabel,
+            ]);
+        }
+
+        // ── MODE NORMAL (1 gender per sheet) ──
+        $data = $this->buildMatrix($sizeKey, $availableSizes, $this->gender);
+
+        $this->matrixCount = count($data['matrix']);
+
         $genderLabel = match($this->gender) {
             'L' => 'PRIA',
             'P' => 'WANITA',
@@ -215,12 +327,12 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             'kaporItem' => $kaporItem,
             'budgetPackage' => $this->budgetPackage,
             'availableSizes' => $availableSizes,
-            'matrix' => $matrix,
-            'totalPerSize' => $totalPerSize,
-            'grandTotal' => $grandTotal,
+            'matrix' => $data['matrix'],
+            'totalPerSize' => $data['totalPerSize'],
+            'grandTotal' => $data['grandTotal'],
             'settings' => $settings,
-            'hideUnknown' => $hideUnknown,
             'genderLabel' => $genderLabel,
+            'sizeLabel' => $this->sizeLabel,
         ]);
     }
 
@@ -231,21 +343,19 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $sheet = $event->sheet->getDelegate();
 
                 // ═══ HITUNG POSISI BARIS ═══
-                // Baris 1-3: Kop surat (pojok kiri)
-                // Baris 4: kosong
-                // Baris 5: Judul dokumen
-                // Baris 6: kosong
-                // Baris 7-8: Header tabel (2 baris)
                 $headerStartRow = 7;
-                $firstDataRow = $headerStartRow + 2; // baris 9
+                $headerRowCount = $this->combinedGender ? 4 : 2;
+                $firstDataRow = $headerStartRow + $headerRowCount; // baris 9 atau 11
                 $lastDataRow = $firstDataRow + max($this->matrixCount, 0) - 1;
                 $footerRow = $lastDataRow + 1;
 
-                // Hitung jumlah kolom dari ukuran yang sudah difilter gender
+                // Hitung jumlah kolom
                 $totalSizeCols = $this->filteredSizeCount;
-                // NO + SATKER + sizes + (UNKNOWN jika bukan pria) + JML
-                $hideUnknown = ($this->gender === 'L');
-                $totalCols = 2 + $totalSizeCols + ($hideUnknown ? 0 : 1) + 1;
+                if ($this->combinedGender) {
+                    $totalCols = 2 + ($totalSizeCols * 2) + 3; // NO, SATKER + 2*(sizes) + 2*(JML) + 1*(TOTAL)
+                } else {
+                    $totalCols = 2 + $totalSizeCols + 1;
+                }
                 $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($totalCols);
 
                 // ═══ DEFAULT FONT ═══
@@ -266,12 +376,13 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                     ->getColor()->setRGB('000000');
 
                 // ═══ JUDUL DOKUMEN (Baris 5: bold, font 11, underline, center) ═══
+                $sheet->mergeCells("A5:{$lastColLetter}5");
                 $sheet->getStyle("A5:{$lastColLetter}5")->getFont()->setBold(true)->setSize(11)->setUnderline(true);
                 $sheet->getStyle("A5:{$lastColLetter}5")->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // ═══ HEADER TABEL (Baris 7-8) ═══
-                $headerRange = "A{$headerStartRow}:{$lastColLetter}".($headerStartRow + 1);
+                // ═══ HEADER TABEL ═══
+                $headerRange = "A{$headerStartRow}:{$lastColLetter}".($headerStartRow + $headerRowCount - 1);
                 $sheet->getStyle($headerRange)->getFont()->setBold(true)->setSize(10);
                 $sheet->getStyle($headerRange)->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)

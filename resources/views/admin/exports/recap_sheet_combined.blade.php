@@ -1,0 +1,140 @@
+<table>
+    {{-- ═══ KOP SURAT ═══ --}}
+    @php
+        $sizeCount = count($availableSizes);
+        $totalHeadersSpan = ($sizeCount * 2) + 2; // ukuran pria + jml + ukuran wanita + jml
+        $totalCols = $totalHeadersSpan + 3; // + NO, SATKER, JUMLAH TOTAL
+    @endphp
+    <tr>
+        <td colspan="{{ $totalCols }}" style="font-weight: bold; text-align: center;">KEPOLISIAN NEGARA REPUBLIK INDONESIA</td>
+    </tr>
+    <tr>
+        <td colspan="{{ $totalCols }}" style="font-weight: bold; text-align: center;">DAERAH NUSA TENGGARA BARAT</td>
+    </tr>
+    <tr>
+        <td colspan="{{ $totalCols }}" style="font-weight: bold; text-align: center;">{{ strtoupper($settings->organization_name ?? 'BIRO LOGISTIK') }}</td>
+    </tr>
+    <tr></tr>
+
+    {{-- ═══ JUDUL DOKUMEN ═══ --}}
+    <tr>
+        <td colspan="{{ $totalCols }}" style="font-weight: bold; text-align: center; text-decoration: underline;">
+            REKAP DATA UKURAN {{ strtoupper($kaporItem->item_name) }}{{ isset($sizeLabel) && $sizeLabel ? ' (' . strtoupper($sizeLabel) . ')' : '' }} POLRI POLDA NTB TAHUN {{ $budgetPackage->budgetYear->year }}
+        </td>
+    </tr>
+    <tr></tr>
+
+    {{-- ══════════ DATA TABEL ══════════ --}}
+    <!-- Header Row 1 -->
+    <tr>
+        <th rowspan="3" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">NO</th>
+        <th rowspan="3" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">SATKER</th>
+        <th colspan="{{ $totalHeadersSpan }}" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">UKURAN {{ strtoupper($kaporItem->item_name) }}</th>
+        <th rowspan="3" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">JUMLAH<br>TOTAL</th>
+    </tr>
+    <!-- Header Row 2 -->
+    <tr>
+        <th colspan="{{ $sizeCount }}" style="font-weight: bold; border: 1px solid #000; text-align: center;">PRIA</th>
+        <th rowspan="2" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">JUMLAH</th>
+        <th colspan="{{ $sizeCount }}" style="font-weight: bold; border: 1px solid #000; text-align: center;">WANITA</th>
+        <th rowspan="2" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">JUMLAH</th>
+    </tr>
+    <!-- Header Row 3 -->
+    <tr>
+        @foreach($availableSizes as $size)
+            <th style="font-weight: bold; border: 1px solid #000; text-align: center;">{{ $size }}</th>
+        @endforeach
+        @foreach($availableSizes as $size)
+            <th style="font-weight: bold; border: 1px solid #000; text-align: center;">{{ $size }}</th>
+        @endforeach
+    </tr>
+    <!-- Nomor Kolom (Optional, sesuai screenshot) -->
+    <tr>
+        <th style="font-weight: bold; border: 1px solid #000; text-align: center;">1</th>
+        <th style="font-weight: bold; border: 1px solid #000; text-align: center;">2</th>
+        @php $colNum = 3; @endphp
+        @foreach($availableSizes as $size)
+            <th style="font-weight: bold; border: 1px solid #000; text-align: center;">{{ $colNum++ }}</th>
+        @endforeach
+        <th style="font-weight: bold; border: 1px solid #000; text-align: center;">{{ $colNum++ }}</th>
+        @foreach($availableSizes as $size)
+            <th style="font-weight: bold; border: 1px solid #000; text-align: center;">{{ $colNum++ }}</th>
+        @endforeach
+        <th style="font-weight: bold; border: 1px solid #000; text-align: center;">{{ $colNum++ }}</th>
+        <th style="font-weight: bold; border: 1px solid #000; text-align: center;">{{ $colNum }}</th>
+    </tr>
+
+    <!-- Body -->
+    @php $no = 1; @endphp
+    @foreach($matrix as $row)
+    <tr>
+        <td style="border: 1px solid #000; text-align: center;">{{ $no++ }}</td>
+        <td style="border: 1px solid #000;">{{ $row['satker_name'] }}</td>
+        
+        <!-- Ukuran Pria -->
+        @foreach($availableSizes as $size)
+            <td style="border: 1px solid #000; text-align: center;">{{ $row['sizes_pria'][$size] > 0 ? $row['sizes_pria'][$size] : '' }}</td>
+        @endforeach
+        <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $row['total_pria'] > 0 ? $row['total_pria'] : '' }}</td>
+        
+        <!-- Ukuran Wanita -->
+        @foreach($availableSizes as $size)
+            <td style="border: 1px solid #000; text-align: center;">{{ $row['sizes_wanita'][$size] > 0 ? $row['sizes_wanita'][$size] : '' }}</td>
+        @endforeach
+        <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $row['total_wanita'] > 0 ? $row['total_wanita'] : '' }}</td>
+        
+        <!-- Jumlah Total -->
+        <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $row['total_pria'] + $row['total_wanita'] }}</td>
+    </tr>
+    @endforeach
+
+    <!-- Footer -->
+    <tr>
+        <td colspan="2" style="font-weight: bold; border: 1px solid #000; text-align: center;">TOTAL</td>
+        @foreach($availableSizes as $size)
+            <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $totalPerSizePria[$size] > 0 ? $totalPerSizePria[$size] : '' }}</td>
+        @endforeach
+        <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $grandTotalPria }}</td>
+        
+        @foreach($availableSizes as $size)
+            <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $totalPerSizeWanita[$size] > 0 ? $totalPerSizeWanita[$size] : '' }}</td>
+        @endforeach
+        <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $grandTotalWanita }}</td>
+        
+        <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $grandTotalPria + $grandTotalWanita }}</td>
+    </tr>
+
+    {{-- ═══ TANDA TANGAN ═══ --}}
+    @php
+        $ttdStartCol = max($totalCols - 3, 2);
+        $emptyColsBefore = $ttdStartCol - 1;
+        $bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        $bulanSekarang = $bulanIndo[now()->month - 1];
+    @endphp
+    <tr>@for($i = 0; $i < $totalCols; $i++)<td></td>@endfor</tr>
+    <tr>@for($i = 0; $i < $totalCols; $i++)<td></td>@endfor</tr>
+    <tr>
+        @for($i = 0; $i < $emptyColsBefore; $i++)<td></td>@endfor
+        <td colspan="4" style="text-align: center;">{{ $settings->location ?? 'Mataram' }},          {{ $bulanSekarang }}  {{ $budgetPackage->budgetYear->year }}</td>
+    </tr>
+    <tr>
+        @for($i = 0; $i < $emptyColsBefore; $i++)<td></td>@endfor
+        <td colspan="4" style="text-align: center;">a.n. {{ strtoupper($settings->organization_name ?? 'KEPALA BIRO LOGISTIK POLDA NTB') }}</td>
+    </tr>
+    <tr>
+        @for($i = 0; $i < $emptyColsBefore; $i++)<td></td>@endfor
+        <td colspan="4" style="text-align: center; font-weight: bold;">{{ strtoupper($settings->signatory_title ?? 'PS.KABAG BEKUM') }}</td>
+    </tr>
+    <tr>@for($i = 0; $i < $totalCols; $i++)<td></td>@endfor</tr>
+    <tr>@for($i = 0; $i < $totalCols; $i++)<td></td>@endfor</tr>
+    <tr>@for($i = 0; $i < $totalCols; $i++)<td></td>@endfor</tr>
+    <tr>@for($i = 0; $i < $totalCols; $i++)<td></td>@endfor</tr>
+    <tr>
+        @for($i = 0; $i < $emptyColsBefore; $i++)<td></td>@endfor
+        <td colspan="4" style="text-align: center; font-weight: bold; text-decoration: underline;">{{ $settings->signatory_name ?? '.............................' }}</td>
+    </tr>
+    <tr>
+        @for($i = 0; $i < $emptyColsBefore; $i++)<td></td>@endfor
+        <td colspan="4" style="text-align: center;">{{ strtoupper($settings->signatory_rank ?? '') }} NRP {{ $settings->signatory_nrp ?? '' }}</td>
+    </tr>
+</table>

@@ -69,10 +69,13 @@
                 </td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn-icon blue" onclick="openEditModal({{ json_encode($item) }})">
+                        <button class="btn-icon blue" onclick="openEditModal({{ json_encode($item) }})" title="Edit Item">
                             <i class="ri-edit-line"></i>
                         </button>
-                        <button class="btn-icon red" onclick="confirmDelete({{ $item->id }}, '{{ $item->item_name }}')">
+                        <button class="btn-icon" style="color:#7C3AED; border-color:#EDE9FE;" onclick="openSizeModal({{ $item->id }}, '{{ addslashes($item->item_name) }}')" title="Kelola Ukuran">
+                            <i class="ri-ruler-2-line"></i>
+                        </button>
+                        <button class="btn-icon red" onclick="confirmDelete({{ $item->id }}, '{{ $item->item_name }}')" title="Hapus Item">
                             <i class="ri-delete-bin-line"></i>
                         </button>
                     </div>
