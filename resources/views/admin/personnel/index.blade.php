@@ -1202,7 +1202,7 @@
                         <h4 style="font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 16px;">DATA UKURAN (KAPOR)</h4>
                         @php
                             $s_head = range(54, 60);
-                            $s_shirt_m = ['14', '14.5', '15', '15.5', '16', '16.5', '17', '17.5', '18', '18.5', '19', '19.5', '20', '21', '22'];
+                            $s_shirt_m = ['14', '14,5', '15', '15,5', '16', '16,5', '17', '17,5', '18', '18,5', '19', '19,5', '20', '21', '22'];
                             $s_wom = ['K', 'SD', 'B', 'EB', 'EEB', 'EEEB', 'EEEEB'];
                             $s_pants_m = range(27, 50);
                             $s_shoes = range(36, 48);
