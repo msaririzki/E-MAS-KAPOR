@@ -1009,8 +1009,6 @@
         /* ── Content Area ─────────────────────────────────── */
         .content {
             padding: 24px 28px;
-            max-width: 1360px;
-            margin: 0 auto;
         }
 
         .page-header {
@@ -1433,7 +1431,6 @@
             }
             .content {
                 padding: 28px 36px;
-                max-width: 1440px;
             }
             .page-header h1 {
                 font-size: 24px;
@@ -1468,9 +1465,7 @@
             body {
                 font-size: 16px;
             }
-            .content {
-                max-width: 1560px;
-            }
+
             .page-header h1 {
                 font-size: 26px;
             }
@@ -1483,7 +1478,6 @@
         @media (max-width: 1440px) {
             .content {
                 padding: 20px 24px;
-                max-width: 1200px;
             }
             .page-header h1 {
                 font-size: 20px;
