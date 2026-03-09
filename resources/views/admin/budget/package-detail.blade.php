@@ -530,11 +530,40 @@
     @keyframes spin { 100% { transform: rotate(360deg); } }
 
     /* Responsive */
+    @media (min-width: 1600px) {
+        .package-hero { padding: 28px; }
+        .package-hero h1.package-title { font-size: 24px !important; }
+        .package-desc { font-size: 15px !important; }
+        .btn-action-primary { font-size: 15px; padding: 12px 24px; }
+        .wizard-step-card { padding: 24px; }
+        .wizard-step-title h3 { font-size: 16px; }
+        .wizard-step-title p { font-size: 13px; }
+        .wizard-step-body .stat-value .num { font-size: 26px; }
+        .wizard-step-body .stat-value .label { font-size: 12px; }
+        .panel-title { font-size: 18px; }
+        .panel-subtitle { font-size: 14px; }
+        .panel-header { padding: 24px 28px; }
+        .data-table th { padding: 16px 24px; font-size: 12px; }
+        .data-table td { padding: 18px 24px; font-size: 14.5px; }
+        .item-primary-name { font-size: 15px; }
+        .export-info h4 { font-size: 14px; }
+        .export-info p { font-size: 13px; }
+        .action-panel { padding: 24px; }
+        .qty-box { font-size: 14px; }
+        .satker-chip { font-size: 13.5px; }
+    }
+    @media (min-width: 1920px) {
+        .package-hero h1.package-title { font-size: 26px !important; }
+        .wizard-step-body .stat-value .num { font-size: 28px; }
+        .data-table td { font-size: 15px; }
+        .panel-title { font-size: 19px; }
+    }
     @media (max-width: 1024px) {
         .layout-grid { grid-template-columns: 1fr; }
         .wizard-track { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
         .export-actions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
         .export-card-group { display: contents; }
+        .export-actions-grid-horizontal { grid-template-columns: 1fr; }
     }
     @media (max-width: 768px) {
         .wizard-track { grid-template-columns: 1fr; }
@@ -542,6 +571,7 @@
         .data-table { min-width: 600px; }
         .table-wrap { overflow-x: auto; }
         .satker-dropdown-wrapper { padding-left: 16px; }
+        .export-card-group-horizontal { grid-template-columns: 1fr; }
     }
 </style>
 @endsection
