@@ -52,6 +52,7 @@
                     @endif
 
                     {{-- Dropdown Rekap Kapor --}}
+                    @if(!auth()->user()->hasRole('admin_satker'))
                     <div style="position: relative;" id="rekapSubMenu">
                         <button class="dropdown-item" onclick="toggleSubMenu()" style="display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between;">
                             <div style="display: flex; align-items: center; gap: 10px;">
@@ -84,6 +85,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                     <div style="border-top: 1px solid #F3F4F6; margin: 4px 0;"></div>
 
