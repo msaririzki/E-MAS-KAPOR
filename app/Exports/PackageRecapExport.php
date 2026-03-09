@@ -26,7 +26,7 @@ class PackageRecapExport implements WithMultipleSheets
     public function __construct(BudgetPackage $budgetPackage)
     {
         $this->budgetPackage = $budgetPackage;
-        $this->budgetPackage->load(['items.kaporItem', 'items.kaporItem.sizes', 'items.recipients']);
+        $this->budgetPackage->load(['items.kaporItem', 'items.recipients']);
     }
 
     /**
