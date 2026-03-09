@@ -143,7 +143,7 @@
                                 <span class="badge badge-warning"><i class="ri-time-line"></i> Belum</span>
                                 @php
                                     $missing = [];
-                                    if (!$hasValidNrp) $missing[] = 'NRP';
+                                    if (!$hasValidNrp) $missing[] = 'NRP/NIP';
                                     if (!$p->rank_id) $missing[] = 'Pangkat';
                                     if (!$p->kapor_sizes) $missing[] = 'Ukuran';
                                 @endphp
