@@ -99,6 +99,21 @@
         }
 
         /* ── Global Theme Overrides (Gen Z / Modern Aesthetics) ──────────────────── */
+
+        /* Theme: Midnight Navy (Classic & Safe) - DEFAULT */
+        body.theme-default {
+            --brand: #C62828;
+            --brand-light: #E53935;
+            --brand-lighter: #EF5350;
+            --brand-bg: #FFEBEE;
+            --accent: #D4AF37;
+            --sidebar-bg: #111827;      /* Midnight Navy */
+            --sidebar-border: rgba(255, 255, 255, 0.05);
+            --sidebar-active-bg: rgba(255, 255, 255, 0.1);
+            --sidebar-active-text: #ffffff;
+            --sidebar-badge-bg: var(--brand);
+            --sidebar-badge-text: #ffffff;
+        }
         
         /* Theme: Matcha Minimalist (Organic & Soft) */
         body.theme-matcha {
@@ -1633,7 +1648,7 @@
     </style>
 </head>
 
-<body class="{{ auth()->user()->theme ?? '' }}">
+<body class="{{ empty(auth()->user()->theme) ? 'theme-default' : auth()->user()->theme }}">
     {{-- ═══ Sidebar ═══ --}}
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
