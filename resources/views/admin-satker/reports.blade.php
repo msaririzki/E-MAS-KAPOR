@@ -132,7 +132,7 @@
                         <td style="font-weight: 600; font-size: 12px; color: #1E293B;">{{ strtoupper($p->full_name) }}</td>
                         <td style="font-size: 12px;">{{ strtoupper($p->rank->name ?? '-') }}</td>
                         <td style="text-align: center; font-size: 11px; color: #64748B;">{{ $p->golongan ?: '-' }}</td>
-                        <td style="font-size: 11px; font-family: 'Courier New', monospace; color: #475569;">{{ $displayNrp }}</td>
+                        <td class="nrp-cell" style="font-size: 11px; font-family: 'Courier New', monospace; color: #475569;">{{ $displayNrp }}</td>
                         <td style="font-size: 12px;">{{ strtoupper($p->jabatan ?: '-') }}</td>
                         <td style="font-size: 12px;">{{ strtoupper($p->bagian ?: '-') }}</td>
                         <td style="text-align: center; font-weight: 700; font-size: 12px; color: {{ $p->gender === 'L' ? '#3B82F6' : '#EC4899' }};">{{ $p->gender === 'L' ? 'P' : ($p->gender === 'P' ? 'W' : '-') }}</td>
@@ -209,8 +209,9 @@
     }
 
     /* 2. LAYOUT RESET - Gunakan seluruh lebar kertas */
-    html, body {
+    html, body, * {
         background-color: #ffffff !important;
+        color: #000 !important;
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
@@ -279,16 +280,23 @@
     th, td {
         border: 1px solid #000 !important;
         padding: 3px 2px !important; /* Padding minimal */
-        text-align: left !important;
+        text-align: center !important; /* Rata tengah secara default */
         vertical-align: middle !important;
         word-wrap: break-word !important;
     }
 
+    /* Kolom Nama Lengkap (kolom ke-2) tetap rata kiri */
+    table tr td:nth-child(2) {
+        text-align: left !important;
+        padding-left: 5px !important;
+    }
+
     thead th {
-        background-color: #f3f4f6 !important;
+        background-color: #d1d5db !important;
         font-weight: bold !important;
         text-align: center !important;
         text-transform: uppercase !important;
+        color: #000 !important;
     }
 
     /* Row Backgrounds */
@@ -299,6 +307,14 @@
 
     tr[style*="background: #FFFBEB"] {
         background-color: #ffffca !important;
+    }
+
+    /* Spefisikasi Cell NRP agar lebih terlihat */
+    .nrp-cell {
+        font-weight: 700 !important;
+        font-family: Arial, sans-serif !important;
+        font-size: 8pt !important;
+        letter-spacing: 0.1px !important;
     }
 
     /* Page Breaks */
