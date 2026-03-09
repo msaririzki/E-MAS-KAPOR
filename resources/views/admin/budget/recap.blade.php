@@ -90,70 +90,93 @@
 
     @if($totalDuplicates > 0)
     <div class="duplicate-list">
-        @foreach($duplicates as $idx => $dup)
-        <div class="duplicate-card" id="dup-{{ $idx }}">
-            <div class="dup-header" onclick="document.getElementById('dup-{{ $idx }}').classList.toggle('expanded')">
-                <div class="dup-info">
-                    <div class="dup-number">{{ $idx + 1 }}</div>
-                    <div class="dup-person">
-                        <div class="dup-name">{{ $dup['personnel']->full_name }}</div>
-                        <div class="dup-meta">
-                            <span><i class="ri-id-card-line"></i> {{ $dup['personnel']->nrp ?? '-' }}</span>
-                            <span><i class="ri-building-2-line"></i> {{ $dup['personnel']->satker->name ?? '-' }}</span>
-                            <span><i class="ri-briefcase-line"></i> {{ $dup['personnel']->personnel_type }}</span>
-                            @if($dup['personnel']->rank)
-                            <span><i class="ri-medal-line"></i> {{ $dup['personnel']->rank->name }}</span>
-                            @endif
-                            @if($dup['personnel']->keterangan)
-                            <span><i class="ri-information-line"></i> {{ $dup['personnel']->keterangan }}</span>
-                            @endif
+        @php 
+            $globalIdx = 1; 
+            $satkerIdx = 0;
+        @endphp
+        @foreach($groupedDuplicates as $satkerName => $satkerDuplicates)
+            @php $satkerIdx++; @endphp
+            <div class="satker-group" id="satker-group-{{ $satkerIdx }}">
+                <div class="satker-group-header" onclick="document.getElementById('satker-group-{{ $satkerIdx }}').classList.toggle('expanded')">
+                    <h3><i class="ri-building-2-line"></i> {{ $satkerName }}</h3>
+                    <div class="satker-header-actions">
+                        <span class="satker-group-count">{{ count($satkerDuplicates) }} personil</span>
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </div>
+                </div>
+
+                <div class="satker-group-body">
+                    @foreach($satkerDuplicates as $dup)
+                    <div class="duplicate-card" id="dup-{{ $globalIdx }}">
+                        <div class="dup-header" onclick="document.getElementById('dup-{{ $globalIdx }}').classList.toggle('expanded')">
+                            <div class="dup-info">
+                                <div class="dup-number">{{ $globalIdx }}</div>
+                                <div class="dup-person">
+                                    <div class="dup-name">{{ $dup['personnel']->full_name }}</div>
+                                    <div class="dup-meta">
+                                        <span><i class="ri-id-card-line"></i> {{ $dup['personnel']->nrp ?? '-' }}</span>
+                                        <span><i class="ri-building-2-line"></i> {{ $dup['personnel']->satker->name ?? '-' }}</span>
+                                        <span><i class="ri-briefcase-line"></i> {{ $dup['personnel']->personnel_type }}</span>
+                                        @if($dup['personnel']->rank)
+                                        <span><i class="ri-medal-line"></i> {{ $dup['personnel']->rank->name }}</span>
+                                        @endif
+                                        @if($dup['personnel']->keterangan)
+                                        <span><i class="ri-information-line"></i> {{ $dup['personnel']->keterangan }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dup-count-wrap">
+                                <span class="dup-count-badge">{{ $dup['total_items'] }} barang</span>
+                                <i class="ri-arrow-down-s-line dup-chevron"></i>
+                            </div>
+                        </div>
+                        <div class="dup-body">
+                            <div class="dup-items-table">
+                                <div class="dup-items-header">
+                                    <span style="flex: 2;">Nama Barang</span>
+                                    <span style="flex: 1;">Kategori</span>
+                                    <span style="flex: 1.5;">Satker Penerima</span>
+                                    <span style="flex: 2;">Filter</span>
+                                    <span style="flex: 1; text-align: right;">Harga</span>
+                                </div>
+                                @foreach($dup['items'] as $itemDetail)
+                                <div class="dup-items-row">
+                                    <span class="item-col" style="flex: 2;">
+                                        <i class="ri-box-3-line" style="color: #94A3B8; margin-right: 6px;"></i>
+                                        {{ $itemDetail['item_name'] }}
+                                    </span>
+                                    <span class="item-col" style="flex: 1;">
+                                        <span class="cat-badge">{{ $itemDetail['category'] }}</span>
+                                    </span>
+                                    <span class="item-col" style="flex: 1.5;">
+                                        <i class="ri-building-2-line" style="color: #94A3B8; margin-right: 4px;"></i>
+                                        {{ $itemDetail['satker_name'] }}
+                                    </span>
+                                    <span class="item-col" style="flex: 2;">
+                                        @if(count($itemDetail['filters']) > 0)
+                                            @foreach($itemDetail['filters'] as $fl)
+                                            <span class="filter-pill">{{ $fl }}</span>
+                                            @endforeach
+                                        @else
+                                            <span style="color: #94A3B8; font-size: 12px;">Semua</span>
+                                        @endif
+                                    </span>
+                                    <span class="item-col" style="flex: 1; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                                        <span style="font-weight: 600; color: #C62828;">Rp {{ number_format($itemDetail['price'] ?? 0, 0, ',', '.') }}</span>
+                                        <a href="{{ route('admin.budget.wizard.step2', $budgetPackage->id) }}#item-card-{{ $itemDetail['item_id'] }}" target="_blank" class="dup-edit-btn" title="Ubah Filter Personil/Satker untuk Barang ini">
+                                            <i class="ri-edit-line"></i> Ubah Alokasi
+                                        </a>
+                                    </span>
+                                </div>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="dup-count-wrap">
-                    <span class="dup-count-badge">{{ $dup['total_items'] }} barang</span>
-                    <i class="ri-arrow-down-s-line dup-chevron"></i>
-                </div>
-            </div>
-            <div class="dup-body">
-                <div class="dup-items-table">
-                    <div class="dup-items-header">
-                        <span style="flex: 2;">Nama Barang</span>
-                        <span style="flex: 1;">Kategori</span>
-                        <span style="flex: 1.5;">Satker Penerima</span>
-                        <span style="flex: 2;">Filter</span>
-                        <span style="flex: 1; text-align: right;">Harga</span>
-                    </div>
-                    @foreach($dup['items'] as $itemDetail)
-                    <div class="dup-items-row">
-                        <span class="item-col" style="flex: 2;">
-                            <i class="ri-box-3-line" style="color: #94A3B8; margin-right: 6px;"></i>
-                            {{ $itemDetail['item_name'] }}
-                        </span>
-                        <span class="item-col" style="flex: 1;">
-                            <span class="cat-badge">{{ $itemDetail['category'] }}</span>
-                        </span>
-                        <span class="item-col" style="flex: 1.5;">
-                            <i class="ri-building-2-line" style="color: #94A3B8; margin-right: 4px;"></i>
-                            {{ $itemDetail['satker_name'] }}
-                        </span>
-                        <span class="item-col" style="flex: 2;">
-                            @if(count($itemDetail['filters']) > 0)
-                                @foreach($itemDetail['filters'] as $fl)
-                                <span class="filter-pill">{{ $fl }}</span>
-                                @endforeach
-                            @else
-                                <span style="color: #94A3B8; font-size: 12px;">Semua</span>
-                            @endif
-                        </span>
-                        <span class="item-col" style="flex: 1; text-align: right; font-weight: 600; color: #C62828;">
-                            Rp {{ number_format($itemDetail['price'] ?? 0, 0, ',', '.') }}
-                        </span>
-                    </div>
+                    @php $globalIdx++; @endphp
                     @endforeach
                 </div>
             </div>
-        </div>
         @endforeach
     </div>
     @else
@@ -303,11 +326,56 @@
     .warning-badge { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
     .success-badge { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
 
+    /* ── Satker Group Header ── */
+    .satker-group { margin-bottom: 6px; }
+    .satker-group-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 14px 18px; margin-top: 4px;
+        border: 1px solid #E2E8F0; border-radius: 12px;
+        background: #F8FAFC; cursor: pointer; transition: all 0.2s;
+    }
+    .satker-group-header:hover {
+        background: #F1F5F9; border-color: #CBD5E1;
+    }
+    .satker-group.expanded .satker-group-header {
+        border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+        border-bottom-color: transparent;
+    }
+    .satker-group-header h3 {
+        font-size: 15px; font-weight: 800; color: #1E293B; margin: 0;
+        display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .satker-group-header h3 i { color: #C62828; font-size: 18px; }
+    
+    .satker-header-actions {
+        display: flex; align-items: center; gap: 12px;
+    }
+    .satker-group-count {
+        background: #E2E8F0; color: #475569; padding: 4px 10px;
+        border-radius: 20px; font-size: 12px; font-weight: 700;
+    }
+    .satker-group-header .group-chevron {
+        font-size: 20px; color: #94A3B8; transition: transform 0.2s;
+    }
+    .satker-group.expanded .satker-group-header .group-chevron {
+        transform: rotate(180deg);
+    }
+    
+    .satker-group-body {
+        display: none; padding: 12px;
+        border: 1px solid #E2E8F0; border-top: none;
+        border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+        background: #ffffff;
+    }
+    .satker-group.expanded .satker-group-body {
+        display: flex; flex-direction: column; gap: 8px;
+    }
+
     /* ── Duplicate List ── */
     .duplicate-list { padding: 16px 24px; display: flex; flex-direction: column; gap: 10px; }
     .duplicate-card {
         border: 1px solid #E2E8F0; border-radius: 12px;
-        overflow: hidden; transition: all 0.2s;
+        overflow: hidden; transition: all 0.2s; margin-bottom: 4px;
     }
     .duplicate-card:hover { border-color: #CBD5E1; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
     .dup-header {
@@ -323,6 +391,13 @@
         display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .dup-name { font-size: 14px; font-weight: 700; color: #0F172A; }
+    .dup-edit-btn {
+        display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+        background: #EFF6FF; color: #2563EB; font-size: 11px; font-weight: 600;
+        border-radius: 6px; text-decoration: none; border: 1px solid #BFDBFE;
+        transition: all 0.2s;
+    }
+    .dup-edit-btn:hover { background: #DBEAFE; color: #1D4ED8; }
     .dup-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
     .dup-meta span { font-size: 11.5px; color: #64748B; display: inline-flex; align-items: center; gap: 4px; }
     .dup-meta i { font-size: 13px; color: #94A3B8; }

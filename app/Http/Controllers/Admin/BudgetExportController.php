@@ -127,11 +127,17 @@ class BudgetExportController extends Controller
         $duplicatedIds = array_keys(array_filter($personnelItemMap, fn($items) => count($items) >= 2));
 
         $duplicates = collect();
+        $groupedDuplicates = collect();
         if (! empty($duplicatedIds)) {
             $personnels = Personnel::with(['rank', 'satker'])
                 ->whereIn('id', $duplicatedIds)
-                ->orderBy('full_name')
-                ->get();
+                ->get()
+                ->sortBy([
+                    fn ($a, $b) => ($a->satker->code === 'POLDA-NTB' ? 1 : 0) <=> ($b->satker->code === 'POLDA-NTB' ? 1 : 0),
+                    fn ($a, $b) => ($a->satker->sort_order ?? 999) <=> ($b->satker->sort_order ?? 999),
+                    fn ($a, $b) => strnatcasecmp($a->full_name, $b->full_name),
+                ])
+                ->values();
 
             foreach ($personnels as $person) {
                 $duplicates->push([
@@ -141,14 +147,17 @@ class BudgetExportController extends Controller
                 ]);
             }
 
-            $duplicates = $duplicates->sortByDesc('total_items')->values();
+            // Group by satker name
+            $groupedDuplicates = $duplicates->groupBy(function ($item) {
+                return $item['personnel']->satker->name ?? 'Tanpa Satker';
+            });
         }
 
         $totalDuplicates = $duplicates->count();
 
         return view('admin.budget.recap', compact(
             'budgetPackage', 'grandTotal', 'totalItems', 'totalRecipients',
-            'duplicates', 'totalDuplicates'
+            'groupedDuplicates', 'totalDuplicates'
         ));
     }
 
