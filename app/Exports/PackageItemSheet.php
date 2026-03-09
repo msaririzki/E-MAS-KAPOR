@@ -149,7 +149,17 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 });
             }
 
-            // Hitung Group By size (mengambil array JSON kapor_sizes)
+            // Filter keterangan (bagian/jabatan khusus) — wajib sama dengan calculateMatchedCount()
+            if (! empty($filters['keterangan'])) {
+                $query->whereIn('keterangan', $filters['keterangan']);
+            }
+
+            // Filter golongan PNS/PPPK — wajib sama dengan calculateMatchedCount()
+            if (! empty($filters['golongan'])) {
+                $query->whereIn('golongan', $filters['golongan']);
+            }
+
+            // Ambil personel yang lolos semua filter (hanya field kapor_sizes yang dibutuhkan)
             $personnels = $query->get(['kapor_sizes']);
 
             $row = [
