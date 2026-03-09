@@ -37,7 +37,7 @@
 
 
     {{-- ═══ Stat Cards ═══ --}}
-    <div class="stats-row" style="grid-template-columns: repeat(5, 1fr);">
+    <div class="stats-row stats-row-5">
         {{-- Total POLRI --}}
         <div class="stat-card">
             <div class="stat-top">

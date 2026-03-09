@@ -94,7 +94,7 @@
             color: var(--text-main);
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
-            font-size: 14px;
+            font-size: clamp(14px, 0.9vw, 16px);
             line-height: 1.5;
         }
 
@@ -1051,6 +1051,10 @@
             margin-bottom: 24px;
         }
 
+        .stats-row-5 {
+            grid-template-columns: repeat(5, 1fr);
+        }
+
         .stat-card {
             background: var(--bg-card);
             border-radius: var(--radius-lg);
@@ -1418,50 +1422,216 @@
             z-index: 90;
         }
 
-        @media (max-width: 1024px) {
+        /* ═══════════════════════════════════════════════════════
+           Responsive Breakpoints
+           ═══════════════════════════════════════════════════════ */
 
+        /* ── Layar besar / 100% scaling (≥1600px) ── */
+        @media (min-width: 1600px) {
+            body {
+                font-size: 15px;
+            }
+            .content {
+                padding: 28px 36px;
+                max-width: 1440px;
+            }
+            .page-header h1 {
+                font-size: 24px;
+            }
+            .stat-value {
+                font-size: 28px;
+            }
+            .stat-card {
+                padding: 24px;
+            }
+            .card-body {
+                padding: 22px;
+            }
+            .card-head {
+                padding: 18px 22px;
+            }
+            .card-head h3 {
+                font-size: 15px;
+            }
+            tbody td {
+                padding: 8px 14px;
+                font-size: 14px;
+            }
+            thead th {
+                padding: 8px 14px;
+                font-size: 12px;
+            }
+        }
+
+        /* ── Layar sangat besar / Monitor 4K (≥1920px) ── */
+        @media (min-width: 1920px) {
+            body {
+                font-size: 16px;
+            }
+            .content {
+                max-width: 1560px;
+            }
+            .page-header h1 {
+                font-size: 26px;
+            }
+            .stat-value {
+                font-size: 30px;
+            }
+        }
+
+        /* ── Laptop 14" / Monitor kecil (≤1440px) ── */
+        @media (max-width: 1440px) {
+            .content {
+                padding: 20px 24px;
+                max-width: 1200px;
+            }
+            .page-header h1 {
+                font-size: 20px;
+            }
+            .stat-value {
+                font-size: 22px;
+            }
+            .stat-card {
+                padding: 18px;
+            }
+        }
+
+        /* ── Laptop 14" + 125% scale (≤1280px) ── */
+        @media (max-width: 1280px) {
+            :root {
+                --sidebar-w: 230px;
+            }
+            .content {
+                padding: 18px 20px;
+            }
+            .header {
+                padding: 0 20px;
+            }
+            .card-body {
+                padding: 16px;
+            }
+            .card-head {
+                padding: 12px 16px;
+            }
+            .stats-row {
+                gap: 12px;
+            }
+            .stats-row-5 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .stat-card {
+                padding: 16px;
+            }
+            .stat-value {
+                font-size: 20px;
+            }
+            .page-header h1 {
+                font-size: 19px;
+            }
+        }
+
+        /* ── Tablet / Layar ≤1024px — Sidebar hidden ── */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .overlay.open {
+                display: block;
+            }
+            .main {
+                margin-left: 0;
+            }
+            .btn-menu-toggle {
+                display: block;
+            }
+            .header-center {
+                display: none;
+            }
+            .content {
+                padding: 16px;
+            }
             .grid-2,
             .grid-3-1 {
                 grid-template-columns: 1fr;
             }
-        }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .overlay.open {
-                display: block;
-            }
-
-            .main {
-                margin-left: 0;
-            }
-
-            .btn-menu-toggle {
-                display: block;
-            }
-
-            .header-center {
-                display: none;
-            }
-
-            .content {
-                padding: 16px;
-            }
-
-            .stats-row {
+            .stats-row,
+            .stats-row-5 {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 10px;
             }
-
             .stat-value {
                 font-size: 20px;
+            }
+            .stat-card {
+                padding: 16px;
+            }
+            /* Reset sidebar width for mobile overlay */
+            .sidebar {
+                width: 280px;
+            }
+        }
+
+        /* ── Mobile (≤768px) ── */
+        @media (max-width: 768px) {
+            .content {
+                padding: 14px;
+            }
+            .header {
+                padding: 0 14px;
+                height: 50px;
+            }
+            .page-header h1 {
+                font-size: 18px;
+            }
+            .card-head h3 {
+                font-size: 13px;
+            }
+            tbody td, thead th {
+                padding: 5px 8px;
+                font-size: 12px;
+            }
+            .btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            .page-header-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        /* ── Mobile kecil (≤480px) ── */
+        @media (max-width: 480px) {
+            .content {
+                padding: 12px;
+            }
+            .header {
+                padding: 0 12px;
+            }
+            .stats-row,
+            .stats-row-5 {
+                grid-template-columns: 1fr;
+            }
+            .stat-card {
+                padding: 14px;
+            }
+            .stat-value {
+                font-size: 18px;
+            }
+            .page-header h1 {
+                font-size: 17px;
+            }
+            .breadcrumb {
+                font-size: 11px;
+            }
+            .dd-name {
+                display: none;
+            }
+            .sidebar {
+                width: 260px;
             }
         }
 
