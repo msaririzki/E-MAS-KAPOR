@@ -130,27 +130,33 @@
             --sidebar-badge-text: #ffffff;
         }
         /* Specific override for Matcha since sidebar is light */
-        body.theme-matcha .sidebar {
-            color: var(--slate-700);
-        }
-        body.theme-matcha .sidebar-brand {
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-        body.theme-matcha .nav-link {
-            color: var(--slate-500);
-        }
-        body.theme-matcha .nav-link.active {
-            color: var(--brand);
-        }
-        body.theme-matcha .nav-link i {
-            color: var(--slate-400);
-        }
-        body.theme-matcha .nav-link.active i {
-            color: var(--brand);
-        }
-        body.theme-matcha .sidebar-footer {
-            border-top: 1px solid rgba(0,0,0,0.05);
-        }
+        body.theme-matcha .sidebar { color: var(--slate-700); }
+        body.theme-matcha .sidebar-brand { border-bottom: 1px solid rgba(0,0,0,0.05); }
+        body.theme-matcha .sidebar-brand-text { color: var(--slate-800); }
+        body.theme-matcha .nav-link { color: var(--slate-600); border-color: rgba(0,0,0,0.03); background: rgba(0,0,0,0.01); }
+        body.theme-matcha .nav-link:hover { background: rgba(0,0,0,0.03); color: var(--slate-800); }
+        body.theme-matcha .nav-link.active { color: var(--brand); background: rgba(101, 163, 13, 0.1); border-color: rgba(101, 163, 13, 0.2); }
+        body.theme-matcha .nav-link i { color: var(--slate-400); }
+        body.theme-matcha .nav-link:hover i { color: var(--slate-600); }
+        body.theme-matcha .nav-link.active i { color: var(--brand); }
+        body.theme-matcha .sidebar-footer { border-top: 1px solid rgba(0,0,0,0.05); }
+        body.theme-matcha .nav-section-label { color: var(--slate-500); }
+        body.theme-matcha .nav-group { border-color: rgba(0,0,0,0.05); background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        body.theme-matcha .nav-group-toggle { color: var(--slate-700); }
+        body.theme-matcha .nav-group-toggle:hover { background: rgba(0,0,0,0.02); color: var(--brand); }
+        body.theme-matcha .nav-group-toggle i.group-icon { color: var(--slate-400); }
+        body.theme-matcha .nav-group-toggle:hover i.group-icon { color: var(--brand); }
+        body.theme-matcha .nav-group-toggle .group-chevron { color: var(--slate-300); }
+        body.theme-matcha .nav-group.open { background: rgba(101, 163, 13, 0.02); border-color: rgba(101, 163, 13, 0.1); }
+        body.theme-matcha .nav-group.open > .nav-group-toggle { color: var(--brand); border-bottom-color: rgba(101, 163, 13, 0.05); background: transparent; }
+        body.theme-matcha .nav-group.open > .nav-group-toggle i.group-icon { color: var(--brand); }
+        body.theme-matcha .nav-group-children .nav-link { background: transparent; border: none; font-weight: 500; }
+        body.theme-matcha .nav-group-children .nav-link::after { background: var(--slate-300); }
+        body.theme-matcha .nav-group-children .nav-link.active { background: rgba(101, 163, 13, 0.15) !important; color: var(--brand) !important; font-weight: 700; }
+        body.theme-matcha .nav-group-children .nav-link.active::after { background: var(--brand); box-shadow: 0 0 6px rgba(101, 163, 13, 0.4); }
+        body.theme-matcha .sidebar-user:hover { background: rgba(0,0,0,0.04); }
+        body.theme-matcha .user-name { color: var(--slate-800); }
+        body.theme-matcha .user-role { color: var(--slate-500); }
 
         /* Theme: Cyber Neon (Dark Mode & Vibrant) */
         body.theme-cyber {
@@ -683,34 +689,7 @@
             text-align: center;
         }
 
-        /* ── Matcha theme overrides for nav-group ── */
-        body.theme-matcha .nav-group-toggle {
-            color: var(--slate-600);
-        }
-        body.theme-matcha .nav-group-toggle:hover,
-        body.theme-matcha .nav-group.open > .nav-group-toggle {
-            background: rgba(101, 163, 13, 0.08);
-            color: var(--slate-800);
-        }
-        body.theme-matcha .nav-link {
-            color: var(--slate-500);
-        }
-        body.theme-matcha .nav-link:hover {
-            color: var(--slate-700);
-            background: rgba(0,0,0,0.03);
-        }
-        body.theme-matcha .nav-section-label {
-            color: var(--slate-400);
-        }
-        body.theme-matcha .nav-group-children .nav-link::after {
-            background: var(--slate-300);
-        }
-        body.theme-matcha .nav-group-children .nav-link:hover::after {
-            background: var(--slate-500);
-        }
-        body.theme-matcha .nav-group-children .nav-link.active::after {
-            background: var(--brand);
-        }
+        /* (Matcha theme overrides moved to the top specific block) */
 
         .sidebar-footer {
             padding: 12px 14px;

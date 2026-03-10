@@ -69,13 +69,13 @@
         <div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden;">
             <div class="card-header" style="background: rgba(var(--brand-rgb, 198, 40, 40), 0.03); border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between;">
                 <div>
-                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--slate-800); display: flex; align-items: center; gap: 10px;">
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
                         <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--brand-bg); color: var(--brand);">
                             <i class="ri-bar-chart-box-line" style="font-size: 18px;"></i>
                         </span>
                         Progres Pengisian — {{ $stats['satker_name'] }}
                     </h3>
-                    <p style="margin: 4px 0 0 42px; font-size: 13px; color: var(--slate-500);">
+                    <p style="margin: 4px 0 0 42px; font-size: 13px; color: var(--text-muted);">
                         Mendeteksi jumlah personil yang telah melengkapi data kapor.
                     </p>
                 </div>
@@ -84,9 +84,9 @@
                 @php $pct = $stats['fill_rate']; @endphp
                 
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
-                    <div style="font-size: 14px; font-weight: 600; color: var(--slate-700);">
+                    <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">
                         <span style="color: {{ $pct >= 80 ? 'var(--success)' : ($pct >= 50 ? 'var(--warning)' : 'var(--danger)') }}; font-size: 16px;">{{ $stats['personnel_submitted'] }}</span>
-                        <span style="color: var(--slate-400); font-weight: 400; margin: 0 4px;">/</span>
+                        <span style="color: var(--text-muted); font-weight: 400; margin: 0 4px;">/</span>
                         {{ $stats['total_personnel'] }} Personil
                     </div>
                     <div style="font-size: 20px; font-weight: 800; color: {{ $pct >= 80 ? 'var(--success)' : ($pct >= 50 ? 'var(--warning)' : 'var(--danger)') }};">
@@ -94,7 +94,7 @@
                     </div>
                 </div>
 
-                <div class="progress" style="height: 16px; border-radius: 8px; background: var(--slate-100); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                <div class="progress" style="height: 16px; border-radius: 8px; background: var(--hover-bg); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); border: 1px solid var(--border-color);">
                     <div class="progress-bar {{ $pct >= 80 ? 'green' : ($pct >= 50 ? 'yellow' : 'red') }}"
                         style="width: {{ $pct }}%; height: 100%; transition: width 1s ease-in-out; background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent); background-size: 1rem 1rem;">
                     </div>
@@ -106,7 +106,7 @@
         <div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden;">
             <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
                 <div>
-                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--slate-800); display: flex; align-items: center; gap: 10px;">
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
                         <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--danger-bg); color: var(--danger);">
                             <i class="ri-error-warning-line" style="font-size: 18px;"></i>
                         </span>
@@ -116,7 +116,7 @@
                         @endif
                     </h3>
                 </div>
-                <a href="{{ route('admin-satker.monitor') }}" class="btn btn-outline" style="border-radius: 8px; font-size: 13px; font-weight: 600; padding: 8px 16px; border-color: var(--slate-200); color: var(--slate-600); display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                <a href="{{ route('admin-satker.monitor') }}" class="btn btn-outline" style="border-radius: 8px; font-size: 13px; font-weight: 600; padding: 8px 16px; border-color: var(--border-color); color: var(--text-main); display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
                     Lihat Monitoring Lengkap <i class="ri-arrow-right-line"></i>
                 </a>
             </div>
@@ -126,25 +126,25 @@
                 <div class="table-responsive" style="overflow-x: auto;">
                     <table class="table" style="width: 100%; border-collapse: collapse;">
                         <thead>
-                            <tr style="background: var(--slate-50); border-bottom: 1px solid var(--slate-200);">
-                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px; width: 50px;">No</th>
-                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">Personil</th>
-                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">NRP / NIP</th>
-                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">Pangkat</th>
-                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px; width: 140px;">Status</th>
+                            <tr style="background: var(--hover-bg); border-bottom: 1px solid var(--border-color);">
+                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; width: 50px;">No</th>
+                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Personil</th>
+                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">NRP / NIP</th>
+                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Pangkat</th>
+                                <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; width: 140px;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($pendingPersonnel as $idx => $p)
-                                <tr style="border-bottom: 1px solid var(--slate-100); transition: background 0.15s;" onmouseover="this.style.background='var(--slate-50)'" onmouseout="this.style.background='transparent'">
-                                    <td style="padding: 16px 24px; font-size: 13px; color: var(--slate-500);">{{ $idx + 1 }}</td>
+                                <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.15s;" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='transparent'">
+                                    <td style="padding: 16px 24px; font-size: 13px; color: var(--text-muted);">{{ $idx + 1 }}</td>
                                     <td style="padding: 16px 24px;">
-                                        <div style="font-weight: 600; color: var(--slate-800); font-size: 14px;">{{ $p->full_name }}</div>
+                                        <div style="font-weight: 600; color: var(--text-main); font-size: 14px;">{{ $p->full_name }}</div>
                                     </td>
-                                    <td style="padding: 16px 24px; font-size: 13px; font-family: 'SFMono-Regular', Consolas, monospace; color: var(--slate-600);">
+                                    <td style="padding: 16px 24px; font-size: 13px; font-family: 'SFMono-Regular', Consolas, monospace; color: var(--text-muted);">
                                         {{ ($p->user->nrp_nip && !str_starts_with($p->user->nrp_nip, 'TEMP-')) ? $p->user->nrp_nip : '—' }}
                                     </td>
-                                    <td style="padding: 16px 24px; font-size: 13px; color: var(--slate-600);">
+                                    <td style="padding: 16px 24px; font-size: 13px; color: var(--text-muted);">
                                         {{ $p->rank->name ?? '—' }}
                                     </td>
                                     <td style="padding: 16px 24px;">
