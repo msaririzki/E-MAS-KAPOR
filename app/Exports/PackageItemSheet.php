@@ -375,11 +375,12 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                     ->setBorderStyle(Border::BORDER_MEDIUM)
                     ->getColor()->setRGB('000000');
 
-                // ═══ JUDUL DOKUMEN (Baris 5: bold, font 11, underline, center) ═══
+                // ═══ JUDUL DOKUMEN (Baris 5: bold, font 11, underline, center, shrink-to-fit) ═══
                 $sheet->mergeCells("A5:{$lastColLetter}5");
                 $sheet->getStyle("A5:{$lastColLetter}5")->getFont()->setBold(true)->setSize(11)->setUnderline(true);
                 $sheet->getStyle("A5:{$lastColLetter}5")->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                    ->setShrinkToFit(true);
 
                 // ═══ HEADER TABEL ═══
                 $headerRange = "A{$headerStartRow}:{$lastColLetter}".($headerStartRow + $headerRowCount - 1);
@@ -400,64 +401,75 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // ═══ TANDA TANGAN (pojok kanan, centered) ═══
+                // Gunakan 4 kolom terakhir agar teks tidak terpotong
                 $ttdStartRow = $footerRow + 2;
-                // Hitung kolom F-H equivalent (3 kolom terakhir)
-                $ttdStartCol = max($totalCols - 2, 1);
+                $ttdColSpan  = min(4, $totalCols - 1); // 4 kolom (atau lebih sedikit kalau tabel kecil)
+                $ttdStartCol = max(1, $totalCols - $ttdColSpan + 1);
                 $ttdStartColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($ttdStartCol);
+
+                // Set lebar 4 kolom TTD: total minimal 50 karakter ~ 8 unit x 4 = 32 unit
+                for ($c = $ttdStartCol; $c <= $totalCols; $c++) {
+                    $cl = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+                    $sheet->getColumnDimension($cl)->setWidth(max($sheet->getColumnDimension($cl)->getWidth(), 12));
+                }
 
                 for ($r = $ttdStartRow; $r <= $ttdStartRow + 8; $r++) {
                     $sheet->getStyle("{$ttdStartColLetter}{$r}:{$lastColLetter}{$r}")->getAlignment()
-                        ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                        ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                        ->setWrapText(false)
+                        ->setShrinkToFit(true);
                 }
                 // Jabatan bold
                 $jabatanRow = $ttdStartRow + 2;
-                $sheet->getStyle("{$ttdStartColLetter}{$jabatanRow}")->getFont()->setBold(true);
+                $sheet->getStyle("{$ttdStartColLetter}{$jabatanRow}:{$lastColLetter}{$jabatanRow}")->getFont()->setBold(true);
                 // Nama bold + underline
                 $namaRow = $ttdStartRow + 7;
-                $sheet->getStyle("{$ttdStartColLetter}{$namaRow}")->getFont()->setBold(true)->setUnderline(true);
+                $sheet->getStyle("{$ttdStartColLetter}{$namaRow}:{$lastColLetter}{$namaRow}")->getFont()->setBold(true)->setUnderline(true);
 
                 // ═══ COLUMN WIDTHS ═══
                 $sheet->getColumnDimension('A')->setWidth(5);   // NO
                 $sheet->getColumnDimension('B')->setWidth(28);  // SATKER
-                // Ukuran: lebar cukup untuk angka/huruf (4 char)
-                for ($c = 3; $c <= $totalCols - 1; $c++) {
+                // Ukuran: lebar cukup untuk angka/huruf
+                for ($c = 3; $c <= $totalCols; $c++) {
                     $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
-                    $sheet->getColumnDimension($colLetter)->setWidth(5.5);
+                    // Jangan override kolom TTD yang sudah diset di atas (lebih lebar)
+                    if ($c < $ttdStartCol) {
+                        $sheet->getColumnDimension($colLetter)->setWidth(5.5);
+                    }
                 }
-                // Kolom JML / terakhir lebih lebar
-                $sheet->getColumnDimension($lastColLetter)->setWidth(6.5);
+                // Kolom JML (sebelum ttd cols) lebih lebar sedikit
+                if ($ttdStartCol > 3) {
+                    $jmlCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($ttdStartCol - 1);
+                    $sheet->getColumnDimension($jmlCol)->setWidth(6.5);
+                }
+
+                // ═══ DISABLE WRAP TEXT GLOBAL ═══
+                $lastRow = max($namaRow + 2, 50);
+                $sheet->getStyle("A1:{$lastColLetter}{$lastRow}")->getAlignment()->setWrapText(false);
 
                 // ═══ SETUP HALAMAN CETAK A4 ═══
+                $orientation = ($totalCols > 10)
+                    ? \PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE
+                    : \PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_PORTRAIT;
+
                 $pageSetup = $sheet->getPageSetup();
                 $pageSetup->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
-                $pageSetup->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+                $pageSetup->setOrientation($orientation);
                 $pageSetup->setFitToPage(true);
                 $pageSetup->setFitToWidth(1);
                 $pageSetup->setFitToHeight(0);
 
                 // ═══ MARGIN CETAK (dalam inci: 1cm ≈ 0.394 inci) ═══
                 $margins = $sheet->getPageMargins();
-                $margins->setTop(0.5);
-                $margins->setBottom(0.5);
+                $margins->setTop(0.50);
+                $margins->setBottom(0.50);
                 $margins->setLeft(0.39);
                 $margins->setRight(0.39);
                 $margins->setHeader(0.2);
                 $margins->setFooter(0.2);
 
-                // ═══ LEBAR KOLOM TANDA TANGAN DIPASTIKAN CUKUP ═══
-                // Pastikan 4 kolom terakhir cukup lebar untuk teks TTD
-                $ttdCols = min(4, $totalCols - 2);
-                $ttdColStart = max(3, $totalCols - $ttdCols + 1);
-                for ($c = $ttdColStart; $c <= $totalCols; $c++) {
-                    $colL = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
-                    $sheet->getColumnDimension($colL)->setWidth(
-                        max($sheet->getColumnDimension($colL)->getWidth(), 10)
-                    );
-                }
-
-                // ═══ WRAP TEXT untuk semua baris ═══
-                $sheet->getStyle("A1:{$lastColLetter}50")
-                    ->getAlignment()->setWrapText(false);
+                // ═══ AREA CETAK ═══
+                $sheet->getPageSetup()->setPrintArea("A1:{$lastColLetter}{$lastRow}");
             },
         ];
     }

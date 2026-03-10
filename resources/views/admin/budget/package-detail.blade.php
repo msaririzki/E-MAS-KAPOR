@@ -138,6 +138,17 @@
                         <i class="ri-loader-4-line spinner"></i>
                     </div>
                 </a>
+
+                <a href="{{ route('admin.budget.export-pdf', $budgetPackage) }}" class="export-btn export-red" data-download data-estimate="15" style="padding: 12px;">
+                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-file-pdf-line"></i></div>
+                    <div class="export-info">
+                        <h4 style="font-size: 12px;">Export Rekapan PDF</h4>
+                        <p style="font-size: 11px;">Unduh file .pdf</p>
+                    </div>
+                    <div class="export-loading">
+                        <i class="ri-loader-4-line spinner"></i>
+                    </div>
+                </a>
                 
                 <a href="{{ route('admin.budget.export-detail', $budgetPackage) }}" class="export-btn export-purple" data-download data-estimate="20" style="padding: 12px;">
                     <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-team-line"></i></div>
@@ -518,6 +529,10 @@
     .export-purple { border-color: #F3E8FF; }
     .export-purple:hover { background: #FAF5FF; border-color: #E9D5FF; }
     .export-purple .export-icon { background: #F3E8FF; color: #9333EA; }
+
+    .export-red { border-color: #FECACA; }
+    .export-red:hover { background: #FEF2F2; border-color: #FCA5A5; }
+    .export-red .export-icon { background: #FEE2E2; color: #DC2626; }
 
     /* Loading overlay */
     .export-btn .export-loading {
