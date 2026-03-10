@@ -1627,7 +1627,7 @@
     </style>
 </head>
 
-<body class="{{ empty(auth()->user()->theme) ? 'theme-default' : auth()->user()->theme }}">
+<body class="{{ (auth()->check() && auth()->user()->hasRole('personil')) ? 'theme-default' : (empty(auth()->user()->theme) ? 'theme-default' : auth()->user()->theme) }}">
     {{-- ═══ Sidebar ═══ --}}
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
