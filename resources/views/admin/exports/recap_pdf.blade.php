@@ -68,7 +68,7 @@
 @endphp
 
 @if($index > 0)
-    <pagebreak orientation="{{ $pageOr }}" margin-left="{{ $pgMrgT_L }}" margin-right="20" margin-top="{{ $pgMrgT_L }}" margin-bottom="20" />
+    <pagebreak orientation="{{ $pageOr }}" margin-left="{{ $pgMrgT_L }}mm" margin-right="20mm" margin-top="{{ $pgMrgT_L }}mm" margin-bottom="20mm" margin-header="0mm" margin-footer="0mm" />
 @endif
 
 <div class="page-item">
