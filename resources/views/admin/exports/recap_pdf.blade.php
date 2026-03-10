@@ -17,7 +17,7 @@
     .page-item { /* dihapus page-break-after: always karena diganti pagebreak mPDF */ position: relative; }
 
     /* Judul */
-    .ttl { text-align: center; font-weight: bold; font-size: 10pt; text-decoration: underline; margin-bottom: 10pt; }
+    .ttl { text-align: center; font-weight: bold; font-size: 10pt; margin-bottom: 10pt; }
 
     /* Tabel */
     table.rek { width: 100%; border-collapse: collapse; }
