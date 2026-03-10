@@ -409,9 +409,9 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $tahun = $this->budgetPackage->budgetYear->year;
                 $location = $settings->location ?? 'Mataram';
 
-                // TTD memakan 3 baris
-                $ttdStartRow = $footerRow + 1;  // Didekatkan ke tabel
-                $ttdColSpan  = min(3, $totalCols - 1); 
+                // TTD memakan lebih banyak rataan kolom (sekitar 7 kolom ukuran) agar muatan pixel teks tidak memaksa shrinkToFit
+                $ttdStartRow = $footerRow + 1;
+                $ttdColSpan  = min(8, max(2, $totalCols - 1)); 
                 $ttdStartCol = max(1, $totalCols - $ttdColSpan + 1);
                 $ttdStartColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($ttdStartCol);
 
@@ -420,23 +420,17 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $sheet->setCellValue("{$ttdStartColLetter}" . ($ttdStartRow + 1), "a.n. " . strtoupper($settings->organization_name ?? 'KEPALA BIRO LOGISTIK POLDA NTB'));
                 $sheet->setCellValue("{$ttdStartColLetter}" . ($ttdStartRow + 2), strtoupper($settings->signatory_title ?? 'PEJABAT PEMBUAT KOMITMEN'));
                 
-                // Jarak tanda tangan kita kurangi jadi 3 baris kosong saja (biar pas untuk stempel)
-                $namaRow = $ttdStartRow + 6; // Sebelumnya +7, sekarang +6 agar makin mepet
+                // Jarak tanda tangan kita beri 3 baris kosong untuk stempel
+                $namaRow = $ttdStartRow + 6; 
                 $sheet->setCellValue("{$ttdStartColLetter}{$namaRow}", $settings->signatory_name ?? '.............................');
                 $sheet->setCellValue("{$ttdStartColLetter}" . ($namaRow + 1), strtoupper($settings->signatory_rank ?? '') . ' NRP ' . ($settings->signatory_nrp ?? ''));
-
-                // Set lebar kolom TTD agar teks panjang tidak terlipat berantakan
-                for ($c = $ttdStartCol; $c <= $totalCols; $c++) {
-                    $cl = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
-                    $sheet->getColumnDimension($cl)->setWidth(max($sheet->getColumnDimension($cl)->getWidth(), 12));
-                }
 
                 // Penggabungan (Merge) & Styling Blok TTD
                 for ($r = $ttdStartRow; $r <= $namaRow + 1; $r++) {
                     $sheet->mergeCells("{$ttdStartColLetter}{$r}:{$lastColLetter}{$r}");
                     $sheet->getStyle("{$ttdStartColLetter}{$r}:{$lastColLetter}{$r}")->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                        ->setWrapText(false) // teks biar ngalir, gak dibungkus
+                        ->setWrapText(false)
                         ->setShrinkToFit(true);
                 }
                 
@@ -448,15 +442,22 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 // ═══ COLUMN WIDTHS UMUM ═══
                 $sheet->getColumnDimension('A')->setWidth(5);   // NO
                 $sheet->getColumnDimension('B')->setWidth(28);  // SATKER
+                
+                // Semua kolom angka kita buat 5.5 seragam
                 for ($c = 3; $c <= $totalCols; $c++) {
                     $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
-                    if ($c < $ttdStartCol) {
-                        $sheet->getColumnDimension($colLetter)->setWidth(5.5);
-                    }
+                    $sheet->getColumnDimension($colLetter)->setWidth(5.5);
                 }
-                if ($ttdStartCol > 3) {
-                    $jmlCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($ttdStartCol - 1);
-                    $sheet->getColumnDimension($jmlCol)->setWidth(6.5);
+
+                // Lebarkan sedikit (7) khusus untuk kolom 'JML' & 'TOTAL' akhir
+                if ($this->combinedGender) {
+                    $jml1Col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($totalCols - $this->filteredSizeCount - 2);
+                    $jml2Col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($totalCols - 1);
+                    $sheet->getColumnDimension($jml1Col)->setWidth(7);
+                    $sheet->getColumnDimension($jml2Col)->setWidth(7);
+                    $sheet->getColumnDimension($lastColLetter)->setWidth(7.5);
+                } else {
+                    $sheet->getColumnDimension($lastColLetter)->setWidth(7.5);
                 }
 
                 // ═══ DISABLE WRAP TEXT GLOBAL ═══
