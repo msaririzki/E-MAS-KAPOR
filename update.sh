@@ -20,12 +20,15 @@ docker compose build
 echo "==> Menerapkan container (recreate jika image berubah)..."
 docker compose up -d
 
+echo "==> Menunggu container siap..."
+sleep 2
+
 echo "==> Menjalankan optimasi Laravel dan cache config..."
-docker compose exec app php artisan optimize:clear
-docker compose exec app php artisan optimize
+docker compose exec -T app php artisan optimize:clear
+docker compose exec -T app php artisan optimize
 
 echo "==> Menjalankan migrasi database..."
-docker compose exec app php artisan migrate --force
+docker compose exec -T app php artisan migrate --force
 
 echo "==> Restart queue worker..."
 docker compose restart queue
