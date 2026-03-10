@@ -64,8 +64,23 @@ Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')-
             $personnel->kapor_sizes = $newSizes;
             $personnel->save();
         }
-        return redirect()->route('personil.kapor.index')->with('success', 'Data ukuran Anda berhasil disimpan dan disinkronkan ke sistem.');
+        return redirect()->route('dashboard')->with('success', 'Data ukuran Anda berhasil disimpan dan disinkronkan ke sistem.');
     })->name('kapor.store');
+
+    Route::post('/testimoni', function (\Illuminate\Http\Request $request) {
+        $validated = $request->validate([
+            'message' => 'required|string|max:2000',
+            'rating'  => 'nullable|integer|min:1|max:5',
+        ]);
+        
+        \App\Models\Testimonial::create([
+            'user_id' => auth()->id(),
+            'message' => $validated['message'],
+            'rating'  => $validated['rating'] ?? 5,
+        ]);
+        
+        return back()->with('success_testimoni', 'Terima kasih atas tanggapan Anda! Testimoni berhasil dikirim.');
+    })->name('testimoni.store');
 
     Route::get('/kapor/riwayat', function () {
         $user = auth()->user();

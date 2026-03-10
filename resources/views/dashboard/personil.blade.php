@@ -4,10 +4,33 @@
 @section('page-title', 'Dashboard Personil')
 @section('page-subtitle', 'Tahun Anggaran ' . $fiscalYear)
 
+@section('styles')
+<style>
+    .form-card { padding: 20px; border: 1px solid var(--border-color); border-radius: var(--radius-lg); margin-bottom: 24px; }
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-main); font-size: 13px; }
+    .form-control { width: 100%; padding: 10px 14px; background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); border-radius: var(--radius-md); font-family: inherit; transition: all 0.2s; }
+    .form-control:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .btn-submit { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: var(--brand); color: #fff; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; }
+    .btn-submit:hover { background: var(--brand-dark); transform: translateY(-1px); }
+    .colored-toast.swal2-icon-success { background-color: var(--success-bg) !important; color: var(--success) !important; }
+    .colored-toast .swal2-title { color: var(--success) !important; }
+    
+    /* Testimoni Rating */
+    .rating-wrapper { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 8px; }
+    .rating-wrapper input { display: none; }
+    .rating-wrapper label { cursor: pointer; color: var(--slate-300); font-size: 24px; transition: color 0.2s; }
+    .rating-wrapper label:hover, .rating-wrapper label:hover ~ label, .rating-wrapper input:checked ~ label { color: #F59E0B; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@endsection
+
 @section('content')
+<div class="content">
+
 {{-- Profile Summary --}}
-<div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden; position: relative;">
-    {{-- Decorative Background Glow --}}
+<div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden; position: relative; margin-bottom: 24px;">
     <div style="position: absolute; right: -50px; top: -50px; width: 150px; height: 150px; background: var(--brand); opacity: 0.1; filter: blur(40px); border-radius: 50%; pointer-events: none;"></div>
     <div style="position: absolute; left: 20%; bottom: -40px; width: 100px; height: 100px; background: var(--accent); opacity: 0.05; filter: blur(30px); border-radius: 50%; pointer-events: none;"></div>
 
@@ -41,8 +64,89 @@
     </div>
 </div>
 
-{{-- Status Cards --}}
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-top: 24px; margin-bottom: 24px;">
+{{-- FORM INPUT UTAMA (PRIORITAS DEPAN) --}}
+<div class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; background: var(--bg-card);">
+    <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 20px 24px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(var(--brand-rgb, 198,40,40), 0.1); color: var(--brand);">
+                <i class="ri-edit-box-line" style="font-size: 18px;"></i>
+            </span>
+            Form Biodata Kelengkapan Kaporlap
+        </h3>
+        <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-muted);">Silakan lengkapi atau perbarui ukuran atribut lapangan Anda di bawah ini secara akurat.</p>
+    </div>
+    
+    <div class="card-body" style="padding: 24px;">
+        <form action="{{ route('personil.kapor.store') }}" method="POST">
+            @csrf
+            
+            <div class="form-card">
+                <h4 style="margin: 0 0 16px 0; font-size: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Tutup Badan & Pakaian</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Kemeja</label>
+                        <input type="text" name="kemeja" class="form-control" value="{{ old('kemeja', $kaporSizes['kemeja'] ?? '') }}" placeholder="Ketik ukuran (cth: M, L, XL...)" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Celana / Rok</label>
+                        <input type="text" name="celana" class="form-control" value="{{ old('celana', $kaporSizes['celana'] ?? '') }}" placeholder="Ketik ukuran (cth: 32, 34...)" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">T.Shirt / Kaos Olahraga</label>
+                        <input type="text" name="olahraga" class="form-control" value="{{ old('olahraga', $kaporSizes['olahraga'] ?? '') }}" placeholder="Ketik ukuran (cth: M, L, XL...)" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Jaket</label>
+                        <input type="text" name="jaket" class="form-control" value="{{ old('jaket', $kaporSizes['jaket'] ?? '') }}" placeholder="Ketik ukuran (cth: M, L, XL...)" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <h4 style="margin: 0 0 16px 0; font-size: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Perlengkapan Kepala & Sabuk</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Tutup Kepala (Topi/Baret)</label>
+                        <input type="text" name="topi" class="form-control" value="{{ old('topi', $kaporSizes['topi'] ?? '') }}" placeholder="Ketik ukuran (cth: 56, 58...)" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Sabuk</label>
+                        <input type="text" name="sabuk" class="form-control" value="{{ old('sabuk', $kaporSizes['sabuk'] ?? '') }}" placeholder="Ketik ukuran (cth: 110, 120...)" required>
+                    </div>
+                    @if(optional(auth()->user()->personnel)->gender === 'P')
+                    <div class="form-group">
+                        <label class="form-label">Jilbab <span style="color: var(--brand); font-size: 11px; margin-left: 4px;">(Khusus Polwan)</span></label>
+                        <input type="text" name="jilbab" class="form-control" value="{{ old('jilbab', $kaporSizes['jilbab'] ?? '') }}" placeholder="Ketik ukuran (cth: SD, M...)" required>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="form-card" style="margin-bottom: 0;">
+                <h4 style="margin: 0 0 16px 0; font-size: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Tutup Kaki & Sepatu</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Sepatu Dinas</label>
+                        <input type="text" name="sepatu_dinas" class="form-control" value="{{ old('sepatu_dinas', $kaporSizes['sepatu_dinas'] ?? '') }}" placeholder="Ketik ukuran (cth: 42, 43...)" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Sepatu Olahraga</label>
+                        <input type="text" name="sepatu_olahraga" class="form-control" value="{{ old('sepatu_olahraga', $kaporSizes['sepatu_olahraga'] ?? '') }}" placeholder="Ketik ukuran (cth: 42, 43...)" required>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                <button type="submit" class="btn-submit" style="max-width: 250px;">
+                    <i class="ri-save-line"></i> Simpan Pilihan Form
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Status Cards (Dipindah ke Bawah Form) --}}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
     {{-- Card 1: Item Terisi --}}
     <div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; padding: 32px 28px; background: var(--bg-card); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-md)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm)';">
         <div style="flex: 1;">
@@ -79,34 +183,15 @@
     </div>
 </div>
 
-{{-- Action Button (CTA Belum Input) --}}
-@if(!$hasSubmitted)
-<div class="card" style="border: 2px dashed rgba(var(--brand-rgb, 198,40,40), 0.3); background: rgba(var(--brand-rgb, 198,40,40), 0.02); border-radius: var(--radius-lg); overflow: hidden; position: relative;">
-    <div style="position: absolute; left: 0; right: 0; top: 0; height: 100%; background: linear-gradient(180deg, transparent 0%, rgba(var(--brand-rgb, 198,40,40), 0.03) 100%); pointer-events: none;"></div>
-    <div class="card-body" style="text-align:center; padding: 60px 40px; position: relative; z-index: 1;">
-        <div style="display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; background: #ffffff; border-radius: 50%; box-shadow: 0 8px 16px rgba(var(--brand-rgb, 198,40,40), 0.15); font-size:36px; color:var(--brand); margin-bottom:20px;">
-            <i class="ri-shirt-fill"></i>
-        </div>
-        <h3 style="font-size:22px; font-weight:800; color: var(--text-main); margin-bottom:12px; letter-spacing: -0.5px;">Belum Ada Data Ukuran Anda</h3>
-        <p style="font-size:15px; color: var(--text-muted); margin-bottom:32px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">
-            Aset data kaporlap Anda masih kosong. Pastikan Anda mengisi kelengkapan rekam ukur kapor untuk keperluan logistik Tahun Anggaran <strong>{{ $fiscalYear }}</strong> secara tepat.
-        </p>
-        <a href="{{ route('personil.kapor.index') }}" class="btn btn-primary" style="font-size:15px; font-weight: 700; padding:16px 36px; border-radius: 9999px; box-shadow: 0 4px 14px rgba(var(--brand-rgb, 198,40,40), 0.4); display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
-            <i class="ri-edit-line"></i> Mulai Input Ukuran Sekarang
-        </a>
-    </div>
-</div>
-@endif
-
-{{-- Submission History --}}
+{{-- Submission History Tab --}}
 @if($hasSubmitted)
-<div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden;">
+<div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px;">
     <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
         <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
             <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(var(--brand-rgb, 198,40,40), 0.1); color: var(--brand);">
                 <i class="ri-shirt-line" style="font-size: 18px;"></i>
             </span>
-            Rincian Ukuran Kapor Anda
+            Ringkasan Ukuran Tersimpan
         </h3>
         <span style="background: var(--info-bg); color: var(--info); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 12px;">TA {{ $fiscalYear }}</span>
     </div>
@@ -116,10 +201,10 @@
                 <thead>
                     <tr style="background: var(--hover-bg); border-bottom: 1px solid var(--border-color);">
                         <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; width: 60px;">No</th>
-                        <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Kategori</th>
-                        <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Nama Item</th>
-                        <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Ukuran Pilihan</th>
-                        <th style="padding: 14px 24px; text-align: right; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Tanggal Input</th>
+                        <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Kategori</th>
+                        <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Nama Item</th>
+                        <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Ukuran Pilihan</th>
+                        <th style="padding: 14px 24px; text-align: right; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Waktu Diperbarui</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -137,7 +222,6 @@
                         ];
                         $idx = 0;
                     @endphp
-
                     @foreach($itemMap as $key => $meta)
                         @if(isset($kaporSizes[$key]) && !empty($kaporSizes[$key]))
                             <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.15s;" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='transparent'">
@@ -153,23 +237,103 @@
                                         {{ $kaporSizes[$key] }}
                                     </span>
                                 </td>
-                                <td style="padding: 16px 24px; font-size: 13px; color: var(--text-muted); text-align: right;">{{ $personnel->updated_at->format('d M Y, H:i') }}</td>
+                                <td style="padding: 16px 24px; font-size: 13px; color: var(--text-muted); text-align: right;">{{ optional($personnel->updated_at)->format('d M Y, H:i') ?? '-' }}</td>
                             </tr>
                         @endif
                     @endforeach
-                    
-                    @if($idx === 0)
-                         <tr>
-                            <td colspan="5" style="text-align:center; padding:40px 20px; color: var(--text-muted);">
-                                <div style="font-size: 40px; margin-bottom: 12px; opacity: 0.5;"><i class="ri-inbox-line"></i></div>
-                                Belum ada rincian data ukuran kaporlap yang terekap.
-                            </td>
-                         </tr>
-                    @endif
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 @endif
+
+{{-- FORM TESTIMONI KOTAK SARAN --}}
+<div class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-card); position: relative;">
+    <div style="position: absolute; right: 0; top: 0; width: 200px; height: 100%; background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.03)); pointer-events: none;"></div>
+    <div class="card-header" style="background: transparent; border-bottom: 1px solid var(--border-color); padding: 20px 24px;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
+            <i class="ri-feedback-line" style="color: var(--brand); font-size: 20px;"></i>
+            Kotak Saran & Testimoni
+        </h3>
+    </div>
+    <div class="card-body" style="padding: 24px;">
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Berikan masukan, kritik, atau pengalaman Anda dalam menggunakan Sistem E-Kaporlap untuk pengembangan kami ke depannya.</p>
+        
+        <form action="{{ route('personil.testimoni.store') }}" method="POST">
+            @csrf
+            <div class="form-group">
+                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                    Penilaian Kualitas
+                </label>
+                <div class="rating-wrapper" style="margin-top: 8px;">
+                    <input type="radio" id="star5" name="rating" value="5" checked />
+                    <label for="star5" title="Sangat Bagus"><i class="ri-star-fill"></i></label>
+                    <input type="radio" id="star4" name="rating" value="4" />
+                    <label for="star4" title="Bagus"><i class="ri-star-fill"></i></label>
+                    <input type="radio" id="star3" name="rating" value="3" />
+                    <label for="star3" title="Cukup"><i class="ri-star-fill"></i></label>
+                    <input type="radio" id="star2" name="rating" value="2" />
+                    <label for="star2" title="Buruk"><i class="ri-star-fill"></i></label>
+                    <input type="radio" id="star1" name="rating" value="1" />
+                    <label for="star1" title="Sangat Buruk"><i class="ri-star-fill"></i></label>
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-top:16px;">
+                <label class="form-label">Tulis Pesan Anda</label>
+                <textarea name="message" class="form-control" rows="4" placeholder="Ketik pandangan, harapan, atau kendala Anda di sini..." required style="resize: vertical;"></textarea>
+            </div>
+            
+            <div style="text-align: right; margin-top: 20px;">
+                <button type="submit" class="btn" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 24px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='var(--bg-body)'">
+                    <i class="ri-send-plane-fill" style="color:var(--brand);"></i> Kirim Testimoni
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</div>
+
+@if(session('success'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            title: 'Berhasil!',
+            text: "{{ session('success') }}",
+            icon: 'success',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            customClass: { popup: 'colored-toast' }
+        });
+    });
+</script>
+@endif
+
+@if(session('success_testimoni'))
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            title: 'Terkirim',
+            text: "{{ session('success_testimoni') }}",
+            icon: 'info',
+            toast: true,
+            position: 'bottom-end',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true,
+            customClass: { popup: 'colored-toast swal2-icon-info' }
+        });
+    });
+</script>
+<style>
+    .colored-toast.swal2-icon-info { background-color: var(--info-bg) !important; color: var(--info) !important;}
+    .colored-toast.swal2-icon-info .swal2-title { color: var(--info) !important; }
+</style>
+@endif
+
 @endsection
