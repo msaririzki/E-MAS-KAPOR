@@ -409,8 +409,8 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $tahun = $this->budgetPackage->budgetYear->year;
                 $location = $settings->location ?? 'Mataram';
 
-                // TTD memakan 3 kolom terakhir
-                $ttdStartRow = $footerRow + 2;
+                // TTD memakan 3 baris
+                $ttdStartRow = $footerRow + 1;  // Didekatkan ke tabel
                 $ttdColSpan  = min(3, $totalCols - 1); 
                 $ttdStartCol = max(1, $totalCols - $ttdColSpan + 1);
                 $ttdStartColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($ttdStartCol);
@@ -420,8 +420,8 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $sheet->setCellValue("{$ttdStartColLetter}" . ($ttdStartRow + 1), "a.n. " . strtoupper($settings->organization_name ?? 'KEPALA BIRO LOGISTIK POLDA NTB'));
                 $sheet->setCellValue("{$ttdStartColLetter}" . ($ttdStartRow + 2), strtoupper($settings->signatory_title ?? 'PEJABAT PEMBUAT KOMITMEN'));
                 
-                // Jarak tanda tangan = baris 3,4,5,6 kosong. Langsung tembak baris 7.
-                $namaRow = $ttdStartRow + 7;
+                // Jarak tanda tangan kita kurangi jadi 3 baris kosong saja (biar pas untuk stempel)
+                $namaRow = $ttdStartRow + 6; // Sebelumnya +7, sekarang +6 agar makin mepet
                 $sheet->setCellValue("{$ttdStartColLetter}{$namaRow}", $settings->signatory_name ?? '.............................');
                 $sheet->setCellValue("{$ttdStartColLetter}" . ($namaRow + 1), strtoupper($settings->signatory_rank ?? '') . ' NRP ' . ($settings->signatory_nrp ?? ''));
 
