@@ -1,4 +1,8 @@
 <table>
+    @php
+        $sizeCount = count($availableSizes);
+        $totalHeadersSpan = ($sizeCount * 2) + 2;
+    @endphp
     {{-- ═══ KOP SURAT (Akan dimerge & distyling murni via PHP PhpSpreadsheet) ═══ --}}
     <tr>
         <td>KEPOLISIAN NEGARA REPUBLIK INDONESIA</td>
