@@ -382,7 +382,8 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $sheet->getStyle("A5:{$lastColLetter}5")->getFont()->setBold(true)->setSize(11); // Underline dihapus sesuai revisi PDF
                 $sheet->getStyle("A5:{$lastColLetter}5")->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                    ->setShrinkToFit(true);
+                    ->setVertical(Alignment::VERTICAL_CENTER)
+                    ->setWrapText(true); // Agar judul panjang bisa terbagi ke baris baru
 
                 // ═══ HEADER TABEL ═══
                 $headerRange = "A{$headerStartRow}:{$lastColLetter}".($headerStartRow + $headerRowCount - 1);
@@ -463,6 +464,15 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 // ═══ DISABLE WRAP TEXT GLOBAL ═══
                 $lastRow = max($namaRow + 2, 50);
                 $sheet->getStyle("A1:{$lastColLetter}{$lastRow}")->getAlignment()->setWrapText(false);
+
+                // Kembalikan atribut Wrap Text untuk area Judul dan Header (karena memakai tag <br>)
+                $sheet->getStyle("A5:{$lastColLetter}5")->getAlignment()->setWrapText(true);
+                $sheet->getStyle("A{$headerStartRow}:{$lastColLetter}".($headerStartRow + $headerRowCount - 1))->getAlignment()->setWrapText(true);
+
+                // Tinggikan baris 5 (Judul) jika tabel berformat Portrait (kolom sedikit) agar bungkusannya terbaca
+                if ($totalCols <= 10) {
+                    $sheet->getRowDimension(5)->setRowHeight(30);
+                }
 
                 // ═══ SETUP HALAMAN CETAK A4 ═══
                 $orientation = ($totalCols > 10)
