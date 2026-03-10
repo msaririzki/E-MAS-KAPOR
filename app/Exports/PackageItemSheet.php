@@ -472,16 +472,28 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $pageSetup = $sheet->getPageSetup();
                 $pageSetup->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
                 $pageSetup->setOrientation($orientation);
-                $pageSetup->setFitToPage(true);
-                $pageSetup->setFitToWidth(1);
-                $pageSetup->setFitToHeight(0);
+                
+                // Centering Kertas (Penting untuk Portrait agar tabel kecil ada di tengah)
+                $pageSetup->setHorizontalCentered(true);
+                
+                // Hanya gunakan FitToPage jika kolomnya banyak (Landscape)
+                // Jika Portrait tabel kecil, biarkan ukuran asli agar font tidak hancur/menciut
+                if ($totalCols > 10) {
+                    $pageSetup->setFitToPage(true);
+                    $pageSetup->setFitToWidth(1);
+                    $pageSetup->setFitToHeight(0);
+                } else {
+                    $pageSetup->setFitToPage(false);
+                }
 
                 // ═══ MARGIN CETAK ═══
                 $margins = $sheet->getPageMargins();
                 $margins->setTop(0.50);
                 $margins->setBottom(0.50);
-                $margins->setLeft(0.39);
-                $margins->setRight(0.39);
+                // Margin kiri-kanan lebih lebar untuk Portrait (tabel kecil)
+                $sideMargin = ($totalCols > 10) ? 0.39 : 0.75; 
+                $margins->setLeft($sideMargin);
+                $margins->setRight($sideMargin);
                 $margins->setHeader(0.2);
                 $margins->setFooter(0.2);
 
