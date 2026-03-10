@@ -1,19 +1,19 @@
 <table>
-    {{-- ═══ KOP SURAT (full-width, merge seluruh kolom) ═══ --}}
+    {{-- ═══ KOP SURAT (Akan dimerge & distyling murni via PHP PhpSpreadsheet) ═══ --}}
     <tr>
-        <td colspan="{{ count($availableSizes) + 3 }}" style="font-weight: bold; text-align: center;">KEPOLISIAN NEGARA REPUBLIK INDONESIA</td>
+        <td>KEPOLISIAN NEGARA REPUBLIK INDONESIA</td>
     </tr>
     <tr>
-        <td colspan="{{ count($availableSizes) + 3 }}" style="font-weight: bold; text-align: center;">DAERAH NUSA TENGGARA BARAT</td>
+        <td>DAERAH NUSA TENGGARA BARAT</td>
     </tr>
     <tr>
-        <td colspan="{{ count($availableSizes) + 3 }}" style="font-weight: bold; text-align: center;">{{ strtoupper($settings->organization_name ?? 'BIRO LOGISTIK') }}</td>
+        <td>{{ strtoupper($settings->organization_name ?? 'BIRO LOGISTIK') }}</td>
     </tr>
     <tr></tr>
 
     {{-- ═══ JUDUL DOKUMEN ═══ --}}
     <tr>
-        <td colspan="{{ count($availableSizes) + 3 }}" style="font-weight: bold; text-align: center;">
+        <td>
             REKAP DATA UKURAN {{ strtoupper($kaporItem->item_name) }}{{ isset($sizeLabel) && $sizeLabel ? ' (' . strtoupper($sizeLabel) . ')' : '' }}{{ isset($genderLabel) ? ' ' . $genderLabel : '' }} POLDA NTB TAHUN {{ $budgetPackage->budgetYear->year }}
         </td>
     </tr>
@@ -53,45 +53,5 @@
             <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $totalPerSize[$size] > 0 ? $totalPerSize[$size] : '-' }}</td>
         @endforeach
         <td style="border: 1px solid #000; text-align: center; font-weight: bold;">{{ $grandTotal }}</td>
-    </tr>
-
-    {{-- ═══ SPASI ═══ --}}
-    @php
-        $totalColCount = count($availableSizes) + 3;
-        // Kolom tanda tangan: 3 kolom terakhir
-        $ttdStartCol = max($totalColCount - 2, 1);
-        $emptyColsBefore = $ttdStartCol - 1;
-
-        $bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-        $bulanSekarang = $bulanIndo[now()->month - 1];
-    @endphp
-    <tr>@for($i = 0; $i < $totalColCount; $i++)<td></td>@endfor</tr>
-    <tr>@for($i = 0; $i < $totalColCount; $i++)<td></td>@endfor</tr>
-
-    {{-- ═══ TANDA TANGAN (pojok kanan) ═══ --}}
-    <tr>
-        @for($i = 0; $i < $emptyColsBefore; $i++)<td></td>@endfor
-        <td colspan="3" style="text-align: center;">{{ $settings->location ?? 'Mataram' }},          {{ $bulanSekarang }}  {{ $budgetPackage->budgetYear->year }}</td>
-    </tr>
-    <tr>
-        @for($i = 0; $i < $emptyColsBefore; $i++)<td></td>@endfor
-        <td colspan="3" style="text-align: center;">a.n. {{ strtoupper($settings->organization_name ?? 'KEPALA BIRO LOGISTIK POLDA NTB') }}</td>
-    </tr>
-    <tr>
-        @for($i = 0; $i < $emptyColsBefore; $i++)<td></td>@endfor
-        <td colspan="3" style="text-align: center; font-weight: bold;">{{ strtoupper($settings->signatory_title ?? 'PS.KABAG BEKUM') }}</td>
-    </tr>
-    {{-- Ruang tanda tangan --}}
-    <tr>@for($i = 0; $i < $totalColCount; $i++)<td></td>@endfor</tr>
-    <tr>@for($i = 0; $i < $totalColCount; $i++)<td></td>@endfor</tr>
-    <tr>@for($i = 0; $i < $totalColCount; $i++)<td></td>@endfor</tr>
-    <tr>@for($i = 0; $i < $totalColCount; $i++)<td></td>@endfor</tr>
-    <tr>
-        @for($i = 0; $i < $emptyColsBefore; $i++)<td></td>@endfor
-        <td colspan="3" style="text-align: center; font-weight: bold; text-decoration: underline;">{{ $settings->signatory_name ?? '.............................' }}</td>
-    </tr>
-    <tr>
-        @for($i = 0; $i < $emptyColsBefore; $i++)<td></td>@endfor
-        <td colspan="3" style="text-align: center;">{{ strtoupper($settings->signatory_rank ?? '') }} NRP {{ $settings->signatory_nrp ?? '' }}</td>
     </tr>
 </table>

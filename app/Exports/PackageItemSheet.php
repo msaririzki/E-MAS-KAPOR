@@ -361,23 +361,25 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 // ═══ DEFAULT FONT ═══
                 $sheet->getParent()->getDefaultStyle()->getFont()->setName('Calibri')->setSize(10);
 
-                // ═══ KOP SURAT (Baris 1-3: bold, font 11, merge seluruh lebar) ═══
-                $sheet->mergeCells("A1:{$lastColLetter}1");
-                $sheet->mergeCells("A2:{$lastColLetter}2");
-                $sheet->mergeCells("A3:{$lastColLetter}3");
-                $sheet->getStyle("A1:{$lastColLetter}3")->getFont()->setBold(true)->setSize(11);
-                $sheet->getStyle("A1:{$lastColLetter}3")->getAlignment()
+                // ═══ KOP SURAT (Membungkus sepanjang 5 kolom saja agar proporsional rata kiri) ═══
+                $kopColCount = min(5, $totalCols);
+                $kopColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($kopColCount);
+                $sheet->mergeCells("A1:{$kopColLetter}1");
+                $sheet->mergeCells("A2:{$kopColLetter}2");
+                $sheet->mergeCells("A3:{$kopColLetter}3");
+                $sheet->getStyle("A1:{$kopColLetter}3")->getFont()->setBold(true)->setSize(11);
+                $sheet->getStyle("A1:{$kopColLetter}3")->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                // Garis bawah kop surat
-                $sheet->getStyle("A3:{$lastColLetter}3")->getBorders()->getBottom()
+                // Garis bawah kop surat HANYA di kolom Kop (bukan ujung ke ujung)
+                $sheet->getStyle("A3:{$kopColLetter}3")->getBorders()->getBottom()
                     ->setBorderStyle(Border::BORDER_MEDIUM)
                     ->getColor()->setRGB('000000');
 
-                // ═══ JUDUL DOKUMEN (Baris 5: bold, font 11, underline, center, shrink-to-fit) ═══
+                // ═══ JUDUL DOKUMEN (Baris 5) ═══
                 $sheet->mergeCells("A5:{$lastColLetter}5");
-                $sheet->getStyle("A5:{$lastColLetter}5")->getFont()->setBold(true)->setSize(11)->setUnderline(true);
+                $sheet->getStyle("A5:{$lastColLetter}5")->getFont()->setBold(true)->setSize(11); // Underline dihapus sesuai revisi PDF
                 $sheet->getStyle("A5:{$lastColLetter}5")->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setShrinkToFit(true);
@@ -400,44 +402,58 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $sheet->getStyle("A{$footerRow}:{$lastColLetter}{$footerRow}")->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // ═══ TANDA TANGAN (pojok kanan, centered) ═══
-                // Gunakan 4 kolom terakhir agar teks tidak terpotong
+                // ═══ TANDA TANGAN (Injeksi Murni via PHP) ═══
+                $settings = \App\Models\InvoiceSetting::getSettings();
+                $bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                $bulanSekarang = $bulanIndo[now()->month - 1];
+                $tahun = $this->budgetPackage->budgetYear->year;
+                $location = $settings->location ?? 'Mataram';
+
+                // TTD memakan 3 kolom terakhir
                 $ttdStartRow = $footerRow + 2;
-                $ttdColSpan  = min(4, $totalCols - 1); // 4 kolom (atau lebih sedikit kalau tabel kecil)
+                $ttdColSpan  = min(3, $totalCols - 1); 
                 $ttdStartCol = max(1, $totalCols - $ttdColSpan + 1);
                 $ttdStartColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($ttdStartCol);
 
-                // Set lebar 4 kolom TTD: total minimal 50 karakter ~ 8 unit x 4 = 32 unit
+                // Injeksi teks ke Excel Cell
+                $sheet->setCellValue("{$ttdStartColLetter}" . ($ttdStartRow), "{$location}, {$bulanSekarang} {$tahun}");
+                $sheet->setCellValue("{$ttdStartColLetter}" . ($ttdStartRow + 1), "a.n. " . strtoupper($settings->organization_name ?? 'KEPALA BIRO LOGISTIK POLDA NTB'));
+                $sheet->setCellValue("{$ttdStartColLetter}" . ($ttdStartRow + 2), strtoupper($settings->signatory_title ?? 'PEJABAT PEMBUAT KOMITMEN'));
+                
+                // Jarak tanda tangan = baris 3,4,5,6 kosong. Langsung tembak baris 7.
+                $namaRow = $ttdStartRow + 7;
+                $sheet->setCellValue("{$ttdStartColLetter}{$namaRow}", $settings->signatory_name ?? '.............................');
+                $sheet->setCellValue("{$ttdStartColLetter}" . ($namaRow + 1), strtoupper($settings->signatory_rank ?? '') . ' NRP ' . ($settings->signatory_nrp ?? ''));
+
+                // Set lebar kolom TTD agar teks panjang tidak terlipat berantakan
                 for ($c = $ttdStartCol; $c <= $totalCols; $c++) {
                     $cl = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
                     $sheet->getColumnDimension($cl)->setWidth(max($sheet->getColumnDimension($cl)->getWidth(), 12));
                 }
 
-                for ($r = $ttdStartRow; $r <= $ttdStartRow + 8; $r++) {
+                // Penggabungan (Merge) & Styling Blok TTD
+                for ($r = $ttdStartRow; $r <= $namaRow + 1; $r++) {
+                    $sheet->mergeCells("{$ttdStartColLetter}{$r}:{$lastColLetter}{$r}");
                     $sheet->getStyle("{$ttdStartColLetter}{$r}:{$lastColLetter}{$r}")->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                        ->setWrapText(false)
+                        ->setWrapText(false) // teks biar ngalir, gak dibungkus
                         ->setShrinkToFit(true);
                 }
+                
                 // Jabatan bold
-                $jabatanRow = $ttdStartRow + 2;
-                $sheet->getStyle("{$ttdStartColLetter}{$jabatanRow}:{$lastColLetter}{$jabatanRow}")->getFont()->setBold(true);
+                $sheet->getStyle("{$ttdStartColLetter}" . ($ttdStartRow + 2) . ":{$lastColLetter}" . ($ttdStartRow + 2))->getFont()->setBold(true);
                 // Nama bold + underline
-                $namaRow = $ttdStartRow + 7;
                 $sheet->getStyle("{$ttdStartColLetter}{$namaRow}:{$lastColLetter}{$namaRow}")->getFont()->setBold(true)->setUnderline(true);
 
-                // ═══ COLUMN WIDTHS ═══
+                // ═══ COLUMN WIDTHS UMUM ═══
                 $sheet->getColumnDimension('A')->setWidth(5);   // NO
                 $sheet->getColumnDimension('B')->setWidth(28);  // SATKER
-                // Ukuran: lebar cukup untuk angka/huruf
                 for ($c = 3; $c <= $totalCols; $c++) {
                     $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
-                    // Jangan override kolom TTD yang sudah diset di atas (lebih lebar)
                     if ($c < $ttdStartCol) {
                         $sheet->getColumnDimension($colLetter)->setWidth(5.5);
                     }
                 }
-                // Kolom JML (sebelum ttd cols) lebih lebar sedikit
                 if ($ttdStartCol > 3) {
                     $jmlCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($ttdStartCol - 1);
                     $sheet->getColumnDimension($jmlCol)->setWidth(6.5);
@@ -459,7 +475,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $pageSetup->setFitToWidth(1);
                 $pageSetup->setFitToHeight(0);
 
-                // ═══ MARGIN CETAK (dalam inci: 1cm ≈ 0.394 inci) ═══
+                // ═══ MARGIN CETAK ═══
                 $margins = $sheet->getPageMargins();
                 $margins->setTop(0.50);
                 $margins->setBottom(0.50);
@@ -468,8 +484,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $margins->setHeader(0.2);
                 $margins->setFooter(0.2);
 
-                // ═══ AREA CETAK ═══
-                $sheet->getPageSetup()->setPrintArea("A1:{$lastColLetter}{$lastRow}");
+                $sheet->getPageSetup()->setPrintArea("A1:{$lastColLetter}{$namaRow}");
             },
         ];
     }
