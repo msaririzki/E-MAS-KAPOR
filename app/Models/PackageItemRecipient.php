@@ -39,38 +39,59 @@ class PackageItemRecipient extends Model
     // ── Methods ───────────────────────────────────────────────
 
     /**
-     * Hitung jumlah personil yang cocok dengan filter di satker terkait
+     * Auto-deteksi gender dari nama item kapor.
+     * Mengembalikan 'L', 'P', atau null (tidak spesifik gender).
+     */
+    public static function detectGenderFromItemName(string $itemName): ?string
+    {
+        $upper = strtoupper($itemName);
+
+        // Kata kunci WANITA/PEREMPUAN dulu agar lebih spesifik
+        if (str_contains($upper, 'WANITA') || str_contains($upper, 'PEREMPUAN')) {
+            return 'P';
+        }
+
+        if (str_contains($upper, 'PRIA') || str_contains($upper, 'LAKI')) {
+            return 'L';
+        }
+
+        return null; // item unisex (sepatu olahraga, kaos kaki, rompi, dll)
+    }
+
+    /**
+     * Hitung jumlah personil yang cocok dengan filter di satker terkait.
+     * Gender auto-detected dari nama item jika tidak diset di filter.
      */
     public function calculateMatchedCount(): int
     {
+        $this->load('packageItem.kaporItem');
+        $itemName = $this->packageItem?->kaporItem?->item_name ?? '';
+
         $query = Personnel::where('satker_id', $this->satker_id)
             ->where('is_active', true);
 
         $filters = $this->recipient_filters ?? [];
 
         // Filter berdasarkan personnel_type (Polri/PNS)
-        // DB stores 'Polri' / 'PNS', filter may come as lowercase
         if (! empty($filters['personnel_type'])) {
             $mappedTypes = array_map(function ($t) {
                 $lower = strtolower($t);
-                if ($lower === 'polri') {
-                    return 'Polri';
-                }
-                if ($lower === 'pns') {
-                    return 'PNS';
-                }
-                if ($lower === 'pppk') {
-                    return 'PPPK';
-                }
-
+                if ($lower === 'polri') return 'Polri';
+                if ($lower === 'pns')   return 'PNS';
+                if ($lower === 'pppk')  return 'PPPK';
                 return $t;
             }, $filters['personnel_type']);
             $query->whereIn('personnel_type', $mappedTypes);
         }
 
-        // Filter berdasarkan gender (L/P)
+        // Filter gender: gunakan dari filter eksplisit ATAU auto-deteksi dari nama item
         if (! empty($filters['gender'])) {
             $query->whereIn('gender', $filters['gender']);
+        } elseif ($itemName !== '') {
+            $autoGender = self::detectGenderFromItemName($itemName);
+            if ($autoGender !== null) {
+                $query->where('gender', $autoGender);
+            }
         }
 
         // Filter berdasarkan rank categories
@@ -96,3 +117,4 @@ class PackageItemRecipient extends Model
         return $count;
     }
 }
+

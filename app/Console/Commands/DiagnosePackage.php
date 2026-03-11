@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\BudgetPackage;
+use App\Models\PackageItemRecipient;
 use App\Models\Personnel;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -40,32 +41,26 @@ class DiagnosePackage extends Command
 
             foreach ($pkg->items as $item) {
                 $realtimeTotal = 0;
-                $filters_info  = [];
+                $itemName   = $item->kaporItem->item_name ?? '';
+                $autoGender = PackageItemRecipient::detectGenderFromItemName($itemName);
 
                 foreach ($item->recipients as $r) {
                     $f = $r->recipient_filters ?? [];
                     $q = Personnel::where('satker_id', $r->satker_id)->where('is_active', true);
 
                     if (! empty($f['personnel_type'])) {
-                        $mt = array_map(fn ($t) => match (strtolower($t)) {
-                            'polri' => 'Polri', 'pns' => 'PNS', 'pppk' => 'PPPK', default => $t
-                        }, $f['personnel_type']);
+                        $mt = array_map(fn ($t) => match(strtolower($t)) {
+                            'polri'=>'Polri','pns'=>'PNS','pppk'=>'PPPK',default=>$t}, $f['personnel_type']);
                         $q->whereIn('personnel_type', $mt);
-                        $filters_info[] = 'type:' . implode('|', $mt);
                     }
                     if (! empty($f['gender'])) {
                         $q->whereIn('gender', $f['gender']);
-                        $filters_info[] = 'gender:' . implode('|', $f['gender']);
+                    } elseif ($autoGender !== null) {
+                        $q->where('gender', $autoGender);
                     }
-                    if (! empty($f['rank_categories'])) {
-                        $q->whereHas('rank', fn ($rq) => $rq->whereIn('category', $f['rank_categories']));
-                    }
-                    if (! empty($f['keterangan'])) {
-                        $q->whereIn('keterangan', $f['keterangan']);
-                    }
-                    if (! empty($f['golongan'])) {
-                        $q->whereIn('golongan', $f['golongan']);
-                    }
+                    if (! empty($f['rank_categories'])) $q->whereHas('rank', fn($rq) => $rq->whereIn('category', $f['rank_categories']));
+                    if (! empty($f['keterangan']))      $q->whereIn('keterangan', $f['keterangan']);
+                    if (! empty($f['golongan']))        $q->whereIn('golongan', $f['golongan']);
                     $realtimeTotal += $q->count();
                 }
 
@@ -89,28 +84,35 @@ class DiagnosePackage extends Command
                 if ($shouldFix) {
                     $this->warn("  ↳ Memperbaiki...");
                     DB::transaction(function () use ($pkg) {
-                        foreach ($pkg->items as $item) {
-                            $totalQty = 0;
-                            foreach ($item->recipients as $r) {
-                                $f = $r->recipient_filters ?? [];
-                                $q = Personnel::where('satker_id', $r->satker_id)->where('is_active', true);
-                                if (! empty($f['personnel_type'])) {
-                                    $mt = array_map(fn ($t) => match (strtolower($t)) { 'polri' => 'Polri', 'pns' => 'PNS', 'pppk' => 'PPPK', default => $t }, $f['personnel_type']);
-                                    $q->whereIn('personnel_type', $mt);
-                                }
-                                if (! empty($f['gender']))          $q->whereIn('gender', $f['gender']);
-                                if (! empty($f['rank_categories'])) $q->whereHas('rank', fn ($rq) => $rq->whereIn('category', $f['rank_categories']));
-                                if (! empty($f['keterangan']))      $q->whereIn('keterangan', $f['keterangan']);
-                                if (! empty($f['golongan']))        $q->whereIn('golongan', $f['golongan']);
-                                $count = $q->count();
-                                $r->update(['matched_count' => $count]);
-                                $totalQty += $count;
+                    foreach ($pkg->items as $item) {
+                        $totalQty   = 0;
+                        $itemName   = $item->kaporItem->item_name ?? '';
+                        $autoGender = PackageItemRecipient::detectGenderFromItemName($itemName);
+
+                        foreach ($item->recipients as $r) {
+                            $f = $r->recipient_filters ?? [];
+                            $q = Personnel::where('satker_id', $r->satker_id)->where('is_active', true);
+                            if (! empty($f['personnel_type'])) {
+                                $mt = array_map(fn ($t) => match(strtolower($t)) {'polri'=>'Polri','pns'=>'PNS','pppk'=>'PPPK',default=>$t}, $f['personnel_type']);
+                                $q->whereIn('personnel_type', $mt);
                             }
-                            $price = (float) ($item->custom_price ?? $item->kaporItem->price ?? 0);
-                            $item->update(['calculated_qty' => $totalQty, 'calculated_total' => $totalQty * $price]);
+                            if (! empty($f['gender'])) {
+                                $q->whereIn('gender', $f['gender']);
+                            } elseif ($autoGender !== null) {
+                                $q->where('gender', $autoGender);
+                            }
+                            if (! empty($f['rank_categories'])) $q->whereHas('rank', fn($rq) => $rq->whereIn('category', $f['rank_categories']));
+                            if (! empty($f['keterangan']))      $q->whereIn('keterangan', $f['keterangan']);
+                            if (! empty($f['golongan']))        $q->whereIn('golongan', $f['golongan']);
+                            $count = $q->count();
+                            $r->update(['matched_count' => $count]);
+                            $totalQty += $count;
                         }
-                        $pkg->update(['total_budget' => $pkg->items()->sum('calculated_total')]);
-                    });
+                        $price = (float) ($item->custom_price ?? $item->kaporItem->price ?? 0);
+                        $item->update(['calculated_qty' => $totalQty, 'calculated_total' => $totalQty * $price]);
+                    }
+                    $pkg->update(['total_budget' => $pkg->items()->sum('calculated_total')]);
+                });
                     $this->info("  ✅ Paket [{$pkg->id}] berhasil disinkronkan.");
                 } else {
                     $this->warn("  ↳ Ada perbedaan. Jalankan dengan --fix untuk memperbaiki.");
