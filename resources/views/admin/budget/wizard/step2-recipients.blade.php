@@ -695,11 +695,33 @@
 
         // Kumpulkan filter
         const filters = {};
+        const autoFilters = {};
+
         document.querySelectorAll(`.filter-input[data-item="${packageItemId}"]:checked`).forEach(cb => {
             const key = cb.dataset.filter;
+            const val = cb.dataset.value;
+
             if (!filters[key]) filters[key] = [];
-            filters[key].push(cb.dataset.value);
+            filters[key].push(val);
+
+            // Cek apakah punya badge AUTO (untuk menandai filter ini murni hasil auto-suggest)
+            let isAuto = false;
+            const span = cb.nextElementSibling || cb.closest('label')?.querySelector('span');
+            if (span && span.querySelector('.auto-badge')) isAuto = true;
+            if (cb.classList.contains('pns-hidden') || cb.classList.contains('pppk-hidden')) {
+                const pnsBadge = cb.closest('.pill-pns-pppk')?.querySelector('.auto-badge');
+                if (pnsBadge) isAuto = true;
+            }
+
+            if (isAuto) {
+                if (!autoFilters[key]) autoFilters[key] = [];
+                autoFilters[key].push(val);
+            }
         });
+
+        if (Object.keys(autoFilters).length > 0) {
+            filters['_auto'] = autoFilters;
+        }
 
         try {
             const resp = await fetch(`/admin/budget/package-items/${packageItemId}/save-recipients`, {
@@ -793,9 +815,170 @@
     );
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Toggle Auto-Saran Logic
+        const autoSuggestToggle = document.getElementById('auto-suggest-toggle');
+        const autoSuggestWrap = document.getElementById('auto-suggest-wrap');
+        const toggleStateText = document.getElementById('toggle-state-text');
+        
+        // Load state from localStorage
+        let isAutoSuggestEnabled = localStorage.getItem('kapor_auto_suggest') !== 'false';
+        autoSuggestToggle.checked = isAutoSuggestEnabled;
+        if (!isAutoSuggestEnabled) {
+            autoSuggestWrap.classList.add('is-off');
+            toggleStateText.textContent = 'Nonaktif';
+        }
+
+        // ── Helper: tambahkan badge AUTO ke span ─────────────────────────────────
+        function addAutoBadge(span) {
+            if (!span || span.querySelector('.auto-badge')) return;
+            const badge = document.createElement('span');
+            badge.className = 'auto-badge';
+            badge.style.cssText = 'font-size:9px;background:rgba(255,255,255,0.3);padding:1px 5px;border-radius:10px;margin-left:4px;font-weight:700;letter-spacing:0.3px;';
+            badge.textContent = 'AUTO';
+            span.appendChild(badge);
+        }
+
+        // ── Fungsi Auto-detect: tipe personil & rank ───────────────────
+        function runAutoSuggest(force = false) {
+            if (!isAutoSuggestEnabled) return;
+
+            document.querySelectorAll('.recipient-card').forEach(card => {
+                const itemId = card.id.replace('item-card-', '');
+                const filters = savedFilters[itemId] || {};
+
+                // Jika sudah ada recipients tersimpan → hormati konfigurasi user, 
+                // KECUALI jika user memaksa eksekusi auto-suggest lewat toggle ON (force = true)
+                const hasSavedRecipients = card.querySelectorAll('input[name^="satker_"]:checked').length > 0;
+                if (!force && hasSavedRecipients) return;
+
+                let hasAutoApplied = false;
+
+                const itemNameEl = card.querySelector('.recipient-item-info h3');
+                const itemName = itemNameEl ? itemNameEl.textContent.trim() : '';
+
+                // Auto-detect gender
+                if (!(filters.gender && filters.gender.length > 0)) {
+                    let autoGender = null;
+                    const n = itemName.toUpperCase();
+                    if (n.includes('WANITA') || n.includes('PEREMPUAN')) autoGender = 'P';
+                    else if (n.includes('PRIA') || n.includes('LAKI')) autoGender = 'L';
+
+                    if (autoGender) {
+                        const cb = card.querySelector(`input.filter-input[data-filter="gender"][data-value="${autoGender}"]`);
+                        if (cb && !cb.checked) {
+                            cb.checked = true;
+                            addAutoBadge(cb.nextElementSibling);
+                            hasAutoApplied = true;
+                        }
+                    }
+                }
+
+                // Auto-detect tipe personil
+                if (!(filters.personnel_type && filters.personnel_type.length > 0)) {
+                    const detectedType = detectPersonnelTypeFromName(itemName);
+
+                    if (detectedType === 'polri') {
+                        const cb = card.querySelector('input.filter-input[data-filter="personnel_type"][data-value="polri"]');
+                        if (cb && !cb.checked) {
+                            cb.checked = true;
+                            addAutoBadge(cb.nextElementSibling);
+                            toggleRankOptions(itemId);
+                            hasAutoApplied = true;
+                        }
+                    } else if (detectedType === 'pns') {
+                        const visualToggle = card.querySelector('.pill-pns-pppk .pill-visual-toggle');
+                        if (visualToggle && !visualToggle.checked) {
+                            visualToggle.checked = true;
+                            syncPnsPppkVisual(visualToggle, itemId);
+                            addAutoBadge(visualToggle.closest('.pill-pns-pppk').querySelector('span'));
+                            toggleRankOptions(itemId);
+                            hasAutoApplied = true;
+                        }
+                    }
+                }
+
+                // Auto-detect rank
+                if (!(filters.rank_categories && filters.rank_categories.length > 0)) {
+                    const detectedRanks = detectRankFromName(itemName);
+                    detectedRanks.forEach(rank => {
+                        const cb = card.querySelector(`input.filter-input[data-filter="rank_categories"][data-value="${rank}"]`);
+                        if (cb && !cb.checked) {
+                            cb.checked = true;
+                            addAutoBadge(cb.nextElementSibling);
+                            hasAutoApplied = true;
+                        }
+                    });
+                }
+
+                // Jika di-force (dari tombol toggle ON) dan ada perubahan, trigger save otomatis
+                if (force && hasAutoApplied) {
+                    if (saveTimeouts[itemId]) clearTimeout(saveTimeouts[itemId]);
+                    saveTimeouts[itemId] = setTimeout(() => saveRecipients(itemId), 500);
+                }
+            });
+        }
+
+        autoSuggestToggle.addEventListener('change', async (e) => {
+            isAutoSuggestEnabled = e.target.checked;
+            localStorage.setItem('kapor_auto_suggest', isAutoSuggestEnabled);
+            
+            if (!isAutoSuggestEnabled) {
+                // Bersihkan filter ber-tag '_auto' dari database secara sinkron sebelum memuat ulang halaman
+                const fetchPromises = [];
+                Object.keys(savedFilters).forEach(itemId => {
+                    let filters = savedFilters[itemId];
+                    if (!filters || Object.keys(filters).length === 0) return;
+
+                    if (filters['_auto']) {
+                        let changed = false;
+                        Object.keys(filters['_auto']).forEach(filterKey => {
+                            const autoValues = filters['_auto'][filterKey];
+                            if (filters[filterKey] && Array.isArray(filters[filterKey])) {
+                                filters[filterKey] = filters[filterKey].filter(v => !autoValues.includes(v));
+                                if (filters[filterKey].length === 0) delete filters[filterKey];
+                                changed = true;
+                            }
+                        });
+                        delete filters['_auto'];
+
+                        if (changed) {
+                            const satkerIds = Array.from(document.querySelectorAll(`#satker-list-${itemId} input[type="checkbox"]:checked`)).map(cb => cb.value);
+                            const p = fetch(`/admin/budget/package-items/${itemId}/save-recipients`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    satker_ids: satkerIds,
+                                    filters: Object.keys(filters).length > 0 ? filters : null,
+                                })
+                            });
+                            fetchPromises.push(p);
+                        }
+                    }
+                });
+
+                if (fetchPromises.length > 0) {
+                    toggleStateText.innerHTML = '<i class="ri-loader-4-line spinner"></i> Sinkr..';
+                    autoSuggestToggle.disabled = true;
+                    await Promise.all(fetchPromises);
+                }
+
+                // Reload halaman untuk merender ulang UI sesuai mode Murni dari DB
+                window.location.reload();
+            } else {
+                // Saat dinyalakan kembali, jalankan auto-suggest secara LIVE tanpa reload
+                toggleStateText.textContent = 'Aktif';
+                autoSuggestWrap.classList.remove('is-off');
+                runAutoSuggest(true); // param force=true mengabaikan check hasSavedRecipients
+            }
+        });
+
         // Pre-check filter pills berdasarkan data tersimpan
         Object.keys(savedFilters).forEach(itemId => {
-            const filters = savedFilters[itemId];
+            let filters = savedFilters[itemId];
             if (!filters || Object.keys(filters).length === 0) return;
 
             // Pre-check personnel_type
@@ -825,43 +1008,6 @@
                     const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="rank_categories"][data-value="${val}"]`);
                     if (cb) cb.checked = true;
                 });
-            }
-        });
-
-        // Auto-deteksi gender dari nama item — HANYA untuk item baru (belum ada satker tersimpan)
-        // Jika item sudah pernah dikonfigurasi (ada satker tersimpan), hormati pilihan user
-        document.querySelectorAll('.recipient-card').forEach(card => {
-            const itemId = card.id.replace('item-card-', '');
-            const filters = savedFilters[itemId] || {};
-
-            // Jika gender sudah diset eksplisit di filter, skip
-            if (filters.gender && filters.gender.length > 0) return;
-
-            // Jika item sudah punya satker tersimpan → user sudah pernah setting → jangan override
-            const hasSavedRecipients = card.querySelectorAll('input[name^="satker_"]:checked').length > 0;
-            if (hasSavedRecipients) return;
-
-            // Item baru: auto-detect gender dari nama item sebagai saran awal
-            const itemNameEl = card.querySelector('.recipient-item-info h3');
-            const itemName = (itemNameEl ? itemNameEl.textContent : '').toUpperCase();
-
-            let autoGender = null;
-            if (itemName.includes('WANITA') || itemName.includes('PEREMPUAN')) autoGender = 'P';
-            else if (itemName.includes('PRIA') || itemName.includes('LAKI')) autoGender = 'L';
-
-            if (autoGender) {
-                const cb = card.querySelector(`input.filter-input[data-filter="gender"][data-value="${autoGender}"]`);
-                if (cb && !cb.checked) {
-                    cb.checked = true;
-                    const span = cb.nextElementSibling;
-                    if (span && !span.querySelector('.auto-badge')) {
-                        const badge = document.createElement('span');
-                        badge.className = 'auto-badge';
-                        badge.style.cssText = 'font-size:9px;background:rgba(255,255,255,0.3);padding:1px 5px;border-radius:10px;margin-left:4px;font-weight:700;letter-spacing:0.3px;';
-                        badge.textContent = 'AUTO';
-                        span.appendChild(badge);
-                    }
-                }
             }
         });
 
@@ -912,63 +1058,8 @@
             return ranks;
         }
 
-        // ── Helper: tambahkan badge AUTO ke span ─────────────────────────────────
-        function addAutoBadge(span) {
-            if (!span || span.querySelector('.auto-badge')) return;
-            const badge = document.createElement('span');
-            badge.className = 'auto-badge';
-            badge.style.cssText = 'font-size:9px;background:rgba(255,255,255,0.3);padding:1px 5px;border-radius:10px;margin-left:4px;font-weight:700;letter-spacing:0.3px;';
-            badge.textContent = 'AUTO';
-            span.appendChild(badge);
-        }
-
-        // ── Auto-detect: tipe personil & rank untuk item BARU ───────────────────
-        document.querySelectorAll('.recipient-card').forEach(card => {
-            const itemId = card.id.replace('item-card-', '');
-            const filters = savedFilters[itemId] || {};
-
-            // Jika sudah ada recipients tersimpan → hormati konfigurasi user
-            const hasSavedRecipients = card.querySelectorAll('input[name^="satker_"]:checked').length > 0;
-            if (hasSavedRecipients) return;
-
-            const itemNameEl = card.querySelector('.recipient-item-info h3');
-            const itemName = itemNameEl ? itemNameEl.textContent.trim() : '';
-
-            // ── Auto-detect tipe personil ────────────────────
-            if (!(filters.personnel_type && filters.personnel_type.length > 0)) {
-                const detectedType = detectPersonnelTypeFromName(itemName);
-
-                if (detectedType === 'polri') {
-                    const cb = card.querySelector('input.filter-input[data-filter="personnel_type"][data-value="polri"]');
-                    if (cb && !cb.checked) {
-                        cb.checked = true;
-                        addAutoBadge(cb.nextElementSibling);
-                        toggleRankOptions(itemId);
-                    }
-                } else if (detectedType === 'pns') {
-                    // Centang kedua hidden checkbox PNS + PPPK dan visual toggle-nya
-                    const visualToggle = card.querySelector('.pill-pns-pppk .pill-visual-toggle');
-                    if (visualToggle && !visualToggle.checked) {
-                        visualToggle.checked = true;
-                        syncPnsPppkVisual(visualToggle, itemId);
-                        addAutoBadge(visualToggle.closest('.pill-pns-pppk').querySelector('span'));
-                        toggleRankOptions(itemId);
-                    }
-                }
-            }
-
-            // ── Auto-detect rank (Polri) ──────────────────────
-            if (!(filters.rank_categories && filters.rank_categories.length > 0)) {
-                const detectedRanks = detectRankFromName(itemName);
-                detectedRanks.forEach(rank => {
-                    const cb = card.querySelector(`input.filter-input[data-filter="rank_categories"][data-value="${rank}"]`);
-                    if (cb && !cb.checked) {
-                        cb.checked = true;
-                        addAutoBadge(cb.nextElementSibling);
-                    }
-                });
-            }
-        });
+        // Eksekusi auto-suggest saat load pertama kali (tidak di-force, hormati status existing)
+        runAutoSuggest(false);
 
         // EVENT LISTENERS FOR AUTO-SAVE
         document.querySelectorAll('.recipient-card').forEach(card => {
@@ -1192,5 +1283,36 @@
         cursor: pointer; padding: 0 2px; line-height: 1; opacity: 0.6;
     }
     .ket-tag button:hover { opacity: 1; }
+
+    /* Toggle Auto-Saran */
+    .auto-suggest-toggle {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: #F8FAFC; border: 1px solid #E2E8F0;
+        padding: 6px 14px; border-radius: 20px;
+        font-size: 13px; font-weight: 600; color: #475569;
+        transition: all 0.2s;
+    }
+    .auto-suggest-toggle.is-off {
+        background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0;
+    }
+    .toggle-label { font-size: 12px; font-weight: 600; }
+    .toggle-state { font-size: 11px; font-weight: 700; color: #10B981; min-width: 48px; }
+    .auto-suggest-toggle.is-off .toggle-state { color: #94A3B8; }
+    .toggle-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background: #CBD5E1; border-radius: 20px; cursor: pointer;
+        transition: background 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-track { background: #10B981; }
+    .toggle-thumb {
+        position: absolute; left: 3px; top: 3px;
+        width: 14px; height: 14px; border-radius: 50%;
+        background: #fff; transition: transform 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .toggle-switch input:checked + .toggle-track .toggle-thumb { transform: translateX(16px); }
 </style>
 @endsection
+
