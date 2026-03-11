@@ -29,7 +29,18 @@
                         Pilih satker penerima untuk setiap item. Gunakan filter opsional, atau kosongkan untuk menghitung semua personil aktif.
                     </p>
                 </div>
-                <div>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    {{-- Toggle Auto-Saran Filter --}}
+                    <div class="auto-suggest-toggle" id="auto-suggest-wrap" title="Auto-Saran Filter">
+                        <span class="toggle-label">Auto-Saran</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="auto-suggest-toggle" checked>
+                            <span class="toggle-track">
+                                <span class="toggle-thumb"></span>
+                            </span>
+                        </label>
+                        <span class="toggle-state" id="toggle-state-text">Aktif</span>
+                    </div>
                     <a href="{{ route('admin.budget.wizard.step3', $budgetPackage) }}" class="btn-action-primary">
                         Lanjut ke Preview <i class="ri-arrow-right-line" style="margin-left: 6px;"></i>
                     </a>
@@ -874,6 +885,91 @@
             @endif
         @endforeach
 
+        // ── Helper: deteksi tipe personil dari nama item ──────────────────────────
+        function detectPersonnelTypeFromName(name) {
+            const n = name.toUpperCase();
+            // Item unisex Polri & PNS — tidak difilter
+            if ((n.includes('POLRI') && n.includes('PNS')) || n.includes('JILBAB')) return null;
+            if (n.includes('OLAHRAGA') || n.includes('KAOS KAKI') || n.includes('ROMPI')) return null;
+            // PNS/PPPK saja
+            if (n.includes('PNS') || n.includes('KORPRI')) return 'pns';
+            // Polri — kata kunci khas satuan Polri
+            const polriKeywords = ['POLRI','POLANTAS','LANTAS','BRIMOB','PROVOS','RESINTEL',
+                                   'RESINTELPAM','HUMAS','BARET','PET ','PDL','PDH','TWO TONE','SAMAPTA'];
+            if (polriKeywords.some(k => n.includes(k))) return 'polri';
+            return null;
+        }
+
+        // ── Helper: deteksi rank dari nama item ──────────────────────────────────
+        function detectRankFromName(name) {
+            const n = name.toUpperCase();
+            const ranks = [];
+            if (n.includes('PATI'))    ranks.push('PATI');
+            if (n.includes('PAMEN'))   ranks.push('PAMEN');
+            if (n.includes('PAMA') && !n.includes('PAMINAL')) ranks.push('PAMA');
+            if (n.includes('BINTARA')) ranks.push('BINTARA');
+            if (n.includes('TAMTAMA')) ranks.push('TAMTAMA');
+            return ranks;
+        }
+
+        // ── Helper: tambahkan badge AUTO ke span ─────────────────────────────────
+        function addAutoBadge(span) {
+            if (!span || span.querySelector('.auto-badge')) return;
+            const badge = document.createElement('span');
+            badge.className = 'auto-badge';
+            badge.style.cssText = 'font-size:9px;background:rgba(255,255,255,0.3);padding:1px 5px;border-radius:10px;margin-left:4px;font-weight:700;letter-spacing:0.3px;';
+            badge.textContent = 'AUTO';
+            span.appendChild(badge);
+        }
+
+        // ── Auto-detect: tipe personil & rank untuk item BARU ───────────────────
+        document.querySelectorAll('.recipient-card').forEach(card => {
+            const itemId = card.id.replace('item-card-', '');
+            const filters = savedFilters[itemId] || {};
+
+            // Jika sudah ada recipients tersimpan → hormati konfigurasi user
+            const hasSavedRecipients = card.querySelectorAll('input[name^="satker_"]:checked').length > 0;
+            if (hasSavedRecipients) return;
+
+            const itemNameEl = card.querySelector('.recipient-item-info h3');
+            const itemName = itemNameEl ? itemNameEl.textContent.trim() : '';
+
+            // ── Auto-detect tipe personil ────────────────────
+            if (!(filters.personnel_type && filters.personnel_type.length > 0)) {
+                const detectedType = detectPersonnelTypeFromName(itemName);
+
+                if (detectedType === 'polri') {
+                    const cb = card.querySelector('input.filter-input[data-filter="personnel_type"][data-value="polri"]');
+                    if (cb && !cb.checked) {
+                        cb.checked = true;
+                        addAutoBadge(cb.nextElementSibling);
+                        toggleRankOptions(itemId);
+                    }
+                } else if (detectedType === 'pns') {
+                    // Centang kedua hidden checkbox PNS + PPPK dan visual toggle-nya
+                    const visualToggle = card.querySelector('.pill-pns-pppk .pill-visual-toggle');
+                    if (visualToggle && !visualToggle.checked) {
+                        visualToggle.checked = true;
+                        syncPnsPppkVisual(visualToggle, itemId);
+                        addAutoBadge(visualToggle.closest('.pill-pns-pppk').querySelector('span'));
+                        toggleRankOptions(itemId);
+                    }
+                }
+            }
+
+            // ── Auto-detect rank (Polri) ──────────────────────
+            if (!(filters.rank_categories && filters.rank_categories.length > 0)) {
+                const detectedRanks = detectRankFromName(itemName);
+                detectedRanks.forEach(rank => {
+                    const cb = card.querySelector(`input.filter-input[data-filter="rank_categories"][data-value="${rank}"]`);
+                    if (cb && !cb.checked) {
+                        cb.checked = true;
+                        addAutoBadge(cb.nextElementSibling);
+                    }
+                });
+            }
+        });
+
         // EVENT LISTENERS FOR AUTO-SAVE
         document.querySelectorAll('.recipient-card').forEach(card => {
             const itemId = card.id.replace('item-card-', '');
@@ -885,7 +981,21 @@
                     if (input.dataset.filter === 'personnel_type') {
                         toggleRankOptions(itemId);
                     }
-                    
+
+                    // Hapus badge AUTO jika user klik filter secara manual
+                    const autoFilters = ['gender', 'personnel_type', 'rank_categories', 'golongan'];
+                    if (autoFilters.includes(input.dataset.filter)) {
+                        // Hapus badge dari span langsung atau dari label terdekat (pill-pns-pppk)
+                        const span = input.nextElementSibling || input.closest('label')?.querySelector('span');
+                        const badge = span ? span.querySelector('.auto-badge') : null;
+                        if (badge) badge.remove();
+                        // Juga hapus badge dari pill-visual-toggle (PNS/PPPK)
+                        if (input.classList.contains('pns-hidden') || input.classList.contains('pppk-hidden')) {
+                            const pnsBadge = input.closest('.pill-pns-pppk')?.querySelector('.auto-badge');
+                            if (pnsBadge) pnsBadge.remove();
+                        }
+                    }
+
                     // Clear existing delay
                     if(saveTimeouts[itemId]) {
                         clearTimeout(saveTimeouts[itemId]);
