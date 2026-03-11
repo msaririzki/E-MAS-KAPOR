@@ -191,12 +191,10 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             $filters = $recipient->recipient_filters ?? [];
             $satker = $recipient->satker;
 
+            // Query IDENTIK dengan calculateMatchedCount — TANPA filter gender sheet di DB
+            // Filter gender sheet diterapkan di PHP agar total = matched_count di web
             $query = Personnel::where('satker_id', $satker->id)
                 ->where('is_active', true);
-
-            if ($genderFilter !== null) {
-                $query->where('gender', $genderFilter);
-            }
 
             if (! empty($filters['personnel_type'])) {
                 $mappedTypes = array_map(function ($t) {
@@ -227,17 +225,23 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $query->whereIn('golongan', $filters['golongan']);
             }
 
-            $personnels = $query->get(['kapor_sizes']);
+            // Ambil gender juga agar bisa difilter di PHP
+            $personnels = $query->get(['gender', 'kapor_sizes']);
 
             $row = [
                 'satker_name' => $satker->name,
-                'sizes' => array_fill_keys($availableSizes, 0),
-                'row_total' => 0,
+                'sizes'       => array_fill_keys($availableSizes, 0),
+                'row_total'   => 0,
             ];
 
             foreach ($personnels as $p) {
-                $sizes = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
-                $sizeVal = $sizes[$sizeKey] ?? null;
+                // Filter gender sheet di PHP — tidak di DB agar query = calculateMatchedCount
+                if ($genderFilter !== null && $p->gender !== $genderFilter) {
+                    continue;
+                }
+
+                $sizes     = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
+                $sizeVal   = $sizes[$sizeKey] ?? null;
                 $sizeValStr = (string) $sizeVal;
 
                 if (! empty($sizeValStr) && $sizeValStr !== '-' && $sizeValStr !== 'null' && in_array($sizeValStr, $availableSizes)) {
@@ -256,6 +260,8 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
 
         return compact('matrix', 'totalPerSize', 'grandTotal');
     }
+
+
 
     public function view(): View
     {
