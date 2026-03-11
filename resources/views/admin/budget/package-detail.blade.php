@@ -793,14 +793,57 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Download Loading State
+    // Download Loading State tersinkronisasi murni via Fetch Blob
     document.querySelectorAll('.export-btn[data-download]').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
+        btn.addEventListener('click', async function(e) {
+            e.preventDefault(); // Cegah redirect bawaan
+            
+            if (btn.classList.contains('is-loading')) return; // Cegah double klik
             btn.classList.add('is-loading');
-            var estimatedSeconds = parseInt(btn.dataset.estimate || '5');
-            setTimeout(function() {
+            
+            try {
+                // Lakukan request file ke backend (browser mutar bola salju sambil menunggu)
+                const response = await fetch(btn.href);
+                if (!response.ok) throw new Error('Download request failed');
+                
+                // Coba petik/ekstrak nama file asli dari Header backend (jika ada Content-Disposition)
+                const disposition = response.headers.get('Content-Disposition');
+                let filename = 'Download_Report'; 
+                
+                // Fallback default extension
+                if (btn.href.includes('pdf')) filename += '.pdf';
+                else if (btn.href.includes('excel') || btn.href.includes('export')) filename += '.xlsx';
+
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    const matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) { 
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                // Ambil bungkus file biner nya langsung
+                const blob = await response.blob();
+                
+                // Bangun jembatan virtual agar user bisa mendownloadnya ke HDD
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click(); // Klik hantu untuk trigger simpan file
+                
+                // Bersihkan ceceran memory
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (error) {
+                console.error("Export error:", error);
+                alert("Gagal melakukan export atau sesi habis. Silakan refresh halaman dan coba lagi.");
+            } finally {
+                // Apapun yang terjadi, stop mutarnya 100% presisi sinkron waktu server!
                 btn.classList.remove('is-loading');
-            }, estimatedSeconds * 1000);
+            }
         });
     });
 });
