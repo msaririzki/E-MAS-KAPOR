@@ -166,6 +166,7 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_satker', 'satker.scope']
 
         // Detail Paket (Wizard)
         Route::get('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'showPackage'])->name('show-package');
+        Route::post('/packages/{budgetPackage}/recalculate', [\App\Http\Controllers\Admin\BudgetController::class, 'recalculatePackage'])->name('recalculate-package');
 
         // Wizard Step 1: Pilih Barang
         Route::get('/packages/{budgetPackage}/select-items', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectItems'])->name('wizard.step1');

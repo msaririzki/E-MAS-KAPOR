@@ -113,7 +113,108 @@
 </div>
 
 
+
+{{-- ── PERINGATAN UKURAN BELUM DIISI ── --}}
+@if(!empty($sizeWarnings))
+<div class="size-warning-banner" id="size-warning-panel">
+    <div class="swb-header">
+        <div class="swb-header-left" onclick="toggleWarningPanel()" style="flex:1; cursor:pointer;">
+            <div class="swb-icon"><i class="ri-error-warning-fill"></i></div>
+            <div>
+                <div class="swb-title">
+                    {{ number_format(collect($sizeWarnings)->sum('missing')) }} personel belum mengisi data ukuran kapor
+                </div>
+                <div class="swb-subtitle">
+                    Memengaruhi {{ count($sizeWarnings) }} jenis barang — klik untuk melihat rincian
+                </div>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <a href="{{ route('admin.personnel.index', ['status' => 'incomplete']) }}"
+               onclick="event.stopPropagation()"
+               class="swb-link-btn"
+               title="Buka halaman personel yang belum isi ukuran">
+                <i class="ri-user-search-line"></i> Lihat &amp; Isi Ukuran
+            </a>
+            <i class="ri-arrow-down-s-line swb-toggle-icon" id="swb-toggle-icon" onclick="toggleWarningPanel()"></i>
+        </div>
+    </div>
+
+    <div class="swb-body hidden" id="swb-body">
+        @foreach($sizeWarnings as $wIdx => $warn)
+        <div class="swb-item">
+            <div class="swb-item-header" onclick="toggleWarnDetail({{ $wIdx }})">
+                <div class="swb-item-name">
+                    <i class="ri-shirt-line"></i>
+                    {{ $warn['item_name'] }}
+                </div>
+                <div class="swb-item-stats">
+                    <span class="swb-stat">
+                        <span class="swb-stat-label">Total</span>
+                        <span class="swb-stat-val">{{ number_format($warn['total']) }}</span>
+                    </span>
+                    <span class="swb-stat swb-stat-ok">
+                        <span class="swb-stat-label">Terisi</span>
+                        <span class="swb-stat-val">{{ number_format($warn['valid']) }}</span>
+                    </span>
+                    <span class="swb-stat swb-stat-miss">
+                        <span class="swb-stat-label">Belum</span>
+                        <span class="swb-stat-val">{{ number_format($warn['missing']) }}</span>
+                    </span>
+                    <div class="swb-progress-bar">
+                        <div class="swb-progress-fill" style="width: {{ $warn['total'] > 0 ? round(($warn['valid'] / $warn['total']) * 100) : 0 }}%"></div>
+                    </div>
+                    <i class="ri-arrow-right-s-line swb-item-arrow" id="swb-arrow-{{ $wIdx }}"></i>
+                </div>
+            </div>
+
+            {{-- Detail per Satker --}}
+            <div class="swb-satker-list hidden" id="swb-detail-{{ $wIdx }}">
+                <table class="swb-satker-table">
+                    <thead>
+                        <tr>
+                            <th>SATKER</th>
+                            <th class="text-right">TOTAL</th>
+                            <th class="text-right">TERISI</th>
+                            <th class="text-right">BELUM</th>
+                            <th class="text-right">PROGRESS</th>
+                            <th class="text-right">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($warn['by_satker'] as $sk)
+                        <tr>
+                            <td>{{ $sk['satker_name'] }}</td>
+                            <td class="text-right text-muted">{{ $sk['total'] }}</td>
+                            <td class="text-right" style="color:#16A34A; font-weight:600;">{{ $sk['valid'] }}</td>
+                            <td class="text-right" style="color:#DC2626; font-weight:700;">{{ $sk['missing'] }}</td>
+                            <td class="text-right">
+                                <div class="swb-progress-bar" style="width:80px; display:inline-block;">
+                                    <div class="swb-progress-fill" style="width: {{ $sk['total'] > 0 ? round(($sk['valid'] / $sk['total']) * 100) : 0 }}%; background: {{ $sk['valid'] === $sk['total'] ? '#16A34A' : '#F59E0B' }};"></div>
+                                </div>
+                                <span style="font-size:11px; color:#64748B; margin-left:4px;">{{ $sk['total'] > 0 ? round(($sk['valid'] / $sk['total']) * 100) : 0 }}%</span>
+                            </td>
+                            <td class="text-right">
+                                <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'satker_id' => $sk['satker_id']]) }}"
+                                   class="swb-satker-link"
+                                   title="Lihat personel belum isi ukuran di {{ $sk['satker_name'] }}">
+                                    <i class="ri-external-link-line"></i> Isi Ukuran
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 @if($budgetPackage->items->count() > 0)
+
 <div class="layout-stack">
 
     {{-- Top Section: Export Actions --}}
@@ -161,6 +262,7 @@
                     </div>
                 </a>
             </div>
+
 
             {{-- HPS & Analysis --}}
             <div class="export-card-group-horizontal" style="gap: 12px;">
@@ -378,6 +480,103 @@
     .mb-3 { margin-bottom: 0.75rem; }
     .cursor-pointer { cursor: pointer; }
     .hidden { display: none !important; }
+
+    /* ── Size Warning Banner ── */
+    .size-warning-banner {
+        background: #FFFBEB;
+        border: 1px solid #FCD34D;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(251, 191, 36, 0.15);
+    }
+    .swb-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 20px; cursor: pointer; user-select: none;
+        transition: background 0.15s;
+    }
+    .swb-header:hover { background: #FEF3C7; }
+    .swb-header-left { display: flex; align-items: center; gap: 14px; }
+    .swb-icon {
+        width: 40px; height: 40px; border-radius: 12px; background: #FDE68A;
+        color: #D97706; display: flex; align-items: center; justify-content: center;
+        font-size: 20px; flex-shrink: 0;
+    }
+    .swb-title { font-size: 14px; font-weight: 700; color: #92400E; margin-bottom: 2px; }
+    .swb-subtitle { font-size: 12px; color: #B45309; }
+    .swb-toggle-icon { font-size: 22px; color: #D97706; transition: transform 0.25s; cursor:pointer; }
+    .swb-toggle-icon.open { transform: rotate(180deg); }
+    .swb-link-btn {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700;
+        background: #D97706; color: #fff; text-decoration: none;
+        transition: background 0.15s, transform 0.15s;
+        white-space: nowrap; flex-shrink: 0;
+    }
+    .swb-link-btn:hover { background: #B45309; transform: translateY(-1px); color: #fff; }
+    .swb-link-btn i { font-size: 14px; }
+
+
+    .swb-body { border-top: 1px solid #FCD34D; }
+    .swb-item { border-bottom: 1px solid #FEF3C7; }
+    .swb-item:last-child { border-bottom: none; }
+
+    .swb-item-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 20px; cursor: pointer; transition: background 0.15s;
+    }
+    .swb-item-header:hover { background: #FEF9E7; }
+    .swb-item-name {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 13.5px; font-weight: 600; color: #1E293B;
+    }
+    .swb-item-name i { color: #D97706; font-size: 16px; }
+    .swb-item-stats {
+        display: flex; align-items: center; gap: 16px;
+    }
+    .swb-stat {
+        display: flex; flex-direction: column; align-items: center;
+        padding: 4px 10px; border-radius: 8px; background: #fff;
+        border: 1px solid #E2E8F0; min-width: 52px;
+    }
+    .swb-stat-label { font-size: 9px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.4px; }
+    .swb-stat-val { font-size: 14px; font-weight: 800; color: #0F172A; }
+    .swb-stat-ok .swb-stat-val { color: #16A34A; }
+    .swb-stat-miss .swb-stat-val { color: #DC2626; }
+    .swb-item-arrow { font-size: 20px; color: #D97706; transition: transform 0.2s; }
+    .swb-item-arrow.open { transform: rotate(90deg); }
+
+    .swb-progress-bar {
+        width: 80px; height: 6px; background: #FDE68A; border-radius: 99px; overflow: hidden;
+    }
+    .swb-progress-fill {
+        height: 100%; background: #F59E0B; border-radius: 99px;
+        transition: width 0.4s ease;
+    }
+
+    .swb-satker-list { background: #fff; border-top: 1px solid #FEF3C7; padding: 0 20px 16px; }
+    .swb-satker-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 12px; }
+    .swb-satker-table th {
+        font-size: 10px; font-weight: 700; color: #94A3B8; text-transform: uppercase;
+        letter-spacing: 0.4px; padding: 6px 10px; text-align: left;
+        border-bottom: 1px solid #F1F5F9;
+    }
+    .swb-satker-table td {
+        font-size: 12.5px; color: #475569; padding: 8px 10px; border-bottom: 1px solid #F8FAFC;
+    }
+    .swb-satker-table tbody tr:hover td { background: #FFFBEB; }
+    .swb-satker-table tbody tr:last-child td { border-bottom: none; }
+    .swb-satker-link {
+        display: inline-flex; align-items: center; gap: 3px;
+        font-size: 11px; font-weight: 700; color: #D97706;
+        text-decoration: none; padding: 3px 8px; border-radius: 6px;
+        border: 1px solid #FCD34D; background: #FFFBEB;
+        transition: all 0.15s; white-space: nowrap;
+    }
+    .swb-satker-link:hover { background: #D97706; color: #fff; border-color: #D97706; }
+    .swb-satker-link i { font-size: 12px; }
+
+
 
     /* ── Main Panel & Table ── */
     .content-panel {
@@ -654,4 +853,40 @@ function toggleSatkerList(idx) {
     }
 }
 </script>
+
+<script>
+// ── Toggle Panel Peringatan Utama ──
+function toggleWarningPanel() {
+    const body = document.getElementById('swb-body');
+    const icon = document.getElementById('swb-toggle-icon');
+    if (!body) return;
+
+    if (body.classList.contains('hidden')) {
+        body.classList.remove('hidden');
+        if (icon) icon.classList.add('open');
+    } else {
+        body.classList.add('hidden');
+        if (icon) icon.classList.remove('open');
+        // Tutup semua detail satker
+        document.querySelectorAll('[id^="swb-detail-"]').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('[id^="swb-arrow-"]').forEach(el => el.classList.remove('open'));
+    }
+}
+
+// ── Toggle Detail per Satker ──
+function toggleWarnDetail(idx) {
+    const detail = document.getElementById('swb-detail-' + idx);
+    const arrow  = document.getElementById('swb-arrow-' + idx);
+    if (!detail) return;
+
+    if (detail.classList.contains('hidden')) {
+        detail.classList.remove('hidden');
+        if (arrow) arrow.classList.add('open');
+    } else {
+        detail.classList.add('hidden');
+        if (arrow) arrow.classList.remove('open');
+    }
+}
+</script>
 @endsection
+

@@ -317,7 +317,53 @@
                 </div>
                 <input type="hidden" name="satker_id" value="{{ request('satker_id') }}">
             </div>
+
+            {{-- ── FILTER UKURAN (hanya muncul saat status=incomplete) ── --}}
+            @if(request('status') === 'incomplete')
+            <div class="custom-select-wrapper" style="flex: 1; min-width: 160px;">
+                <div class="custom-select" onclick="toggleDropdown(this)">
+                    <div class="select-trigger">
+                        @php
+                            $sizeLabels = [
+                                'topi'            => '🪖 Tutup Kepala',
+                                'kemeja'          => '👔 Kemeja / PDL',
+                                'celana'          => '👖 Celana / Rok',
+                                'olahraga'        => '👕 Olahraga',
+                                'sepatu_dinas'    => '👞 Sepatu Dinas',
+                                'sepatu_olahraga' => '👟 Sepatu Olahraga',
+                                'jaket'           => '🧥 Jaket',
+                                'sabuk'           => '🔧 Sabuk',
+                                'jilbab'          => '🧕 Jilbab',
+                            ];
+                        @endphp
+                        <span>{{ isset($sizeLabels[$missingSizeFilter]) ? $sizeLabels[$missingSizeFilter] : 'Semua Ukuran' }}</span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="options-scroll">
+                            <div class="option {{ empty($missingSizeFilter) ? 'selected' : '' }}"
+                                 onclick="selectOptionSearch(this, 'missing_size', '', 'Semua Ukuran')">
+                                Semua Ukuran
+                            </div>
+                            @foreach($sizeLabels as $key => $label)
+                            <div class="option {{ $missingSizeFilter === $key ? 'selected' : '' }}"
+                                 onclick="selectOptionSearch(this, 'missing_size', '{{ $key }}', '{{ $label }}')">
+                                {{ $label }}
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="missing_size" value="{{ $missingSizeFilter }}">
+            </div>
+            @endif
+
         </div>
+
+        {{-- Pertahankan status=incomplete saat filter form di-submit --}}
+        @if(request('status') === 'incomplete')
+            <input type="hidden" name="status" value="incomplete">
+        @endif
 
         <div>
             <button type="button" class="btn" style="background: var(--slate-600); color: white;" onclick="window.location.href=updateQueryStringParameter(window.location.href, 'export', '1')">
@@ -326,6 +372,7 @@
         </div>
     </form>
 </div>
+
 
 {{-- Data Table --}}
 <div class="table-container">

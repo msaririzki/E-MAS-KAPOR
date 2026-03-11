@@ -115,30 +115,57 @@ class PersonnelController extends Controller
         // Filter: hanya tampilkan personel dengan data belum lengkap
         // (kapor_sizes NULL, atau ada ukuran yang hilang, ATAU rank_id NULL ATAU NRP NULL)
         $isIncompleteFilter = $request->get('status') === 'incomplete';
+        $missingSizeFilter  = $request->get('missing_size', ''); // e.g. 'kemeja', 'topi', etc.
+
         if ($isIncompleteFilter) {
-            $query->where(function ($q) {
-                $q->whereNull('personnels.rank_id')
-                  ->orWhereNull('personnels.nrp')
-                  ->orWhereNull('personnels.kapor_sizes')
-                  ->orWhere(function ($q2) {
-                      // Jika kapor_sizes ada, cari yang ukurannya bolong / tidak lengkap
-                      $q2->whereNotNull('personnels.kapor_sizes')
-                         ->where(function ($q3) {
-                             $q3->whereNull('kapor_sizes->topi')
-                                ->orWhereNull('kapor_sizes->kemeja')
-                                ->orWhereNull('kapor_sizes->celana')
-                                ->orWhereNull('kapor_sizes->olahraga')
-                                ->orWhereNull('kapor_sizes->sepatu_dinas')
-                                ->orWhereNull('kapor_sizes->sepatu_olahraga')
-                                ->orWhereNull('kapor_sizes->jaket')
-                                ->orWhereNull('kapor_sizes->sabuk')
-                                ->orWhere(function ($q4) {
-                                    $q4->where('gender', 'P')
-                                       ->whereNull('kapor_sizes->jilbab');
-                                });
-                         });
-                  });
-            });
+            // Jika ada filter ukuran spesifik, hanya cari personel yang field itu NULL
+            if (!empty($missingSizeFilter)) {
+                $allowedSizeKeys = ['topi','kemeja','celana','olahraga','sepatu_dinas','sepatu_olahraga','jaket','sabuk','jilbab'];
+                if (in_array($missingSizeFilter, $allowedSizeKeys)) {
+                    $query->where(function ($q) use ($missingSizeFilter) {
+                        if ($missingSizeFilter === 'jilbab') {
+                            // Jilbab hanya wajib untuk perempuan yang BERJILBAB/BERJILBAP
+                            $q->where('gender', 'P')
+                              ->whereIn('keterangan', ['BERJILBAB', 'BERJILBAP'])
+                              ->where(function ($q2) {
+                                  $q2->whereNull('personnels.kapor_sizes')
+                                     ->orWhereNull('kapor_sizes->jilbab');
+                              });
+
+                        } else {
+                            $q->whereNull('personnels.kapor_sizes')
+                              ->orWhereNull("kapor_sizes->{$missingSizeFilter}");
+                        }
+                    });
+                }
+
+            } else {
+                // Tidak ada filter spesifik — tampilkan semua yang incomplete
+                $query->where(function ($q) {
+                    $q->whereNull('personnels.rank_id')
+                      ->orWhereNull('personnels.nrp')
+                      ->orWhereNull('personnels.kapor_sizes')
+                      ->orWhere(function ($q2) {
+                          // Jika kapor_sizes ada, cari yang ukurannya bolong / tidak lengkap
+                          $q2->whereNotNull('personnels.kapor_sizes')
+                             ->where(function ($q3) {
+                                 $q3->whereNull('kapor_sizes->topi')
+                                    ->orWhereNull('kapor_sizes->kemeja')
+                                    ->orWhereNull('kapor_sizes->celana')
+                                    ->orWhereNull('kapor_sizes->olahraga')
+                                    ->orWhereNull('kapor_sizes->sepatu_dinas')
+                                    ->orWhereNull('kapor_sizes->sepatu_olahraga')
+                                    ->orWhereNull('kapor_sizes->jaket')
+                                    ->orWhereNull('kapor_sizes->sabuk')
+                                    ->orWhere(function ($q4) {
+                                        $q4->where('gender', 'P')
+                                           ->whereNull('kapor_sizes->jilbab');
+                                    });
+                             });
+                      });
+                });
+            }
+
             // Kelompokkan berdasarkan satker agar tidak tercampur
             if ($sort !== 'satker') {
                 $query->leftJoin('satkers', 'personnels.satker_id', '=', 'satkers.id')
@@ -146,6 +173,7 @@ class PersonnelController extends Controller
             }
             $query->orderBy('satkers.name', 'asc')->orderBy('personnels.full_name', 'asc');
         }
+
 
         // Pagination
         $perPage = $request->get('per_page', $isIncompleteFilter ? 100 : 10);
@@ -157,7 +185,8 @@ class PersonnelController extends Controller
 
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
 
-        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter'));
+        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter'));
+
     }
 
     public function store(Request $request)
