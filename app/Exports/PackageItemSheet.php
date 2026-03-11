@@ -189,10 +189,9 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
 
         foreach ($this->packageItem->recipients as $recipient) {
             $filters = $recipient->recipient_filters ?? [];
-            $satker = $recipient->satker;
+            $satker  = $recipient->satker;
 
-            // Query IDENTIK dengan calculateMatchedCount — TANPA filter gender sheet di DB
-            // Filter gender sheet diterapkan di PHP agar total = matched_count di web
+            // Query identik dengan calculateMatchedCount — TANPA filter gender sheet di DB
             $query = Personnel::where('satker_id', $satker->id)
                 ->where('is_active', true);
 
@@ -225,41 +224,43 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $query->whereIn('golongan', $filters['golongan']);
             }
 
-            // Ambil gender juga agar bisa difilter di PHP
+            // Ambil gender + kapor_sizes untuk breakdown ukuran
             $personnels = $query->get(['gender', 'kapor_sizes']);
 
             $row = [
                 'satker_name' => $satker->name,
                 'sizes'       => array_fill_keys($availableSizes, 0),
-                'row_total'   => 0,
+                // row_total = matched_count tersimpan (= angka di web), bukan re-count
+                'row_total'   => (int) $recipient->matched_count,
             ];
 
             foreach ($personnels as $p) {
-                // Filter gender sheet di PHP — tidak di DB agar query = calculateMatchedCount
+                // Filter gender di PHP untuk breakdown ukuran per sheet
                 if ($genderFilter !== null && $p->gender !== $genderFilter) {
                     continue;
                 }
 
-                $sizes     = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
-                $sizeVal   = $sizes[$sizeKey] ?? null;
+                $sizes      = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
+                $sizeVal    = $sizes[$sizeKey] ?? null;
                 $sizeValStr = (string) $sizeVal;
 
                 if (! empty($sizeValStr) && $sizeValStr !== '-' && $sizeValStr !== 'null' && in_array($sizeValStr, $availableSizes)) {
                     $row['sizes'][$sizeValStr]++;
                     $totalPerSize[$sizeValStr]++;
                 }
-
-                $row['row_total']++;
-                $grandTotal++;
             }
 
+            // grandTotal = sum matched_count (= angka di web)
             if ($row['row_total'] > 0) {
+                $grandTotal += $row['row_total'];
                 $matrix[] = $row;
             }
         }
 
         return compact('matrix', 'totalPerSize', 'grandTotal');
     }
+
+
 
 
 
