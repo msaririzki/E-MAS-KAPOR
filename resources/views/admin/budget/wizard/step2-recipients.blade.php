@@ -800,7 +800,7 @@
                 }
             }
 
-            // Pre-check gender
+            // Pre-check gender dari filter tersimpan
             if (filters.gender && Array.isArray(filters.gender)) {
                 filters.gender.forEach(val => {
                     const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="gender"][data-value="${val}"]`);
@@ -814,6 +814,43 @@
                     const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="rank_categories"][data-value="${val}"]`);
                     if (cb) cb.checked = true;
                 });
+            }
+        });
+
+        // Auto-deteksi gender dari nama item — HANYA untuk item baru (belum ada satker tersimpan)
+        // Jika item sudah pernah dikonfigurasi (ada satker tersimpan), hormati pilihan user
+        document.querySelectorAll('.recipient-card').forEach(card => {
+            const itemId = card.id.replace('item-card-', '');
+            const filters = savedFilters[itemId] || {};
+
+            // Jika gender sudah diset eksplisit di filter, skip
+            if (filters.gender && filters.gender.length > 0) return;
+
+            // Jika item sudah punya satker tersimpan → user sudah pernah setting → jangan override
+            const hasSavedRecipients = card.querySelectorAll('input[name^="satker_"]:checked').length > 0;
+            if (hasSavedRecipients) return;
+
+            // Item baru: auto-detect gender dari nama item sebagai saran awal
+            const itemNameEl = card.querySelector('.recipient-item-info h3');
+            const itemName = (itemNameEl ? itemNameEl.textContent : '').toUpperCase();
+
+            let autoGender = null;
+            if (itemName.includes('WANITA') || itemName.includes('PEREMPUAN')) autoGender = 'P';
+            else if (itemName.includes('PRIA') || itemName.includes('LAKI')) autoGender = 'L';
+
+            if (autoGender) {
+                const cb = card.querySelector(`input.filter-input[data-filter="gender"][data-value="${autoGender}"]`);
+                if (cb && !cb.checked) {
+                    cb.checked = true;
+                    const span = cb.nextElementSibling;
+                    if (span && !span.querySelector('.auto-badge')) {
+                        const badge = document.createElement('span');
+                        badge.className = 'auto-badge';
+                        badge.style.cssText = 'font-size:9px;background:rgba(255,255,255,0.3);padding:1px 5px;border-radius:10px;margin-left:4px;font-weight:700;letter-spacing:0.3px;';
+                        badge.textContent = 'AUTO';
+                        span.appendChild(badge);
+                    }
+                }
             }
         });
 

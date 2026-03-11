@@ -41,8 +41,6 @@ class DiagnosePackage extends Command
 
             foreach ($pkg->items as $item) {
                 $realtimeTotal = 0;
-                $itemName   = $item->kaporItem->item_name ?? '';
-                $autoGender = PackageItemRecipient::detectGenderFromItemName($itemName);
 
                 foreach ($item->recipients as $r) {
                     $f = $r->recipient_filters ?? [];
@@ -53,11 +51,7 @@ class DiagnosePackage extends Command
                             'polri'=>'Polri','pns'=>'PNS','pppk'=>'PPPK',default=>$t}, $f['personnel_type']);
                         $q->whereIn('personnel_type', $mt);
                     }
-                    if (! empty($f['gender'])) {
-                        $q->whereIn('gender', $f['gender']);
-                    } elseif ($autoGender !== null) {
-                        $q->where('gender', $autoGender);
-                    }
+                    if (! empty($f['gender']))          $q->whereIn('gender', $f['gender']);
                     if (! empty($f['rank_categories'])) $q->whereHas('rank', fn($rq) => $rq->whereIn('category', $f['rank_categories']));
                     if (! empty($f['keterangan']))      $q->whereIn('keterangan', $f['keterangan']);
                     if (! empty($f['golongan']))        $q->whereIn('golongan', $f['golongan']);
@@ -86,8 +80,6 @@ class DiagnosePackage extends Command
                     DB::transaction(function () use ($pkg) {
                     foreach ($pkg->items as $item) {
                         $totalQty   = 0;
-                        $itemName   = $item->kaporItem->item_name ?? '';
-                        $autoGender = PackageItemRecipient::detectGenderFromItemName($itemName);
 
                         foreach ($item->recipients as $r) {
                             $f = $r->recipient_filters ?? [];
@@ -96,11 +88,7 @@ class DiagnosePackage extends Command
                                 $mt = array_map(fn ($t) => match(strtolower($t)) {'polri'=>'Polri','pns'=>'PNS','pppk'=>'PPPK',default=>$t}, $f['personnel_type']);
                                 $q->whereIn('personnel_type', $mt);
                             }
-                            if (! empty($f['gender'])) {
-                                $q->whereIn('gender', $f['gender']);
-                            } elseif ($autoGender !== null) {
-                                $q->where('gender', $autoGender);
-                            }
+                            if (! empty($f['gender']))          $q->whereIn('gender', $f['gender']);
                             if (! empty($f['rank_categories'])) $q->whereHas('rank', fn($rq) => $rq->whereIn('category', $f['rank_categories']));
                             if (! empty($f['keterangan']))      $q->whereIn('keterangan', $f['keterangan']);
                             if (! empty($f['golongan']))        $q->whereIn('golongan', $f['golongan']);

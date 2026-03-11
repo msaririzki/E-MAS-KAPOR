@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BudgetPackage;
 use App\Models\BudgetYear;
-use App\Models\PackageItemRecipient;
 use App\Models\Personnel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -120,8 +119,6 @@ class BudgetController extends Controller
         DB::transaction(function () use ($budgetPackage) {
             foreach ($budgetPackage->items as $item) {
                 $totalQty  = 0;
-                $itemName  = $item->kaporItem->item_name ?? '';
-                $autoGender = PackageItemRecipient::detectGenderFromItemName($itemName);
 
                 foreach ($item->recipients as $recipient) {
                     $filters = $recipient->recipient_filters ?? [];
@@ -130,12 +127,7 @@ class BudgetController extends Controller
                         $mt = array_map(fn($t) => match (strtolower($t)) { 'polri' => 'Polri', 'pns' => 'PNS', 'pppk' => 'PPPK', default => $t }, $filters['personnel_type']);
                         $q->whereIn('personnel_type', $mt);
                     }
-                    // Gender: filter eksplisit dari wizard, atau auto-deteksi dari nama item
-                    if (!empty($filters['gender'])) {
-                        $q->whereIn('gender', $filters['gender']);
-                    } elseif ($autoGender !== null) {
-                        $q->where('gender', $autoGender);
-                    }
+                    if (!empty($filters['gender']))          $q->whereIn('gender', $filters['gender']);
                     if (!empty($filters['rank_categories'])) $q->whereHas('rank', fn($rq) => $rq->whereIn('category', $filters['rank_categories']));
                     if (!empty($filters['keterangan']))      $q->whereIn('keterangan', $filters['keterangan']);
                     if (!empty($filters['golongan']))        $q->whereIn('golongan', $filters['golongan']);
@@ -256,8 +248,6 @@ class BudgetController extends Controller
         DB::transaction(function () use ($budgetPackage) {
             foreach ($budgetPackage->items as $item) {
                 $totalQty   = 0;
-                $itemName   = $item->kaporItem->item_name ?? '';
-                $autoGender = PackageItemRecipient::detectGenderFromItemName($itemName);
 
                 foreach ($item->recipients as $recipient) {
                     $filters = $recipient->recipient_filters ?? [];
@@ -276,11 +266,9 @@ class BudgetController extends Controller
                         $query->whereIn('personnel_type', $mappedTypes);
                     }
 
-                    // Gender: eksplisit dari wizard ATAU auto-deteksi dari nama item
+                    // Gender: hanya dari filter eksplisit user
                     if (!empty($filters['gender'])) {
                         $query->whereIn('gender', $filters['gender']);
-                    } elseif ($autoGender !== null) {
-                        $query->where('gender', $autoGender);
                     }
 
                     if (!empty($filters['rank_categories'])) {

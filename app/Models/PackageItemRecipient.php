@@ -65,7 +65,6 @@ class PackageItemRecipient extends Model
     public function calculateMatchedCount(): int
     {
         $this->load('packageItem.kaporItem');
-        $itemName = $this->packageItem?->kaporItem?->item_name ?? '';
 
         $query = Personnel::where('satker_id', $this->satker_id)
             ->where('is_active', true);
@@ -84,14 +83,9 @@ class PackageItemRecipient extends Model
             $query->whereIn('personnel_type', $mappedTypes);
         }
 
-        // Filter gender: gunakan dari filter eksplisit ATAU auto-deteksi dari nama item
+        // Filter gender: hanya dari filter eksplisit user, tidak auto-detect dari nama item
         if (! empty($filters['gender'])) {
             $query->whereIn('gender', $filters['gender']);
-        } elseif ($itemName !== '') {
-            $autoGender = self::detectGenderFromItemName($itemName);
-            if ($autoGender !== null) {
-                $query->where('gender', $autoGender);
-            }
         }
 
         // Filter berdasarkan rank categories
