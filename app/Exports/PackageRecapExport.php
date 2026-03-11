@@ -93,6 +93,11 @@ class PackageRecapExport implements WithMultipleSheets
             $hasCelana = $this->needsCelanaSheet($packageItem);
             $isOlahraga = $this->isOlahraga($packageItem);
 
+            // ── Helper Pemeriksa Konten Nama ────────────────────
+            $upperBase = strtoupper($baseName);
+            $hasMaleInName = str_contains($upperBase, 'PRIA') || str_contains($upperBase, 'LAKI');
+            $hasFemaleInName = str_contains($upperBase, 'WANITA') || str_contains($upperBase, 'PEREMPUAN');
+
             // ── OLAHRAGA: 1 sheet gabungan pria+wanita ──
             if ($isOlahraga && isset($gendersInItem['L']) && isset($gendersInItem['P'])) {
                 $sheetName = substr(trim($baseName), 0, 31);
@@ -105,7 +110,14 @@ class PackageRecapExport implements WithMultipleSheets
 
             // ── Sheet BAJU ──────────────────────────────
             if (isset($gendersInItem['L'])) {
-                $label = $hasCelana ? ' Baju Pria' : ' Pria';
+                // Jika sudah ada kata PRIA di nama item, jangan ditambahkan kata 'Pria' lagi, kecuali ada celana maka tambah 'Baju'
+                $label = '';
+                if ($hasCelana) {
+                    $label = $hasMaleInName ? ' Baju' : ' Baju Pria';
+                } else {
+                    $label = $hasMaleInName ? '' : ' Pria';
+                }
+                
                 $sheetName = substr(trim($baseName) . $label, 0, 31);
                 $sheets[] = new PackageItemSheet(
                     $packageItem, $sheetName, $this->budgetPackage, 'L',
@@ -114,7 +126,13 @@ class PackageRecapExport implements WithMultipleSheets
             }
 
             if (isset($gendersInItem['P'])) {
-                $label = $hasCelana ? ' Baju Wanita' : ' Wanita';
+                $label = '';
+                if ($hasCelana) {
+                    $label = $hasFemaleInName ? ' Baju' : ' Baju Wanita';
+                } else {
+                    $label = $hasFemaleInName ? '' : ' Wanita';
+                }
+
                 $sheetName = substr(trim($baseName) . $label, 0, 31);
                 $sheets[] = new PackageItemSheet(
                     $packageItem, $sheetName, $this->budgetPackage, 'P',
@@ -125,7 +143,8 @@ class PackageRecapExport implements WithMultipleSheets
             // ── Sheet CELANA (companion untuk item STEL) ──
             if ($hasCelana) {
                 if (isset($gendersInItem['L'])) {
-                    $sheetName = substr(trim($baseName) . ' Celana Pria', 0, 31);
+                    $label = $hasMaleInName ? ' Celana' : ' Celana Pria';
+                    $sheetName = substr(trim($baseName) . $label, 0, 31);
                     $sheets[] = new PackageItemSheet(
                         $packageItem, $sheetName, $this->budgetPackage, 'L',
                         'celana', 'Ukuran Celana', $this->celanaPriaSizes
@@ -133,7 +152,8 @@ class PackageRecapExport implements WithMultipleSheets
                 }
 
                 if (isset($gendersInItem['P'])) {
-                    $sheetName = substr(trim($baseName) . ' Celana Wanita', 0, 31);
+                    $label = $hasFemaleInName ? ' Celana' : ' Celana Wanita';
+                    $sheetName = substr(trim($baseName) . $label, 0, 31);
                     $sheets[] = new PackageItemSheet(
                         $packageItem, $sheetName, $this->budgetPackage, 'P',
                         'celana', 'Ukuran Celana', $this->celanaWanitaSizes

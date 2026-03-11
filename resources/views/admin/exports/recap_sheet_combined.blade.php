@@ -18,7 +18,7 @@
     {{-- ═══ JUDUL DOKUMEN ═══ --}}
     <tr>
         <td>
-            REKAP DATA UKURAN {{ strtoupper($kaporItem->item_name) }}{{ isset($sizeLabel) && $sizeLabel ? ' (' . strtoupper($sizeLabel) . ')' : '' }} POLRI POLDA NTB TAHUN {{ $budgetPackage->budgetYear->year }}
+            REKAP DATA UKURAN {{ strtoupper($kaporItem->item_name) }} POLDA NTB TAHUN {{ $budgetPackage->budgetYear->year }}
         </td>
     </tr>
     <tr></tr>
