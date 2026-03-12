@@ -338,73 +338,140 @@ class PersonnelController extends Controller
 
     public function nrpIssues(Request $request)
     {
-        // 1. Cari dulu NRP-NRP apa saja yang bermasalah di satker user saat ini
+        // ==============================================================================
+        // 1. AUTO-SCAN: Temukan semua NRP duplikat di seluruh DB secara riil
+        // ==============================================================================
+        $duplicateNrps = Personnel::whereNotNull('nrp')
+            ->where('nrp', '!=', '')
+            ->where('nrp', '!=', '-')
+            ->groupBy('nrp')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('nrp')
+            ->toArray();
+
+        // Tandai sebagai bermasalah jika belum ada bendera error dan belum diselesaikan
+        if (! empty($duplicateNrps)) {
+            $strDuplicateNrps = array_map('strval', $duplicateNrps);
+            Personnel::whereIn('nrp', $strDuplicateNrps)
+                ->whereNull('nrp_issue_resolved_at')
+                ->where('has_nrp_issue', false)
+                ->update([
+                    'has_nrp_issue' => true,
+                    'nrp_issue_note' => 'Sistem mendeteksi NRP duplikat pada database.',
+                ]);
+        }
+
+        // ==============================================================================
+        // 2. AUTO-CLEANUP: Bersihkan yang sudah tidak duplikat (lawan sudah dihapus/diedit)
+        // ==============================================================================
+        $flaggedNrps = Personnel::whereNotNull('nrp')
+            ->where('has_nrp_issue', true)
+            ->pluck('nrp')
+            ->unique()
+            ->toArray();
+
+        if (! empty($flaggedNrps)) {
+            $orphanedNrps = array_diff($flaggedNrps, $duplicateNrps);
+            if (! empty($orphanedNrps)) {
+                $strOrphanedNrps = array_map('strval', $orphanedNrps);
+                Personnel::whereIn('nrp', $strOrphanedNrps)
+                    ->where('has_nrp_issue', true)
+                    ->update([
+                        'has_nrp_issue' => false,
+                        'nrp_issue_resolved_at' => now(),
+                        'nrp_issue_note' => 'Otomatis terselesaikan sistem: Lawan duplikat sudah dihapus/diedit dari database.',
+                    ]);
+            }
+        }
+
+        // ==============================================================================
+        // 3. AMBIL DATA UNTUK DITAMPILKAN DI HALAMAN INI
+        // ==============================================================================
+        // Ambil NRP bermasalah di SATKER SAAT INI (admin_satker hanya melihat masalah di tempatnya)
         $problematicNrps = Personnel::forCurrentSatker()
             ->where('has_nrp_issue', true)
             ->whereNotNull('nrp')
             ->pluck('nrp')
             ->unique()
             ->toArray();
+        // Pastikan format query selalu string
+        $strProblematicNrps = array_map('strval', $problematicNrps);
 
-        // [AUTO-CLEANUP] Jika ada NRP bermasalah, tapi ternyata di SELURUH DB 
-        // hanya tersisa 1 orang (lawannya sudah dihapus), otomatis tandai selesai!
-        if (!empty($problematicNrps)) {
-            $nrpCounts = Personnel::whereIn('nrp', $problematicNrps)
-                ->select('nrp', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
-                ->groupBy('nrp')
-                ->pluck('total', 'nrp')
-                ->toArray();
-
-            $orphanedNrps = [];
-            foreach ($nrpCounts as $nrp => $total) {
-                if ($total <= 1) {
-                    $orphanedNrps[] = (string) $nrp;
-                }
-            }
-
-            if (!empty($orphanedNrps)) {
-                Personnel::whereIn('nrp', $orphanedNrps)
-                    ->where('has_nrp_issue', true)
-                    ->update([
-                        'has_nrp_issue' => false,
-                        'nrp_issue_resolved_at' => now(),
-                        'nrp_issue_note' => 'Otomatis terselesaikan sistem: Lawan duplikat sudah dihapus dari database.'
-                    ]);
-                
-                // Update list NRP bermasalah karena sebagian sudah diselesaikan
-                // Perlu string compare agar sesuai dengan $problematicNrps (yang mungkin berupa string)
-                $problematicNrps = array_values(array_filter($problematicNrps, function($p) use ($orphanedNrps) {
-                    return !in_array((string)$p, $orphanedNrps, true);
-                }));
-            }
-        }
-
-        // 2. Jika ada personil bermasalah tapi NRP-nya NULL (blank), ambil ID mereka
+        // Termasuk personel yang NRP nya kosong (ditandai bermasalah saat upload)
         $nullNrpIssuesIds = Personnel::forCurrentSatker()
             ->where('has_nrp_issue', true)
             ->whereNull('nrp')
             ->pluck('id')
             ->toArray();
 
-        // 3. Query SEMUA personil dari SEMUA satker yang NRP-nya masuk dalam daftar bermasalah yang TERSISA
+        // Query SEMUA personil dari SEMUA satker yang NRP-nya masuk dalam daftar bermasalah yang TERSISA
         $personnels = Personnel::with(['rank', 'satker'])
-            ->where(function ($query) use ($problematicNrps, $nullNrpIssuesIds) {
-                if (!empty($problematicNrps)) {
-                    $query->whereIn('nrp', $problematicNrps);
+            ->where(function ($query) use ($strProblematicNrps, $nullNrpIssuesIds) {
+                if (! empty($strProblematicNrps)) {
+                    $query->whereIn('nrp', $strProblematicNrps);
                 }
-                if (!empty($nullNrpIssuesIds)) {
+                if (! empty($nullNrpIssuesIds)) {
                     $query->orWhereIn('id', $nullNrpIssuesIds);
                 }
-                
-                if (empty($problematicNrps) && empty($nullNrpIssuesIds)) {
+
+                // Fallback jika tidak ada data bermasalah
+                if (empty($strProblematicNrps) && empty($nullNrpIssuesIds)) {
                     $query->whereRaw('1 = 0');
                 }
             })
+            // Urutkan agar yang 'Terselesaikan' (resolved_at tdk null) turun ke bawah
+            ->orderByRaw('nrp_issue_resolved_at IS NOT NULL')
             ->orderBy('nrp')
             ->latest()
             ->paginate(50);
 
-        return view('admin.personnel.nrp_issues', compact('personnels'));
+        // ==============================================================================
+        // 4. STATISTIK UNTUK UI (TOP 5 SATKER & TOTAL)
+        // ==============================================================================
+        $stats = [
+            'total_personnel' => 0, // Dihitung dari builder di bawah agar akurat
+            'total_groups' => count($strProblematicNrps) + count($nullNrpIssuesIds),
+        ];
+
+        $topSatkers = collect();
+        if ($stats['total_groups'] > 0) {
+            // Hitung total personil yang terlibat (yg belum terselesaikan statusnya)
+            $stats['total_personnel'] = Personnel::where(function ($query) use ($strProblematicNrps, $nullNrpIssuesIds) {
+                if (! empty($strProblematicNrps)) {
+                    $query->whereIn('nrp', $strProblematicNrps);
+                }
+                if (! empty($nullNrpIssuesIds)) {
+                    $query->orWhereIn('id', $nullNrpIssuesIds);
+                }
+            })
+                ->whereNull('nrp_issue_resolved_at')
+                ->count();
+
+            // Hitung Top 5 Satker
+            $topSatkers = Personnel::with('satker')
+                ->where(function ($query) use ($strProblematicNrps, $nullNrpIssuesIds) {
+                    if (! empty($strProblematicNrps)) {
+                        $query->whereIn('nrp', $strProblematicNrps);
+                    }
+                    if (! empty($nullNrpIssuesIds)) {
+                        $query->orWhereIn('id', $nullNrpIssuesIds);
+                    }
+                })
+                ->whereNull('nrp_issue_resolved_at')
+                ->select('satker_id', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+                ->groupBy('satker_id')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get()
+                ->map(function ($p) {
+                    return [
+                        'name' => $p->satker->name ?? 'Tidak Diketahui',
+                        'total' => $p->total,
+                    ];
+                });
+        }
+
+        return view('admin.personnel.nrp_issues', compact('personnels', 'stats', 'topSatkers'));
     }
 
     /**
@@ -420,7 +487,7 @@ class PersonnelController extends Controller
 
             return redirect()->back()->with('success', 'Status masalah duplikat NRP berhasil ditandai selesai.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memproses resolusi: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memproses resolusi: '.$e->getMessage());
         }
     }
 
@@ -535,7 +602,7 @@ class PersonnelController extends Controller
                 $preview[$index]['rank_id'] = $rankId;
             }
         }
-        
+
         // Ambil aksi untuk baris duplikat (skip vs import)
         $actionOverrides = $request->input('action_overrides', []);
         foreach ($actionOverrides as $index => $action) {

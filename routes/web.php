@@ -121,7 +121,7 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_satker', 'satker.scope']
     Route::post('/personnel/import-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importConfirm'])->name('personnel.import-confirm');
     Route::post('/personnel/import-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importCancel'])->name('personnel.import-cancel');
     Route::delete('/personnel/bulk-delete', [\App\Http\Controllers\Admin\PersonnelController::class, 'bulkDeleteBySatker'])->name('personnel.bulk-delete');
-    
+
     // NRP Issues
     Route::get('/personnel/nrp-issues', [\App\Http\Controllers\Admin\PersonnelController::class, 'nrpIssues'])->name('personnel.nrp-issues');
     Route::post('/personnel/{personnel}/resolve-nrp', [\App\Http\Controllers\Admin\PersonnelController::class, 'resolveNrpIssue'])->name('personnel.resolve-nrp');

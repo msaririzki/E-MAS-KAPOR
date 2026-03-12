@@ -225,7 +225,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
             $isDuplicate = false;
             if (! empty($nrp) && isset($processedNrp[$nrp])) {
                 $isDuplicate = true;
-                
+
                 // Tandai juga baris pertama yang ditemukan agar ikut merah di preview
                 $prevIdx = $processedNrp[$nrp]['preview_idx'];
                 if (isset($preview[$prevIdx])) {
@@ -237,11 +237,11 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
 
             // ── Deteksi duplikat cross-database ──────────────────────────
             $dbDuplicate = null;
-            if (!empty($nrp) && isset($allNrpData[$nrp])) {
+            if (! empty($nrp) && isset($allNrpData[$nrp])) {
                 $existingDB = $allNrpData[$nrp];
                 // Jika ini adalah orang yang sama (update diri sendiri), bukan duplikat.
                 // Jika id berbeda, atau record existingP kosong tapi nrp sudah dipakai orang lain, maka duplikat.
-                if (!$existingP || $existingP->id !== $existingDB->id) {
+                if (! $existingP || $existingP->id !== $existingDB->id) {
                     $dbDuplicate = [
                         'personnel_id' => $existingDB->id,
                         'full_name' => $existingDB->full_name,
@@ -519,7 +519,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                             $updateData['kapor_sizes'] = $merged;
                         }
 
-                        $hasNrpIssue = !empty($data['db_duplicate']) || !empty($data['duplicate_nrp']);
+                        $hasNrpIssue = ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']);
                         $updateData['has_nrp_issue'] = $hasNrpIssue;
                         if ($hasNrpIssue) {
                             $updateData['nrp_issue_note'] = $this->buildNrpIssueNote($data);
@@ -569,7 +569,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                             'keterangan_3' => $data['keterangan_3'] ?: null,
                             'keterangan_4' => $data['keterangan_4'] ?: null,
                             'kapor_sizes' => array_filter($data['sizes'] ?? [], fn ($v) => $v !== ''),
-                            'has_nrp_issue' => !empty($data['db_duplicate']) || !empty($data['duplicate_nrp']),
+                            'has_nrp_issue' => ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']),
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ]);
 

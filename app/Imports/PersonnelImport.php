@@ -898,7 +898,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                         $rankResult['corrected'] = true;
                         $rankResult['corrected_to'] = $dupeLabel;
                     }
-                    
+
                     // Tandai juga baris pertama yang ditemukan sebelumnya agar ikut merah
                     $prevIdx = $dupeInfo['preview_idx'];
                     if (isset($preview[$prevIdx])) {
@@ -1147,6 +1147,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'errors' => $errors,
         ];
     }
+
     /**
      * Helper: buat catatan masalah NRP untuk personel yang terdeteksi duplikat.
      */

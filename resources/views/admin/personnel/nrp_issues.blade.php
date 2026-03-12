@@ -112,6 +112,48 @@
     }
 </style>
 
+@if(isset($stats) && isset($topSatkers) && $stats['total_groups'] > 0)
+<div style="max-width: 1200px; margin: 0 auto 24px auto;">
+    <div style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 20px;">
+        <!-- Card 1: Total Ringkasan -->
+        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #E5E7EB; border-left: 4px solid #991B1B; display: flex; flex-direction: column; justify-content: center;">
+            <div style="color: #6B7280; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Total Konfik Aktif</div>
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span style="font-size: 36px; font-weight: 800; color: #991B1B; line-height: 1;">{{ $stats['total_groups'] }}</span>
+                <span style="color: #4B5563; font-size: 14px; font-weight: 600;">NRP</span>
+            </div>
+            <div style="margin-top: 12px; font-size: 12px; color: #6B7280; background: #FEF2F2; padding: 6px 10px; border-radius: 6px; display: inline-block;">
+                Melibatkan <strong style="color: #991B1B;">{{ $stats['total_personnel'] }}</strong> personel
+            </div>
+        </div>
+
+        <!-- Card 2: Top 5 Satker -->
+        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #E5E7EB;">
+            <div style="color: #6B7280; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; display: flex; align-items: center; gap: 6px;">
+                <i class="ri-bar-chart-grouped-line" style="font-size: 16px; color: #3B82F6;"></i> Top 5 Satker Terbanyak
+            </div>
+            @if($topSatkers->count() > 0)
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px;">
+                    @foreach($topSatkers as $sat)
+                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 8px; text-align: center; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top:0; left:0; width: 100%; height: 3px; background: #3B82F6;"></div>
+                        <div style="font-size: 22px; font-weight: 800; color: #1E293B; margin-bottom: 4px;">{{ $sat['total'] }}</div>
+                        <div style="font-size: 11px; color: #64748B; font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;" title="{{ $sat['name'] }}">
+                            {{ $sat['name'] }}
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @else
+                <div style="text-align: center; color: #9CA3AF; font-size: 13px; padding: 10px 0;">
+                    Tidak ada satker yang mendominasi data duplikat saat ini.
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+@endif
+
 <div class="issues-container" style="max-width: 1200px; margin: 0 auto; padding-bottom: 40px;">
     @php
         // Mengelompokkan data berdasarkan NRP
