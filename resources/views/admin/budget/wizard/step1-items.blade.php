@@ -39,9 +39,9 @@
                         <i class="ri-shopping-cart-2-line"></i>
                         <span id="selectedCount" style="font-size: 16px; font-weight: 800; margin: 0 4px;">{{ count($selectedIds) }}</span> <span style="font-weight: 500;">item dipilih</span>
                     </div>
-                    <a href="{{ route('admin.budget.wizard.step2', $budgetPackage) }}" class="btn-action-primary {{ count($selectedIds) == 0 ? 'disabled' : '' }}" id="nextBtn" style="white-space: nowrap;">
+                    <button type="button" class="btn-action-primary {{ count($selectedIds) == 0 ? 'disabled' : '' }}" id="nextBtn" style="white-space: nowrap; border: none; cursor: pointer;" onclick="openReorderModal()">
                         Lanjut ke Penerima <i class="ri-arrow-right-line" style="margin-left: 6px;"></i>
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
@@ -70,7 +70,7 @@
         </div>
 
         {{-- Step 2 --}}
-        <a href="{{ route('admin.budget.wizard.step2', $budgetPackage) }}" class="wizard-step-card pending {{ count($selectedIds) == 0 ? 'disabled-link' : '' }}" id="step2Link">
+        <a href="javascript:void(0)" onclick="if(!this.classList.contains('disabled-link')) openReorderModal()" class="wizard-step-card pending {{ count($selectedIds) == 0 ? 'disabled-link' : '' }}" id="step2Link">
             <div class="wizard-step-header">
                 <div class="wizard-step-number">2</div>
                 <div class="wizard-step-title">
@@ -138,6 +138,7 @@
         @foreach($items as $item)
         <div class="item-card {{ in_array($item->id, $selectedIds) ? 'selected' : '' }}"
              data-item-id="{{ $item->id }}"
+             data-package-item-id="{{ $packageItemMap[$item->id] ?? '' }}"
              onclick="toggleItem({{ $item->id }}, this)">
             
             <div class="item-card-check">
@@ -181,9 +182,37 @@
 </div>
 @endforeach
 
+{{-- Reorder Modal --}}
+<div id="reorderModal" class="reorder-modal-backdrop" style="display: none;">
+    <div class="reorder-modal-box">
+        <div class="reorder-modal-header">
+            <div>
+                <h3 class="reorder-modal-title">Atur Urutan Barang</h3>
+                <p class="reorder-modal-desc">Geser (drag & drop) untuk mengatur urutan prioritas barang.</p>
+            </div>
+            <button type="button" class="btn-close-modal" onclick="closeReorderModal()">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <div class="reorder-modal-body custom-scrollbar">
+            <div id="sortableList" class="sortable-list">
+                {{-- Diisi via JS --}}
+            </div>
+        </div>
+        <div class="reorder-modal-footer">
+            <button type="button" class="btn-cancel" onclick="closeReorderModal()">Batal</button>
+            <button type="button" class="btn-save btn-action-primary" id="btnSaveOrder" onclick="saveOrder()">Simpan & Lanjut <i class="ri-arrow-right-line"></i></button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script>
     const toggleUrl = "{{ route('admin.budget.wizard.toggle-item', $budgetPackage, false) }}";
     const csrfToken = "{{ csrf_token() }}";
+    
+    // Track sorted kapor item ids
+    let sortedSelectedKaporIds = @json($selectedIds);
 
     async function toggleItem(itemId, el) {
         // Prevent multiple clicks while loading
@@ -213,14 +242,27 @@
 
             const data = await resp.json();
 
-            // Update Class
+            // Update Class and ID
             if (data.action === 'added') {
                 el.classList.add('selected');
+                if(data.package_item_id) {
+                    el.setAttribute('data-package-item-id', data.package_item_id);
+                }
+                
+                // Add to tracked sorted array
+                if (!sortedSelectedKaporIds.includes(itemId)) {
+                    sortedSelectedKaporIds.push(itemId);
+                }
+                
                 // Add pop animation effect
                 el.style.transform = 'scale(0.97)';
                 setTimeout(() => el.style.transform = '', 150);
             } else {
                 el.classList.remove('selected');
+                el.setAttribute('data-package-item-id', '');
+                
+                // Remove from tracked array
+                sortedSelectedKaporIds = sortedSelectedKaporIds.filter(id => id !== itemId);
             }
 
             // Update Counters
@@ -281,6 +323,89 @@
             }
         });
     }
+
+    // --- REORDER MODAL LOGIC ---
+    let sortableInstance = null;
+
+    function openReorderModal() {
+        if(document.getElementById('nextBtn').classList.contains('disabled')) return;
+        
+        const modal = document.getElementById('reorderModal');
+        const list = document.getElementById('sortableList');
+        list.innerHTML = ''; // Clear previous
+
+        // Kumpulkan item terpilih berdasarkan urutan sortedSelectedKaporIds
+        sortedSelectedKaporIds.forEach(kaporId => {
+            const card = document.querySelector(`.item-card[data-item-id="${kaporId}"]`);
+            if(!card) return;
+
+            const packageItemId = card.getAttribute('data-package-item-id');
+            const name = card.querySelector('.item-name').innerText;
+            const category = card.closest('.category-section').querySelector('.category-title').innerText.trim().replace(/\s*\d+\s*Barang$/, '');
+            const infoTopHtml = card.querySelector('.info-top').innerHTML;
+            
+            const listItem = document.createElement('div');
+            listItem.className = 'sortable-item';
+            listItem.setAttribute('data-package-item-id', packageItemId);
+            listItem.innerHTML = `
+                <div class="drag-handle"><i class="ri-draggable"></i></div>
+                <div class="sortable-content">
+                    <div style="font-size: 11px; color:#64748B; font-weight:600;">${category}</div>
+                    <div style="font-weight: 700; color: #1E293B;">${name}</div>
+                </div>
+            `;
+            list.appendChild(listItem);
+        });
+
+        modal.style.display = 'flex';
+        
+        // Initialize Sortable
+        if(sortableInstance) sortableInstance.destroy();
+        sortableInstance = new Sortable(list, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost'
+        });
+    }
+
+    function closeReorderModal() {
+        document.getElementById('reorderModal').style.display = 'none';
+    }
+
+    async function saveOrder() {
+        const btn = document.getElementById('btnSaveOrder');
+        btn.innerHTML = '<i class="ri-loader-4-line spinner"></i> Menyimpan...';
+        btn.disabled = true;
+
+        const items = document.querySelectorAll('.sortable-item');
+        const orderedPackageItemIds = Array.from(items).map(item => item.getAttribute('data-package-item-id')).filter(id => id);
+
+        try {
+            const resp = await fetch('{{ route('admin.budget.wizard.reorder-items', $budgetPackage) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ ordered_ids: orderedPackageItemIds })
+            });
+
+            if (!resp.ok) {
+                let errLog = await resp.text();
+                throw new Error('Gagal menyimpan urutan');
+            }
+            
+            // Success, proceed to step 2
+            window.location.href = '{{ route('admin.budget.wizard.step2', $budgetPackage) }}';
+
+        } catch (err) {
+            console.error(err);
+            alert(err.message);
+            btn.innerHTML = 'Simpan & Lanjut <i class="ri-arrow-right-line"></i>';
+            btn.disabled = false;
+        }
+    }
 </script>
 @endsection
 
@@ -299,9 +424,9 @@
     /* ── Hero Section ── (Copied from Step 2) */
     .package-hero {
         background: #ffffff;
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 24px;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
         border: 1px solid #E2E8F0;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
         position: relative;
@@ -322,12 +447,12 @@
     .btn-back {
         display: flex;
         align-items: center; justify-content: center;
-        width: 40px; height: 40px;
+        width: 36px; height: 36px;
         background: #F8FAFC;
         border: 1px solid #E2E8F0;
-        border-radius: 12px;
+        border-radius: 10px;
         color: #475569;
-        font-size: 20px;
+        font-size: 18px;
         transition: all 0.2s;
         text-decoration: none;
     }
@@ -339,8 +464,8 @@
     }
     .package-hero-content { flex: 1; }
     .package-title-wrapper { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
-    .package-title { font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; }
-    .package-desc { color: #64748B; font-size: 14px; margin: 0; line-height: 1.5; }
+    .package-title { font-size: 20px; font-weight: 800; color: #0F172A; margin: 0; }
+    .package-desc { color: #64748B; font-size: 13px; margin: 0; line-height: 1.4; }
     
     /* Selected Counter specific to step 1 */
     .selected-counter {
@@ -353,8 +478,8 @@
     
     .btn-action-primary {
         display: inline-flex; align-items: center; justify-content: center;
-        padding: 10px 20px; border-radius: 10px;
-        background: #C62828; color: #fff; font-size: 14px; font-weight: 600;
+        padding: 8px 16px; border-radius: 8px;
+        background: #C62828; color: #fff; font-size: 13px; font-weight: 600;
         text-decoration: none; transition: all 0.2s; border: 1px solid #B91C1C;
         box-shadow: 0 2px 4px rgba(198, 40, 40, 0.1);
     }
@@ -366,14 +491,14 @@
     }
 
     /* ── Wizard Steps ── (Copied from Step 2) */
-    .wizard-steps-container { margin-bottom: 24px; }
-    .wizard-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .wizard-steps-container { margin-bottom: 20px; }
+    .wizard-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     
     .wizard-step-card {
         background: #ffffff;
         border: 1px solid #E2E8F0;
-        border-radius: 16px;
-        padding: 20px;
+        border-radius: 12px;
+        padding: 16px;
         text-decoration: none;
         color: inherit;
         display: flex; flex-direction: column; justify-content: space-between;
@@ -397,23 +522,23 @@
     .wizard-step-card.pending { opacity: 0.6; background: #F8FAFC; border-style: dashed; }
     .wizard-step-card.pending .wizard-step-number { background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0; }
 
-    .wizard-step-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 24px; position: relative; z-index: 2; }
+    .wizard-step-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; position: relative; z-index: 2; }
     .wizard-step-number {
-        width: 36px; height: 36px; border-radius: 10px;
-        font-size: 16px; font-weight: 800;
+        width: 32px; height: 32px; border-radius: 8px;
+        font-size: 14px; font-weight: 800;
         display: flex; align-items: center; justify-content: center;
         flex-shrink: 0; border: 1px solid transparent;
     }
-    .wizard-step-title h3 { font-size: 15px; font-weight: 700; color: #1E293B; margin: 0 0 2px 0; }
-    .wizard-step-title p { font-size: 12px; color: #64748B; margin: 0; line-height: 1.4; }
+    .wizard-step-title h3 { font-size: 14px; font-weight: 700; color: #1E293B; margin: 0 0 2px 0; }
+    .wizard-step-title p { font-size: 11px; color: #64748B; margin: 0; line-height: 1.4; }
     
     .wizard-step-body { display: flex; align-items: flex-end; justify-content: space-between; margin-top: auto; position: relative; z-index: 2; }
     .wizard-step-body .stat-value { display: flex; flex-direction: column; }
-    .wizard-step-body .stat-value .num { font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1; margin-bottom: 4px; letter-spacing: -0.5px; }
-    .wizard-step-body .stat-value .label { font-size: 11px; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+    .wizard-step-body .stat-value .num { font-size: 18px; font-weight: 800; color: #0F172A; line-height: 1; margin-bottom: 4px; letter-spacing: -0.5px; }
+    .wizard-step-body .stat-value .label { font-size: 10px; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
     
-    .wizard-step-arrow { font-size: 20px; color: #CBD5E1; }
-    .active-indicator { font-size: 11px; font-weight: 700; color: #C62828; background: #FEF2F2; padding: 4px 10px; border-radius: 12px; }
+    .wizard-step-arrow { font-size: 18px; color: #CBD5E1; }
+    .active-indicator { font-size: 10px; font-weight: 700; color: #C62828; background: #FEF2F2; padding: 4px 8px; border-radius: 10px; }
 
     /* ── Category Section ── */
     .category-section { margin-bottom: 32px; }
@@ -526,5 +651,59 @@
 
     /* Search Input Focus */
     #searchInput:focus { border-color: #C62828; box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.1); }
+
+    /* ── Reorder Modal ── */
+    .reorder-modal-backdrop {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 100;
+    }
+    .reorder-modal-box {
+        background: #fff; width: 100%; max-width: 500px; border-radius: 16px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        display: flex; flex-direction: column; max-height: 90vh;
+    }
+    .reorder-modal-header {
+        padding: 20px 24px; border-bottom: 1px solid #E2E8F0;
+        display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .reorder-modal-title { font-size: 18px; font-weight: 800; color: #0F172A; margin: 0 0 4px 0; }
+    .reorder-modal-desc { font-size: 13px; color: #64748B; margin: 0; }
+    .btn-close-modal {
+        background: none; border: none; font-size: 24px; color: #94A3B8; cursor: pointer;
+        padding: 4px; border-radius: 8px; transition: all 0.2s;
+    }
+    .btn-close-modal:hover { background: #F1F5F9; color: #EF4444; }
+    
+    .reorder-modal-body {
+        padding: 20px 24px; overflow-y: auto; flex: 1;
+    }
+    .sortable-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 16px; background: #fff; border: 1px solid #E2E8F0;
+        border-radius: 12px; margin-bottom: 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .drag-handle {
+        color: #94A3B8; font-size: 20px; cursor: grab; display: flex; align-items: center; justify-content: center;
+        width: 24px; height: 24px;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    .sortable-content { flex: 1; }
+    .sortable-ghost { opacity: 0.4; background: #F8FAFC; border: 1px dashed #CBD5E1; }
+    
+    .reorder-modal-footer {
+        padding: 16px 24px; border-top: 1px solid #E2E8F0; background: #F8FAFC;
+        border-radius: 0 0 16px 16px; display: flex; justify-content: flex-end; gap: 12px;
+    }
+    .btn-cancel {
+        padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px;
+        background: #fff; border: 1px solid #CBD5E1; color: #475569; cursor: pointer;
+    }
+    .btn-cancel:hover { background: #F1F5F9; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
 </style>
 @endsection

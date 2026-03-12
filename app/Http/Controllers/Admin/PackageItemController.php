@@ -25,13 +25,18 @@ class PackageItemController extends Controller
             ->orderBy('item_name')
             ->get();
 
-        $selectedIds = $budgetPackage->items()->pluck('kapor_item_id')->toArray();
+        // Array of kapor_item_id in sorted order
+        $selectedIds = $budgetPackage->items()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->pluck('kapor_item_id')->toArray();
+        $packageItemMap = $budgetPackage->items()->pluck('id', 'kapor_item_id')->toArray();
 
         // Group items by category
         $groupedItems = $allItems->groupBy('category');
 
         return view('admin.budget.wizard.step1-items', compact(
-            'budgetPackage', 'groupedItems', 'selectedIds'
+            'budgetPackage', 'groupedItems', 'selectedIds', 'packageItemMap'
         ));
     }
 
@@ -62,7 +67,34 @@ class PackageItemController extends Controller
 
         $count = $budgetPackage->items()->count();
 
-        return response()->json(['action' => $action, 'count' => $count]);
+        $packageItemId = $existing ? null : PackageItem::where('budget_package_id', $budgetPackage->id)
+            ->where('kapor_item_id', $validated['kapor_item_id'])
+            ->value('id');
+
+        return response()->json([
+            'action' => $action,
+            'count' => $count,
+            'package_item_id' => $packageItemId,
+        ]);
+    }
+
+    /**
+     * Menyimpan urutan baru untuk item yang telah dipilih pada Tahap 1
+     */
+    public function reorderItems(Request $request, BudgetPackage $budgetPackage)
+    {
+        $validated = $request->validate([
+            'ordered_ids' => 'required|array',
+            'ordered_ids.*' => 'exists:package_items,id',
+        ]);
+
+        foreach ($validated['ordered_ids'] as $index => $packageItemId) {
+            PackageItem::where('id', $packageItemId)
+                ->where('budget_package_id', $budgetPackage->id)
+                ->update(['sort_order' => $index + 1]);
+        }
+
+        return response()->json(['success' => true]);
     }
 
     /**
@@ -70,7 +102,9 @@ class PackageItemController extends Controller
      */
     public function selectRecipients(BudgetPackage $budgetPackage)
     {
-        $budgetPackage->load(['budgetYear', 'items.kaporItem', 'items.recipients.satker']);
+        $budgetPackage->load(['budgetYear', 'items' => function ($q) {
+            $q->orderBy('sort_order')->orderBy('id');
+        }, 'items.kaporItem', 'items.recipients.satker']);
 
         if ($budgetPackage->items->isEmpty()) {
             return redirect()->route('admin.budget.wizard.step1', $budgetPackage)
@@ -166,6 +200,9 @@ class PackageItemController extends Controller
     {
         $budgetPackage->load([
             'budgetYear',
+            'items' => function ($q) {
+                $q->orderBy('sort_order')->orderBy('id');
+            },
             'items.kaporItem',
             'items.recipients.satker',
         ]);

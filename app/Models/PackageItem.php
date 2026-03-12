@@ -14,6 +14,7 @@ class PackageItem extends Model
     protected $fillable = [
         'budget_package_id',
         'kapor_item_id',
+        'sort_order',
         'custom_price',
         'calculated_qty',
         'calculated_total',
@@ -22,6 +23,7 @@ class PackageItem extends Model
     protected function casts(): array
     {
         return [
+            'sort_order' => 'integer',
             'custom_price' => 'decimal:2',
             'calculated_total' => 'decimal:2',
         ];

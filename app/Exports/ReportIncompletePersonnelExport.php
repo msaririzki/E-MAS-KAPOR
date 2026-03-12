@@ -28,9 +28,15 @@ class ReportIncompletePersonnelExport implements FromCollection, WithHeadings, W
 
         foreach ($personnels as $p) {
             $missing = [];
-            if (empty($p->nrp)) $missing[] = 'NRP';
-            if (empty($p->rank_id)) $missing[] = 'Pangkat';
-            if (empty($p->kapor_sizes)) $missing[] = 'Ukuran KAPOR';
+            if (empty($p->nrp)) {
+                $missing[] = 'NRP';
+            }
+            if (empty($p->rank_id)) {
+                $missing[] = 'Pangkat';
+            }
+            if (empty($p->kapor_sizes)) {
+                $missing[] = 'Ukuran KAPOR';
+            }
 
             $rows->push([
                 'no' => $no++,

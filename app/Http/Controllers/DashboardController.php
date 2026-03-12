@@ -7,9 +7,9 @@ use App\Models\Personnel;
 use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -59,7 +59,7 @@ class DashboardController extends Controller
 
         // Cek status kunci sistem (Manual & Tanggal)
         $isLocked = Setting::getValue('is_system_locked', 'false') === 'true';
-        if (!$isLocked) {
+        if (! $isLocked) {
             try {
                 $startDate = Carbon::parse(Setting::getValue('input_start_date', date('Y-02-01')))->startOfDay();
                 $endDate = Carbon::parse(Setting::getValue('input_end_date', date('Y-08-31')))->endOfDay();
@@ -127,10 +127,10 @@ class DashboardController extends Controller
         }
 
         return view('dashboard.superadmin', compact(
-            'stats', 
-            'satkerStats', 
-            'availableYears', 
-            'fiscalYear', 
+            'stats',
+            'satkerStats',
+            'availableYears',
+            'fiscalYear',
             'defaultYear',
             'incompletePersonnel',
             'activities'

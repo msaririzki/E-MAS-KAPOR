@@ -2,7 +2,6 @@
 
 namespace App\Exports;
 
-use App\Models\Personnel;
 use App\Models\Satker;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -43,7 +42,7 @@ class ReportPersonnelSummaryExport implements FromCollection, WithHeadings, With
                 'total' => $s->total_personnel,
                 'sudah_input' => $s->submitted_count,
                 'belum_input' => $pending,
-                'persentase' => $pct . '%',
+                'persentase' => $pct.'%',
             ]);
         }
 

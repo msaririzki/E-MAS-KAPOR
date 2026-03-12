@@ -96,6 +96,7 @@ class KaporSizeStandardSeeder extends Seeder
             if (str_contains($upper, 'PNS') || str_contains($upper, 'PPPK')) {
                 return 'topi_pns';
             }
+
             return 'topi_pati';
         }
 
@@ -171,9 +172,9 @@ class KaporSizeStandardSeeder extends Seeder
                 foreach ($sizeMap[$gender] ?? [] as $order => $label) {
                     KaporSize::create([
                         'kapor_item_id' => $item->id,
-                        'size_label'    => $label,
-                        'gender'        => $gender,
-                        'sort_order'    => $order + 1,
+                        'size_label' => $label,
+                        'gender' => $gender,
+                        'sort_order' => $order + 1,
                     ]);
                     $totalCreated++;
                 }

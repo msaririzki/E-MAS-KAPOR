@@ -36,6 +36,7 @@ Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')-
     Route::get('/kapor', function () {
         $personnel = auth()->user()->personnel;
         $kaporSizes = $personnel ? ($personnel->kapor_sizes ?? []) : [];
+
         return view('personil.kapor.index', compact('kaporSizes'));
     })->name('kapor.index');
 
@@ -56,29 +57,30 @@ Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')-
                 $rules['jilbab'] = 'required|string';
             }
             $validated = $request->validate($rules);
-            
+
             // Menggabungkan dengan json format sebelumnya
             $currentSizes = is_array($personnel->kapor_sizes) ? $personnel->kapor_sizes : [];
             $newSizes = array_merge($currentSizes, $validated);
-            
+
             $personnel->kapor_sizes = $newSizes;
             $personnel->save();
         }
+
         return redirect()->route('dashboard')->with('success', 'Data ukuran Anda berhasil disimpan dan disinkronkan ke sistem.');
     })->name('kapor.store');
 
     Route::post('/testimoni', function (\Illuminate\Http\Request $request) {
         $validated = $request->validate([
             'message' => 'required|string|max:2000',
-            'rating'  => 'nullable|integer|min:1|max:5',
+            'rating' => 'nullable|integer|min:1|max:5',
         ]);
-        
+
         \App\Models\Testimonial::create([
             'user_id' => auth()->id(),
             'message' => $validated['message'],
-            'rating'  => $validated['rating'] ?? 5,
+            'rating' => $validated['rating'] ?? 5,
         ]);
-        
+
         return back()->with('success_testimoni', 'Terima kasih atas tanggapan Anda! Testimoni berhasil dikirim.');
     })->name('testimoni.store');
 
@@ -86,8 +88,8 @@ Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')-
         $user = auth()->user();
         $personnel = $user->personnel;
         $kaporSizes = $personnel ? ($personnel->kapor_sizes ?? []) : [];
-        $hasSubmitted = !empty($kaporSizes) && is_array($kaporSizes) && count(array_filter($kaporSizes)) > 0;
-        
+        $hasSubmitted = ! empty($kaporSizes) && is_array($kaporSizes) && count(array_filter($kaporSizes)) > 0;
+
         return view('personil.kapor.history', compact('kaporSizes', 'hasSubmitted', 'personnel'));
     })->name('kapor.history');
 });
@@ -171,6 +173,7 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_satker', 'satker.scope']
         // Wizard Step 1: Pilih Barang
         Route::get('/packages/{budgetPackage}/select-items', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectItems'])->name('wizard.step1');
         Route::post('/packages/{budgetPackage}/toggle-item', [\App\Http\Controllers\Admin\PackageItemController::class, 'toggleItem'])->name('wizard.toggle-item');
+        Route::post('/packages/{budgetPackage}/reorder-items', [\App\Http\Controllers\Admin\PackageItemController::class, 'reorderItems'])->name('wizard.reorder-items');
 
         // Wizard Step 2: Pilih Penerima
         Route::get('/packages/{budgetPackage}/select-recipients', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectRecipients'])->name('wizard.step2');

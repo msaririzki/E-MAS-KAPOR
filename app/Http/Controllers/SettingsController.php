@@ -61,7 +61,7 @@ class SettingsController extends Controller
         Setting::setValue('app_name', $validated['app_name']);
         Setting::setValue('fiscal_year', $validated['fiscal_year']);
         Setting::setValue('is_system_locked', $request->has('is_system_locked') ? 'true' : 'false');
-        
+
         if (isset($validated['input_start_date'])) {
             Setting::setValue('input_start_date', $validated['input_start_date']);
         }

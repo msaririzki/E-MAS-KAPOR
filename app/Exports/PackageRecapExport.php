@@ -105,6 +105,7 @@ class PackageRecapExport implements WithMultipleSheets
                     $packageItem, $sheetName, $this->budgetPackage, null,
                     null, null, null, true // combinedGender = true
                 );
+
                 continue; // skip pembuatan sheet terpisah
             }
 
@@ -117,8 +118,8 @@ class PackageRecapExport implements WithMultipleSheets
                 } else {
                     $label = $hasMaleInName ? '' : ' Pria';
                 }
-                
-                $sheetName = substr(trim($baseName) . $label, 0, 31);
+
+                $sheetName = substr(trim($baseName).$label, 0, 31);
                 $sheets[] = new PackageItemSheet(
                     $packageItem, $sheetName, $this->budgetPackage, 'L',
                     null, $hasCelana ? 'Ukuran Baju' : null
@@ -133,7 +134,7 @@ class PackageRecapExport implements WithMultipleSheets
                     $label = $hasFemaleInName ? '' : ' Wanita';
                 }
 
-                $sheetName = substr(trim($baseName) . $label, 0, 31);
+                $sheetName = substr(trim($baseName).$label, 0, 31);
                 $sheets[] = new PackageItemSheet(
                     $packageItem, $sheetName, $this->budgetPackage, 'P',
                     null, $hasCelana ? 'Ukuran Baju' : null
@@ -144,7 +145,7 @@ class PackageRecapExport implements WithMultipleSheets
             if ($hasCelana) {
                 if (isset($gendersInItem['L'])) {
                     $label = $hasMaleInName ? ' Celana' : ' Celana Pria';
-                    $sheetName = substr(trim($baseName) . $label, 0, 31);
+                    $sheetName = substr(trim($baseName).$label, 0, 31);
                     $sheets[] = new PackageItemSheet(
                         $packageItem, $sheetName, $this->budgetPackage, 'L',
                         'celana', 'Ukuran Celana', $this->celanaPriaSizes
@@ -153,7 +154,7 @@ class PackageRecapExport implements WithMultipleSheets
 
                 if (isset($gendersInItem['P'])) {
                     $label = $hasFemaleInName ? ' Celana' : ' Celana Wanita';
-                    $sheetName = substr(trim($baseName) . $label, 0, 31);
+                    $sheetName = substr(trim($baseName).$label, 0, 31);
                     $sheets[] = new PackageItemSheet(
                         $packageItem, $sheetName, $this->budgetPackage, 'P',
                         'celana', 'Ukuran Celana', $this->celanaWanitaSizes
