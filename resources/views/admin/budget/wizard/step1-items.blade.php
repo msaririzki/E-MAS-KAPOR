@@ -22,27 +22,23 @@
             </a>
         </div>
         <div class="package-hero-content">
-            <div class="package-title-wrapper" style="justify-content: space-between; width: 100%;">
-                <div>
+            <div style="width: 100%;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
                     <h1 class="package-title">Pilih Barang untuk {{ $budgetPackage->name }}</h1>
-                    @if($budgetPackage->description)
-                    <p class="package-desc" style="margin-top: 6px; font-weight: 500; color: #475569;">
-                        <strong>Deskripsi Paket:</strong> {{ $budgetPackage->description }}
-                    </p>
-                    @endif
-                    <p class="package-desc" style="margin-top: 6px;">
-                        Klik item untuk menambah/menghapus dari paket. Item yang terpilih akan ditandai.
-                    </p>
-                </div>
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div class="selected-counter" id="selectedCounter">
-                        <i class="ri-shopping-cart-2-line"></i>
-                        <span id="selectedCount" style="font-size: 16px; font-weight: 800; margin: 0 4px;">{{ count($selectedIds) }}</span> <span style="font-weight: 500;">item dipilih</span>
-                    </div>
-                    <button type="button" class="btn-action-primary {{ count($selectedIds) == 0 ? 'disabled' : '' }}" id="nextBtn" style="white-space: nowrap; border: none; cursor: pointer;" onclick="openReorderModal()">
+                    <button type="button" class="btn-action-primary {{ count($selectedIds) == 0 ? 'disabled' : '' }}" id="nextBtn" style="white-space: nowrap; border: none; cursor: pointer; margin-left: auto;" onclick="openReorderModal()">
                         Lanjut ke Penerima <i class="ri-arrow-right-line" style="margin-left: 6px;"></i>
                     </button>
                 </div>
+                {{-- Hidden counter dipakai oleh JS --}}
+                <span id="selectedCount" style="display:none;">{{ count($selectedIds) }}</span>
+                @if($budgetPackage->description)
+                <p class="package-desc" style="margin-top: 0; font-weight: 500; color: #475569;">
+                    <strong>Deskripsi Paket:</strong> {{ $budgetPackage->description }}
+                </p>
+                @endif
+                <p class="package-desc" style="margin-top: 4px;">
+                    Klik item untuk menambah/menghapus dari paket. Item yang terpilih akan ditandai.
+                </p>
             </div>
         </div>
     </div>

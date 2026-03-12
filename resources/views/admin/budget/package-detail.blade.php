@@ -20,27 +20,23 @@
             </a>
         </div>
         <div class="package-hero-content">
-            <div class="package-title-wrapper" style="justify-content: space-between; width: 100%; align-items: flex-start;">
-                <div>
+            <div style="width: 100%;">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
-                        <h1 class="package-title" style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">{{ $budgetPackage->name }}</h1>
+                        <h1 class="package-title" style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">{{ $budgetPackage->name }}</h1>
                         <span class="badge" style="background: {{ $budgetPackage->status_color['bg'] }}; color: {{ $budgetPackage->status_color['text'] }}; border: 1px solid {{ str_replace(')', ', 0.2)', str_replace('rgb', 'rgba', $budgetPackage->status_color['text'])) }}; font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; letter-spacing: 0.3px;">
                             {{ $budgetPackage->status_label }}
                         </span>
+                        <a href="{{ route('admin.budget.wizard.step1', $budgetPackage) }}" class="btn-action-primary" style="margin-left: auto;">
+                            <i class="ri-edit-box-line" style="margin-right: 6px;"></i> Edit Paket
+                        </a>
                     </div>
-                    <p class="package-desc" style="color: #64748B; font-size: 14px; margin: 0; line-height: 1.5; display: flex; align-items: center; gap: 6px;">
-                        <i class="ri-calendar-event-line" style="font-size: 16px; color: #94A3B8;"></i>
+                    <p class="package-desc" style="color: #64748B; font-size: 13px; margin: 0; line-height: 1.4; display: flex; align-items: center; gap: 6px;">
+                        <i class="ri-calendar-event-line" style="font-size: 15px; color: #94A3B8;"></i>
                         Tahun Anggaran {{ $budgetPackage->budgetYear->name }}
                         <span style="color: #CBD5E1;">&bull;</span>
                         {{ $budgetPackage->description ?? 'Tidak ada deskripsi' }}
                     </p>
                 </div>
-                <div>
-                     <a href="{{ route('admin.budget.wizard.step1', $budgetPackage) }}" class="btn-action-primary">
-                        <i class="ri-edit-box-line" style="margin-right: 6px;"></i> Edit Paket
-                    </a>
-                </div>
-            </div>
         </div>
     </div>
 </div>
