@@ -7,7 +7,6 @@ use App\Models\BudgetPackage;
 use App\Models\KaporItem;
 use App\Models\PackageItem;
 use App\Models\PackageItemRecipient;
-use App\Models\Personnel;
 use App\Models\Satker;
 use Illuminate\Http\Request;
 
@@ -123,10 +122,36 @@ class PackageItemController extends Controller
         // Flatten semua satker untuk pilihan
         $allSatkers = Satker::orderBy('sort_order')->orderBy('name')->get();
 
-        // Ambil semua keterangan unik dari personel aktif
-        $allKeterangan = Personnel::where('is_active', true)
-            ->whereNotNull('keterangan')
-            ->where('keterangan', '!=', '')
+        // Ambil semua keterangan unik dari personel aktif (gabungan 4 kolom)
+        $allKeterangan = \Illuminate\Support\Facades\DB::query()
+            ->fromSub(function ($query) {
+                $query->select('keterangan')
+                    ->from('personnels')
+                    ->where('is_active', true)
+                    ->whereNotNull('keterangan')
+                    ->where('keterangan', '!=', '')
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_2 as keterangan')
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_2')
+                            ->where('keterangan_2', '!=', '')
+                    )
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_3 as keterangan')
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_3')
+                            ->where('keterangan_3', '!=', '')
+                    )
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_4 as keterangan')
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_4')
+                            ->where('keterangan_4', '!=', '')
+                    );
+            }, 'all_ket')
             ->selectRaw('keterangan, COUNT(*) as jumlah')
             ->groupBy('keterangan')
             ->orderByDesc('jumlah')
@@ -273,10 +298,39 @@ class PackageItemController extends Controller
      */
     public function getSatkerKeterangan(Satker $satker)
     {
-        $keteranganList = Personnel::where('satker_id', $satker->id)
-            ->where('is_active', true)
-            ->whereNotNull('keterangan')
-            ->where('keterangan', '!=', '')
+        $keteranganList = \Illuminate\Support\Facades\DB::query()
+            ->fromSub(function ($query) use ($satker) {
+                $query->select('keterangan')
+                    ->from('personnels')
+                    ->where('satker_id', $satker->id)
+                    ->where('is_active', true)
+                    ->whereNotNull('keterangan')
+                    ->where('keterangan', '!=', '')
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_2 as keterangan')
+                            ->where('satker_id', $satker->id)
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_2')
+                            ->where('keterangan_2', '!=', '')
+                    )
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_3 as keterangan')
+                            ->where('satker_id', $satker->id)
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_3')
+                            ->where('keterangan_3', '!=', '')
+                    )
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_4 as keterangan')
+                            ->where('satker_id', $satker->id)
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_4')
+                            ->where('keterangan_4', '!=', '')
+                    );
+            }, 'all_ket')
             ->selectRaw('keterangan, COUNT(*) as jumlah')
             ->groupBy('keterangan')
             ->orderBy('keterangan')

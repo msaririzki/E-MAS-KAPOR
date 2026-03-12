@@ -41,7 +41,10 @@
     .row-ok       { }
     .row-corrected{ background: #FFFDF0 !important; }
     .row-error    { background: #FFF5F5 !important; }
+    .row-duplicate{ background: #FEE2E2 !important; border-left: 3px solid #EF4444; }
     .hidden-row   { display: none !important; }
+    .db-dupe-info { font-size: 10px; background: #FEE2E2; color: #B91C1C; padding: 3px 8px; border-radius: 8px; font-weight: 600; margin-top: 3px; display: block; width: fit-content; font-family: sans-serif; line-height: 1.4; }
+    .db-dupe-info i { font-size: 11px; vertical-align: -1px; }
 </style>
 
 {{-- FORM BATALKAN — terpisah di luar form utama --}}
@@ -94,6 +97,14 @@
                 <i class="ri-error-warning-line"></i> Pilih Manual <span class="badge">{{ $stats['error'] }}</span>
             </div>
             @endif
+            @php
+                $dupeCount = collect($preview)->filter(fn($r) => !empty($r['db_duplicate']) || !empty($r['duplicate_nrp']))->count();
+            @endphp
+            @if($dupeCount > 0)
+            <div class="filter-pill error" onclick="setFilter('duplicate')" id="pill-duplicate" style="background:#FEE2E2; color:#991B1B; border-color:#FECACA;">
+                <i class="ri-file-copy-line"></i> NRP Duplikat <span class="badge">{{ $dupeCount }}</span>
+            </div>
+            @endif
         </div>
 
         {{-- Bagian Kanan: Aksi (Form Konfirmasi & Batal) - Tampil Berdasar Scroll --}}
@@ -139,13 +150,16 @@
                 <tbody id="previewTableBody">
                 @foreach($preview as $i => $row)
                 @php
-                    $trClass = match($row['status']) {
-                        'corrected' => 'row-corrected',
-                        'error'     => 'row-error',
-                        default     => 'row-ok',
+                    $hasDupe = !empty($row['db_duplicate']) || !empty($row['duplicate_nrp']);
+                    $trClass = match(true) {
+                        $hasDupe => 'row-duplicate',
+                        $row['status'] === 'corrected' => 'row-corrected',
+                        $row['status'] === 'error' => 'row-error',
+                        default => 'row-ok',
                     };
+                    $dataStatus = $hasDupe ? 'duplicate' : $row['status'];
                 @endphp
-                <tr class="{{ $trClass }}" id="row-{{ $i }}" data-status="{{ $row['status'] }}">
+                <tr class="{{ $trClass }}" id="row-{{ $i }}" data-status="{{ $dataStatus }}">
 
                     {{-- HANYA kirim override rank_id untuk baris yang diubah manual.
                          Data lain (nama, nrp, dll) dibaca dari session di server.
@@ -242,10 +256,25 @@
                     <td style="color:#6B7280;">{{ $row['golongan'] ?: '—' }}</td>
                     <td style="font-family:monospace; color:#374151;">
                         {{ $row['nrp'] ?: '—' }}
-                        @if(!empty($row['duplicate_nrp']))
-                        <span style="display:block; font-size:9px; background:#FED7AA; color:#9A3412; padding:1px 7px; border-radius:10px; font-weight:700; margin-top:2px; width:fit-content; font-family:sans-serif;">
-                            <i class="ri-alert-line"></i> NRP DUPLIKAT
+                        @if(!empty($row['db_duplicate']))
+                        <span class="db-dupe-info">
+                            <i class="ri-error-warning-fill"></i> NRP SUDAH ADA DI DATABASE<br>
+                            <strong>{{ $row['db_duplicate']['full_name'] }}</strong>
+                            — {{ $row['db_duplicate']['same_satker'] ? 'Satker ini' : $row['db_duplicate']['satker_name'] }}
                         </span>
+                        @elseif(!empty($row['duplicate_nrp']))
+                        <span style="display:block; font-size:9px; background:#FED7AA; color:#9A3412; padding:1px 7px; border-radius:10px; font-weight:700; margin-top:2px; width:fit-content; font-family:sans-serif;">
+                            <i class="ri-alert-line"></i> NRP DUPLIKAT DALAM FILE
+                        </span>
+                        @endif
+                        
+                        @if(!empty($row['db_duplicate']) || !empty($row['duplicate_nrp']))
+                        <div style="margin-top: 6px;">
+                            <select name="action_overrides[{{ $i }}]" onchange="updateDuplicateAction({{ $i }}, this)" style="font-size: 11px; padding: 4px; border: 1px solid #EF4444; border-radius: 4px; background: #fff; color: #B91C1C; cursor: pointer;">
+                                <option value="import">⚠️ Tetap Import</option>
+                                <option value="skip">❌ Abaikan Baris Ini</option>
+                            </select>
+                        </div>
                         @endif
                     </td>
                     <td style="color:#4B5563;">{{ $row['jabatan'] ?: '—' }}</td>
@@ -295,7 +324,7 @@
 const errorIndexes = @json(collect($preview)->where('status', 'error')->keys()->values());
 
 function setFilter(status) {
-    ['all','ok','corrected','error'].forEach(function(s) {
+    ['all','ok','corrected','error','duplicate'].forEach(function(s) {
         const p = document.getElementById('pill-' + s);
         if (p) p.classList.toggle('active', s === status);
     });
@@ -343,6 +372,19 @@ function updateOverride(i, sel) {
 function toggleEdit(i) {
     const el = document.getElementById('rank-edit-' + i);
     if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateDuplicateAction(i, sel) {
+    const tr = document.getElementById('row-' + i);
+    if (!tr) return;
+    
+    if (sel.value === 'skip') {
+        tr.style.opacity = '0.5';
+        tr.style.background = '#F3F4F6';
+    } else {
+        tr.style.opacity = '1';
+        tr.style.background = '#FEE2E2';
+    }
 }
 
 function recalcPending() {

@@ -82,6 +82,7 @@ class PersonnelController extends Controller
             'submitted' => $submittedCount,
             'pending' => $totalReal - $submittedCount,
             'active' => Personnel::forCurrentSatker()->where('is_active', true)->count(),
+            'nrp_issues' => Personnel::forCurrentSatker()->where('has_nrp_issue', true)->whereNull('nrp_issue_resolved_at')->count(),
         ];
 
         // Filters
@@ -203,6 +204,9 @@ class PersonnelController extends Controller
             'religion' => 'nullable|string|max:50',
             'golongan' => 'nullable|string|max:50',
             'keterangan' => 'nullable|string|max:255',
+            'keterangan_2' => 'nullable|string|max:255',
+            'keterangan_3' => 'nullable|string|max:255',
+            'keterangan_4' => 'nullable|string|max:255',
             'kapor_sizes' => 'nullable|array',
         ]);
 
@@ -267,6 +271,9 @@ class PersonnelController extends Controller
             'religion' => 'nullable|string|max:50',
             'golongan' => 'nullable|string|max:50',
             'keterangan' => 'nullable|string|max:255',
+            'keterangan_2' => 'nullable|string|max:255',
+            'keterangan_3' => 'nullable|string|max:255',
+            'keterangan_4' => 'nullable|string|max:255',
             'is_active' => 'nullable|boolean',
             'kapor_sizes' => 'nullable|array',
         ]);
@@ -326,6 +333,94 @@ class PersonnelController extends Controller
             DB::rollBack();
 
             return redirect()->back()->with('error', 'Gagal menghapus: '.$e->getMessage());
+        }
+    }
+
+    public function nrpIssues(Request $request)
+    {
+        // 1. Cari dulu NRP-NRP apa saja yang bermasalah di satker user saat ini
+        $problematicNrps = Personnel::forCurrentSatker()
+            ->where('has_nrp_issue', true)
+            ->whereNotNull('nrp')
+            ->pluck('nrp')
+            ->unique()
+            ->toArray();
+
+        // [AUTO-CLEANUP] Jika ada NRP bermasalah, tapi ternyata di SELURUH DB 
+        // hanya tersisa 1 orang (lawannya sudah dihapus), otomatis tandai selesai!
+        if (!empty($problematicNrps)) {
+            $nrpCounts = Personnel::whereIn('nrp', $problematicNrps)
+                ->select('nrp', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+                ->groupBy('nrp')
+                ->pluck('total', 'nrp')
+                ->toArray();
+
+            $orphanedNrps = [];
+            foreach ($nrpCounts as $nrp => $total) {
+                if ($total <= 1) {
+                    $orphanedNrps[] = (string) $nrp;
+                }
+            }
+
+            if (!empty($orphanedNrps)) {
+                Personnel::whereIn('nrp', $orphanedNrps)
+                    ->where('has_nrp_issue', true)
+                    ->update([
+                        'has_nrp_issue' => false,
+                        'nrp_issue_resolved_at' => now(),
+                        'nrp_issue_note' => 'Otomatis terselesaikan sistem: Lawan duplikat sudah dihapus dari database.'
+                    ]);
+                
+                // Update list NRP bermasalah karena sebagian sudah diselesaikan
+                // Perlu string compare agar sesuai dengan $problematicNrps (yang mungkin berupa string)
+                $problematicNrps = array_values(array_filter($problematicNrps, function($p) use ($orphanedNrps) {
+                    return !in_array((string)$p, $orphanedNrps, true);
+                }));
+            }
+        }
+
+        // 2. Jika ada personil bermasalah tapi NRP-nya NULL (blank), ambil ID mereka
+        $nullNrpIssuesIds = Personnel::forCurrentSatker()
+            ->where('has_nrp_issue', true)
+            ->whereNull('nrp')
+            ->pluck('id')
+            ->toArray();
+
+        // 3. Query SEMUA personil dari SEMUA satker yang NRP-nya masuk dalam daftar bermasalah yang TERSISA
+        $personnels = Personnel::with(['rank', 'satker'])
+            ->where(function ($query) use ($problematicNrps, $nullNrpIssuesIds) {
+                if (!empty($problematicNrps)) {
+                    $query->whereIn('nrp', $problematicNrps);
+                }
+                if (!empty($nullNrpIssuesIds)) {
+                    $query->orWhereIn('id', $nullNrpIssuesIds);
+                }
+                
+                if (empty($problematicNrps) && empty($nullNrpIssuesIds)) {
+                    $query->whereRaw('1 = 0');
+                }
+            })
+            ->orderBy('nrp')
+            ->latest()
+            ->paginate(50);
+
+        return view('admin.personnel.nrp_issues', compact('personnels'));
+    }
+
+    /**
+     * Tandai masalah NRP selesai direview.
+     */
+    public function resolveNrpIssue(Request $request, Personnel $personnel)
+    {
+        try {
+            $personnel->update([
+                'has_nrp_issue' => false,
+                'nrp_issue_resolved_at' => now(),
+            ]);
+
+            return redirect()->back()->with('success', 'Status masalah duplikat NRP berhasil ditandai selesai.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memproses resolusi: ' . $e->getMessage());
         }
     }
 
@@ -438,6 +533,15 @@ class PersonnelController extends Controller
         foreach ($rankOverrides as $index => $rankId) {
             if (isset($preview[$index]) && $rankId !== '' && $rankId !== null) {
                 $preview[$index]['rank_id'] = $rankId;
+            }
+        }
+        
+        // Ambil aksi untuk baris duplikat (skip vs import)
+        $actionOverrides = $request->input('action_overrides', []);
+        foreach ($actionOverrides as $index => $action) {
+            if ($action === 'skip' && isset($preview[$index])) {
+                // Hapus data dari preview agar tidak diimport
+                unset($preview[$index]);
             }
         }
 
@@ -637,6 +741,15 @@ class PersonnelController extends Controller
         foreach ($rankOverrides as $index => $rankId) {
             if (isset($preview[$index]) && $rankId !== '' && $rankId !== null) {
                 $preview[$index]['rank_id'] = $rankId;
+            }
+        }
+
+        // Ambil aksi untuk baris duplikat (skip vs import)
+        $actionOverrides = $request->input('action_overrides', []);
+        foreach ($actionOverrides as $index => $action) {
+            if ($action === 'skip' && isset($preview[$index])) {
+                // Hapus data dari preview agar tidak diimport/diupdate
+                unset($preview[$index]);
             }
         }
 

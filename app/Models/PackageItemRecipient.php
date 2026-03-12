@@ -102,9 +102,15 @@ class PackageItemRecipient extends Model
             });
         }
 
-        // Filter berdasarkan keterangan
+        // Filter berdasarkan keterangan (cek di 4 kolom keterangan)
         if (! empty($filters['keterangan'])) {
-            $query->whereIn('keterangan', $filters['keterangan']);
+            $ketValues = $filters['keterangan'];
+            $query->where(function ($q) use ($ketValues) {
+                $q->whereIn('keterangan', $ketValues)
+                    ->orWhereIn('keterangan_2', $ketValues)
+                    ->orWhereIn('keterangan_3', $ketValues)
+                    ->orWhereIn('keterangan_4', $ketValues);
+            });
         }
 
         // Filter berdasarkan golongan PNS/PPPK
