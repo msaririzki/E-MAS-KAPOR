@@ -93,7 +93,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">T.Shirt / Kaos Olahraga</label>
-                        <input type="text" name="olahraga" class="form-control" value="{{ old('olahraga', $kaporSizes['olahraga'] ?? '') }}" placeholder="Ketik ukuran (cth: M, L, XL...)" required>
+                        <input type="text" name="olahraga" class="form-control" value="{{ old('olahraga', $kaporSizes['olahraga'] ?? '') }}" placeholder="Ketik ukuran (cth: K, SD, B...)" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Jaket</label>
@@ -111,12 +111,12 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Sabuk</label>
-                        <input type="text" name="sabuk" class="form-control" value="{{ old('sabuk', $kaporSizes['sabuk'] ?? '') }}" placeholder="Ketik ukuran (cth: 110, 120...)" required>
+                        <input type="text" name="sabuk" class="form-control" value="{{ old('sabuk', $kaporSizes['sabuk'] ?? '') }}" placeholder="Ketik ukuran (cth: 36, 38, 40...)" required>
                     </div>
                     @if(optional(auth()->user()->personnel)->gender === 'P')
                     <div class="form-group">
                         <label class="form-label">Jilbab <span style="color: var(--brand); font-size: 11px; margin-left: 4px;">(Khusus Polwan)</span></label>
-                        <input type="text" name="jilbab" class="form-control" value="{{ old('jilbab', $kaporSizes['jilbab'] ?? '') }}" placeholder="Ketik ukuran (cth: SD, M...)" required>
+                        <input type="text" name="jilbab" class="form-control" value="{{ old('jilbab', $kaporSizes['jilbab'] ?? '') }}" placeholder="Ketik ukuran (cth: K, SD, B...)" required>
                     </div>
                     @endif
                 </div>

@@ -337,6 +337,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 'grandTotalWanita' => $data['grandTotalWanita'],
                 'settings' => $settings,
                 'sizeLabel' => $this->sizeLabel,
+                'sheetTitle' => $this->sheetName,
             ]);
         }
 
@@ -362,6 +363,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             'settings' => $settings,
             'genderLabel' => $genderLabel,
             'sizeLabel' => $this->sizeLabel,
+            'sheetTitle' => $this->sheetName,
         ]);
     }
 

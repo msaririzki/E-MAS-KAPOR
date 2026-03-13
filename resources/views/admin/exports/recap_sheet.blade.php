@@ -12,14 +12,9 @@
     <tr></tr>
 
     {{-- ═══ JUDUL DOKUMEN ═══ --}}
-    @php
-        $itemName = strtoupper($kaporItem->item_name);
-        $hasGenderInName = str_contains($itemName, 'PRIA') || str_contains($itemName, 'LAKI') || str_contains($itemName, 'WANITA') || str_contains($itemName, 'PEREMPUAN');
-        $genderSuffix = (isset($genderLabel) && !$hasGenderInName) ? ' ' . $genderLabel : '';
-    @endphp
     <tr>
         <td>
-            REKAP DATA UKURAN {{ $itemName }}{{ $genderSuffix }} POLDA NTB TAHUN {{ $budgetPackage->budgetYear->year }}
+            REKAP DATA UKURAN {{ strtoupper($sheetTitle ?? $kaporItem->item_name) }} POLDA NTB TAHUN {{ $budgetPackage->budgetYear->year }}
         </td>
     </tr>
     <tr></tr>
