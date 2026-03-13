@@ -54,9 +54,7 @@
     elseif  ($cnt >= 8)  { $fs='8pt';   $pd='3pt 3pt';     $sw='100pt';$nw='16pt'; $jw='21pt'; }
     else                 { $fs='8.5pt'; $pd='3.5pt 4pt';   $sw='130pt';$nw='18pt'; $jw='23pt'; }
 
-    $judulBagian = strtoupper($page['item_name']);
-    if (!empty($page['size_label']))   $judulBagian .= ' ('.strtoupper($page['size_label']).')';
-    if (!empty($page['gender_label'])) $judulBagian .= ' '.$page['gender_label'];
+    $judulBagian = strtoupper($page['display_title'] ?? $page['item_name']);
 
     $bl = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
     $bln = $bl[now()->month - 1];
@@ -100,7 +98,7 @@
             <tr>
                 <th rowspan="4" style="width:{{ $nw }};padding:{{ $pd }};">NO</th>
                 <th rowspan="4" style="width:{{ $sw }};padding:{{ $pd }};">SATKER</th>
-                <th colspan="{{ ($cnt*2)+2 }}" style="padding:{{ $pd }};">UKURAN {{ strtoupper($page['item_name']) }}</th>
+                <th colspan="{{ ($cnt*2)+2 }}" style="padding:{{ $pd }};">UKURAN {{ strtoupper($page['display_title'] ?? $page['item_name']) }}</th>
                 <th rowspan="4" style="width:{{ $jw }};padding:{{ $pd }};">JML TOTAL</th>
             </tr>
             <tr>

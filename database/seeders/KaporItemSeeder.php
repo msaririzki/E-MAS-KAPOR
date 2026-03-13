@@ -19,10 +19,11 @@ class KaporItemSeeder extends Seeder
 
         // Size configurations
         $sizesHat = ['U' => range(54, 60)];
-        $sizesHijab = ['U' => ['S', 'M', 'L', 'XL']];
+        $sizesHijab = ['U' => ['K', 'SD', 'B']];
         $sizesClothePria = ['L' => ['14', '14.5', '15', '15.5', '16', '16.5', '17', '18'], 'P' => ['K', 'SD', 'B', 'EB']];
         $sizesClotheWanita = ['L' => ['14', '14.5', '15', '15.5', '16', '16.5', '17', '18'], 'P' => ['K', 'SD', 'B', 'EB']]; // Standardize for now
         $sizesJacket = ['U' => ['S', 'M', 'L', 'XL', 'XXL', 'XXXL']];
+        $sizesOlahraga = ['U' => ['K', 'SD', 'B', 'EB', 'EEB', 'EEEB', 'EEEEB']];
         $sizesShoePria = ['L' => range(38, 46)];
         $sizesShoeWanita = ['P' => range(36, 42)];
         $sizesShoeUnisex = ['U' => range(36, 46)];
@@ -60,8 +61,8 @@ class KaporItemSeeder extends Seeder
             ['category' => 'Tutup_Badan', 'item_name' => 'PAKAIAN KORPRI PNS WANITA', 'price' => 380000, 'unit' => 'STEL', 'sizes_config' => $sizesClotheWanita],
             ['category' => 'Tutup_Badan', 'item_name' => 'PAKAIAN LENGAN PENDEK RESINTELPAM PRIA', 'price' => 548000, 'unit' => 'STEL', 'sizes_config' => $sizesClothePria],
             ['category' => 'Tutup_Badan', 'item_name' => 'PAKAIAN LENGAN PANJANG RESINTELPAM WANITA', 'price' => 618000, 'unit' => 'STEL', 'sizes_config' => $sizesClotheWanita],
-            ['category' => 'Tutup_Badan', 'item_name' => 'PAKAIAN OLAHRAGA PRIA', 'price' => 437000, 'unit' => 'STEL', 'sizes_config' => $sizesJacket],
-            ['category' => 'Tutup_Badan', 'item_name' => 'PAKAIAN OLAHRAGA WANITA', 'price' => 437000, 'unit' => 'STEL', 'sizes_config' => $sizesJacket],
+            ['category' => 'Tutup_Badan', 'item_name' => 'PAKAIAN OLAHRAGA PRIA', 'price' => 437000, 'unit' => 'STEL', 'sizes_config' => $sizesOlahraga],
+            ['category' => 'Tutup_Badan', 'item_name' => 'PAKAIAN OLAHRAGA WANITA', 'price' => 437000, 'unit' => 'STEL', 'sizes_config' => $sizesOlahraga],
             ['category' => 'Tutup_Badan', 'item_name' => 'PDH PNS PRIA', 'price' => 480000, 'unit' => 'STEL', 'sizes_config' => $sizesClothePria],
             ['category' => 'Tutup_Badan', 'item_name' => 'PDH PNS WANITA', 'price' => 480000, 'unit' => 'STEL', 'sizes_config' => $sizesClotheWanita],
             ['category' => 'Tutup_Badan', 'item_name' => 'PDL PNS PRIA', 'price' => 548000, 'unit' => 'STEL', 'sizes_config' => $sizesClothePria],
@@ -95,7 +96,7 @@ class KaporItemSeeder extends Seeder
             ['category' => 'Tutup_Badan', 'item_name' => 'PDU PNS PRIA', 'price' => 750000, 'unit' => 'STEL', 'sizes_config' => $sizesClothePria],
             ['category' => 'Tutup_Badan', 'item_name' => 'PDU PNS WANITA', 'price' => 750000, 'unit' => 'STEL', 'sizes_config' => $sizesClotheWanita],
             ['category' => 'Tutup_Badan', 'item_name' => 'ROMPI KESELAMATAN HIJAU STABILO', 'price' => 120000, 'unit' => 'PCS', 'sizes_config' => $sizesJacket],
-            ['category' => 'Tutup_Badan', 'item_name' => 'T-SHIRT', 'price' => 150000, 'unit' => 'PCS', 'sizes_config' => $sizesJacket],
+            ['category' => 'Tutup_Badan', 'item_name' => 'T-SHIRT', 'price' => 150000, 'unit' => 'PCS', 'sizes_config' => $sizesOlahraga],
             ['category' => 'Tutup_Badan', 'item_name' => 'HUMAS LENGAN PANJANG PRIA', 'price' => 748000, 'unit' => 'STEL', 'sizes_config' => $sizesClothePria],
             ['category' => 'Tutup_Badan', 'item_name' => 'HUMAS LENGAN PANJANG WANITA', 'price' => 748000, 'unit' => 'STEL', 'sizes_config' => $sizesClotheWanita],
             ['category' => 'Tutup_Badan', 'item_name' => 'OPSNAL TIK LENGAN PENDEK PRIA', 'price' => 748000, 'unit' => 'STEL', 'sizes_config' => $sizesClothePria],
