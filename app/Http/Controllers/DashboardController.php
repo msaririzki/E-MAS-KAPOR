@@ -175,10 +175,29 @@ class DashboardController extends Controller
         $totalPns = $satker->pns_count ?? 0;
 
         $totalPersonnel = Personnel::where('satker_id', $satkerId)->count();
+
+        // Sinkron dengan PersonnelController::index() — cek kelengkapan setiap field kapor_sizes
         $submittedCount = Personnel::where('satker_id', $satkerId)
-            ->whereNotNull('kapor_sizes')
             ->whereNotNull('rank_id')
             ->whereNotNull('nrp')
+            ->whereNotNull('kapor_sizes')
+            ->where(function ($q) {
+                $q->whereNotNull('kapor_sizes->topi')
+                    ->whereNotNull('kapor_sizes->kemeja')
+                    ->whereNotNull('kapor_sizes->celana')
+                    ->whereNotNull('kapor_sizes->olahraga')
+                    ->whereNotNull('kapor_sizes->sepatu_dinas')
+                    ->whereNotNull('kapor_sizes->sepatu_olahraga')
+                    ->whereNotNull('kapor_sizes->jaket')
+                    ->whereNotNull('kapor_sizes->sabuk');
+            })
+            ->where(function ($q) {
+                $q->where('gender', 'L')
+                    ->orWhere(function ($q2) {
+                        $q2->where('gender', 'P')
+                            ->whereNotNull('kapor_sizes->jilbab');
+                    });
+            })
             ->count();
 
         $stats = [

@@ -7,6 +7,7 @@ use App\Exports\PersonnelTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\PersonnelImport;
 use App\Imports\PersonnelUpdateImport;
+use App\Imports\PersonnelSdmImport;
 use App\Models\KaporItem;
 use App\Models\Personnel;
 use App\Models\Rank;
@@ -681,6 +682,129 @@ class PersonnelController extends Controller
         session()->forget(['update_import_preview', 'update_import_satker_id', 'update_import_stats']);
 
         return redirect()->route('admin.personnel.index')->with('info', 'Proses import update dibatalkan.');
+    }
+
+    /**
+     * Import SDM: khusus Super Admin untuk masukkin data pokok awal (termasuk agama).
+     */
+    public function importSdm(Request $request)
+    {
+        set_time_limit(0);
+        ini_set('memory_limit', '2G');
+
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:51200',
+            'satker_id' => 'required|exists:satkers,id',
+        ]);
+
+        $user = auth()->user();
+
+        if (!$user->hasRole('superadmin')) {
+            return redirect()->back()->with('error', 'Hanya Super Admin yang bisa melakukan Impor Data SDM.');
+        }
+
+        try {
+            $import = new PersonnelSdmImport((int) $request->satker_id);
+            $collection = Excel::toCollection($import, $request->file('file'));
+
+            $preview = [];
+            foreach ($collection as $sheetRows) {
+                $sheetPreview = $import->generatePreview($sheetRows);
+                $preview = array_merge($preview, $sheetPreview);
+            }
+
+            $totalOk = collect($preview)->where('status', 'ok')->count();
+            $totalCorrected = collect($preview)->where('status', 'corrected')->count();
+            $totalError = collect($preview)->where('status', 'error')->count();
+
+            session([
+                'sdm_import_preview' => $preview,
+                'sdm_import_satker_id' => $request->satker_id,
+                'sdm_import_stats' => [
+                    'ok' => $totalOk,
+                    'corrected' => $totalCorrected,
+                    'error' => $totalError,
+                    'total' => count($preview),
+                ],
+            ]);
+
+            AuditLogger::log('Preview Import Data SDM', 'Manajemen Personil', null, null, null, 'info', "Preview SDM: {$totalOk} siap, {$totalCorrected} dikoreksi, {$totalError} error");
+
+            return redirect()->route('admin.personnel.import-sdm-preview');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memproses file SDM: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Tampilkan halaman preview hasil parsing file Excel SDM.
+     */
+    public function importSdmPreview()
+    {
+        $preview = session('sdm_import_preview');
+        $satkerId = session('sdm_import_satker_id');
+        $stats = session('sdm_import_stats');
+
+        if (! $preview || ! $satkerId) {
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.');
+        }
+
+        $satker = Satker::find($satkerId);
+        $ranks = Rank::orderBy('sort_order')->get();
+
+        return view('admin.personnel.import_sdm_preview', compact('preview', 'satker', 'stats', 'ranks'));
+    }
+
+    /**
+     * Konfirmasi import SDM.
+     */
+    public function importSdmConfirm(Request $request)
+    {
+        set_time_limit(0);
+
+        $satkerId = session('sdm_import_satker_id');
+        $preview = session('sdm_import_preview');
+
+        if (! $satkerId || ! $preview) {
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.');
+        }
+
+        $rankOverrides = $request->input('rank_overrides', []);
+        foreach ($rankOverrides as $index => $rankId) {
+            if (isset($preview[$index]) && $rankId !== '' && $rankId !== null) {
+                $preview[$index]['rank_id'] = $rankId;
+            }
+        }
+
+        try {
+            $importer = new PersonnelSdmImport($satkerId);
+            $results = $importer->saveFromPreviewData($preview, $satkerId);
+
+            $successCount = $results['success_count'];
+            $errorCount = $results['error_count'];
+
+            session()->forget(['sdm_import_preview', 'sdm_import_satker_id', 'sdm_import_stats']);
+
+            AuditLogger::log('Konfirmasi Import Data SDM', 'Manajemen Personil', null, null, null, 'success', "Berhasil: {$successCount}. Gagal: {$errorCount}");
+
+            if ($errorCount > 0) {
+                return redirect()->route('admin.personnel.index')->with('warning', "Berhasil mengimpor {$successCount} data SDM. Gagal: {$errorCount}.");
+            }
+
+            return redirect()->route('admin.personnel.index')->with('success', "Berhasil mengimpor {$successCount} data personil (SDM).");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menyimpa data SDM: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Batalkan proses import SDM.
+     */
+    public function importSdmCancel()
+    {
+        session()->forget(['sdm_import_preview', 'sdm_import_satker_id', 'sdm_import_stats']);
+
+        return redirect()->route('admin.personnel.index')->with('info', 'Proses import Data SDM dibatalkan.');
     }
 
     /**

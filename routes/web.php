@@ -127,6 +127,13 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_satker', 'satker.scope']
     Route::get('/personnel/import-update-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdatePreview'])->name('personnel.import-update-preview');
     Route::post('/personnel/import-update-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdateConfirm'])->name('personnel.import-update-confirm');
     Route::post('/personnel/import-update-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdateCancel'])->name('personnel.import-update-cancel');
+    
+    // Import Data SDM (Super Admin Only)
+    Route::post('/personnel/import-sdm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdm'])->name('personnel.import-sdm');
+    Route::get('/personnel/import-sdm-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdmPreview'])->name('personnel.import-sdm-preview');
+    Route::post('/personnel/import-sdm-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdmConfirm'])->name('personnel.import-sdm-confirm');
+    Route::post('/personnel/import-sdm-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdmCancel'])->name('personnel.import-sdm-cancel');
+
     Route::resource('kapor-items', \App\Http\Controllers\Admin\KaporItemController::class)->except(['create', 'edit', 'show']);
     Route::get('/kapor-items/{kaporItem}/sizes', [\App\Http\Controllers\Admin\KaporItemController::class, 'getSizes'])->name('kapor-items.sizes.index');
     Route::post('/kapor-items/{kaporItem}/sizes', [\App\Http\Controllers\Admin\KaporItemController::class, 'addSize'])->name('kapor-items.sizes.store');
