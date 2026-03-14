@@ -92,7 +92,7 @@
     }
 
     .btn-submit:hover {
-        background: var(--brand-dark);
+        background: #B71C1C;
         transform: translateY(-1px);
     }
 </style>

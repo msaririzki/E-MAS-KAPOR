@@ -13,7 +13,7 @@
     .form-control:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
     .btn-submit { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: var(--brand); color: #fff; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; }
-    .btn-submit:hover { background: var(--brand-dark); transform: translateY(-1px); }
+    .btn-submit:hover { background: #B71C1C; transform: translateY(-1px); }
     .colored-toast.swal2-icon-success { background-color: var(--success-bg) !important; color: var(--success) !important; }
     .colored-toast .swal2-title { color: var(--success) !important; }
     
