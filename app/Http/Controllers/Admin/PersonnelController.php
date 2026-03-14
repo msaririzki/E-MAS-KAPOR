@@ -7,6 +7,7 @@ use App\Exports\PersonnelTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\PersonnelImport;
 use App\Imports\PersonnelUpdateImport;
+use App\Imports\PersonnelSdmImport;
 use App\Models\KaporItem;
 use App\Models\Personnel;
 use App\Models\Rank;
@@ -59,21 +60,21 @@ class PersonnelController extends Controller
             ->where(function ($q) {
                 // Semua tipe personel (Pria/Wanita) harus isi ini
                 $q->whereNotNull('kapor_sizes->topi')
-                  ->whereNotNull('kapor_sizes->kemeja')
-                  ->whereNotNull('kapor_sizes->celana')
-                  ->whereNotNull('kapor_sizes->olahraga')
-                  ->whereNotNull('kapor_sizes->sepatu_dinas')
-                  ->whereNotNull('kapor_sizes->sepatu_olahraga')
-                  ->whereNotNull('kapor_sizes->jaket')
-                  ->whereNotNull('kapor_sizes->sabuk');
+                    ->whereNotNull('kapor_sizes->kemeja')
+                    ->whereNotNull('kapor_sizes->celana')
+                    ->whereNotNull('kapor_sizes->olahraga')
+                    ->whereNotNull('kapor_sizes->sepatu_dinas')
+                    ->whereNotNull('kapor_sizes->sepatu_olahraga')
+                    ->whereNotNull('kapor_sizes->jaket')
+                    ->whereNotNull('kapor_sizes->sabuk');
             })
             ->where(function ($q) {
                 // Khusus wanita, wajib isi jilbab
                 $q->where('gender', 'L')
-                  ->orWhere(function ($q2) {
-                      $q2->where('gender', 'P')
-                         ->whereNotNull('kapor_sizes->jilbab');
-                  });
+                    ->orWhere(function ($q2) {
+                        $q2->where('gender', 'P')
+                            ->whereNotNull('kapor_sizes->jilbab');
+                    });
             })
             ->count();
 
@@ -82,6 +83,7 @@ class PersonnelController extends Controller
             'submitted' => $submittedCount,
             'pending' => $totalReal - $submittedCount,
             'active' => Personnel::forCurrentSatker()->where('is_active', true)->count(),
+            'nrp_issues' => Personnel::forCurrentSatker()->where('has_nrp_issue', true)->whereNull('nrp_issue_resolved_at')->count(),
         ];
 
         // Filters
@@ -115,26 +117,26 @@ class PersonnelController extends Controller
         // Filter: hanya tampilkan personel dengan data belum lengkap
         // (kapor_sizes NULL, atau ada ukuran yang hilang, ATAU rank_id NULL ATAU NRP NULL)
         $isIncompleteFilter = $request->get('status') === 'incomplete';
-        $missingSizeFilter  = $request->get('missing_size', ''); // e.g. 'kemeja', 'topi', etc.
+        $missingSizeFilter = $request->get('missing_size', ''); // e.g. 'kemeja', 'topi', etc.
 
         if ($isIncompleteFilter) {
             // Jika ada filter ukuran spesifik, hanya cari personel yang field itu NULL
-            if (!empty($missingSizeFilter)) {
-                $allowedSizeKeys = ['topi','kemeja','celana','olahraga','sepatu_dinas','sepatu_olahraga','jaket','sabuk','jilbab'];
+            if (! empty($missingSizeFilter)) {
+                $allowedSizeKeys = ['topi', 'kemeja', 'celana', 'olahraga', 'sepatu_dinas', 'sepatu_olahraga', 'jaket', 'sabuk', 'jilbab'];
                 if (in_array($missingSizeFilter, $allowedSizeKeys)) {
                     $query->where(function ($q) use ($missingSizeFilter) {
                         if ($missingSizeFilter === 'jilbab') {
                             // Jilbab hanya wajib untuk perempuan yang BERJILBAB/BERJILBAP
                             $q->where('gender', 'P')
-                              ->whereIn('keterangan', ['BERJILBAB', 'BERJILBAP'])
-                              ->where(function ($q2) {
-                                  $q2->whereNull('personnels.kapor_sizes')
-                                     ->orWhereNull('kapor_sizes->jilbab');
-                              });
+                                ->whereIn('keterangan', ['BERJILBAB', 'BERJILBAP'])
+                                ->where(function ($q2) {
+                                    $q2->whereNull('personnels.kapor_sizes')
+                                        ->orWhereNull('kapor_sizes->jilbab');
+                                });
 
                         } else {
                             $q->whereNull('personnels.kapor_sizes')
-                              ->orWhereNull("kapor_sizes->{$missingSizeFilter}");
+                                ->orWhereNull("kapor_sizes->{$missingSizeFilter}");
                         }
                     });
                 }
@@ -143,26 +145,26 @@ class PersonnelController extends Controller
                 // Tidak ada filter spesifik — tampilkan semua yang incomplete
                 $query->where(function ($q) {
                     $q->whereNull('personnels.rank_id')
-                      ->orWhereNull('personnels.nrp')
-                      ->orWhereNull('personnels.kapor_sizes')
-                      ->orWhere(function ($q2) {
-                          // Jika kapor_sizes ada, cari yang ukurannya bolong / tidak lengkap
-                          $q2->whereNotNull('personnels.kapor_sizes')
-                             ->where(function ($q3) {
-                                 $q3->whereNull('kapor_sizes->topi')
-                                    ->orWhereNull('kapor_sizes->kemeja')
-                                    ->orWhereNull('kapor_sizes->celana')
-                                    ->orWhereNull('kapor_sizes->olahraga')
-                                    ->orWhereNull('kapor_sizes->sepatu_dinas')
-                                    ->orWhereNull('kapor_sizes->sepatu_olahraga')
-                                    ->orWhereNull('kapor_sizes->jaket')
-                                    ->orWhereNull('kapor_sizes->sabuk')
-                                    ->orWhere(function ($q4) {
-                                        $q4->where('gender', 'P')
-                                           ->whereNull('kapor_sizes->jilbab');
-                                    });
-                             });
-                      });
+                        ->orWhereNull('personnels.nrp')
+                        ->orWhereNull('personnels.kapor_sizes')
+                        ->orWhere(function ($q2) {
+                            // Jika kapor_sizes ada, cari yang ukurannya bolong / tidak lengkap
+                            $q2->whereNotNull('personnels.kapor_sizes')
+                                ->where(function ($q3) {
+                                    $q3->whereNull('kapor_sizes->topi')
+                                        ->orWhereNull('kapor_sizes->kemeja')
+                                        ->orWhereNull('kapor_sizes->celana')
+                                        ->orWhereNull('kapor_sizes->olahraga')
+                                        ->orWhereNull('kapor_sizes->sepatu_dinas')
+                                        ->orWhereNull('kapor_sizes->sepatu_olahraga')
+                                        ->orWhereNull('kapor_sizes->jaket')
+                                        ->orWhereNull('kapor_sizes->sabuk')
+                                        ->orWhere(function ($q4) {
+                                            $q4->where('gender', 'P')
+                                                ->whereNull('kapor_sizes->jilbab');
+                                        });
+                                });
+                        });
                 });
             }
 
@@ -173,7 +175,6 @@ class PersonnelController extends Controller
             }
             $query->orderBy('satkers.name', 'asc')->orderBy('personnels.full_name', 'asc');
         }
-
 
         // Pagination
         $perPage = $request->get('per_page', $isIncompleteFilter ? 100 : 10);
@@ -204,6 +205,9 @@ class PersonnelController extends Controller
             'religion' => 'nullable|string|max:50',
             'golongan' => 'nullable|string|max:50',
             'keterangan' => 'nullable|string|max:255',
+            'keterangan_2' => 'nullable|string|max:255',
+            'keterangan_3' => 'nullable|string|max:255',
+            'keterangan_4' => 'nullable|string|max:255',
             'kapor_sizes' => 'nullable|array',
         ]);
 
@@ -268,6 +272,9 @@ class PersonnelController extends Controller
             'religion' => 'nullable|string|max:50',
             'golongan' => 'nullable|string|max:50',
             'keterangan' => 'nullable|string|max:255',
+            'keterangan_2' => 'nullable|string|max:255',
+            'keterangan_3' => 'nullable|string|max:255',
+            'keterangan_4' => 'nullable|string|max:255',
             'is_active' => 'nullable|boolean',
             'kapor_sizes' => 'nullable|array',
         ]);
@@ -327,6 +334,161 @@ class PersonnelController extends Controller
             DB::rollBack();
 
             return redirect()->back()->with('error', 'Gagal menghapus: '.$e->getMessage());
+        }
+    }
+
+    public function nrpIssues(Request $request)
+    {
+        // ==============================================================================
+        // 1. AUTO-SCAN: Temukan semua NRP duplikat di seluruh DB secara riil
+        // ==============================================================================
+        $duplicateNrps = Personnel::whereNotNull('nrp')
+            ->where('nrp', '!=', '')
+            ->where('nrp', '!=', '-')
+            ->groupBy('nrp')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('nrp')
+            ->toArray();
+
+        // Tandai sebagai bermasalah jika belum ada bendera error dan belum diselesaikan
+        if (! empty($duplicateNrps)) {
+            $strDuplicateNrps = array_map('strval', $duplicateNrps);
+            Personnel::whereIn('nrp', $strDuplicateNrps)
+                ->whereNull('nrp_issue_resolved_at')
+                ->where('has_nrp_issue', false)
+                ->update([
+                    'has_nrp_issue' => true,
+                    'nrp_issue_note' => 'Sistem mendeteksi NRP duplikat pada database.',
+                ]);
+        }
+
+        // ==============================================================================
+        // 2. AUTO-CLEANUP: Bersihkan yang sudah tidak duplikat (lawan sudah dihapus/diedit)
+        // ==============================================================================
+        $flaggedNrps = Personnel::whereNotNull('nrp')
+            ->where('has_nrp_issue', true)
+            ->pluck('nrp')
+            ->unique()
+            ->toArray();
+
+        if (! empty($flaggedNrps)) {
+            $orphanedNrps = array_diff($flaggedNrps, $duplicateNrps);
+            if (! empty($orphanedNrps)) {
+                $strOrphanedNrps = array_map('strval', $orphanedNrps);
+                Personnel::whereIn('nrp', $strOrphanedNrps)
+                    ->where('has_nrp_issue', true)
+                    ->update([
+                        'has_nrp_issue' => false,
+                        'nrp_issue_resolved_at' => now(),
+                        'nrp_issue_note' => 'Otomatis terselesaikan sistem: Lawan duplikat sudah dihapus/diedit dari database.',
+                    ]);
+            }
+        }
+
+        // ==============================================================================
+        // 3. AMBIL DATA UNTUK DITAMPILKAN DI HALAMAN INI
+        // ==============================================================================
+        // Ambil NRP bermasalah di SATKER SAAT INI (admin_satker hanya melihat masalah di tempatnya)
+        $problematicNrps = Personnel::forCurrentSatker()
+            ->where('has_nrp_issue', true)
+            ->whereNotNull('nrp')
+            ->pluck('nrp')
+            ->unique()
+            ->toArray();
+        // Pastikan format query selalu string
+        $strProblematicNrps = array_map('strval', $problematicNrps);
+
+        // Termasuk personel yang NRP nya kosong (ditandai bermasalah saat upload)
+        $nullNrpIssuesIds = Personnel::forCurrentSatker()
+            ->where('has_nrp_issue', true)
+            ->whereNull('nrp')
+            ->pluck('id')
+            ->toArray();
+
+        // Query SEMUA personil dari SEMUA satker yang NRP-nya masuk dalam daftar bermasalah yang TERSISA
+        $personnels = Personnel::with(['rank', 'satker'])
+            ->where(function ($query) use ($strProblematicNrps, $nullNrpIssuesIds) {
+                if (! empty($strProblematicNrps)) {
+                    $query->whereIn('nrp', $strProblematicNrps);
+                }
+                if (! empty($nullNrpIssuesIds)) {
+                    $query->orWhereIn('id', $nullNrpIssuesIds);
+                }
+
+                // Fallback jika tidak ada data bermasalah
+                if (empty($strProblematicNrps) && empty($nullNrpIssuesIds)) {
+                    $query->whereRaw('1 = 0');
+                }
+            })
+            // Urutkan agar yang 'Terselesaikan' (resolved_at tdk null) turun ke bawah
+            ->orderByRaw('nrp_issue_resolved_at IS NOT NULL')
+            ->orderBy('nrp')
+            ->latest()
+            ->paginate(50);
+
+        // ==============================================================================
+        // 4. STATISTIK UNTUK UI (TOP 5 SATKER & TOTAL)
+        // ==============================================================================
+        $stats = [
+            'total_personnel' => 0, // Dihitung dari builder di bawah agar akurat
+            'total_groups' => count($strProblematicNrps) + count($nullNrpIssuesIds),
+        ];
+
+        $topSatkers = collect();
+        if ($stats['total_groups'] > 0) {
+            // Hitung total personil yang terlibat (yg belum terselesaikan statusnya)
+            $stats['total_personnel'] = Personnel::where(function ($query) use ($strProblematicNrps, $nullNrpIssuesIds) {
+                if (! empty($strProblematicNrps)) {
+                    $query->whereIn('nrp', $strProblematicNrps);
+                }
+                if (! empty($nullNrpIssuesIds)) {
+                    $query->orWhereIn('id', $nullNrpIssuesIds);
+                }
+            })
+                ->whereNull('nrp_issue_resolved_at')
+                ->count();
+
+            // Hitung Top 5 Satker
+            $topSatkers = Personnel::with('satker')
+                ->where(function ($query) use ($strProblematicNrps, $nullNrpIssuesIds) {
+                    if (! empty($strProblematicNrps)) {
+                        $query->whereIn('nrp', $strProblematicNrps);
+                    }
+                    if (! empty($nullNrpIssuesIds)) {
+                        $query->orWhereIn('id', $nullNrpIssuesIds);
+                    }
+                })
+                ->whereNull('nrp_issue_resolved_at')
+                ->select('satker_id', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+                ->groupBy('satker_id')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get()
+                ->map(function ($p) {
+                    return [
+                        'name' => $p->satker->name ?? 'Tidak Diketahui',
+                        'total' => $p->total,
+                    ];
+                });
+        }
+
+        return view('admin.personnel.nrp_issues', compact('personnels', 'stats', 'topSatkers'));
+    }
+
+    /**
+     * Tandai masalah NRP selesai direview.
+     */
+    public function resolveNrpIssue(Request $request, Personnel $personnel)
+    {
+        try {
+            $personnel->update([
+                'has_nrp_issue' => false,
+                'nrp_issue_resolved_at' => now(),
+            ]);
+
+            return redirect()->back()->with('success', 'Status masalah duplikat NRP berhasil ditandai selesai.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memproses resolusi: '.$e->getMessage());
         }
     }
 
@@ -439,6 +601,15 @@ class PersonnelController extends Controller
         foreach ($rankOverrides as $index => $rankId) {
             if (isset($preview[$index]) && $rankId !== '' && $rankId !== null) {
                 $preview[$index]['rank_id'] = $rankId;
+            }
+        }
+
+        // Ambil aksi untuk baris duplikat (skip vs import)
+        $actionOverrides = $request->input('action_overrides', []);
+        foreach ($actionOverrides as $index => $action) {
+            if ($action === 'skip' && isset($preview[$index])) {
+                // Hapus data dari preview agar tidak diimport
+                unset($preview[$index]);
             }
         }
 
@@ -641,6 +812,15 @@ class PersonnelController extends Controller
             }
         }
 
+        // Ambil aksi untuk baris duplikat (skip vs import)
+        $actionOverrides = $request->input('action_overrides', []);
+        foreach ($actionOverrides as $index => $action) {
+            if ($action === 'skip' && isset($preview[$index])) {
+                // Hapus data dari preview agar tidak diimport/diupdate
+                unset($preview[$index]);
+            }
+        }
+
         try {
             $importer = new PersonnelUpdateImport((int) $satkerId);
             $results = $importer->saveUpdateFromPreview($preview);
@@ -682,6 +862,129 @@ class PersonnelController extends Controller
         session()->forget(['update_import_preview', 'update_import_satker_id', 'update_import_stats']);
 
         return redirect()->route('admin.personnel.index')->with('info', 'Proses import update dibatalkan.');
+    }
+
+    /**
+     * Import SDM: khusus Super Admin untuk masukkin data pokok awal (termasuk agama).
+     */
+    public function importSdm(Request $request)
+    {
+        set_time_limit(0);
+        ini_set('memory_limit', '2G');
+
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:51200',
+            'satker_id' => 'required|exists:satkers,id',
+        ]);
+
+        $user = auth()->user();
+
+        if (!$user->hasRole('superadmin')) {
+            return redirect()->back()->with('error', 'Hanya Super Admin yang bisa melakukan Impor Data SDM.');
+        }
+
+        try {
+            $import = new PersonnelSdmImport((int) $request->satker_id);
+            $collection = Excel::toCollection($import, $request->file('file'));
+
+            $preview = [];
+            foreach ($collection as $sheetRows) {
+                $sheetPreview = $import->generatePreview($sheetRows);
+                $preview = array_merge($preview, $sheetPreview);
+            }
+
+            $totalOk = collect($preview)->where('status', 'ok')->count();
+            $totalCorrected = collect($preview)->where('status', 'corrected')->count();
+            $totalError = collect($preview)->where('status', 'error')->count();
+
+            session([
+                'sdm_import_preview' => $preview,
+                'sdm_import_satker_id' => $request->satker_id,
+                'sdm_import_stats' => [
+                    'ok' => $totalOk,
+                    'corrected' => $totalCorrected,
+                    'error' => $totalError,
+                    'total' => count($preview),
+                ],
+            ]);
+
+            AuditLogger::log('Preview Import Data SDM', 'Manajemen Personil', null, null, null, 'info', "Preview SDM: {$totalOk} siap, {$totalCorrected} dikoreksi, {$totalError} error");
+
+            return redirect()->route('admin.personnel.import-sdm-preview');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memproses file SDM: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Tampilkan halaman preview hasil parsing file Excel SDM.
+     */
+    public function importSdmPreview()
+    {
+        $preview = session('sdm_import_preview');
+        $satkerId = session('sdm_import_satker_id');
+        $stats = session('sdm_import_stats');
+
+        if (! $preview || ! $satkerId) {
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.');
+        }
+
+        $satker = Satker::find($satkerId);
+        $ranks = Rank::orderBy('sort_order')->get();
+
+        return view('admin.personnel.import_sdm_preview', compact('preview', 'satker', 'stats', 'ranks'));
+    }
+
+    /**
+     * Konfirmasi import SDM.
+     */
+    public function importSdmConfirm(Request $request)
+    {
+        set_time_limit(0);
+
+        $satkerId = session('sdm_import_satker_id');
+        $preview = session('sdm_import_preview');
+
+        if (! $satkerId || ! $preview) {
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.');
+        }
+
+        $rankOverrides = $request->input('rank_overrides', []);
+        foreach ($rankOverrides as $index => $rankId) {
+            if (isset($preview[$index]) && $rankId !== '' && $rankId !== null) {
+                $preview[$index]['rank_id'] = $rankId;
+            }
+        }
+
+        try {
+            $importer = new PersonnelSdmImport($satkerId);
+            $results = $importer->saveFromPreviewData($preview, $satkerId);
+
+            $successCount = $results['success_count'];
+            $errorCount = $results['error_count'];
+
+            session()->forget(['sdm_import_preview', 'sdm_import_satker_id', 'sdm_import_stats']);
+
+            AuditLogger::log('Konfirmasi Import Data SDM', 'Manajemen Personil', null, null, null, 'success', "Berhasil: {$successCount}. Gagal: {$errorCount}");
+
+            if ($errorCount > 0) {
+                return redirect()->route('admin.personnel.index')->with('warning', "Berhasil mengimpor {$successCount} data SDM. Gagal: {$errorCount}.");
+            }
+
+            return redirect()->route('admin.personnel.index')->with('success', "Berhasil mengimpor {$successCount} data personil (SDM).");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menyimpa data SDM: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Batalkan proses import SDM.
+     */
+    public function importSdmCancel()
+    {
+        session()->forget(['sdm_import_preview', 'sdm_import_satker_id', 'sdm_import_stats']);
+
+        return redirect()->route('admin.personnel.index')->with('info', 'Proses import Data SDM dibatalkan.');
     }
 
     /**

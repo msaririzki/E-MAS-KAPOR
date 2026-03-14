@@ -118,19 +118,29 @@ class BudgetController extends Controller
         // ── Auto-recalculate: sinkronkan matched_count & calculated_qty dengan data personel terkini ──
         DB::transaction(function () use ($budgetPackage) {
             foreach ($budgetPackage->items as $item) {
-                $totalQty  = 0;
+                $totalQty = 0;
 
                 foreach ($item->recipients as $recipient) {
                     $filters = $recipient->recipient_filters ?? [];
                     $q = Personnel::where('satker_id', $recipient->satker_id)->where('is_active', true);
-                    if (!empty($filters['personnel_type'])) {
-                        $mt = array_map(fn($t) => match (strtolower($t)) { 'polri' => 'Polri', 'pns' => 'PNS', 'pppk' => 'PPPK', default => $t }, $filters['personnel_type']);
+                    if (! empty($filters['personnel_type'])) {
+                        $mt = array_map(fn ($t) => match (strtolower($t)) {
+                            'polri' => 'Polri', 'pns' => 'PNS', 'pppk' => 'PPPK', default => $t
+                        }, $filters['personnel_type']);
                         $q->whereIn('personnel_type', $mt);
                     }
-                    if (!empty($filters['gender']))          $q->whereIn('gender', $filters['gender']);
-                    if (!empty($filters['rank_categories'])) $q->whereHas('rank', fn($rq) => $rq->whereIn('category', $filters['rank_categories']));
-                    if (!empty($filters['keterangan']))      $q->whereIn('keterangan', $filters['keterangan']);
-                    if (!empty($filters['golongan']))        $q->whereIn('golongan', $filters['golongan']);
+                    if (! empty($filters['gender'])) {
+                        $q->whereIn('gender', $filters['gender']);
+                    }
+                    if (! empty($filters['rank_categories'])) {
+                        $q->whereHas('rank', fn ($rq) => $rq->whereIn('category', $filters['rank_categories']));
+                    }
+                    if (! empty($filters['keterangan'])) {
+                        $q->whereIn('keterangan', $filters['keterangan']);
+                    }
+                    if (! empty($filters['golongan'])) {
+                        $q->whereIn('golongan', $filters['golongan']);
+                    }
                     $count = $q->count();
                     $recipient->update(['matched_count' => $count]);
                     $totalQty += $count;
@@ -154,45 +164,72 @@ class BudgetController extends Controller
         // Helper: tentukan sizeKey dari nama item
         $getSizeKey = function (string $name): string {
             $name = strtoupper($name);
-            if (str_contains($name, 'TOPI') || str_contains($name, 'PET') || str_contains($name, 'BARET') || str_contains($name, 'PECI')) return 'topi';
-            if (str_contains($name, 'JILBAB')) return 'jilbab';
-            if (str_contains($name, 'CELANA') || str_contains($name, 'ROK')) return 'celana';
-            if (str_contains($name, 'SEPATU OLAHRAGA')) return 'sepatu_olahraga';
-            if (str_contains($name, 'SEPATU')) return 'sepatu_dinas';
-            if (str_contains($name, 'JAKET')) return 'jaket';
-            if (str_contains($name, 'OLAHRAGA')) return 'olahraga';
-            if (str_contains($name, 'SABUK')) return 'sabuk';
+            if (str_contains($name, 'TOPI') || str_contains($name, 'PET') || str_contains($name, 'BARET') || str_contains($name, 'PECI')) {
+                return 'topi';
+            }
+            if (str_contains($name, 'JILBAB')) {
+                return 'jilbab';
+            }
+            if (str_contains($name, 'CELANA') || str_contains($name, 'ROK')) {
+                return 'celana';
+            }
+            if (str_contains($name, 'SEPATU OLAHRAGA')) {
+                return 'sepatu_olahraga';
+            }
+            if (str_contains($name, 'SEPATU')) {
+                return 'sepatu_dinas';
+            }
+            if (str_contains($name, 'JAKET')) {
+                return 'jaket';
+            }
+            if (str_contains($name, 'OLAHRAGA')) {
+                return 'olahraga';
+            }
+            if (str_contains($name, 'SABUK')) {
+                return 'sabuk';
+            }
+
             return 'kemeja';
         };
 
         foreach ($budgetPackage->items as $item) {
             $kaporItem = $item->kaporItem;
-            $sizeKey   = $getSizeKey($kaporItem->item_name);
+            $sizeKey = $getSizeKey($kaporItem->item_name);
 
             // Dapatkan daftar ukuran valid dari eager-loaded collection (tanpa query baru)
             $validSizes = array_values(array_unique($kaporItem->sizes->pluck('size_label')->toArray()));
-            if (empty($validSizes)) continue; // skip jika item tidak punya ukuran
+            if (empty($validSizes)) {
+                continue;
+            } // skip jika item tidak punya ukuran
 
-            $itemTotal   = 0;
-            $itemValid   = 0;
-            $bySatker    = [];
+            $itemTotal = 0;
+            $itemValid = 0;
+            $bySatker = [];
 
             foreach ($item->recipients as $recipient) {
                 $filters = $recipient->recipient_filters ?? [];
-                $satker  = $recipient->satker;
+                $satker = $recipient->satker;
 
                 $query = \App\Models\Personnel::where('satker_id', $satker->id)->where('is_active', true);
 
-                if (!empty($filters['personnel_type'])) {
-                    $mappedTypes = array_map(fn($t) => match(strtolower($t)) {
+                if (! empty($filters['personnel_type'])) {
+                    $mappedTypes = array_map(fn ($t) => match (strtolower($t)) {
                         'polri' => 'Polri', 'pns' => 'PNS', 'pppk' => 'PPPK', default => $t
                     }, $filters['personnel_type']);
                     $query->whereIn('personnel_type', $mappedTypes);
                 }
-                if (!empty($filters['gender']))          $query->whereIn('gender', $filters['gender']);
-                if (!empty($filters['rank_categories'])) $query->whereHas('rank', fn($q) => $q->whereIn('category', $filters['rank_categories']));
-                if (!empty($filters['keterangan']))      $query->whereIn('keterangan', $filters['keterangan']);
-                if (!empty($filters['golongan']))        $query->whereIn('golongan', $filters['golongan']);
+                if (! empty($filters['gender'])) {
+                    $query->whereIn('gender', $filters['gender']);
+                }
+                if (! empty($filters['rank_categories'])) {
+                    $query->whereHas('rank', fn ($q) => $q->whereIn('category', $filters['rank_categories']));
+                }
+                if (! empty($filters['keterangan'])) {
+                    $query->whereIn('keterangan', $filters['keterangan']);
+                }
+                if (! empty($filters['golongan'])) {
+                    $query->whereIn('golongan', $filters['golongan']);
+                }
 
                 $personnels = $query->get(['kapor_sizes']);
 
@@ -200,24 +237,24 @@ class BudgetController extends Controller
                 $satkerValid = 0;
 
                 foreach ($personnels as $p) {
-                    $sizes   = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : ($p->kapor_sizes ?? []);
+                    $sizes = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : ($p->kapor_sizes ?? []);
                     $sizeVal = (string) ($sizes[$sizeKey] ?? '');
-                    if (!empty($sizeVal) && $sizeVal !== '-' && $sizeVal !== 'null' && in_array($sizeVal, $validSizes)) {
+                    if (! empty($sizeVal) && $sizeVal !== '-' && $sizeVal !== 'null' && in_array($sizeVal, $validSizes)) {
                         $satkerValid++;
                     }
                 }
 
                 $satkerMissing = $satkerTotal - $satkerValid;
-                $itemTotal    += $satkerTotal;
-                $itemValid    += $satkerValid;
+                $itemTotal += $satkerTotal;
+                $itemValid += $satkerValid;
 
                 if ($satkerMissing > 0) {
                     $bySatker[] = [
-                        'satker_id'   => $satker->id,
+                        'satker_id' => $satker->id,
                         'satker_name' => $satker->name,
-                        'total'       => $satkerTotal,
-                        'valid'       => $satkerValid,
-                        'missing'     => $satkerMissing,
+                        'total' => $satkerTotal,
+                        'valid' => $satkerValid,
+                        'missing' => $satkerMissing,
                     ];
 
                 }
@@ -227,9 +264,9 @@ class BudgetController extends Controller
             if ($itemMissing > 0) {
                 $sizeWarnings[] = [
                     'item_name' => $kaporItem->item_name,
-                    'total'     => $itemTotal,
-                    'valid'     => $itemValid,
-                    'missing'   => $itemMissing,
+                    'total' => $itemTotal,
+                    'valid' => $itemValid,
+                    'missing' => $itemMissing,
                     'by_satker' => $bySatker,
                 ];
             }
@@ -247,7 +284,7 @@ class BudgetController extends Controller
 
         DB::transaction(function () use ($budgetPackage) {
             foreach ($budgetPackage->items as $item) {
-                $totalQty   = 0;
+                $totalQty = 0;
 
                 foreach ($item->recipients as $recipient) {
                     $filters = $recipient->recipient_filters ?? [];
@@ -255,33 +292,40 @@ class BudgetController extends Controller
                     $query = Personnel::where('satker_id', $recipient->satker_id)
                         ->where('is_active', true);
 
-                    if (!empty($filters['personnel_type'])) {
+                    if (! empty($filters['personnel_type'])) {
                         $mappedTypes = array_map(function ($t) {
                             $lower = strtolower($t);
-                            if ($lower === 'polri') return 'Polri';
-                            if ($lower === 'pns') return 'PNS';
-                            if ($lower === 'pppk') return 'PPPK';
+                            if ($lower === 'polri') {
+                                return 'Polri';
+                            }
+                            if ($lower === 'pns') {
+                                return 'PNS';
+                            }
+                            if ($lower === 'pppk') {
+                                return 'PPPK';
+                            }
+
                             return $t;
                         }, $filters['personnel_type']);
                         $query->whereIn('personnel_type', $mappedTypes);
                     }
 
                     // Gender: hanya dari filter eksplisit user
-                    if (!empty($filters['gender'])) {
+                    if (! empty($filters['gender'])) {
                         $query->whereIn('gender', $filters['gender']);
                     }
 
-                    if (!empty($filters['rank_categories'])) {
+                    if (! empty($filters['rank_categories'])) {
                         $query->whereHas('rank', function ($q) use ($filters) {
                             $q->whereIn('category', $filters['rank_categories']);
                         });
                     }
 
-                    if (!empty($filters['keterangan'])) {
+                    if (! empty($filters['keterangan'])) {
                         $query->whereIn('keterangan', $filters['keterangan']);
                     }
 
-                    if (!empty($filters['golongan'])) {
+                    if (! empty($filters['golongan'])) {
                         $query->whereIn('golongan', $filters['golongan']);
                     }
 
@@ -292,7 +336,7 @@ class BudgetController extends Controller
 
                 $price = (float) ($item->custom_price ?? $item->kaporItem->price ?? 0);
                 $item->update([
-                    'calculated_qty'   => $totalQty,
+                    'calculated_qty' => $totalQty,
                     'calculated_total' => $totalQty * $price,
                 ]);
             }

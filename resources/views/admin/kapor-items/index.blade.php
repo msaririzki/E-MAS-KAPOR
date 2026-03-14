@@ -253,10 +253,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>KELOMPOK INVOICE / HPS</label>
-                    <input type="text" name="invoice_group" class="form-input" placeholder="Contoh: PDL POLRI, TOPI LAPANGAN PNS, JILBAB POLRI DAN PNS">
-                    <p style="font-size: 11px; color: #6B7280; margin-top: 4px;">Digunakan untuk pengelompokan barang di dokumen Invoice/HPS</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>KELOMPOK INVOICE / HPS</label>
+                        <input type="text" name="invoice_group" class="form-input" placeholder="Contoh: PDL POLRI, TOPI LAPANGAN PNS, JILBAB POLRI DAN PNS">
+                        <p style="font-size: 11px; color: #6B7280; margin-top: 4px;">Digunakan untuk pengelompokan barang di dokumen Invoice/HPS</p>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>DESKRIPSI (OPSIONAL)</label>
@@ -326,9 +328,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>KELOMPOK INVOICE / HPS</label>
-                    <input type="text" name="invoice_group" id="edit_invoice_group" class="form-input" placeholder="Contoh: PDL POLRI">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>KELOMPOK INVOICE / HPS</label>
+                        <input type="text" name="invoice_group" id="edit_invoice_group" class="form-input" placeholder="Contoh: PDL POLRI">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>STATUS</label>

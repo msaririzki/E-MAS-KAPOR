@@ -10,18 +10,13 @@ services:
         HOST_GID: ${HOST_GID:-1000}
     working_dir: /var/www/html
     environment:
-      # Kita arahkan agar env Laravel connect ke MariaDB di docker ini
       DB_HOST: db
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-Ndekutaok987..}
     volumes:
-      # public: shared dengan Nginx agar bisa serve file statis
       - app-public:/var/www/html/public
-      # storage & database: persistent data
       - app-storage:/var/www/html/storage
-      # .env dari host langsung di-mount
       - ./.env:/var/www/html/.env
-      # --- Kode PHP di-mount dari host agar git pull langsung berpengaruh ---
       - ./app:/var/www/html/app:ro
       - ./config:/var/www/html/config:ro
       - ./database:/var/www/html/database

@@ -30,17 +30,6 @@
                     </p>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                    {{-- Toggle Auto-Saran Filter --}}
-                    <div class="auto-suggest-toggle" id="auto-suggest-wrap" title="Auto-Saran Filter">
-                        <span class="toggle-label">Auto-Saran</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="auto-suggest-toggle" checked>
-                            <span class="toggle-track">
-                                <span class="toggle-thumb"></span>
-                            </span>
-                        </label>
-                        <span class="toggle-state" id="toggle-state-text">Aktif</span>
-                    </div>
                     <a href="{{ route('admin.budget.wizard.step3', $budgetPackage) }}" class="btn-action-primary">
                         Lanjut ke Preview <i class="ri-arrow-right-line" style="margin-left: 6px;"></i>
                     </a>
@@ -110,11 +99,30 @@
 </div>
 
 {{-- Items with Recipients --}}
+<div class="items-search-container" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+    <div style="position: relative; flex: 1;">
+        <i class="ri-search-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 16px;"></i>
+        <input type="text" id="global-item-search" class="form-input" style="padding-left: 36px; padding-top: 8px; padding-bottom: 8px; width: 100%; border-radius: 8px; border: 1px solid #E2E8F0; font-size: 13px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" placeholder="Cari nama barang kapor..." oninput="filterGlobalItems(this.value)">
+    </div>
+    
+    {{-- Toggle Auto-Saran Filter --}}
+    <div class="auto-suggest-toggle" id="auto-suggest-wrap" title="Auto-Saran Filter">
+        <span class="toggle-label">Auto-Saran Filter</span>
+        <label class="toggle-switch">
+            <input type="checkbox" id="auto-suggest-toggle" checked>
+            <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+            </span>
+        </label>
+        <span class="toggle-state" id="toggle-state-text">Aktif</span>
+    </div>
+</div>
+
 <div class="recipients-container">
     @foreach($budgetPackage->items as $item)
-    <div class="card premium-card recipient-card" id="item-card-{{ $item->id }}">
+    <div class="card premium-card recipient-card {{ $loop->first ? '' : 'collapsed' }}" id="item-card-{{ $item->id }}">
         
-        <div class="card-head recipient-card-header">
+        <div class="card-head recipient-card-header" onclick="toggleCard({{ $item->id }})">
             <div class="recipient-item-info">
                 <div class="info-top">
                     <span class="badge badge-neutral badge-sm">{{ $item->kaporItem->category }}</span>
@@ -126,6 +134,9 @@
                 <div class="summary-box">
                     <span class="recipient-count" id="count-{{ $item->id }}">{{ $item->recipients->sum('matched_count') }}</span>
                     <span class="summary-label">Personil Terestimasi</span>
+                </div>
+                <div class="card-toggle-icon">
+                    <i class="ri-arrow-down-s-line"></i>
                 </div>
             </div>
         </div>
@@ -147,6 +158,11 @@
                                 Pilih Semua
                             </button>
                         </div>
+                    </div>
+
+                    <div class="satker-search-wrap" style="margin-bottom: 12px; position: relative;">
+                        <i class="ri-search-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8;"></i>
+                        <input type="text" class="form-input" style="padding-left: 36px; padding-top: 8px; padding-bottom: 8px; width: 100%; border-radius: 8px; border: 1px solid #E2E8F0; font-size: 13px;" placeholder="Cari nama satker..." oninput="filterSatkers({{ $item->id }}, this.value)">
                     </div>
                     
                     <div class="satker-checkboxes custom-scrollbar" id="satker-list-{{ $item->id }}">
@@ -328,9 +344,9 @@
     /* ── Hero Section ── */
     .package-hero {
         background: #ffffff;
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 24px;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
         border: 1px solid #E2E8F0;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
         position: relative;
@@ -368,13 +384,13 @@
     }
     .package-hero-content { flex: 1; }
     .package-title-wrapper { display: flex; align-items: center; flex-wrap: wrap; }
-    .package-title { font-size: 22px; font-weight: 800; color: #0F172A; margin: 0; }
-    .package-desc { color: #64748B; font-size: 14px; margin: 0; line-height: 1.5; }
+    .package-title { font-size: 20px; font-weight: 800; color: #0F172A; margin: 0; }
+    .package-desc { color: #64748B; font-size: 13px; margin: 0; line-height: 1.4; }
     
     .btn-action-primary {
         display: inline-flex; align-items: center; justify-content: center;
-        padding: 10px 20px; border-radius: 10px;
-        background: #C62828; color: #fff; font-size: 14px; font-weight: 600;
+        padding: 8px 16px; border-radius: 8px;
+        background: #C62828; color: #fff; font-size: 13px; font-weight: 600;
         text-decoration: none; transition: all 0.2s; border: 1px solid #B91C1C;
         box-shadow: 0 2px 4px rgba(198, 40, 40, 0.1);
     }
@@ -383,14 +399,14 @@
     }
 
     /* ── Wizard Steps ── */
-    .wizard-steps-container { margin-bottom: 24px; }
-    .wizard-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .wizard-steps-container { margin-bottom: 20px; }
+    .wizard-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     
     .wizard-step-card {
         background: #ffffff;
         border: 1px solid #E2E8F0;
-        border-radius: 16px;
-        padding: 20px;
+        border-radius: 12px;
+        padding: 16px;
         text-decoration: none;
         color: inherit;
         display: flex; flex-direction: column; justify-content: space-between;
@@ -415,56 +431,69 @@
     .wizard-step-card.pending { opacity: 0.6; pointer-events: none; background: #F8FAFC; border-style: dashed; }
     .wizard-step-card.pending .wizard-step-number { background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0; }
 
-    .wizard-step-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 24px; position: relative; z-index: 2; }
+    .wizard-step-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; position: relative; z-index: 2; }
     .wizard-step-number {
-        width: 36px; height: 36px; border-radius: 10px;
-        font-size: 16px; font-weight: 800;
+        width: 32px; height: 32px; border-radius: 8px;
+        font-size: 14px; font-weight: 800;
         display: flex; align-items: center; justify-content: center;
         flex-shrink: 0; border: 1px solid transparent;
     }
-    .wizard-step-title h3 { font-size: 15px; font-weight: 700; color: #1E293B; margin: 0 0 2px 0; }
-    .wizard-step-title p { font-size: 12px; color: #64748B; margin: 0; line-height: 1.4; }
+    .wizard-step-title h3 { font-size: 14px; font-weight: 700; color: #1E293B; margin: 0 0 2px 0; }
+    .wizard-step-title p { font-size: 11px; color: #64748B; margin: 0; line-height: 1.4; }
     
     .wizard-step-body { display: flex; align-items: flex-end; justify-content: space-between; margin-top: auto; position: relative; z-index: 2; }
     .wizard-step-body .stat-value { display: flex; flex-direction: column; }
-    .wizard-step-body .stat-value .num { font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1; margin-bottom: 4px; letter-spacing: -0.5px; }
-    .wizard-step-body .stat-value .label { font-size: 11px; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+    .wizard-step-body .stat-value .num { font-size: 18px; font-weight: 800; color: #0F172A; line-height: 1; margin-bottom: 4px; letter-spacing: -0.5px; }
+    .wizard-step-body .stat-value .label { font-size: 10px; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
     
-    .wizard-step-arrow { font-size: 20px; color: #CBD5E1; }
-    .active-indicator { font-size: 11px; font-weight: 700; color: #C62828; background: #FEF2F2; padding: 4px 10px; border-radius: 12px; }
+    .wizard-step-arrow { font-size: 18px; color: #CBD5E1; }
+    .active-indicator { font-size: 10px; font-weight: 700; color: #C62828; background: #FEF2F2; padding: 4px 8px; border-radius: 10px; }
 
     /* ── Recipient Cards ── */
-    .premium-card { border-color: #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); border-radius: 16px; margin-bottom: 24px; position: relative; }
+    .premium-card { border-color: #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.02); border-radius: 12px; margin-bottom: 20px; position: relative; transition: all 0.3s; }
+    .premium-card.collapsed { margin-bottom: 12px; }
+    
     .recipient-card-header {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 20px 24px; background: #fff; border-bottom: 1px solid #F1F5F9;
-        border-radius: 16px 16px 0 0;
+        padding: 12px 20px; background: #fff; border-bottom: 1px solid #F1F5F9;
+        border-radius: 12px 12px 0 0; cursor: pointer; user-select: none; transition: background 0.2s;
     }
-    .recipient-item-info .info-top { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
-    .item-price { font-size: 14px; font-weight: 600; color: #475569; }
-    .item-price .unit { color: #94A3B8; font-weight: 400; font-size: 12px; }
-    .recipient-item-info h3 { font-size: 18px; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.3px; }
-    
-    .recipient-summary { text-align: right; }
-    .summary-box { background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 16px; border-radius: 12px; display: inline-flex; flex-direction: column; align-items: flex-end; }
-    .recipient-count { font-size: 26px; font-weight: 800; color: #C62828; line-height: 1; margin-bottom: 4px; }
-    .summary-label { font-size: 11px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; }
+    .recipient-card-header:hover { background: #F8FAFC; }
+    .premium-card.collapsed .recipient-card-header { border-bottom: none; border-radius: 12px; }
 
-    .recipient-card-body { padding: 0; }
-    .body-grid { display: grid; grid-template-columns: 2fr 1fr; }
+    .recipient-item-info .info-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .item-price { font-size: 13px; font-weight: 600; color: #475569; }
+    .item-price .unit { color: #94A3B8; font-weight: 400; font-size: 11px; }
+    .recipient-item-info h3 { font-size: 16px; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.2px; }
+    
+    .recipient-summary { display: flex; align-items: center; gap: 12px; text-align: right; }
+    .summary-box { background: #F8FAFC; border: 1px solid #E2E8F0; padding: 6px 12px; border-radius: 8px; display: inline-flex; flex-direction: column; align-items: flex-end; }
+    .recipient-count { font-size: 20px; font-weight: 800; color: #C62828; line-height: 1; margin-bottom: 2px; }
+    .summary-label { font-size: 10px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .card-toggle-icon {
+        width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+        color: #94A3B8; font-size: 20px; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .premium-card.collapsed .card-toggle-icon { transform: rotate(-90deg); }
+
+    .recipient-card-body { padding: 0; transition: max-height 0.3s ease; }
+    .premium-card.collapsed .recipient-card-body { display: none; }
+    
+    .body-grid { display: grid; grid-template-columns: 2fr 1fr; align-items: stretch; }
     @media (max-width: 900px) { .body-grid { grid-template-columns: 1fr; } }
     
-    .satker-section { padding: 24px; border-right: 1px solid #F1F5F9; }
-    .filter-section { padding: 16px 24px; background: #FAFAFA; border-left: 1px solid #F1F5F9; }
+    .satker-section { padding: 16px 20px; border-right: 1px solid #F1F5F9; display: flex; flex-direction: column; }
+    .filter-section { padding: 12px 20px; background: #FAFAFA; border-left: 1px solid #F1F5F9; }
     @media (max-width: 900px) { 
         .satker-section { border-right: none; border-bottom: 1px solid #F1F5F9; } 
         .filter-section { border-left: none; }
     }
 
-    .section-title-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; width: 100%; }
-    .section-title-wrap i { font-size: 18px; }
-    .section-label { font-size: 14px; font-weight: 700; color: #1E293B; margin: 0; }
-    .optional-text { font-size: 12px; font-weight: 400; color: #94A3B8; }
+    .section-title-wrap { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; width: 100%; }
+    .section-title-wrap i { font-size: 16px; }
+    .section-label { font-size: 13px; font-weight: 700; color: #1E293B; margin: 0; }
+    .optional-text { font-size: 11px; font-weight: 400; color: #94A3B8; }
     
     .btn-select-all {
         background: #F1F5F9; border: 1px solid #E2E8F0; color: #475569; padding: 4px 10px;
@@ -478,19 +507,20 @@
     /* Satker Select UI */
     .satker-checkboxes {
         display: grid; grid-template-columns: repeat(3, 1fr);
-        gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 8px;
+        gap: 6px; overflow-y: auto; padding-right: 6px;
+        flex: 1; max-height: 300px;
     }
     @media (max-width: 1024px) { .satker-checkboxes { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .satker-checkboxes { grid-template-columns: 1fr; } }
     
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
     .satker-checkbox {
-        display: flex; align-items: flex-start; gap: 10px;
-        padding: 10px 12px; border: 1px solid #E2E8F0; border-radius: 10px;
+        display: flex; align-items: flex-start; gap: 8px;
+        padding: 8px 10px; border: 1px solid #E2E8F0; border-radius: 8px;
         cursor: pointer; transition: all 0.2s; background: #fff;
     }
     .satker-checkbox:hover { border-color: #CBD5E1; background: #F8FAFC; }
@@ -510,14 +540,14 @@
     .satker-name { font-size: 13px; color: #475569; font-weight: 500; line-height: 1.4; transition: all 0.2s; }
 
     /* Filter UI */
-    .filter-groups { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
-    .filter-label { font-size: 12px; font-weight: 600; color: #64748B; margin-bottom: 8px; display: block; }
-    .filter-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .filter-groups { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+    .filter-label { font-size: 11px; font-weight: 600; color: #64748B; margin-bottom: 6px; display: block; }
+    .filter-pills { display: flex; flex-wrap: wrap; gap: 6px; }
     .pill-check { cursor: pointer; }
     .pill-check input { display: none; }
     .pill-check span {
         display: inline-flex; align-items: center; gap: 6px;
-        padding: 6px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 600;
+        padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 600;
         border: 1px solid #E2E8F0; background: #fff; color: #475569; transition: all 0.2s;
         box-shadow: 0 1px 2px rgba(0,0,0,0.02);
     }
@@ -527,12 +557,12 @@
     .pill-check input:checked + span:hover { background: #B91C1C; border-color: #B91C1C; }
 
     /* Current Recipients Tags - Full Width */
-    .current-recipients { background: #FAFAFA; padding: 20px 24px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; }
-    .recipient-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .current-recipients { background: #FAFAFA; padding: 12px 20px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+    .recipient-tags { display: flex; flex-wrap: wrap; gap: 6px; }
     .recipient-tag {
-        display: inline-flex; align-items: center; gap: 8px;
-        font-size: 12px; font-weight: 600; padding: 6px 12px;
-        background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; border-radius: 8px;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 11.5px; font-weight: 600; padding: 4px 10px;
+        background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; border-radius: 6px;
     }
     .recipient-tag.zero-count {
         background: #F1F5F9; color: #64748B; border-color: #E2E8F0;
@@ -610,6 +640,52 @@
         rankGroup.querySelectorAll('.rank-pill').forEach(pill => {
             if (pill.style.display === 'none') {
                 pill.querySelector('input').checked = false;
+            }
+        });
+    }
+
+    // Accordion Toggle
+    function toggleCard(itemId) {
+        const card = document.getElementById('item-card-' + itemId);
+        card.classList.toggle('collapsed');
+        
+        // Opsional: Jika ingin gaya accordion sejati (satu terbuka pada satu waktu)
+        // document.querySelectorAll('.recipient-card').forEach(c => {
+        //     if (c.id !== 'item-card-' + itemId) {
+        //         c.classList.add('collapsed');
+        //     }
+        // });
+    }
+
+    // Filter pencarian satker
+    function filterSatkers(itemId, query) {
+        const container = document.getElementById('satker-list-' + itemId);
+        const labels = container.querySelectorAll('.satker-checkbox');
+        const q = query.toLowerCase().trim();
+
+        labels.forEach(label => {
+            const name = label.querySelector('.satker-name')?.textContent?.toLowerCase() || '';
+            if (name.includes(q)) {
+                label.style.display = 'flex';
+            } else {
+                label.style.display = 'none';
+            }
+        });
+    }
+
+    // Filter pencarian barang kapor global
+    function filterGlobalItems(query) {
+        const q = query.toLowerCase().trim();
+        const cards = document.querySelectorAll('.recipient-card');
+
+        cards.forEach(card => {
+            const itemName = card.querySelector('.recipient-item-info h3')?.textContent?.toLowerCase() || '';
+            const categoryName = card.querySelector('.badge-neutral')?.textContent?.toLowerCase() || '';
+
+            if (itemName.includes(q) || categoryName.includes(q)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
             }
         });
     }
@@ -1112,10 +1188,19 @@
         document.querySelectorAll('.ket-dropdown-panel.open').forEach(p => p.classList.remove('open'));
         document.querySelectorAll('.ket-dropdown.active').forEach(d => d.classList.remove('active'));
 
+        // Reset z-index semua card
+        document.querySelectorAll('.premium-card').forEach(c => c.style.zIndex = '1');
+
         if (!isOpen) {
             panel.classList.add('open');
             dropdown.classList.add('active');
             panel.querySelector('.ket-search-input').focus();
+            
+            // Set z-index card yang aktif lebih tinggi agar dropdown yang overflow tidak tertutup card di bawahnya
+            const card = document.getElementById('item-card-' + itemId);
+            if (card) {
+                card.style.zIndex = '50';
+            }
         }
     }
 
@@ -1177,6 +1262,7 @@
         if (!e.target.closest('.ket-dropdown')) {
             document.querySelectorAll('.ket-dropdown-panel.open').forEach(p => p.classList.remove('open'));
             document.querySelectorAll('.ket-dropdown.active').forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.premium-card').forEach(c => c.style.zIndex = '1');
         }
     });
 

@@ -28,7 +28,7 @@ class ReportAuditLogExport implements FromCollection, WithHeadings, WithStyles, 
                     'waktu' => $a->created_at->format('d M Y H:i'),
                     'pelaku' => $a->causer->name ?? 'System',
                     'deskripsi' => $a->description,
-                    'subjek' => $a->subject_type ? class_basename($a->subject_type) . ' #' . $a->subject_id : '-',
+                    'subjek' => $a->subject_type ? class_basename($a->subject_type).' #'.$a->subject_id : '-',
                     'properti' => json_encode($a->properties ?? [], JSON_UNESCAPED_UNICODE),
                 ]);
             }

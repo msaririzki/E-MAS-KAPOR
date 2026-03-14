@@ -113,9 +113,16 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             if (! empty($filters['personnel_type'])) {
                 $mappedTypes = array_map(function ($t) {
                     $lower = strtolower($t);
-                    if ($lower === 'polri') return 'Polri';
-                    if ($lower === 'pns') return 'PNS';
-                    if ($lower === 'pppk') return 'PPPK';
+                    if ($lower === 'polri') {
+                        return 'Polri';
+                    }
+                    if ($lower === 'pns') {
+                        return 'PNS';
+                    }
+                    if ($lower === 'pppk') {
+                        return 'PPPK';
+                    }
+
                     return $t;
                 }, $filters['personnel_type']);
                 $query->whereIn('personnel_type', $mappedTypes);
@@ -132,7 +139,13 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             }
 
             if (! empty($filters['keterangan'])) {
-                $query->whereIn('keterangan', $filters['keterangan']);
+                $ketValues = $filters['keterangan'];
+                $query->where(function ($q) use ($ketValues) {
+                    $q->whereIn('keterangan', $ketValues)
+                        ->orWhereIn('keterangan_2', $ketValues)
+                        ->orWhereIn('keterangan_3', $ketValues)
+                        ->orWhereIn('keterangan_4', $ketValues);
+                });
             }
 
             if (! empty($filters['golongan'])) {
@@ -189,7 +202,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
 
         foreach ($this->packageItem->recipients as $recipient) {
             $filters = $recipient->recipient_filters ?? [];
-            $satker  = $recipient->satker;
+            $satker = $recipient->satker;
 
             // Query identik dengan calculateMatchedCount — TANPA filter gender sheet di DB
             $query = Personnel::where('satker_id', $satker->id)
@@ -198,9 +211,16 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             if (! empty($filters['personnel_type'])) {
                 $mappedTypes = array_map(function ($t) {
                     $lower = strtolower($t);
-                    if ($lower === 'polri') return 'Polri';
-                    if ($lower === 'pns') return 'PNS';
-                    if ($lower === 'pppk') return 'PPPK';
+                    if ($lower === 'polri') {
+                        return 'Polri';
+                    }
+                    if ($lower === 'pns') {
+                        return 'PNS';
+                    }
+                    if ($lower === 'pppk') {
+                        return 'PPPK';
+                    }
+
                     return $t;
                 }, $filters['personnel_type']);
                 $query->whereIn('personnel_type', $mappedTypes);
@@ -217,7 +237,13 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             }
 
             if (! empty($filters['keterangan'])) {
-                $query->whereIn('keterangan', $filters['keterangan']);
+                $ketValues = $filters['keterangan'];
+                $query->where(function ($q) use ($ketValues) {
+                    $q->whereIn('keterangan', $ketValues)
+                        ->orWhereIn('keterangan_2', $ketValues)
+                        ->orWhereIn('keterangan_3', $ketValues)
+                        ->orWhereIn('keterangan_4', $ketValues);
+                });
             }
 
             if (! empty($filters['golongan'])) {
@@ -229,9 +255,9 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
 
             $row = [
                 'satker_name' => $satker->name,
-                'sizes'       => array_fill_keys($availableSizes, 0),
+                'sizes' => array_fill_keys($availableSizes, 0),
                 // row_total = matched_count tersimpan (= angka di web), bukan re-count
-                'row_total'   => (int) $recipient->matched_count,
+                'row_total' => (int) $recipient->matched_count,
             ];
 
             foreach ($personnels as $p) {
@@ -240,8 +266,8 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                     continue;
                 }
 
-                $sizes      = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
-                $sizeVal    = $sizes[$sizeKey] ?? null;
+                $sizes = is_string($p->kapor_sizes) ? json_decode($p->kapor_sizes, true) : $p->kapor_sizes;
+                $sizeVal = $sizes[$sizeKey] ?? null;
                 $sizeValStr = (string) $sizeVal;
 
                 if (! empty($sizeValStr) && $sizeValStr !== '-' && $sizeValStr !== 'null' && in_array($sizeValStr, $availableSizes)) {
@@ -260,10 +286,6 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
         return compact('matrix', 'totalPerSize', 'grandTotal');
     }
 
-
-
-
-
     public function view(): View
     {
         $kaporItem = $this->packageItem->kaporItem;
@@ -277,7 +299,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             if ($this->gender !== null) {
                 $sizesQuery->where(function ($q) {
                     $q->where('gender', $this->gender)
-                      ->orWhereNull('gender');
+                        ->orWhereNull('gender');
                 });
             } else {
                 // Combined mode: ambil ukuran dari gender pertama (sama untuk kedua gender di olahraga)
@@ -315,6 +337,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 'grandTotalWanita' => $data['grandTotalWanita'],
                 'settings' => $settings,
                 'sizeLabel' => $this->sizeLabel,
+                'sheetTitle' => $this->sheetName,
             ]);
         }
 
@@ -323,7 +346,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
 
         $this->matrixCount = count($data['matrix']);
 
-        $genderLabel = match($this->gender) {
+        $genderLabel = match ($this->gender) {
             'L' => 'PRIA',
             'P' => 'WANITA',
             default => null,
@@ -340,6 +363,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             'settings' => $settings,
             'genderLabel' => $genderLabel,
             'sizeLabel' => $this->sizeLabel,
+            'sheetTitle' => $this->sheetName,
         ]);
     }
 
@@ -412,26 +436,26 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
 
                 // ═══ TANDA TANGAN (Injeksi Murni via PHP) ═══
                 $settings = \App\Models\InvoiceSetting::getSettings();
-                $bulanIndo = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                 $bulanSekarang = $bulanIndo[now()->month - 1];
                 $tahun = $this->budgetPackage->budgetYear->year;
                 $location = $settings->location ?? 'Mataram';
 
                 // TTD memakan lebih banyak rataan kolom (sekitar 7 kolom ukuran) agar muatan pixel teks tidak memaksa shrinkToFit
                 $ttdStartRow = $footerRow + 1;
-                $ttdColSpan  = min(8, max(2, $totalCols - 1)); 
+                $ttdColSpan = min(8, max(2, $totalCols - 1));
                 $ttdStartCol = max(1, $totalCols - $ttdColSpan + 1);
                 $ttdStartColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($ttdStartCol);
 
                 // Injeksi teks ke Excel Cell
-                $sheet->setCellValue("{$ttdStartColLetter}" . ($ttdStartRow), "{$location}, {$bulanSekarang} {$tahun}");
-                $sheet->setCellValue("{$ttdStartColLetter}" . ($ttdStartRow + 1), "a.n. " . strtoupper($settings->organization_name ?? 'KEPALA BIRO LOGISTIK POLDA NTB'));
-                $sheet->setCellValue("{$ttdStartColLetter}" . ($ttdStartRow + 2), strtoupper($settings->signatory_title ?? 'PEJABAT PEMBUAT KOMITMEN'));
-                
+                $sheet->setCellValue("{$ttdStartColLetter}".($ttdStartRow), "{$location}, {$bulanSekarang} {$tahun}");
+                $sheet->setCellValue("{$ttdStartColLetter}".($ttdStartRow + 1), 'a.n. '.strtoupper($settings->organization_name ?? 'KEPALA BIRO LOGISTIK POLDA NTB'));
+                $sheet->setCellValue("{$ttdStartColLetter}".($ttdStartRow + 2), strtoupper($settings->signatory_title ?? 'PEJABAT PEMBUAT KOMITMEN'));
+
                 // Jarak tanda tangan kita beri 3 baris kosong untuk stempel
-                $namaRow = $ttdStartRow + 6; 
+                $namaRow = $ttdStartRow + 6;
                 $sheet->setCellValue("{$ttdStartColLetter}{$namaRow}", $settings->signatory_name ?? '.............................');
-                $sheet->setCellValue("{$ttdStartColLetter}" . ($namaRow + 1), strtoupper($settings->signatory_rank ?? '') . ' NRP ' . ($settings->signatory_nrp ?? ''));
+                $sheet->setCellValue("{$ttdStartColLetter}".($namaRow + 1), strtoupper($settings->signatory_rank ?? '').' NRP '.($settings->signatory_nrp ?? ''));
 
                 // Penggabungan (Merge) & Styling Blok TTD
                 for ($r = $ttdStartRow; $r <= $namaRow + 1; $r++) {
@@ -441,16 +465,16 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                         ->setWrapText(false)
                         ->setShrinkToFit(true);
                 }
-                
+
                 // Jabatan bold
-                $sheet->getStyle("{$ttdStartColLetter}" . ($ttdStartRow + 2) . ":{$lastColLetter}" . ($ttdStartRow + 2))->getFont()->setBold(true);
+                $sheet->getStyle("{$ttdStartColLetter}".($ttdStartRow + 2).":{$lastColLetter}".($ttdStartRow + 2))->getFont()->setBold(true);
                 // Nama bold + underline
                 $sheet->getStyle("{$ttdStartColLetter}{$namaRow}:{$lastColLetter}{$namaRow}")->getFont()->setBold(true)->setUnderline(true);
 
                 // ═══ COLUMN WIDTHS UMUM ═══
                 $sheet->getColumnDimension('A')->setWidth(5);   // NO
                 $sheet->getColumnDimension('B')->setWidth(28);  // SATKER
-                
+
                 // Semua kolom angka kita buat 5.5 seragam
                 for ($c = 3; $c <= $totalCols; $c++) {
                     $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
@@ -489,10 +513,10 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $pageSetup = $sheet->getPageSetup();
                 $pageSetup->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
                 $pageSetup->setOrientation($orientation);
-                
+
                 // Centering Kertas (Penting untuk Portrait agar tabel kecil ada di tengah)
                 $pageSetup->setHorizontalCentered(true);
-                
+
                 // Hanya gunakan FitToPage jika kolomnya banyak (Landscape)
                 // Jika Portrait tabel kecil, biarkan ukuran asli agar font tidak hancur/menciut
                 if ($totalCols > 10) {
@@ -508,7 +532,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 $margins->setTop(0.50);
                 $margins->setBottom(0.50);
                 // Margin kiri-kanan lebih lebar untuk Portrait (tabel kecil)
-                $sideMargin = ($totalCols > 10) ? 0.39 : 0.75; 
+                $sideMargin = ($totalCols > 10) ? 0.39 : 0.75;
                 $margins->setLeft($sideMargin);
                 $margins->setRight($sideMargin);
                 $margins->setHeader(0.2);

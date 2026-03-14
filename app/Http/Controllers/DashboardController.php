@@ -7,9 +7,9 @@ use App\Models\Personnel;
 use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -59,7 +59,7 @@ class DashboardController extends Controller
 
         // Cek status kunci sistem (Manual & Tanggal)
         $isLocked = Setting::getValue('is_system_locked', 'false') === 'true';
-        if (!$isLocked) {
+        if (! $isLocked) {
             try {
                 $startDate = Carbon::parse(Setting::getValue('input_start_date', date('Y-02-01')))->startOfDay();
                 $endDate = Carbon::parse(Setting::getValue('input_end_date', date('Y-08-31')))->endOfDay();
@@ -127,10 +127,10 @@ class DashboardController extends Controller
         }
 
         return view('dashboard.superadmin', compact(
-            'stats', 
-            'satkerStats', 
-            'availableYears', 
-            'fiscalYear', 
+            'stats',
+            'satkerStats',
+            'availableYears',
+            'fiscalYear',
             'defaultYear',
             'incompletePersonnel',
             'activities'
@@ -175,10 +175,29 @@ class DashboardController extends Controller
         $totalPns = $satker->pns_count ?? 0;
 
         $totalPersonnel = Personnel::where('satker_id', $satkerId)->count();
+
+        // Sinkron dengan PersonnelController::index() — cek kelengkapan setiap field kapor_sizes
         $submittedCount = Personnel::where('satker_id', $satkerId)
-            ->whereNotNull('kapor_sizes')
             ->whereNotNull('rank_id')
             ->whereNotNull('nrp')
+            ->whereNotNull('kapor_sizes')
+            ->where(function ($q) {
+                $q->whereNotNull('kapor_sizes->topi')
+                    ->whereNotNull('kapor_sizes->kemeja')
+                    ->whereNotNull('kapor_sizes->celana')
+                    ->whereNotNull('kapor_sizes->olahraga')
+                    ->whereNotNull('kapor_sizes->sepatu_dinas')
+                    ->whereNotNull('kapor_sizes->sepatu_olahraga')
+                    ->whereNotNull('kapor_sizes->jaket')
+                    ->whereNotNull('kapor_sizes->sabuk');
+            })
+            ->where(function ($q) {
+                $q->where('gender', 'L')
+                    ->orWhere(function ($q2) {
+                        $q2->where('gender', 'P')
+                            ->whereNotNull('kapor_sizes->jilbab');
+                    });
+            })
             ->count();
 
         $stats = [

@@ -20,27 +20,23 @@
             </a>
         </div>
         <div class="package-hero-content">
-            <div class="package-title-wrapper" style="justify-content: space-between; width: 100%; align-items: flex-start;">
-                <div>
+            <div style="width: 100%;">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
-                        <h1 class="package-title" style="font-size: 22px; font-weight: 800; color: #0F172A; margin: 0;">{{ $budgetPackage->name }}</h1>
+                        <h1 class="package-title" style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0;">{{ $budgetPackage->name }}</h1>
                         <span class="badge" style="background: {{ $budgetPackage->status_color['bg'] }}; color: {{ $budgetPackage->status_color['text'] }}; border: 1px solid {{ str_replace(')', ', 0.2)', str_replace('rgb', 'rgba', $budgetPackage->status_color['text'])) }}; font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; letter-spacing: 0.3px;">
                             {{ $budgetPackage->status_label }}
                         </span>
+                        <a href="{{ route('admin.budget.wizard.step1', $budgetPackage) }}" class="btn-action-primary" style="margin-left: auto;">
+                            <i class="ri-edit-box-line" style="margin-right: 6px;"></i> Edit Paket
+                        </a>
                     </div>
-                    <p class="package-desc" style="color: #64748B; font-size: 14px; margin: 0; line-height: 1.5; display: flex; align-items: center; gap: 6px;">
-                        <i class="ri-calendar-event-line" style="font-size: 16px; color: #94A3B8;"></i>
+                    <p class="package-desc" style="color: #64748B; font-size: 13px; margin: 0; line-height: 1.4; display: flex; align-items: center; gap: 6px;">
+                        <i class="ri-calendar-event-line" style="font-size: 15px; color: #94A3B8;"></i>
                         Tahun Anggaran {{ $budgetPackage->budgetYear->name }}
                         <span style="color: #CBD5E1;">&bull;</span>
                         {{ $budgetPackage->description ?? 'Tidak ada deskripsi' }}
                     </p>
                 </div>
-                <div>
-                     <a href="{{ route('admin.budget.wizard.step1', $budgetPackage) }}" class="btn-action-primary">
-                        <i class="ri-edit-box-line" style="margin-right: 6px;"></i> Edit Paket
-                    </a>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -394,9 +390,9 @@
     /* ── Hero Section & Wizard ── */
     .package-hero {
         background: #ffffff;
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 24px;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
         border: 1px solid #E2E8F0;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
         position: relative;
@@ -410,8 +406,8 @@
     .package-hero-inner { display: flex; align-items: flex-start; gap: 16px; }
     .btn-back {
         display: flex; align-items: center; justify-content: center;
-        width: 40px; height: 40px; background: #F8FAFC; border: 1px solid #E2E8F0;
-        border-radius: 12px; color: #475569; font-size: 20px; transition: all 0.2s; text-decoration: none;
+        width: 36px; height: 36px; background: #F8FAFC; border: 1px solid #E2E8F0;
+        border-radius: 10px; color: #475569; font-size: 18px; transition: all 0.2s; text-decoration: none;
     }
     .btn-back:hover { background: #C62828; color: #ffffff; border-color: #C62828; transform: translateX(-2px); }
     .package-hero-content { flex: 1; }
@@ -419,8 +415,8 @@
     
     .btn-action-primary {
         display: inline-flex; align-items: center; justify-content: center;
-        padding: 10px 20px; border-radius: 10px;
-        background: #ffffff; color: #475569; font-size: 14px; font-weight: 600;
+        padding: 8px 16px; border-radius: 8px;
+        background: #ffffff; color: #475569; font-size: 13px; font-weight: 600;
         text-decoration: none; transition: all 0.2s; border: 1px solid #E2E8F0;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
@@ -429,10 +425,10 @@
     }
 
     /* ── Wizard Steps ── */
-    .wizard-steps-container { margin-bottom: 24px; }
-    .wizard-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .wizard-steps-container { margin-bottom: 20px; }
+    .wizard-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .wizard-step-card {
-        background: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 20px;
+        background: #ffffff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px;
         text-decoration: none; color: inherit; display: flex; flex-direction: column; justify-content: space-between;
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
     }
@@ -440,18 +436,18 @@
     .wizard-step-card.completed { border-color: #BBF7D0; background: #F0FDF4; opacity: 0.9; }
     .wizard-step-card.completed .wizard-step-number { background: #10B981; color: #fff; border-color: #10B981; }
     .wizard-step-card.disabled { opacity: 0.6; pointer-events: none; background: #F8FAFC; filter: grayscale(1); }
-    .wizard-step-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 24px; position: relative; z-index: 2; }
+    .wizard-step-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; position: relative; z-index: 2; }
     .wizard-step-number {
-        width: 36px; height: 36px; border-radius: 10px; font-size: 16px; font-weight: 800;
+        width: 32px; height: 32px; border-radius: 8px; font-size: 14px; font-weight: 800;
         display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0;
     }
-    .wizard-step-title h3 { font-size: 15px; font-weight: 700; color: #1E293B; margin: 0 0 2px 0; }
-    .wizard-step-title p { font-size: 12px; color: #64748B; margin: 0; line-height: 1.4; }
+    .wizard-step-title h3 { font-size: 14px; font-weight: 700; color: #1E293B; margin: 0 0 2px 0; }
+    .wizard-step-title p { font-size: 11px; color: #64748B; margin: 0; line-height: 1.4; }
     .wizard-step-body { display: flex; align-items: flex-end; justify-content: space-between; margin-top: auto; position: relative; z-index: 2; }
     .wizard-step-body .stat-value { display: flex; flex-direction: column; }
-    .wizard-step-body .stat-value .num { font-size: 22px; font-weight: 800; color: #0F172A; line-height: 1; margin-bottom: 4px; letter-spacing: -0.5px; }
-    .wizard-step-body .stat-value .label { font-size: 11px; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
-    .wizard-step-arrow { font-size: 20px; color: #CBD5E1; }
+    .wizard-step-body .stat-value .num { font-size: 18px; font-weight: 800; color: #0F172A; line-height: 1; margin-bottom: 4px; letter-spacing: -0.5px; }
+    .wizard-step-body .stat-value .label { font-size: 10px; color: #94A3B8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+    .wizard-step-arrow { font-size: 18px; color: #CBD5E1; }
 
     /* ── Utilities Baru ── */
     .text-center { text-align: center; }

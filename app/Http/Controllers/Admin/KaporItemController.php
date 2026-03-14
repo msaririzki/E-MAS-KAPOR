@@ -26,17 +26,17 @@ class KaporItemController extends Controller
 
         $categories = [
             'Tutup_Kepala' => 'Tutup Kepala',
-            'Tutup_Badan'  => 'Tutup Badan',
-            'Tutup_Kaki'   => 'Tutup Kaki',
-            'Atribut'      => 'Atribut',
+            'Tutup_Badan' => 'Tutup Badan',
+            'Tutup_Kaki' => 'Tutup Kaki',
+            'Atribut' => 'Atribut',
         ];
 
         $stats = [
-            'total'       => KaporItem::count(),
-            'active'      => KaporItem::where('is_active', true)->count(),
-            'kepala'      => KaporItem::where('category', 'Tutup_Kepala')->count(),
-            'badan'       => KaporItem::where('category', 'Tutup_Badan')->count(),
-            'kaki'        => KaporItem::where('category', 'Tutup_Kaki')->count(),
+            'total' => KaporItem::count(),
+            'active' => KaporItem::where('is_active', true)->count(),
+            'kepala' => KaporItem::where('category', 'Tutup_Kepala')->count(),
+            'badan' => KaporItem::where('category', 'Tutup_Badan')->count(),
+            'kaki' => KaporItem::where('category', 'Tutup_Kaki')->count(),
             'total_value' => KaporItem::where('is_active', true)->sum('price'),
         ];
 
@@ -52,13 +52,13 @@ class KaporItemController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'item_name'      => 'required|string|max:255',
-            'category'       => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut,Lainnya',
-            'description'    => 'nullable|string',
-            'price'          => 'nullable|numeric|min:0',
-            'unit'           => 'nullable|string|max:50',
-            'invoice_group'  => 'nullable|string|max:255',
-            'gender_specific'=> 'nullable|in:L,P',
+            'item_name' => 'required|string|max:255',
+            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut,Lainnya',
+            'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'unit' => 'nullable|string|max:50',
+            'invoice_group' => 'nullable|string|max:255',
+            'gender_specific' => 'nullable|in:L,P',
         ]);
 
         $validated['is_active'] = true;
@@ -72,14 +72,14 @@ class KaporItemController extends Controller
     public function update(Request $request, KaporItem $kaporItem)
     {
         $validated = $request->validate([
-            'item_name'      => 'required|string|max:255',
-            'category'       => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut,Lainnya',
-            'description'    => 'nullable|string',
-            'price'          => 'nullable|numeric|min:0',
-            'unit'           => 'nullable|string|max:50',
-            'invoice_group'  => 'nullable|string|max:255',
-            'gender_specific'=> 'nullable|in:L,P',
-            'is_active'      => 'boolean',
+            'item_name' => 'required|string|max:255',
+            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut,Lainnya',
+            'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'unit' => 'nullable|string|max:50',
+            'invoice_group' => 'nullable|string|max:255',
+            'gender_specific' => 'nullable|in:L,P',
+            'is_active' => 'boolean',
         ]);
 
         if ($request->has('is_active')) {
@@ -116,7 +116,7 @@ class KaporItemController extends Controller
     {
         $validated = $request->validate([
             'size_label' => 'required|string|max:50',
-            'gender'     => 'nullable|in:L,P',
+            'gender' => 'nullable|in:L,P',
         ]);
 
         // Cek duplikasi dalam item + gender yang sama
@@ -136,7 +136,7 @@ class KaporItemController extends Controller
 
         $size = $kaporItem->sizes()->create([
             'size_label' => $validated['size_label'],
-            'gender'     => $validated['gender'] ?? null,
+            'gender' => $validated['gender'] ?? null,
             'sort_order' => $max + 1,
         ]);
 

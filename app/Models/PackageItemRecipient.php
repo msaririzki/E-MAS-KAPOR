@@ -75,9 +75,16 @@ class PackageItemRecipient extends Model
         if (! empty($filters['personnel_type'])) {
             $mappedTypes = array_map(function ($t) {
                 $lower = strtolower($t);
-                if ($lower === 'polri') return 'Polri';
-                if ($lower === 'pns')   return 'PNS';
-                if ($lower === 'pppk')  return 'PPPK';
+                if ($lower === 'polri') {
+                    return 'Polri';
+                }
+                if ($lower === 'pns') {
+                    return 'PNS';
+                }
+                if ($lower === 'pppk') {
+                    return 'PPPK';
+                }
+
                 return $t;
             }, $filters['personnel_type']);
             $query->whereIn('personnel_type', $mappedTypes);
@@ -95,9 +102,15 @@ class PackageItemRecipient extends Model
             });
         }
 
-        // Filter berdasarkan keterangan
+        // Filter berdasarkan keterangan (cek di 4 kolom keterangan)
         if (! empty($filters['keterangan'])) {
-            $query->whereIn('keterangan', $filters['keterangan']);
+            $ketValues = $filters['keterangan'];
+            $query->where(function ($q) use ($ketValues) {
+                $q->whereIn('keterangan', $ketValues)
+                    ->orWhereIn('keterangan_2', $ketValues)
+                    ->orWhereIn('keterangan_3', $ketValues)
+                    ->orWhereIn('keterangan_4', $ketValues);
+            });
         }
 
         // Filter berdasarkan golongan PNS/PPPK
@@ -111,4 +124,3 @@ class PackageItemRecipient extends Model
         return $count;
     }
 }
-

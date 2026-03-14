@@ -83,7 +83,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="8" style="text-align: center; padding: 48px; color: #9CA3AF;">
+                <td colspan="7" style="text-align: center; padding: 48px; color: #9CA3AF;">
                     <i class="ri-inbox-line" style="font-size: 48px; display: block; margin-bottom: 12px; opacity: 0.3;"></i>
                     Belum ada data item kapor.
                 </td>

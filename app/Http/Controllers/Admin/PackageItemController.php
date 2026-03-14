@@ -7,7 +7,6 @@ use App\Models\BudgetPackage;
 use App\Models\KaporItem;
 use App\Models\PackageItem;
 use App\Models\PackageItemRecipient;
-use App\Models\Personnel;
 use App\Models\Satker;
 use Illuminate\Http\Request;
 
@@ -25,13 +24,18 @@ class PackageItemController extends Controller
             ->orderBy('item_name')
             ->get();
 
-        $selectedIds = $budgetPackage->items()->pluck('kapor_item_id')->toArray();
+        // Array of kapor_item_id in sorted order
+        $selectedIds = $budgetPackage->items()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->pluck('kapor_item_id')->toArray();
+        $packageItemMap = $budgetPackage->items()->pluck('id', 'kapor_item_id')->toArray();
 
         // Group items by category
         $groupedItems = $allItems->groupBy('category');
 
         return view('admin.budget.wizard.step1-items', compact(
-            'budgetPackage', 'groupedItems', 'selectedIds'
+            'budgetPackage', 'groupedItems', 'selectedIds', 'packageItemMap'
         ));
     }
 
@@ -62,7 +66,34 @@ class PackageItemController extends Controller
 
         $count = $budgetPackage->items()->count();
 
-        return response()->json(['action' => $action, 'count' => $count]);
+        $packageItemId = $existing ? null : PackageItem::where('budget_package_id', $budgetPackage->id)
+            ->where('kapor_item_id', $validated['kapor_item_id'])
+            ->value('id');
+
+        return response()->json([
+            'action' => $action,
+            'count' => $count,
+            'package_item_id' => $packageItemId,
+        ]);
+    }
+
+    /**
+     * Menyimpan urutan baru untuk item yang telah dipilih pada Tahap 1
+     */
+    public function reorderItems(Request $request, BudgetPackage $budgetPackage)
+    {
+        $validated = $request->validate([
+            'ordered_ids' => 'required|array',
+            'ordered_ids.*' => 'exists:package_items,id',
+        ]);
+
+        foreach ($validated['ordered_ids'] as $index => $packageItemId) {
+            PackageItem::where('id', $packageItemId)
+                ->where('budget_package_id', $budgetPackage->id)
+                ->update(['sort_order' => $index + 1]);
+        }
+
+        return response()->json(['success' => true]);
     }
 
     /**
@@ -70,7 +101,9 @@ class PackageItemController extends Controller
      */
     public function selectRecipients(BudgetPackage $budgetPackage)
     {
-        $budgetPackage->load(['budgetYear', 'items.kaporItem', 'items.recipients.satker']);
+        $budgetPackage->load(['budgetYear', 'items' => function ($q) {
+            $q->orderBy('sort_order')->orderBy('id');
+        }, 'items.kaporItem', 'items.recipients.satker']);
 
         if ($budgetPackage->items->isEmpty()) {
             return redirect()->route('admin.budget.wizard.step1', $budgetPackage)
@@ -89,10 +122,36 @@ class PackageItemController extends Controller
         // Flatten semua satker untuk pilihan
         $allSatkers = Satker::orderBy('sort_order')->orderBy('name')->get();
 
-        // Ambil semua keterangan unik dari personel aktif
-        $allKeterangan = Personnel::where('is_active', true)
-            ->whereNotNull('keterangan')
-            ->where('keterangan', '!=', '')
+        // Ambil semua keterangan unik dari personel aktif (gabungan 4 kolom)
+        $allKeterangan = \Illuminate\Support\Facades\DB::query()
+            ->fromSub(function ($query) {
+                $query->select('keterangan')
+                    ->from('personnels')
+                    ->where('is_active', true)
+                    ->whereNotNull('keterangan')
+                    ->where('keterangan', '!=', '')
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_2 as keterangan')
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_2')
+                            ->where('keterangan_2', '!=', '')
+                    )
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_3 as keterangan')
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_3')
+                            ->where('keterangan_3', '!=', '')
+                    )
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_4 as keterangan')
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_4')
+                            ->where('keterangan_4', '!=', '')
+                    );
+            }, 'all_ket')
             ->selectRaw('keterangan, COUNT(*) as jumlah')
             ->groupBy('keterangan')
             ->orderByDesc('jumlah')
@@ -166,6 +225,9 @@ class PackageItemController extends Controller
     {
         $budgetPackage->load([
             'budgetYear',
+            'items' => function ($q) {
+                $q->orderBy('sort_order')->orderBy('id');
+            },
             'items.kaporItem',
             'items.recipients.satker',
         ]);
@@ -236,10 +298,39 @@ class PackageItemController extends Controller
      */
     public function getSatkerKeterangan(Satker $satker)
     {
-        $keteranganList = Personnel::where('satker_id', $satker->id)
-            ->where('is_active', true)
-            ->whereNotNull('keterangan')
-            ->where('keterangan', '!=', '')
+        $keteranganList = \Illuminate\Support\Facades\DB::query()
+            ->fromSub(function ($query) use ($satker) {
+                $query->select('keterangan')
+                    ->from('personnels')
+                    ->where('satker_id', $satker->id)
+                    ->where('is_active', true)
+                    ->whereNotNull('keterangan')
+                    ->where('keterangan', '!=', '')
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_2 as keterangan')
+                            ->where('satker_id', $satker->id)
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_2')
+                            ->where('keterangan_2', '!=', '')
+                    )
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_3 as keterangan')
+                            ->where('satker_id', $satker->id)
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_3')
+                            ->where('keterangan_3', '!=', '')
+                    )
+                    ->unionAll(
+                        \Illuminate\Support\Facades\DB::table('personnels')
+                            ->select('keterangan_4 as keterangan')
+                            ->where('satker_id', $satker->id)
+                            ->where('is_active', true)
+                            ->whereNotNull('keterangan_4')
+                            ->where('keterangan_4', '!=', '')
+                    );
+            }, 'all_ket')
             ->selectRaw('keterangan, COUNT(*) as jumlah')
             ->groupBy('keterangan')
             ->orderBy('keterangan')

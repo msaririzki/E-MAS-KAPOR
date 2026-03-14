@@ -3,9 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\BudgetPackage;
-use App\Models\Personnel;
-use App\Models\Satker;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -32,26 +29,26 @@ class ReportsController extends Controller
 
     private function exportPersonilSatker()
     {
-        return Excel::download(new \App\Exports\ReportPersonnelSummaryExport, 'Rekap_Personil_Per_Satker_' . date('Y-m-d') . '.xlsx');
+        return Excel::download(new \App\Exports\ReportPersonnelSummaryExport, 'Rekap_Personil_Per_Satker_'.date('Y-m-d').'.xlsx');
     }
 
     private function exportUkuranKapor()
     {
-        return Excel::download(new \App\Exports\ReportKaporSizeExport, 'Rekap_Ukuran_KAPOR_' . date('Y-m-d') . '.xlsx');
+        return Excel::download(new \App\Exports\ReportKaporSizeExport, 'Rekap_Ukuran_KAPOR_'.date('Y-m-d').'.xlsx');
     }
 
     private function exportAnggaranPaket()
     {
-        return Excel::download(new \App\Exports\ReportBudgetPackageExport, 'Rekap_Anggaran_Paket_' . date('Y-m-d') . '.xlsx');
+        return Excel::download(new \App\Exports\ReportBudgetPackageExport, 'Rekap_Anggaran_Paket_'.date('Y-m-d').'.xlsx');
     }
 
     private function exportPersonilBelumLengkap()
     {
-        return Excel::download(new \App\Exports\ReportIncompletePersonnelExport, 'Data_Personil_Belum_Lengkap_' . date('Y-m-d') . '.xlsx');
+        return Excel::download(new \App\Exports\ReportIncompletePersonnelExport, 'Data_Personil_Belum_Lengkap_'.date('Y-m-d').'.xlsx');
     }
 
     private function exportAuditLog()
     {
-        return Excel::download(new \App\Exports\ReportAuditLogExport, 'Riwayat_Audit_Log_' . date('Y-m-d') . '.xlsx');
+        return Excel::download(new \App\Exports\ReportAuditLogExport, 'Riwayat_Audit_Log_'.date('Y-m-d').'.xlsx');
     }
 }
