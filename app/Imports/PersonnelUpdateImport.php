@@ -520,7 +520,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         }
 
                         $hasNrpIssue = ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']);
-                        $updateData['has_nrp_issue'] = $hasNrpIssue;
+
                         if ($hasNrpIssue) {
                             $updateData['nrp_issue_note'] = $this->buildNrpIssueNote($data);
                         } else {
@@ -569,7 +569,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                             'keterangan_3' => $data['keterangan_3'] ?: null,
                             'keterangan_4' => $data['keterangan_4'] ?: null,
                             'kapor_sizes' => array_filter($data['sizes'] ?? [], fn ($v) => $v !== ''),
-                            'has_nrp_issue' => ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']),
+
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ]);
 

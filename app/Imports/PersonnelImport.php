@@ -1085,7 +1085,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'keterangan_3' => $keterangan3 ?: null,
                             'keterangan_4' => $keterangan4 ?: null,
                             'is_active' => true,
-                            'has_nrp_issue' => ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']),
+
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ]);
                         if (! $isDuplicateNrp) {
@@ -1104,7 +1104,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'keterangan_3' => $keterangan3 ?: null,
                             'keterangan_4' => $keterangan4 ?: null,
                             'gender' => $gender,
-                            'has_nrp_issue' => ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']),
+
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ];
                         // Hanya update rank_id jika ada
