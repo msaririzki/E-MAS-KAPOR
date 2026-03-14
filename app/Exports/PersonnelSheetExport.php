@@ -73,6 +73,9 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                 $sizes['sabuk'] ?? '',                           // P  SABUK
                 $sizes['jilbab'] ?? '',                          // Q  JILBAB
                 $p->keterangan ?? '',                            // R  KETERANGAN
+                $p->keterangan_2 ?? '',                          // S  KET.1
+                $p->keterangan_3 ?? '',                          // T  KET.2
+                $p->keterangan_4 ?? '',                          // U  KET.3
             ]);
         }
 
@@ -102,9 +105,9 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
             ['DATA UKURAN KAPOR PERSONEL '.strtoupper($this->satkerName)],
             ['UNTUK DUKUNGAN KAPOR TA. '.$fiscalYear],
             [''],
-            ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'UKURAN', '', '', '', '', '', '', '', '', 'KETERANGAN'],
-            ['', '', '', '', '', '', '', '', 'TUTUP KEPALA', 'TUTUP BADAN', '', '', 'TUTUP KAKI SEPATU', '', 'JAKET', 'SABUK', 'JILBAB', ''],
-            ['', '', '', '', '', '', '', '', '', 'KEMEJA', 'CELANA / ROK', 'T.SHIRT / OLAHRAGA', 'DINAS', 'OLAHRAGA', '', '', '', ''],
+            ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'UKURAN', '', '', '', '', '', '', '', '', 'KETERANGAN', 'KET. 1', 'KET.2', 'KET.3'],
+            ['', '', '', '', '', '', '', '', 'TUTUP KEPALA', 'TUTUP BADAN', '', '', 'TUTUP KAKI SEPATU', '', 'JAKET', 'SABUK', 'JILBAB', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', 'KEMEJA', 'CELANA / ROK', 'T.SHIRT / OLAHRAGA', 'DINAS', 'OLAHRAGA', '', '', '', '', '', '', ''],
         ];
     }
 
@@ -138,14 +141,14 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                 }
 
                 // ── Alignment header ──────────────────────────────────────
-                $sheet->getStyle('A1:R6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('A1:U6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // ── Merge Top Headers ─────────────────────────────────────
                 $sheet->mergeCells('A1:C1');
                 $sheet->mergeCells('A2:C2');
                 $sheet->mergeCells('A3:C3');
-                $sheet->mergeCells('A5:R5');
-                $sheet->mergeCells('A6:R6');
+                $sheet->mergeCells('A5:U5');
+                $sheet->mergeCells('A6:U6');
 
                 // ── Merge Table Headers ───────────────────────────────────
                 $sheet->mergeCells('A8:A10');
@@ -165,8 +168,12 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                 $sheet->mergeCells('Q9:Q10');
                 $sheet->mergeCells('R8:R10');
 
+                $sheet->mergeCells('S8:S10'); // KET.1
+                $sheet->mergeCells('T8:T10'); // KET.2
+                $sheet->mergeCells('U8:U10'); // KET.3
+
                 // ── Border header ─────────────────────────────────────────
-                $sheet->getStyle('A8:R10')->applyFromArray([
+                $sheet->getStyle('A8:U10')->applyFromArray([
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
@@ -177,7 +184,7 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
 
                 // ── Border data rows ──────────────────────────────────────
                 if ($lastDataRow >= 11) {
-                    $sheet->getStyle('A11:R'.$lastDataRow)->applyFromArray([
+                    $sheet->getStyle('A11:U'.$lastDataRow)->applyFromArray([
                         'borders' => [
                             'allBorders' => [
                                 'borderStyle' => Border::BORDER_THIN,
@@ -192,7 +199,7 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                 }
 
                 // ── Background header ─────────────────────────────────────
-                $sheet->getStyle('A8:R10')->getFill()
+                $sheet->getStyle('A8:U10')->getFill()
                     ->setFillType(Fill::FILL_SOLID)
                     ->getStartColor()->setARGB('F2F2F2');
 

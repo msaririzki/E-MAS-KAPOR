@@ -251,11 +251,17 @@ class BudgetExportController extends Controller
             return $isStel && ! $isAlreadyCelana && ! $isNonClothing;
         };
 
-        // Helper: apakah item olahraga (combined gender)
-        $isOlahraga = function ($packageItem) {
+        // Helper: apakah item pakai sheet gabungan pria+wanita
+        $usesCombinedGenderSheet = function ($packageItem) {
             $name = strtoupper($packageItem->kaporItem->item_name);
 
-            return str_contains($name, 'OLAHRAGA') || str_contains($name, 'T-SHIRT') || str_contains($name, 'T SHIRT');
+            return str_contains($name, 'OLAHRAGA')
+                || str_contains($name, 'T-SHIRT')
+                || str_contains($name, 'T SHIRT')
+                || str_contains($name, 'TOPI')
+                || str_contains($name, 'PET')
+                || str_contains($name, 'BARET')
+                || str_contains($name, 'PECI');
         };
 
         // Helper: tentukan sizeKey
@@ -434,6 +440,7 @@ class BudgetExportController extends Controller
         foreach ($budgetPackage->items as $packageItem) {
             $kaporItem = $packageItem->kaporItem;
             $itemName = $kaporItem->item_name;
+            $baseName = str_replace(['/', '\\', '?', '*', ':', '[', ']'], ' ', $itemName);
 
             // Kumpulkan gender yang ada
             $gendersInItem = [];
@@ -453,9 +460,12 @@ class BudgetExportController extends Controller
             }
 
             $hasCelana = $needsCelana($packageItem);
-            $combineGender = $isOlahraga($packageItem) && isset($gendersInItem['L']) && isset($gendersInItem['P']);
+            $combineGender = $usesCombinedGenderSheet($packageItem) && isset($gendersInItem['L']) && isset($gendersInItem['P']);
+            $upperBase = strtoupper($baseName);
+            $hasMaleInName = str_contains($upperBase, 'PRIA') || str_contains($upperBase, 'LAKI');
+            $hasFemaleInName = str_contains($upperBase, 'WANITA') || str_contains($upperBase, 'PEREMPUAN');
 
-            // ── OLAHRAGA (combined) ──
+            // ── Item ukuran gabungan (combined) ──
             if ($combineGender) {
                 $sizeKey = $getSizeKey($packageItem, null);
                 $availableSizes = $getAvailableSizes($kaporItem, null, null);
@@ -466,6 +476,7 @@ class BudgetExportController extends Controller
                     'gender_label' => null,
                     'size_label' => null,
                     'available_sizes' => $availableSizes,
+                    'display_title' => trim($baseName),
                 ]);
 
                 continue;
@@ -480,12 +491,23 @@ class BudgetExportController extends Controller
                 $sizeKey = $getSizeKey($packageItem, null);
                 $availableSizes = $getAvailableSizes($kaporItem, $g, null);
                 $data = $buildMatrix($packageItem, $sizeKey, $availableSizes, $g);
+                $bajuLabel = '';
+                if ($hasCelana) {
+                    $bajuLabel = $g === 'L'
+                        ? ($hasMaleInName ? ' Baju' : ' Baju Pria')
+                        : ($hasFemaleInName ? ' Baju' : ' Baju Wanita');
+                } else {
+                    $bajuLabel = $g === 'L'
+                        ? ($hasMaleInName ? '' : ' Pria')
+                        : ($hasFemaleInName ? '' : ' Wanita');
+                }
                 $pages[] = array_merge($data, [
                     'mode' => 'normal',
                     'item_name' => $itemName,
                     'gender_label' => $hasCelana ? 'BAJU '.$genderLabel : $genderLabel,
                     'size_label' => $hasCelana ? 'Ukuran Baju' : null,
                     'available_sizes' => $availableSizes,
+                    'display_title' => trim($baseName).$bajuLabel,
                 ]);
 
                 // ── CELANA (companion STEL) ──
@@ -493,12 +515,16 @@ class BudgetExportController extends Controller
                     $overrideSizes = $g === 'L' ? $celanaPriaSizes : $celanaWanitaSizes;
                     $celanaAvailable = $overrideSizes;
                     $celanaData = $buildMatrix($packageItem, 'celana', $celanaAvailable, $g);
+                    $celanaLabel = $g === 'L'
+                        ? ($hasMaleInName ? ' Celana' : ' Celana Pria')
+                        : ($hasFemaleInName ? ' Celana' : ' Celana Wanita');
                     $pages[] = array_merge($celanaData, [
                         'mode' => 'normal',
                         'item_name' => $itemName,
                         'gender_label' => 'CELANA '.$genderLabel,
                         'size_label' => 'Ukuran Celana',
                         'available_sizes' => $celanaAvailable,
+                        'display_title' => trim($baseName).$celanaLabel,
                     ]);
                 }
             }

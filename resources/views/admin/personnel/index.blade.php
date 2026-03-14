@@ -261,6 +261,21 @@
     </a>
 </div>
 
+@if(($stats['nrp_issues'] ?? 0) > 0)
+<div style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="ri-error-warning-fill" style="font-size: 24px; color: #EA580C;"></i>
+        <span style="font-size: 14px; color: #9A3412; line-height: 1.4;">
+            Terdapat <strong>{{ $stats['nrp_issues'] }} personel</strong> dengan indikasi duplikasi NRP.<br>
+            <span style="font-size: 12px; opacity: 0.9;">Harap segera selesaikan konflik ini untuk keamanan login akun personel.</span>
+        </span>
+    </div>
+    <a href="{{ route('admin.personnel.nrp-issues') }}" class="btn" style="background: #EA580C; color: white; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;">
+        <i class="ri-list-check"></i> Cek & Selesaikan
+    </a>
+</div>
+@endif
+
 @if(request('status') === 'incomplete')
 <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
     <div style="display: flex; align-items: center; gap: 10px;">
@@ -1276,22 +1291,25 @@
                             <input type="hidden" name="bagian" id="add_bagian_select" value="{{ old('modal_type') == 'add' ? old('bagian') : '' }}" disabled>
                         </div>
                     </div>
+                    @foreach(['keterangan' => 'KETERANGAN 1', 'keterangan_2' => 'KETERANGAN 2', 'keterangan_3' => 'KETERANGAN 3', 'keterangan_4' => 'KETERANGAN 4'] as $ketField => $ketLabel)
                     <div class="form-group">
-                        <label>KETERANGAN</label>
+                        <label>{{ $ketLabel }}</label>
                         <div class="custom-select-wrapper">
                             <div class="custom-select" onclick="toggleDropdown(this)">
-                                <div class="select-trigger"><span id="add_keterangan_label">{{ old('modal_type') == 'add' && old('keterangan') ? old('keterangan') : '— Pilih Keterangan —' }}</span><i class="ri-arrow-down-s-line"></i></div>
+                                <div class="select-trigger"><span id="add_{{ $ketField }}_label">{{ old('modal_type') == 'add' && old($ketField) ? old($ketField) : '— Pilih '.$ketLabel.' —' }}</span><i class="ri-arrow-down-s-line"></i></div>
                                 <div class="custom-options">
                                     <div class="options-scroll">
+                                        <div class="option" onclick="selectOptionManual(this, '{{ $ketField }}', '', '— Kosong —', 'add_{{ $ketField }}_label')">— Kosong —</div>
                                         @foreach(['STAF', 'SAMAPTA', 'LANTAS', 'PROVOS', 'RESKRIM', 'INTEL', 'PAMINAL', 'SIKUM', 'HUMAS', 'TIK'] as $opt)
-                                            <div class="option" onclick="selectOptionManual(this, 'keterangan', '{{ $opt }}', '{{ $opt }}', 'add_keterangan_label')">{{ $opt }}</div>
+                                            <div class="option" onclick="selectOptionManual(this, '{{ $ketField }}', '{{ $opt }}', '{{ $opt }}', 'add_{{ $ketField }}_label')">{{ $opt }}</div>
                                         @endforeach
                                     </div>
                                 </div>
                             </div>
-                            <input type="hidden" name="keterangan" id="add_keterangan" value="{{ old('modal_type') == 'add' ? old('keterangan') : '' }}">
+                            <input type="hidden" name="{{ $ketField }}" id="add_{{ $ketField }}" value="{{ old('modal_type') == 'add' ? old($ketField) : '' }}">
                         </div>
                     </div>
+                    @endforeach
 
                     <!-- Row 5 -->
                     <div class="form-group">
@@ -1790,22 +1808,25 @@
                             <input type="hidden" name="bagian" id="edit_bagian_select" value="{{ old('modal_type') == 'edit' ? old('bagian') : '' }}" disabled>
                         </div>
                     </div>
+                    @foreach(['keterangan' => 'KETERANGAN 1', 'keterangan_2' => 'KETERANGAN 2', 'keterangan_3' => 'KETERANGAN 3', 'keterangan_4' => 'KETERANGAN 4'] as $ketField => $ketLabel)
                     <div class="form-group">
-                        <label>KETERANGAN</label>
+                        <label>{{ $ketLabel }}</label>
                         <div class="custom-select-wrapper">
                             <div class="custom-select" onclick="toggleDropdown(this)">
-                                <div class="select-trigger"><span id="edit_keterangan_label">{{ old('modal_type') == 'edit' && old('keterangan') ? old('keterangan') : '— Pilih Keterangan —' }}</span><i class="ri-arrow-down-s-line"></i></div>
+                                <div class="select-trigger"><span id="edit_{{ $ketField }}_label">{{ old('modal_type') == 'edit' && old($ketField) ? old($ketField) : '— Pilih '.$ketLabel.' —' }}</span><i class="ri-arrow-down-s-line"></i></div>
                                 <div class="custom-options">
                                     <div class="options-scroll">
+                                        <div class="option" onclick="selectOptionManual(this, '{{ $ketField }}', '', '— Kosong —', 'edit_{{ $ketField }}_label')">— Kosong —</div>
                                         @foreach(['STAF', 'SAMAPTA', 'LANTAS', 'PROVOS', 'RESKRIM', 'INTEL', 'PAMINAL', 'SIKUM', 'HUMAS', 'TIK'] as $opt)
-                                            <div class="option" onclick="selectOptionManual(this, 'keterangan', '{{ $opt }}', '{{ $opt }}', 'edit_keterangan_label')">{{ $opt }}</div>
+                                            <div class="option" onclick="selectOptionManual(this, '{{ $ketField }}', '{{ $opt }}', '{{ $opt }}', 'edit_{{ $ketField }}_label')">{{ $opt }}</div>
                                         @endforeach
                                     </div>
                                 </div>
                             </div>
-                            <input type="hidden" name="keterangan" id="edit_keterangan" value="{{ old('modal_type') == 'edit' ? old('keterangan') : '' }}">
+                            <input type="hidden" name="{{ $ketField }}" id="edit_{{ $ketField }}" value="{{ old('modal_type') == 'edit' ? old($ketField) : '' }}">
                         </div>
                     </div>
+                    @endforeach
                     <div class="form-group">
                         <label>NO HP (WHATSAPP)</label>
                         <div class="input-with-icon">
@@ -3140,7 +3161,14 @@
         document.getElementById('detail_satker').innerText = p.satker ? p.satker.name : '—';
         document.getElementById('detail_jabatan').innerText = p.jabatan || '—';
         document.getElementById('detail_bagian').innerText = p.bagian || '—';
-        document.getElementById('detail_keterangan').innerText = p.keterangan || '—';
+        
+        let ketArr = [];
+        if (p.keterangan) ketArr.push(p.keterangan);
+        if (p.keterangan_2) ketArr.push(p.keterangan_2);
+        if (p.keterangan_3) ketArr.push(p.keterangan_3);
+        if (p.keterangan_4) ketArr.push(p.keterangan_4);
+        document.getElementById('detail_keterangan').innerText = ketArr.length > 0 ? ketArr.join(' / ') : '—';
+        
         document.getElementById('detail_golongan').innerText = p.golongan || '—';
         document.getElementById('detail_religion').innerText = p.religion || '—';
         document.getElementById('detail_gender').innerText = p.gender || '—';
@@ -3299,7 +3327,13 @@
         
         document.getElementById('edit_jabatan').value = p.jabatan || '';
         document.getElementById('edit_keterangan').value = p.keterangan || '';
-        document.getElementById('edit_keterangan_label').innerText = p.keterangan || '— Pilih Keterangan —';
+        document.getElementById('edit_keterangan_label').innerText = p.keterangan || '— Pilih KETERANGAN 1 —';
+        document.getElementById('edit_keterangan_2').value = p.keterangan_2 || '';
+        document.getElementById('edit_keterangan_2_label').innerText = p.keterangan_2 || '— Pilih KETERANGAN 2 —';
+        document.getElementById('edit_keterangan_3').value = p.keterangan_3 || '';
+        document.getElementById('edit_keterangan_3_label').innerText = p.keterangan_3 || '— Pilih KETERANGAN 3 —';
+        document.getElementById('edit_keterangan_4').value = p.keterangan_4 || '';
+        document.getElementById('edit_keterangan_4_label').innerText = p.keterangan_4 || '— Pilih KETERANGAN 4 —';
         
         document.getElementById('edit_phone').value = p.phone || '';
         document.getElementById('edit_golongan').value = p.golongan || '';

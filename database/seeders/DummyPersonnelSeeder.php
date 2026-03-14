@@ -37,10 +37,10 @@ class DummyPersonnelSeeder extends Seeder
             'celana' => ['28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38'],
             'sepatu_dinas' => ['38', '39', '40', '41', '42', '43', '44', '45'],
             'sepatu_olahraga' => ['38', '39', '40', '41', '42', '43', '44', '45'],
-            'sabuk' => ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
-            'jilbab' => ['M', 'L', 'XL'],
+            'sabuk' => ['36', '38', '40', '42', '44', '46', '48', '50', '52', '54', '56', '58', '60'],
+            'jilbab' => ['K', 'SD', 'B'],
             'jaket' => ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
-            'olahraga' => ['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
+            'olahraga' => ['K', 'SD', 'B', 'EB', 'EEB', 'EEEB', 'EEEEB'],
             'tutup_kepala' => ['54', '55', '56', '57', '58', '59', '60'],
         ];
 

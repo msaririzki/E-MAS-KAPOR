@@ -98,13 +98,15 @@
 .pv-table tbody tr { border-bottom: 1px solid var(--slate-100); }
 .pv-table tbody tr:last-child { border-bottom: none; }
 .pv-table tbody td { padding: 10px 14px; vertical-align: top; }
-/* Row colours */
 .row-update   { }
-.row-corrected{ background: #FFFDF0; }
-.row-new      { background: #F0FDF8; }
-.row-same     { background: #FAFAFA; opacity: .75; }
-.row-error    { background: #FFF8F8; }
-.row-dup      { background: #FFFBEA; }
+.row-corrected{ background: #FFFDF0 !important; }
+.row-new      { background: #F0FDF8 !important; }
+.row-same     { background: #FAFAFA !important; opacity: .75; }
+.row-error    { background: #FFF5F5 !important; }
+.row-dup      { background: #FEE2E2 !important; border-left: 3px solid #EF4444; }
+
+.db-dupe-info { font-size: 10px; background: #FEE2E2; color: #B91C1C; padding: 3px 8px; border-radius: 8px; font-weight: 600; margin-top: 3px; display: block; width: fit-content; font-family: sans-serif; line-height: 1.4; }
+.db-dupe-info i { font-size: 11px; vertical-align: -1px; }
 
 /* Status badge */
 .st-badge {
@@ -368,7 +370,9 @@
             <tbody id="previewBody">
             @foreach($preview as $i => $row)
             @php
+                $hasDupe = !empty($row['db_duplicate']) || !empty($row['duplicate_nrp']);
                 $fc = match(true) {
+                    $hasDupe                       => 'duplicate',
                     $row['status'] === 'error'     => 'error',
                     $row['status'] === 'no_change' => 'no_change',
                     $row['action'] === 'new'        => 'new',
@@ -377,7 +381,8 @@
                 $rowCls = match($fc) {
                     'new'      => 'row-new',
                     'no_change'=> 'row-same',
-                    'error'    => ($row['error_type'] ?? '') === 'duplicate' ? 'row-dup' : 'row-error',
+                    'duplicate'=> 'row-dup',
+                    'error'    => 'row-error',
                     default    => ($row['status'] === 'corrected') ? 'row-corrected' : 'row-update',
                 };
                 $matchBy = $row['match_by'] ?? 'none';
@@ -418,8 +423,8 @@
                     @elseif($row['status'] === 'no_change')
                         <span class="st-badge st-same"><i class="ri-minus-line"></i> SAMA</span>
                     @else
-                        @if(($row['error_type'] ?? '') === 'duplicate')
-                            <span class="st-badge st-dup"><i class="ri-file-copy-line"></i> DUPLIKAT</span>
+                        @if($hasDupe)
+                            <span class="st-badge st-dup" style="background:#FEE2E2; color:#991B1B;"><i class="ri-file-copy-line"></i> DUPLIKAT</span>
                         @else
                             <span class="st-badge st-error"><i class="ri-error-warning-line"></i> ERROR</span>
                         @endif
@@ -477,6 +482,17 @@
                 <td style="padding-top:12px;">
                     @if(!empty($row['nrp']))
                         <span class="nrp-cell">{{ $row['nrp'] }}</span>
+                        @if(!empty($row['db_duplicate']))
+                        <span class="db-dupe-info">
+                            <i class="ri-error-warning-fill"></i> NRP SUDAH ADA DI DB<br>
+                            <strong>{{ $row['db_duplicate']['full_name'] }}</strong>
+                            — {{ $row['db_duplicate']['same_satker'] ? 'Satker ini' : $row['db_duplicate']['satker_name'] }}
+                        </span>
+                        @elseif(!empty($row['duplicate_nrp']))
+                        <span style="display:block; font-size:9px; background:#FED7AA; color:#9A3412; padding:1px 7px; border-radius:10px; font-weight:700; margin-top:2px; width:fit-content; font-family:sans-serif;">
+                            <i class="ri-alert-line"></i> NRP DUPLIKAT DI FILE INI
+                        </span>
+                        @endif
                     @else
                         <span class="nrp-empty">Tanpa NRP</span>
                     @endif

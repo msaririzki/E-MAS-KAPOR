@@ -139,7 +139,13 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             }
 
             if (! empty($filters['keterangan'])) {
-                $query->whereIn('keterangan', $filters['keterangan']);
+                $ketValues = $filters['keterangan'];
+                $query->where(function ($q) use ($ketValues) {
+                    $q->whereIn('keterangan', $ketValues)
+                        ->orWhereIn('keterangan_2', $ketValues)
+                        ->orWhereIn('keterangan_3', $ketValues)
+                        ->orWhereIn('keterangan_4', $ketValues);
+                });
             }
 
             if (! empty($filters['golongan'])) {
@@ -231,7 +237,13 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             }
 
             if (! empty($filters['keterangan'])) {
-                $query->whereIn('keterangan', $filters['keterangan']);
+                $ketValues = $filters['keterangan'];
+                $query->where(function ($q) use ($ketValues) {
+                    $q->whereIn('keterangan', $ketValues)
+                        ->orWhereIn('keterangan_2', $ketValues)
+                        ->orWhereIn('keterangan_3', $ketValues)
+                        ->orWhereIn('keterangan_4', $ketValues);
+                });
             }
 
             if (! empty($filters['golongan'])) {
@@ -325,6 +337,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 'grandTotalWanita' => $data['grandTotalWanita'],
                 'settings' => $settings,
                 'sizeLabel' => $this->sizeLabel,
+                'sheetTitle' => $this->sheetName,
             ]);
         }
 
@@ -350,6 +363,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             'settings' => $settings,
             'genderLabel' => $genderLabel,
             'sizeLabel' => $this->sizeLabel,
+            'sheetTitle' => $this->sheetName,
         ]);
     }
 

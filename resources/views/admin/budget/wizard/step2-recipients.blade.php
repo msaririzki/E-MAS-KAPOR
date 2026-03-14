@@ -477,14 +477,14 @@
     }
     .premium-card.collapsed .card-toggle-icon { transform: rotate(-90deg); }
 
-    .recipient-card-body { padding: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .recipient-card-body { padding: 0; transition: max-height 0.3s ease; }
     .premium-card.collapsed .recipient-card-body { display: none; }
     
     .body-grid { display: grid; grid-template-columns: 2fr 1fr; align-items: stretch; }
     @media (max-width: 900px) { .body-grid { grid-template-columns: 1fr; } }
     
-    .satker-section { padding: 16px 20px; border-right: 1px solid #F1F5F9; display: flex; flex-direction: column; max-height: 340px; overflow: hidden; }
-    .filter-section { padding: 12px 20px; background: #FAFAFA; border-left: 1px solid #F1F5F9; max-height: 340px; overflow-y: auto; }
+    .satker-section { padding: 16px 20px; border-right: 1px solid #F1F5F9; display: flex; flex-direction: column; }
+    .filter-section { padding: 12px 20px; background: #FAFAFA; border-left: 1px solid #F1F5F9; }
     @media (max-width: 900px) { 
         .satker-section { border-right: none; border-bottom: 1px solid #F1F5F9; } 
         .filter-section { border-left: none; }
@@ -508,7 +508,7 @@
     .satker-checkboxes {
         display: grid; grid-template-columns: repeat(3, 1fr);
         gap: 6px; overflow-y: auto; padding-right: 6px;
-        flex: 1;
+        flex: 1; max-height: 300px;
     }
     @media (max-width: 1024px) { .satker-checkboxes { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .satker-checkboxes { grid-template-columns: 1fr; } }
@@ -1188,10 +1188,19 @@
         document.querySelectorAll('.ket-dropdown-panel.open').forEach(p => p.classList.remove('open'));
         document.querySelectorAll('.ket-dropdown.active').forEach(d => d.classList.remove('active'));
 
+        // Reset z-index semua card
+        document.querySelectorAll('.premium-card').forEach(c => c.style.zIndex = '1');
+
         if (!isOpen) {
             panel.classList.add('open');
             dropdown.classList.add('active');
             panel.querySelector('.ket-search-input').focus();
+            
+            // Set z-index card yang aktif lebih tinggi agar dropdown yang overflow tidak tertutup card di bawahnya
+            const card = document.getElementById('item-card-' + itemId);
+            if (card) {
+                card.style.zIndex = '50';
+            }
         }
     }
 
@@ -1253,6 +1262,7 @@
         if (!e.target.closest('.ket-dropdown')) {
             document.querySelectorAll('.ket-dropdown-panel.open').forEach(p => p.classList.remove('open'));
             document.querySelectorAll('.ket-dropdown.active').forEach(d => d.classList.remove('active'));
+            document.querySelectorAll('.premium-card').forEach(c => c.style.zIndex = '1');
         }
     });
 

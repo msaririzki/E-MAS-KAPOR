@@ -51,13 +51,19 @@ class PackageRecapExport implements WithMultipleSheets
     }
 
     /**
-     * Deteksi apakah item ini olahraga (pria+wanita ukuran sama, gabung 1 sheet).
+     * Deteksi item yang ukuran pria+wanitanya digabung dalam 1 sheet.
      */
-    private function isOlahraga(object $packageItem): bool
+    private function usesCombinedGenderSheet(object $packageItem): bool
     {
         $name = strtoupper($packageItem->kaporItem->item_name);
 
-        return str_contains($name, 'OLAHRAGA') || str_contains($name, 'T-SHIRT') || str_contains($name, 'T SHIRT');
+        return str_contains($name, 'OLAHRAGA')
+            || str_contains($name, 'T-SHIRT')
+            || str_contains($name, 'T SHIRT')
+            || str_contains($name, 'TOPI')
+            || str_contains($name, 'PET')
+            || str_contains($name, 'BARET')
+            || str_contains($name, 'PECI');
     }
 
     public function sheets(): array
@@ -91,15 +97,15 @@ class PackageRecapExport implements WithMultipleSheets
             }
 
             $hasCelana = $this->needsCelanaSheet($packageItem);
-            $isOlahraga = $this->isOlahraga($packageItem);
+            $usesCombinedGenderSheet = $this->usesCombinedGenderSheet($packageItem);
 
             // ── Helper Pemeriksa Konten Nama ────────────────────
             $upperBase = strtoupper($baseName);
             $hasMaleInName = str_contains($upperBase, 'PRIA') || str_contains($upperBase, 'LAKI');
             $hasFemaleInName = str_contains($upperBase, 'WANITA') || str_contains($upperBase, 'PEREMPUAN');
 
-            // ── OLAHRAGA: 1 sheet gabungan pria+wanita ──
-            if ($isOlahraga && isset($gendersInItem['L']) && isset($gendersInItem['P'])) {
+            // ── Item ukuran gabungan: 1 sheet pria+wanita ──
+            if ($usesCombinedGenderSheet && isset($gendersInItem['L']) && isset($gendersInItem['P'])) {
                 $sheetName = substr(trim($baseName), 0, 31);
                 $sheets[] = new PackageItemSheet(
                     $packageItem, $sheetName, $this->budgetPackage, null,
