@@ -1654,22 +1654,14 @@
 
             {{-- ══ Personil Role ══ --}}
             @if(auth()->user()->hasRole('personil'))
-                <div class="nav-group {{ request()->routeIs('personil.kapor.*') ? 'open' : '' }}">
-                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-shirt-line group-icon"></i> Kapor
-                        <i class="ri-arrow-down-s-line group-chevron"></i>
-                    </button>
-                    <div class="nav-group-children">
-                        <a href="{{ route('personil.kapor.index') }}"
-                            class="nav-link {{ request()->routeIs('personil.kapor.index') ? 'active' : '' }}">
-                            Input Ukuran
-                        </a>
-                        <a href="{{ route('personil.kapor.history') }}"
-                            class="nav-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
-                            Riwayat
-                        </a>
-                    </div>
-                </div>
+                <a href="{{ route('personil.kapor.index') }}"
+                    class="nav-link {{ request()->routeIs('personil.kapor.index') ? 'active' : '' }}">
+                    <i class="ri-edit-line"></i> Input Ukuran
+                </a>
+                <a href="{{ route('personil.kapor.history') }}"
+                    class="nav-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
+                    <i class="ri-history-line"></i> Riwayat
+                </a>
             @endif
 
             {{-- ══ Admin Satker Role ══ --}}
