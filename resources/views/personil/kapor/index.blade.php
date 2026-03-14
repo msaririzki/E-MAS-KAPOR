@@ -95,6 +95,8 @@
         background: #B71C1C;
         transform: translateY(-1px);
     }
+    
+    .btn-cancel:hover { background: var(--slate-100) !important; color: var(--danger) !important; border-color: var(--danger-border) !important; }
 </style>
 @endsection
 
@@ -245,7 +247,12 @@
             </div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; margin-top: 32px;">
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
+            @if($hasSubmitted)
+            <button type="button" onclick="document.getElementById('kaporForm').style.display='none'; document.getElementById('kaporSummaryCard').style.display='block';" class="btn btn-cancel" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: var(--radius-md); font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                <i class="ri-close-line"></i> Batal
+            </button>
+            @endif
             <button type="submit" class="btn-submit" style="max-width: 250px;">
                 <i class="ri-save-line"></i> Simpan Data
             </button>

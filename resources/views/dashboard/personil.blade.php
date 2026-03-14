@@ -22,6 +22,8 @@
     .rating-wrapper input { display: none; }
     .rating-wrapper label { cursor: pointer; color: var(--slate-300); font-size: 24px; transition: color 0.2s; }
     .rating-wrapper label:hover, .rating-wrapper label:hover ~ label, .rating-wrapper input:checked ~ label { color: #F59E0B; }
+    
+    .btn-cancel:hover { background: var(--slate-100) !important; color: var(--danger) !important; border-color: var(--danger-border) !important; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection
@@ -205,7 +207,12 @@
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                @if($hasSubmitted)
+                <button type="button" onclick="document.getElementById('kaporForm').style.display='none'; document.getElementById('kaporSummaryCard').style.display='block';" class="btn btn-cancel" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: var(--radius-md); font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                    <i class="ri-close-line"></i> Batal
+                </button>
+                @endif
                 <button type="submit" class="btn-submit" style="max-width: 250px;">
                     <i class="ri-save-line"></i> Simpan Pilihan Form
                 </button>
