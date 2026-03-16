@@ -1013,7 +1013,7 @@ class PersonnelController extends Controller
 
         try {
             DB::transaction(function () {
-                Personnel::chunk(500, function ($personnels) {
+                Personnel::chunkById(500, function ($personnels) {
                     foreach ($personnels as $personnel) {
                         // Delete submissions
                         $personnel->submissions()->delete();
