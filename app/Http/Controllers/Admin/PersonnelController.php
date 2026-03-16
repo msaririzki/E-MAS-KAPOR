@@ -997,4 +997,49 @@ class PersonnelController extends Controller
             return redirect()->back()->with('error', 'Gagal menghapus data: '.$e->getMessage());
         }
     }
+
+    /**
+     * Bulk delete ALL personnel.
+     */
+    public function bulkDeleteAll(Request $request)
+    {
+        $request->validate([
+            'confirm_text' => 'required|string',
+        ]);
+
+        if (strtoupper($request->confirm_text) !== 'KOSONGKAN') {
+            return redirect()->back()->with('error', 'Konfirmasi kata kunci salah. Silakan ketik KOSONGKAN untuk melanjutkan.');
+        }
+
+        try {
+            DB::transaction(function () {
+                Personnel::chunk(500, function ($personnels) {
+                    foreach ($personnels as $personnel) {
+                        // Delete submissions
+                        $personnel->submissions()->delete();
+
+                        // Delete user account if it exists
+                        if ($personnel->user) {
+                            $personnel->user->delete();
+                        }
+
+                        // Delete personnel
+                        $personnel->delete();
+                    }
+                });
+
+                AuditLogger::log('Kosongkan Semua Personil', 'Manajemen Personil', null, null, null, 'success', 'Berhasil mengosongkan seluruh database personil.');
+            });
+
+            // Sinkronkan jumlah Polri/PNS di semua satker setelah bulk delete all
+            $satkers = Satker::all();
+            foreach ($satkers as $satker) {
+                PersonnelImport::recalculateSatkerCount($satker->id);
+            }
+
+            return redirect()->back()->with('success', 'Berhasil mengosongkan seluruh database personil.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengosongkan database: '.$e->getMessage());
+        }
+    }
 }

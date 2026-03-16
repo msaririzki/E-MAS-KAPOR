@@ -127,6 +127,11 @@
                         <i class="ri-delete-bin-line" style="color: #EF4444; font-size: 16px;"></i>
                         <div style="font-weight: 600; color: #EF4444; font-size: 13px;">Hapus Data Satker</div>
                     </button>
+                    <div style="border-top: 1px solid #F3F4F6; margin: 4px 0;"></div>
+                    <button class="dropdown-item" onclick="openModal('bulkDeleteAllModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                        <i class="ri-delete-bin-2-fill" style="color: #991B1B; font-size: 16px;"></i>
+                        <div style="font-weight: 700; color: #991B1B; font-size: 13px;">Kosongkan Semua Personel</div>
+                    </button>
                 </div>
             </div>
             @else
@@ -622,6 +627,45 @@
                 <button type="button" class="btn btn-outline" onclick="closeModal('bulkDeleteModal')">Batal</button>
                 <button type="submit" class="btn" style="background: #DC2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer;">
                     <i class="ri-delete-bin-line"></i> Hapus Semua Data
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Bulk Delete ALL Personnel Modal --}}
+<div id="bulkDeleteAllModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #991B1B;">Kosongkan Semua Personel</h3>
+            <button class="modal-close" onclick="closeModal('bulkDeleteAllModal')">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <form action="{{ route('admin.personnel.bulk-delete-all') }}" method="POST">
+            @csrf
+            @method('DELETE')
+            <div class="modal-body" style="padding: 24px;">
+                <div style="background: #FEF2F2; border: 1px solid #FEE2E2; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                    <div style="display: flex; gap: 12px;">
+                        <i class="ri-error-warning-fill" style="font-size: 24px; color: #991B1B;"></i>
+                        <div>
+                            <h4 style="font-size: 14px; font-weight: 700; color: #7F1D1D; margin-bottom: 4px;">Peringatan Sangat Merusak!</h4>
+                            <p style="font-size: 13px; color: #991B1B; line-height: 1.5;">Tindakan ini akan mengosongkan <strong>SELURUH</strong> data personil, akun login personil, dan riwayat ukuran kapor di semua satker database. Gunakan ini hanya untuk persiapan import ulang database yang bersih.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="font-weight: 700; color: #374151;">Konfirmasi Pengosongan <span style="color: #EF4444;">*</span></label>
+                    <p style="font-size: 12px; color: #6B7280; margin-bottom: 8px;">Ketik kata <strong>KOSONGKAN</strong> di bawah ini untuk mengonfirmasi.</p>
+                    <input type="text" name="confirm_text" required placeholder="Ketik KOSONGKAN" class="form-input" style="padding: 10px;">
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('bulkDeleteAllModal')">Batal</button>
+                <button type="submit" class="btn" style="background: #991B1B; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                    <i class="ri-delete-bin-2-fill"></i> Kosongkan Database
                 </button>
             </div>
         </form>
