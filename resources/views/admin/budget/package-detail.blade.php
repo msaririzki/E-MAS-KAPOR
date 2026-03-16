@@ -260,8 +260,17 @@
             </div>
 
 
-            {{-- HPS & Analysis --}}
+            {{-- HPS, Analysis & SPPM --}}
             <div class="export-card-group-horizontal" style="gap: 12px;">
+
+                <button type="button" onclick="openSppmModal()" class="export-btn export-indigo" style="padding: 12px; width: 100%; text-align: left;">
+                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-file-word-line"></i></div>
+                    <div class="export-info">
+                        <h4 style="font-size: 12px;">Cetak SPPM</h4>
+                        <p style="font-size: 11px;">Format dokumen Word</p>
+                    </div>
+                </button>
+
 
                 <a href="{{ route('admin.budget.recap', $budgetPackage) }}" class="export-btn export-blue" style="padding: 12px;">
                     <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-user-shared-line"></i></div>
@@ -376,6 +385,41 @@
     </div>
 </div>
 @endif
+
+{{-- Modal Export SPPM --}}
+<div id="sppmModal" class="modal-overlay hidden">
+    <div class="modal-container" style="max-width: 500px;">
+        <div class="modal-header" style="border-bottom: 1px solid #E2E8F0; padding: 16px 20px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="ri-file-word-line" style="color: #4F46E5;"></i> Pengaturan Cetak SPPM
+            </h3>
+            <button onclick="closeSppmModal()" class="btn-close" style="background: transparent; border: none; font-size: 20px; cursor: pointer; color: #64748B;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+            <form id="sppmForm" method="POST" action="{{ route('admin.budget.export-sppm', $budgetPackage) }}">
+                @csrf
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">Nomor SPPM</label>
+                    <input type="text" name="sppm_number" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 13px;" value="SPPM/           /VII/LOG.5.16.1./2025/ROLOG" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">Berdasarkan (Sprin)</label>
+                    <input type="text" name="sprin_number" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 13px;" value="Sprin/1006/VII/LOG.5.16.1./2025" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">Tanggal Surat</label>
+                    <input type="text" name="sppm_date" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 13px;" value="{{ strtoupper(\Carbon\Carbon::now()->translatedFormat('d F Y')) }}" required>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" onclick="closeSppmModal()" class="btn btn-outline" style="padding: 10px 16px; border: 1px solid #CBD5E1; background: #fff; border-radius: 8px; font-weight: 600; font-size: 13px; color: #475569; cursor: pointer;">Batal</button>
+                    <button type="submit" id="btnSubmitSppm" class="btn" style="padding: 10px 16px; background: #4F46E5; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <i class="ri-download-line"></i> Download
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('styles')
@@ -725,6 +769,10 @@
     .export-purple:hover { background: #FAF5FF; border-color: #E9D5FF; }
     .export-purple .export-icon { background: #F3E8FF; color: #9333EA; }
 
+    .export-indigo { border-color: #E0E7FF; }
+    .export-indigo:hover { background: #EEF2FF; border-color: #C7D2FE; }
+    .export-indigo .export-icon { background: #E0E7FF; color: #4F46E5; }
+
     .export-red { border-color: #FECACA; }
     .export-red:hover { background: #FEF2F2; border-color: #FCA5A5; }
     .export-red .export-icon { background: #FEE2E2; color: #DC2626; }
@@ -738,6 +786,20 @@
     .export-btn.is-loading .export-loading { display: flex; }
     .spinner { font-size: 24px; color: #C62828; animation: spin 1s linear infinite; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* Modal Standard Styles */
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px);
+        z-index: 9999; display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden; transition: all 0.3s ease;
+    }
+    .modal-overlay:not(.hidden) { opacity: 1; visibility: visible; }
+    .modal-container {
+        background: #fff; width: 100%; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transform: translateY(20px) scale(0.95); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .modal-overlay:not(.hidden) .modal-container { transform: translateY(0) scale(1); }
+    .form-control:focus { outline: none; border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
     /* Responsive */
     @media (min-width: 1600px) {
@@ -841,6 +903,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 btn.classList.remove('is-loading');
             }
         });
+    });
+
+    // SPPM Modal Logic
+    window.openSppmModal = function() {
+        const modal = document.getElementById('sppmModal');
+        modal.classList.remove('hidden');
+    };
+
+    window.closeSppmModal = function() {
+        const modal = document.getElementById('sppmModal');
+        modal.classList.add('hidden');
+    };
+
+    document.getElementById('sppmForm').addEventListener('submit', function(e) {
+        // We do not prevent default here, let the form submit normally
+        // which will trigger the download and not navigate away
+        const btn = document.getElementById('btnSubmitSppm');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="ri-loader-4-line spinner" style="color: #fff; font-size: 16px;"></i> Memproses...';
+        btn.disabled = true;
+
+        // Form post directly reloads/downloads. Since it's a file download via POST 
+        // the browser will stay on the current page. We just clean up the modal state after a brief delay.
+        setTimeout(() => {
+            closeSppmModal();
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }, 1500);
+    });
+
+    // Close modal on click outside
+    document.getElementById('sppmModal').addEventListener('click', function(e) {
+        if(e.target === this) {
+            closeSppmModal();
+        }
     });
 });
 
