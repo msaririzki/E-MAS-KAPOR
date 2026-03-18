@@ -214,81 +214,82 @@
 <div class="layout-stack">
 
     {{-- Top Section: Export Actions --}}
-    <div class="action-panel" style="margin-bottom: 24px; padding: 16px;">
-        <div style="margin-bottom: 12px;">
-            <h3 style="font-size: 13px; font-weight: 700; color: #64748B; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
-                <i class="ri-printer-line" style="margin-right: 4px;"></i> Opsi Cetak & Unduh
-            </h3>
+    <div class="action-panel action-panel-exports" style="margin-bottom: 24px;">
+        <div class="action-panel-header">
+            <div class="action-panel-title-wrap">
+                <div class="action-panel-icon">
+                    <i class="ri-printer-line"></i>
+                </div>
+                <div>
+                    <h3 class="action-panel-title">Opsi Cetak & Unduh</h3>
+                    <p class="action-panel-subtitle">Pilih format keluaran yang dibutuhkan untuk rekap, dokumen kerja, dan pemeriksaan data.</p>
+                </div>
+            </div>
         </div>
-        <div class="export-actions-grid-horizontal" style="gap: 12px;">
-            
-            {{-- Excel / Detail Download --}}
-            <div class="export-card-group-horizontal" style="gap: 12px;">
-                
-                <a href="{{ route('admin.budget.export-csv', $budgetPackage) }}" class="export-btn export-green" data-download data-estimate="10" style="padding: 12px;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-file-excel-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Export Rekapan</h4>
-                        <p style="font-size: 11px;">Unduh file .xlsx</p>
-                    </div>
-                    <div class="export-loading">
-                        <i class="ri-loader-4-line spinner"></i>
-                    </div>
-                </a>
 
-                <a href="{{ route('admin.budget.export-pdf', $budgetPackage) }}" class="export-btn export-red" data-download data-estimate="15" style="padding: 12px;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-file-pdf-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Export Rekapan PDF</h4>
-                        <p style="font-size: 11px;">Unduh file .pdf</p>
-                    </div>
-                    <div class="export-loading">
-                        <i class="ri-loader-4-line spinner"></i>
-                    </div>
-                </a>
-                
-                <a href="{{ route('admin.budget.export-detail', $budgetPackage) }}" class="export-btn export-purple" data-download data-estimate="20" style="padding: 12px;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-team-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Export Nominatif</h4>
-                        <p style="font-size: 11px;">Detail per personil</p>
-                    </div>
-                    <div class="export-loading">
-                        <i class="ri-loader-4-line spinner"></i>
-                    </div>
-                </a>
-            </div>
+        <div class="export-actions-grid">
+            <a href="{{ route('admin.budget.export-csv', $budgetPackage) }}" class="export-btn export-green" data-download data-estimate="10">
+                <div class="export-icon"><i class="ri-file-excel-line"></i></div>
+                <div class="export-info">
+                    <h4>Export Rekapan</h4>
+                    <p>Rekap utama `.xlsx`.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-download-2-line"></i></div>
+                <div class="export-loading">
+                    <i class="ri-loader-4-line spinner"></i>
+                </div>
+            </a>
 
+            <a href="{{ route('admin.budget.export-pdf', $budgetPackage) }}" class="export-btn export-red" data-download data-estimate="15">
+                <div class="export-icon"><i class="ri-file-pdf-line"></i></div>
+                <div class="export-info">
+                    <h4>Export Rekapan PDF</h4>
+                    <p>Rekap siap baca `.pdf`.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-download-2-line"></i></div>
+                <div class="export-loading">
+                    <i class="ri-loader-4-line spinner"></i>
+                </div>
+            </a>
 
-            {{-- HPS, Analysis & SPPM --}}
-            <div class="export-card-group-horizontal" style="gap: 12px;">
+            <a href="{{ route('admin.budget.export-detail', $budgetPackage) }}" class="export-btn export-purple" data-download data-estimate="20">
+                <div class="export-icon"><i class="ri-team-line"></i></div>
+                <div class="export-info">
+                    <h4>Export Nominatif</h4>
+                    <p>Detail per personil.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-download-2-line"></i></div>
+                <div class="export-loading">
+                    <i class="ri-loader-4-line spinner"></i>
+                </div>
+            </a>
 
-                <button type="button" onclick="openSppmModal()" class="export-btn export-indigo" style="padding: 12px; width: 100%; text-align: left;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-file-word-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Cetak SPPM</h4>
-                        <p style="font-size: 11px;">Format dokumen Word</p>
-                    </div>
-                </button>
+            <button type="button" onclick="openSppmModal()" class="export-btn export-indigo export-btn-button">
+                <div class="export-icon"><i class="ri-file-word-line"></i></div>
+                <div class="export-info">
+                    <h4>Cetak SPPM</h4>
+                    <p>Dokumen SPPM Word.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
+            </button>
 
+            <a href="{{ route('admin.budget.recap', $budgetPackage) }}" class="export-btn export-blue">
+                <div class="export-icon"><i class="ri-user-shared-line"></i></div>
+                <div class="export-info">
+                    <h4>Analisis Duplikasi</h4>
+                    <p>Cek personil ganda.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
+            </a>
 
-                <a href="{{ route('admin.budget.recap', $budgetPackage) }}" class="export-btn export-blue" style="padding: 12px;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-user-shared-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Analisis Duplikasi</h4>
-                        <p style="font-size: 11px;">Cek personil ganda</p>
-                    </div>
-                </a>
-                
-                <a href="{{ route('admin.budget.invoice', $budgetPackage) }}" class="export-btn export-orange" style="padding: 12px;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-file-text-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Invoice HPS</h4>
-                        <p style="font-size: 11px;">Generate format HPS</p>
-                    </div>
-                </a>
-            </div>
-
+            <a href="{{ route('admin.budget.invoice', $budgetPackage) }}" class="export-btn export-orange">
+                <div class="export-icon"><i class="ri-file-text-line"></i></div>
+                <div class="export-info">
+                    <h4>Invoice HPS</h4>
+                    <p>Generate format HPS.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
+            </a>
         </div>
     </div>
 
@@ -697,85 +698,163 @@
         background: #ffffff;
         border: 1px solid #E2E8F0;
         border-radius: 16px;
-        padding: 20px;
+        padding: 16px 18px;
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
     }
-    .export-actions-grid-horizontal {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
+    .action-panel-exports {
+        background:
+            linear-gradient(180deg, rgba(241, 245, 249, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
+        border-color: #D8E1EC;
     }
-    .export-card-group-horizontal {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
+    .action-panel-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 10px;
+    }
+    .action-panel-title-wrap {
+        display: flex;
+        align-items: flex-start;
         gap: 12px;
     }
-    .export-divider {
-        display: flex; align-items: center; text-align: center;
-        position: relative;
+    .action-panel-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        color: #1D4ED8;
+        background: linear-gradient(180deg, #DBEAFE 0%, #EFF6FF 100%);
+        border: 1px solid #BFDBFE;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+        flex-shrink: 0;
     }
-    .export-divider::before {
-        content: ''; position: absolute; left: 0; right: 0; top: 50%;
-        border-top: 1px dashed #E2E8F0; z-index: 1;
+    .action-panel-title {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #334155;
+        margin: 0 0 2px 0;
+        letter-spacing: 0.1px;
     }
-    .export-divider span { position: relative; z-index: 2; margin: 0 auto; }
+    .action-panel-subtitle {
+        font-size: 11px;
+        color: #64748B;
+        margin: 0;
+        line-height: 1.3;
+        max-width: 640px;
+    }
+    .export-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
 
     .export-btn {
         display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px;
-        background: #ffffff;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
+        align-items: flex-start;
+        gap: 11px;
+        padding: 10px 12px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(244,247,251,0.98) 100%);
+        border: 1px solid #DDE6F0;
+        border-radius: 14px;
         text-decoration: none;
         color: inherit;
-        transition: all 0.2s;
+        transition: all 0.22s ease;
         position: relative;
         overflow: hidden;
+        min-height: 68px;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+    }
+    .export-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.76) 0%, rgba(255,255,255,0) 58%);
+        pointer-events: none;
     }
     .export-btn:hover {
-        border-color: transparent;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         transform: translateY(-2px);
+        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
     }
     .export-icon {
-        width: 38px; height: 38px;
+        width: 34px; height: 34px;
         border-radius: 10px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 18px;
+        font-size: 17px;
         flex-shrink: 0;
         transition: transform 0.2s;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
     }
     .export-btn:hover .export-icon { transform: scale(1.1); }
-    .export-info { flex: 1; }
-    .export-info h4 { font-size: 13px; font-weight: 700; color: #1E293B; margin: 0 0 2px 0; }
-    .export-info p { font-size: 12px; color: #64748B; margin: 0; }
+    .export-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .export-info h4 {
+        font-size: 12.5px;
+        font-weight: 800;
+        color: #1E293B;
+        margin: 1px 0 1px 0;
+        line-height: 1.2;
+    }
+    .export-info p {
+        font-size: 10.5px;
+        color: #64748B;
+        margin: 0;
+        line-height: 1.25;
+    }
+    .export-trailing {
+        width: 26px;
+        height: 26px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748B;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(203, 213, 225, 0.95);
+        flex-shrink: 0;
+        align-self: center;
+        transition: all 0.2s ease;
+    }
+    .export-btn:hover .export-trailing {
+        color: #475569;
+        transform: translateX(2px);
+    }
+    .export-btn-button {
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+    }
 
     /* Color Variants for Export Cards */
-    .export-blue { border-color: #E0E7FF; }
-    .export-blue:hover { background: #EEF2FF; border-color: #C7D2FE; }
-    .export-blue .export-icon { background: #E0E7FF; color: #4F46E5; }
+    .export-blue { border-color: #C7D2FE; background: linear-gradient(180deg, #F2F7FF 0%, #E4EEFF 100%); }
+    .export-blue:hover { background: #E8F0FF; border-color: #A5B4FC; }
+    .export-blue .export-icon { background: linear-gradient(180deg, #DBEAFE 0%, #E0E7FF 100%); color: #4F46E5; }
     
-    .export-orange { border-color: #FFEDD5; }
-    .export-orange:hover { background: #FFF7ED; border-color: #FED7AA; }
-    .export-orange .export-icon { background: #FFEDD5; color: #F97316; }
+    .export-orange { border-color: #FED7AA; background: linear-gradient(180deg, #FFF5EC 0%, #FFEBD8 100%); }
+    .export-orange:hover { background: #FFF1E5; border-color: #FDBA74; }
+    .export-orange .export-icon { background: linear-gradient(180deg, #FFEDD5 0%, #FED7AA 100%); color: #EA580C; }
 
-    .export-green { border-color: #DCFCE7; }
-    .export-green:hover { background: #F0FDF4; border-color: #BBF7D0; }
-    .export-green .export-icon { background: #DCFCE7; color: #16A34A; }
+    .export-green { border-color: #BBF7D0; background: linear-gradient(180deg, #F0FFF4 0%, #DDFBE8 100%); }
+    .export-green:hover { background: #EAFBF0; border-color: #86EFAC; }
+    .export-green .export-icon { background: linear-gradient(180deg, #DCFCE7 0%, #BBF7D0 100%); color: #15803D; }
 
-    .export-purple { border-color: #F3E8FF; }
-    .export-purple:hover { background: #FAF5FF; border-color: #E9D5FF; }
-    .export-purple .export-icon { background: #F3E8FF; color: #9333EA; }
+    .export-purple { border-color: #E9D5FF; background: linear-gradient(180deg, #FBF5FF 0%, #F2E6FF 100%); }
+    .export-purple:hover { background: #F7EEFF; border-color: #D8B4FE; }
+    .export-purple .export-icon { background: linear-gradient(180deg, #F3E8FF 0%, #E9D5FF 100%); color: #9333EA; }
 
-    .export-indigo { border-color: #E0E7FF; }
-    .export-indigo:hover { background: #EEF2FF; border-color: #C7D2FE; }
-    .export-indigo .export-icon { background: #E0E7FF; color: #4F46E5; }
+    .export-indigo { border-color: #C7D2FE; background: linear-gradient(180deg, #F2F5FF 0%, #E2E9FF 100%); }
+    .export-indigo:hover { background: #E8ECFF; border-color: #A5B4FC; }
+    .export-indigo .export-icon { background: linear-gradient(180deg, #E0E7FF 0%, #C7D2FE 100%); color: #4338CA; }
 
-    .export-red { border-color: #FECACA; }
-    .export-red:hover { background: #FEF2F2; border-color: #FCA5A5; }
-    .export-red .export-icon { background: #FEE2E2; color: #DC2626; }
+    .export-red { border-color: #FECACA; background: linear-gradient(180deg, #FFF4F4 0%, #FEE7E7 100%); }
+    .export-red:hover { background: #FEEBEC; border-color: #FCA5A5; }
+    .export-red .export-icon { background: linear-gradient(180deg, #FEE2E2 0%, #FECACA 100%); color: #DC2626; }
 
     /* Loading overlay */
     .export-btn .export-loading {
@@ -834,8 +913,7 @@
         .layout-grid { grid-template-columns: 1fr; }
         .wizard-track { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
         .export-actions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-        .export-card-group { display: contents; }
-        .export-actions-grid-horizontal { grid-template-columns: 1fr; }
+        .export-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 768px) {
         .wizard-track { grid-template-columns: 1fr; }
@@ -843,7 +921,10 @@
         .data-table { min-width: 600px; }
         .table-wrap { overflow-x: auto; }
         .satker-dropdown-wrapper { padding-left: 16px; }
-        .export-card-group-horizontal { grid-template-columns: 1fr; }
+        .action-panel-header { flex-direction: column; }
+        .export-actions-grid { grid-template-columns: 1fr; }
+        .export-btn { min-height: auto; }
+        .action-panel-subtitle { display: none; }
     }
 </style>
 @endsection
@@ -1025,4 +1106,3 @@ function toggleWarnDetail(idx) {
 }
 </script>
 @endsection
-

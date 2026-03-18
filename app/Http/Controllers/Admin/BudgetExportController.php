@@ -9,11 +9,11 @@ use App\Models\Personnel;
 use App\Services\BudgetCalculationService;
 use App\Services\SppmWordExportService;
 use Illuminate\Http\Request;
-use ZipArchive;
 
 class BudgetExportController extends Controller
 {
     protected BudgetCalculationService $calcService;
+
     protected SppmWordExportService $sppmExportService;
 
     public function __construct(BudgetCalculationService $calcService, SppmWordExportService $sppmExportService)
@@ -596,49 +596,19 @@ class BudgetExportController extends Controller
             'sppm_date' => 'nullable|string',
         ]);
 
-        $files = $this->sppmExportService->generateForPackage($budgetPackage, [
+        $filePath = $this->sppmExportService->generateForPackage($budgetPackage, [
             'sppm_number' => $validated['sppm_number'] ?? '',
             'sprin_number' => $validated['sprin_number'] ?? '',
             'date' => $validated['sppm_date'] ?? '',
         ]);
 
-        if (empty($files)) {
+        if (! $filePath) {
             return redirect()->back()->with('error', 'Tidak ada data penerima valid untuk paket ini.');
         }
 
-        if (count($files) === 1) {
-            // Single file, download directly
-            $satkerName = array_key_first($files);
-            $filePath = $files[$satkerName];
-            $fileName = "SPPM_{$satkerName}.docx";
+        $budgetPackage->load('budgetYear');
+        $fileName = 'SPPM_'.str_replace(' ', '_', $budgetPackage->name).'_'.$budgetPackage->budgetYear->year.'.docx';
 
-            return response()->download($filePath, $fileName)->deleteFileAfterSend(true);
-        }
-
-        // Multiple files, zip them
-        $zipFile = tempnam(sys_get_temp_dir(), 'SPPM_ZIP_');
-        $zip = new ZipArchive();
-        
-        if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
-            foreach ($files as $satkerName => $filePath) {
-                // Ensure unique filenames inside the zip just in case
-                $zip->addFile($filePath, "SPPM_{$satkerName}.docx");
-            }
-            $zip->close();
-            
-            // Delete the temp docx files
-            foreach ($files as $filePath) {
-                if (file_exists($filePath)) {
-                    @unlink($filePath);
-                }
-            }
-
-            $budgetPackage->load('budgetYear');
-            $zipName = 'SPPM_' . str_replace(' ', '_', $budgetPackage->name) . '_' . $budgetPackage->budgetYear->year . '.zip';
-
-            return response()->download($zipFile, $zipName)->deleteFileAfterSend(true);
-        }
-
-        return redirect()->back()->with('error', 'Gagal membuat file ZIP.');
+        return response()->download($filePath, $fileName)->deleteFileAfterSend(true);
     }
 }
