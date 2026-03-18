@@ -305,11 +305,11 @@ class SppmWordExportService
             ],
         );
 
-        $this->replaceAllExactText($xpath, 'Mataram,         Juli    2025', $signatureDate);
-        $this->replaceAllExactText($xpath, 'a.n. KEPALA BIRO LOGISTIK POLDA NTB', 'a.n. '.$organizationName);
-        $this->replaceAllExactText($xpath, 'plt. KABAG BEKUM', $signatoryTitle);
-        $this->replaceAllExactText($xpath, 'JUAINI', $signatoryName);
-        $this->replaceAllMathText($xpath, 'AJUN KOMISARIS POLISI NRP 68020366 ', $signatoryRankLine === 'NRP' ? '' : $signatoryRankLine.' ');
+        $this->replaceAllExactText($xpath, 'LOKASI,         BULAN    TAHUN', $signatureDate);
+        $this->replaceAllExactText($xpath, 'a.n. NAMA ORGANISASI', 'a.n. '.$organizationName);
+        $this->replaceAllExactText($xpath, 'JABATAN PENANDATANGAN', $signatoryTitle);
+        $this->replaceAllExactText($xpath, 'NAMA PENANDATANGAN', $signatoryName);
+        $this->replaceAllMathText($xpath, 'PANGKAT / NRP PENANDATANGAN ', $signatoryRankLine === 'NRP' ? '' : $signatoryRankLine.' ');
 
         $this->replaceParagraphRuns(
             $xpath,
