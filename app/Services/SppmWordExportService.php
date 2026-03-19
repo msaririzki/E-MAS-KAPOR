@@ -308,12 +308,14 @@ class SppmWordExportService
                 $suratData['sprin_number'] ?? '',
             ],
         );
+
+        $sprinDateParts = $this->extractDateParts($suratData['sprin_date'] ?? '');
         $this->replaceParagraphRuns(
             $xpath,
             'TANGGAL',
             [
                 ' ',
-                'TANGGAL '.$dateParts['display_upper'],
+                'TANGGAL '.$sprinDateParts['display_upper'],
             ],
         );
 

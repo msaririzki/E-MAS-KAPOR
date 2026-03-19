@@ -392,32 +392,66 @@
 
 {{-- Modal Export SPPM --}}
 <div id="sppmModal" class="modal-overlay hidden">
-    <div class="modal-container" style="max-width: 500px;">
-        <div class="modal-header" style="border-bottom: 1px solid #E2E8F0; padding: 16px 20px;">
-            <h3 style="font-size: 16px; font-weight: 700; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i class="ri-file-word-line" style="color: #4F46E5;"></i> Pengaturan Cetak SPPM
-            </h3>
-            <button onclick="closeSppmModal()" class="btn-close" style="background: transparent; border: none; font-size: 20px; cursor: pointer; color: #64748B;">&times;</button>
+    <div class="modal-container" style="max-width: 550px; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2);">
+        <div class="modal-header" style="background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border-bottom: 1px solid #E2E8F0; padding: 20px 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #4F46E5; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);">
+                        <i class="ri-file-word-2-fill"></i>
+                    </div>
+                    Pengaturan Cetak SPPM
+                </h3>
+                <button onclick="closeSppmModal()" class="btn-close" style="background: #E2E8F0; border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 16px; cursor: pointer; color: #64748B; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <p style="font-size: 12.5px; color: #64748B; margin: 6px 0 0 42px;">Lengkapi detail surat perintah dan tanggal sebelum mengunduh dokumen.</p>
         </div>
-        <div class="modal-body" style="padding: 20px;">
+        <div class="modal-body" style="padding: 24px; background: #fff;">
             <form id="sppmForm" method="POST" action="{{ route('admin.budget.export-sppm', $budgetPackage) }}">
                 @csrf
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">Nomor SPPM</label>
-                    <input type="text" name="sppm_number" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 13px;" value="SPPM/           /VII/LOG.5.16.1./2025/ROLOG" required>
+                <div style="display: flex; flex-direction: column; gap: 18px;">
+                    
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+                            <i class="ri-barcode-box-line" style="color: #64748B; font-size: 14px;"></i> Nomor SPPM
+                        </label>
+                        <input type="text" name="sppm_number" class="form-control" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #F8FAFC; transition: all 0.2s; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" value="SPPM/           /VII/LOG.5.16.1./2025/ROLOG" required placeholder="Masukkan Nomor SPPM">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+                                <i class="ri-file-paper-2-line" style="color: #64748B; font-size: 14px;"></i> Nomor Sprin
+                            </label>
+                            <input type="text" name="sprin_number" class="form-control" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #F8FAFC; transition: all 0.2s; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" value="Sprin/1006/VII/LOG.5.16.1./2025" required placeholder="Contoh: Sprin/1006/VII/...">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+                                <i class="ri-calendar-event-line" style="color: #64748B; font-size: 14px;"></i> Tanggal Sprin
+                            </label>
+                            <div style="position: relative;">
+                                <input type="text" name="sprin_date" class="form-control datepicker" style="width: 100%; padding: 12px 14px; padding-left: 36px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #fff; cursor: pointer; transition: all 0.2s;" placeholder="Pilih tanggal sprin" required>
+                                <i class="ri-calendar-2-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 15px; pointer-events: none;"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+                            <i class="ri-calendar-check-line" style="color: #64748B; font-size: 14px;"></i> Tanggal Surat (SPPM)
+                        </label>
+                        <div style="position: relative;">
+                            <input type="text" name="sppm_date" class="form-control monthpicker" style="width: 100%; padding: 12px 14px; padding-left: 36px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #fff; cursor: pointer; transition: all 0.2s;" value="{{ strtoupper(\Carbon\Carbon::now()->translatedFormat('F Y')) }}" required placeholder="Pilih bulan dan tahun">
+                            <i class="ri-calendar-2-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 15px; pointer-events: none;"></i>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">Berdasarkan (Sprin)</label>
-                    <input type="text" name="sprin_number" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 13px;" value="Sprin/1006/VII/LOG.5.16.1./2025" required>
-                </div>
-                <div class="form-group" style="margin-bottom: 24px;">
-                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px;">Tanggal Surat</label>
-                    <input type="text" name="sppm_date" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 13px;" value="{{ strtoupper(\Carbon\Carbon::now()->translatedFormat('d F Y')) }}" required>
-                </div>
-                <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                    <button type="button" onclick="closeSppmModal()" class="btn btn-outline" style="padding: 10px 16px; border: 1px solid #CBD5E1; background: #fff; border-radius: 8px; font-weight: 600; font-size: 13px; color: #475569; cursor: pointer;">Batal</button>
-                    <button type="submit" id="btnSubmitSppm" class="btn" style="padding: 10px 16px; background: #4F46E5; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                        <i class="ri-download-line"></i> Download
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; padding-top: 16px; border-top: 1px dashed #E2E8F0;">
+                    <button type="button" onclick="closeSppmModal()" class="btn btn-outline" style="padding: 10px 18px; border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 10px; font-weight: 600; font-size: 13.5px; color: #475569; cursor: pointer; transition: all 0.2s;">Batal</button>
+                    <button type="submit" id="btnSubmitSppm" class="btn" style="padding: 10px 20px; background: #4F46E5; color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3); transition: all 0.2s;">
+                        <i class="ri-download-cloud-2-line"></i> Download Dokumen
                     </button>
                 </div>
             </form>
@@ -427,7 +461,10 @@
 @endsection
 
 @section('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
 <style>
+    .flatpickr-calendar { z-index: 99999 !important; }
      /* ── Main Layout Stack ── */
      .layout-stack {
         display: flex;
@@ -933,8 +970,29 @@
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize datepickers
+    flatpickr(".datepicker", {
+        locale: "id",
+        dateFormat: "d F Y",
+        allowInput: true
+    });
+    
+    // Initialize monthpickers
+    flatpickr(".monthpicker", {
+        locale: "id",
+        plugins: [
+            new monthSelectPlugin({
+                shorthand: false, // shows full month name
+                dateFormat: "F Y", // e.g. "Maret 2026"
+                altFormat: "F Y"
+            })
+        ]
+    });
     // Download Loading State tersinkronisasi murni via Fetch Blob
     document.querySelectorAll('.export-btn[data-download]').forEach(function(btn) {
         btn.addEventListener('click', async function(e) {

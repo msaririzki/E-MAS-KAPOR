@@ -1623,8 +1623,8 @@
             }
         }
 
-        @yield('styles')
     </style>
+    @yield('styles')
 </head>
 
 <body class="{{ (auth()->check() && auth()->user()->hasRole('personil')) ? 'theme-default' : (empty(auth()->user()->theme) ? 'theme-default' : auth()->user()->theme) }}">

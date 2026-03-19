@@ -528,13 +528,21 @@ class BudgetExportController extends Controller
         $validated = $request->validate([
             'sppm_number' => 'nullable|string',
             'sprin_number' => 'nullable|string',
+            'sprin_date' => 'nullable|string',
             'sppm_date' => 'nullable|string',
         ]);
+
+        // Tanggal Surat sengaja dihilangkan harinya jadi hanya tersisa Bulan dan Tahun, agar tanggal cetaknya kosong untuk tulis tangan "........"
+        $sppmDate = $validated['sppm_date'] ?? '';
+        if (! empty($sppmDate)) {
+            $sppmDate = preg_replace('/^\d{1,2}\s+/', '', $sppmDate);
+        }
 
         $filePath = $this->sppmExportService->generateForPackage($budgetPackage, [
             'sppm_number' => $validated['sppm_number'] ?? '',
             'sprin_number' => $validated['sprin_number'] ?? '',
-            'date' => $validated['sppm_date'] ?? '',
+            'sprin_date' => $validated['sprin_date'] ?? '',
+            'date' => $sppmDate,
         ]);
 
         if (! $filePath) {
