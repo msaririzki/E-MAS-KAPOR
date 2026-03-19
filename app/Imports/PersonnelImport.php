@@ -986,18 +986,16 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
 
         // ── Pre-load sekali agar tidak ada N+1 query ─────────────────────────
-        // PENTING: Hanya lookup personel & user di SATKER YANG SAMA.
+        // PENTING: existingPersonnel hanya lookup di SATKER YANG SAMA.
         // Jika NRP sudah ada di satker lain, tetap INSERT baru di satker target
         // agar jumlah personel sesuai dengan data sumber (Excel).
-        // Duplikat cross-satker tetap terdeteksi via flag has_nrp_issue dari preview.
+        // existingUsers tetap global karena users.nrp_nip UNIQUE constraint.
         $ranksById = Rank::all()->keyBy('id');
         $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
         $existingPersonnel = Personnel::whereIn('nrp', $allNrp)
             ->where('satker_id', $satkerId)
             ->get()->keyBy('nrp');
-        $existingUsers = User::whereIn('nrp_nip', $allNrp)
-            ->where('satker_id', $satker->id)
-            ->get()->keyBy('nrp_nip');
+        $existingUsers = User::whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
 
         // ── Satu transaksi besar untuk semua insert/update ───────────────────
         DB::transaction(function () use (
@@ -1038,13 +1036,20 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     $effectiveNrp = $nrp;
                     $isEmptyNrp = empty($nrp);
                     $isDuplicateNrp = ! empty($data['duplicate_nrp']);
+                    // Cross-satker duplicate: NRP ada di DB tapi di satker lain
+                    // Perlakukan seperti batch duplicate — buat TEMP user, tapi simpan NRP asli
+                    $isDbDuplicate = ! empty($data['db_duplicate']);
 
-                    if ($isEmptyNrp || $isDuplicateNrp) {
+                    // Perlu TEMP user jika: NRP kosong, duplikat dalam batch, ATAU duplikat cross-satker
+                    // Karena users.nrp_nip UNIQUE, kita tidak bisa buat user dengan NRP yang sama
+                    $needTempUser = $isEmptyNrp || $isDuplicateNrp || $isDbDuplicate;
+
+                    if ($needTempUser) {
                         $effectiveNrp = 'TEMP-'.strtoupper(substr(md5($fullName.$idx.time()), 0, 8));
                     }
 
-                    // Jika NRP duplikat dalam batch, jangan lookup existing — buat record baru
-                    $personnel = ($isEmptyNrp || $isDuplicateNrp) ? null : $existingPersonnel->get($effectiveNrp);
+                    // Jika NRP duplikat (batch/cross-satker), jangan lookup existing — buat record baru
+                    $personnel = $needTempUser ? null : $existingPersonnel->get($effectiveNrp);
 
                     if (! $personnel) {
                         // ── User baru: bcrypt cost=4 (10× lebih cepat, password bisa diubah nanti) ──
@@ -1070,9 +1075,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             $personnelType = 'PNS';
                         }
 
-                        // Simpan NRP asli untuk personil, tapi NRP duplikat disimpan NULL
-                        // agar tidak bentrok di database
-                        $saveNrp = $isEmptyNrp ? null : ($isDuplicateNrp ? $nrp : $effectiveNrp);
+                        // Simpan NRP asli untuk personil (personnels.nrp TIDAK unique)
+                        // Hanya NRP kosong yang disimpan NULL
+                        $saveNrp = $isEmptyNrp ? null : $nrp;
 
                         $personnel = Personnel::create([
                             'user_id' => $user->id,
@@ -1093,7 +1098,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'has_nrp_issue' => ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']),
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ]);
-                        if (! $isDuplicateNrp) {
+                        if (! $needTempUser) {
                             $existingPersonnel->put($effectiveNrp, $personnel);
                         }
                     } else {
