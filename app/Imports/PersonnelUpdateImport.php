@@ -201,16 +201,42 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
 
             $rankResult = PersonnelImport::findRankWithCorrection($rankInput, $ranks, $golongan);
 
+            // ── Resolusi Rumus Manual (=L15) ──────────────────────────
+            $resolveFormula = function ($val) use ($rows) {
+                if (is_string($val) && preg_match('/^=([A-Z]+)(\d+)$/i', trim($val), $m)) {
+                    $colStr = strtoupper($m[1]);
+                    $rNum = (int) $m[2];
+                    $cIdx = 0;
+                    foreach (str_split($colStr) as $char) {
+                        $cIdx = $cIdx * 26 + (ord($char) - 64);
+                    }
+                    $cIdx -= 1;
+                    $tIdx = $rNum - 11; // PersonnelUpdateImport startRow = 11
+
+                    if ($rows->has($tIdx)) {
+                        $targetRow = $rows->get($tIdx);
+                        if ($targetRow instanceof \Illuminate\Support\Collection) {
+                            $targetRow = $targetRow->toArray();
+                        }
+                        if (isset($targetRow[$cIdx])) {
+                            return trim((string) $targetRow[$cIdx]);
+                        }
+                    }
+                }
+
+                return $val;
+            };
+
             $sizes = $sizeSanitizer->sanitizeSubmittedSizes([
-                'topi' => trim($row[8] ?? ''),
-                'kemeja' => trim($row[9] ?? ''),
-                'celana' => trim($row[10] ?? ''),
-                'olahraga' => trim($row[11] ?? ''),
-                'sepatu_dinas' => trim($row[12] ?? ''),
-                'sepatu_olahraga' => trim($row[13] ?? ''),
-                'jaket' => trim($row[14] ?? ''),
-                'sabuk' => trim($row[15] ?? ''),
-                'jilbab' => trim($row[16] ?? ''),
+                'topi' => $resolveFormula(trim($row[8] ?? '')),
+                'kemeja' => $resolveFormula(trim($row[9] ?? '')),
+                'celana' => $resolveFormula(trim($row[10] ?? '')),
+                'olahraga' => $resolveFormula(trim($row[11] ?? '')),
+                'sepatu_dinas' => $resolveFormula(trim($row[12] ?? '')),
+                'sepatu_olahraga' => $resolveFormula(trim($row[13] ?? '')),
+                'jaket' => $resolveFormula(trim($row[14] ?? '')),
+                'sabuk' => $resolveFormula(trim($row[15] ?? '')),
+                'jilbab' => $resolveFormula(trim($row[16] ?? '')),
             ], $gender);
 
             // ── Multi-strategy matching ────────────────────────────────

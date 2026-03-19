@@ -587,11 +587,11 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
     }
 
     /**
-     * Start reading data from Row 11 (after the 10-row header in the template)
+     * Start reading data from Row 8 (to capture headers for dynamic mapping)
      */
     public function startRow(): int
     {
-        return 11;
+        return 8;
     }
 
     /**
@@ -640,6 +640,111 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
     }
 
     /**
+     * Parse headers dynamically to find column index mappings.
+     * This fixes missing/shifted columns in some Satker's customized templates (e.g. Dit Lantas).
+     */
+    private static function detectDynamicColumns(Collection $rows, int $offset): array
+    {
+        $cols = [
+            'sizes' => [
+                'topi' => 8 + $offset,
+                'kemeja' => 9 + $offset,
+                'celana' => 10 + $offset,
+                'olahraga' => 11 + $offset,
+                'sepatu_dinas' => 12 + $offset,
+                'sepatu_olahraga' => 13 + $offset,
+                'jaket' => 14 + $offset,
+                'sabuk' => 15 + $offset,
+                'jilbab' => 16 + $offset,
+            ],
+            'kets' => [
+                'ket1' => 17 + $offset,
+                'ket2' => 18 + $offset,
+                'ket3' => 19 + $offset,
+                'ket4' => 20 + $offset,
+            ],
+        ];
+
+        // Scan the first 7 rows to find a header row
+        foreach ($rows->take(7) as $row) {
+            $rowArr = $row instanceof Collection ? $row->toArray() : $row;
+
+            // We consider it a header row if it contains 'KEMEJA' or 'JAKET'
+            $imploded = strtoupper(implode(' ', array_map(function ($v) {
+                return trim((string) $v);
+            }, $rowArr)));
+            if (str_contains($imploded, 'KEMEJA') || str_contains($imploded, 'JAKET')) {
+                $newSizeCols = [];
+                $newKetCols = [];
+                $ketFound = 0;
+
+                foreach ($rowArr as $colIdx => $val) {
+                    $val = strtoupper(trim((string) $val));
+                    if (empty($val)) {
+                        continue;
+                    }
+
+                    // Match sizes
+                    if (str_contains($val, 'TUTUP') && str_contains($val, 'KEPALA')) {
+                        $newSizeCols['topi'] = $colIdx;
+                    } elseif ($val === 'TUTUP' || $val === 'KEPALA') {
+                        $newSizeCols['topi'] = $colIdx;
+                    } elseif (str_contains($val, 'KEMEJA')) {
+                        $newSizeCols['kemeja'] = $colIdx;
+                    } elseif (str_contains($val, 'CELANA') || str_contains($val, 'ROK')) {
+                        $newSizeCols['celana'] = $colIdx;
+                    } elseif (str_contains($val, 'BADAN')) {
+                        if (! isset($newSizeCols['celana'])) {
+                            $newSizeCols['celana'] = $colIdx;
+                        }
+                    } elseif (str_contains($val, 'KAKI') || str_contains($val, 'SEPATU DINAS')) {
+                        $newSizeCols['sepatu_dinas'] = $colIdx;
+                    } elseif (str_contains($val, 'DINAS') && ! str_contains($val, 'SEPATU')) {
+                        $newSizeCols['sepatu_dinas'] = $colIdx;
+                    } elseif (str_contains($val, 'OLAHRAGA') && str_contains($val, 'SEPATU')) {
+                        $newSizeCols['sepatu_olahraga'] = $colIdx;
+                    } elseif (str_contains($val, 'T.SHIRT') || str_contains($val, 'T-SHIRT') || str_contains($val, 'T SHIRT') || str_contains($val, 'KAOS')) {
+                        $newSizeCols['olahraga'] = $colIdx;
+                    } elseif (str_contains($val, 'OLAHRAGA')) {
+                        $sd = $newSizeCols['sepatu_dinas'] ?? $cols['sizes']['sepatu_dinas'] ?? null;
+                        if ($sd !== null && $sd === $colIdx - 1) {
+                            $newSizeCols['sepatu_olahraga'] = $colIdx;
+                        } else {
+                            $newSizeCols['olahraga'] = $colIdx;
+                        }
+                    } elseif (str_contains($val, 'JAKET')) {
+                        $newSizeCols['jaket'] = $colIdx;
+                    } elseif (str_contains($val, 'SABUK')) {
+                        $newSizeCols['sabuk'] = $colIdx;
+                    } elseif (str_contains($val, 'JILBAB')) {
+                        $newSizeCols['jilbab'] = $colIdx;
+                    }
+
+                    // Match Keterangan (KET, KET 1, KETERANGAN, dll)
+                    elseif (str_contains($val, 'KETERANGAN') || $val === 'KET' || str_starts_with($val, 'KET ')) {
+                        $ketFound++;
+                        $newKetCols['ket'.$ketFound] = $colIdx;
+                    }
+                }
+
+                // Merge detected columns with defaults
+                $cols['sizes'] = array_merge($cols['sizes'], $newSizeCols);
+                if (count($newKetCols) > 0) {
+                    $cols['kets']['ket1'] = $newKetCols['ket1'] ?? ($cols['sizes']['jilbab'] + 1);
+                    $cols['kets']['ket2'] = $newKetCols['ket2'] ?? ($cols['kets']['ket1'] + 1);
+                    $cols['kets']['ket3'] = $newKetCols['ket3'] ?? ($cols['kets']['ket2'] + 1);
+                    $cols['kets']['ket4'] = $newKetCols['ket4'] ?? ($cols['kets']['ket3'] + 1);
+                }
+
+                // Sengaja TIDAK break; di sini, agar baris sub-header (seperti CELANA/ROK di bawah TUTUP BADAN)
+                // bisa terbaca dan me-replace (override) index header utamanya.
+            }
+        }
+
+        return $cols;
+    }
+
+    /**
      * Parse rows menjadi array preview data (TANPA menyimpan ke DB).
      * Digunakan untuk menampilkan preview sebelum konfirmasi import.
      */
@@ -676,6 +781,11 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 $row = $row->toArray();
             }
 
+            // Auto-detect dynamic columns mapping (for missing size columns)
+            $colMaps = self::detectDynamicColumns($rows, $offset);
+            $sizeCols = $colMaps['sizes'];
+            $ketCols = $colMaps['kets'];
+
             // Terapkan offset kolom: jika double-NO, semua index geser +1
             $colName = 1 + $offset;
             $colRank = 2 + $offset;
@@ -684,10 +794,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $colJabatan = 5 + $offset;
             $colBagian = 6 + $offset;
             $colGender = 7 + $offset;
-            $colKet = 17 + $offset;
-            $colKet2 = 18 + $offset;
-            $colKet3 = 19 + $offset;
-            $colKet4 = 20 + $offset;
+            $colKet = $ketCols['ket1'];
+            $colKet2 = $ketCols['ket2'];
+            $colKet3 = $ketCols['ket3'];
+            $colKet4 = $ketCols['ket4'];
 
             // Bersihkan tanda bintang (*) dan normalisasi enter/spasi ganda (karena sering ada \n di dalam cell Excel)
             $fullNameRtn = str_replace('*', '', $row[$colName] ?? '');
@@ -763,6 +873,13 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             // Cegah false positive, misal ada orang bernama "Total", hanya tolak bila namanya persis "JUMLAH" atau "TOTAL"
             if ($nameLower === 'jumlah' || $nameLower === 'total' || $nameLower === 'dst' || $nameLower === 'dst.') {
                 continue;
+            }
+
+            // Abaikan baris header teks asli (sub-headers)
+            if ($nameLower === 'nama' || $nameLower === 'nama lengkap' || $nameLower === 'nama personel') {
+                if (strtolower($rankInput) === 'pangkat' || strtolower($jabatan) === 'jabatan') {
+                    continue;
+                }
             }
 
             // 1a2. Abaikan baris header kategori ukuran kapor (TUTUP KEPALA, KEMEJA, CELANA, dll)
@@ -849,17 +966,43 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             // Koreksi pangkat (sekarang menyertakan golongan untuk PPPK)
             $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan, $isSiswaSatker);
 
-            // Ukuran kapor (kolom I-Q, index 8-16, ditambah offset jika double-NO)
+            // ── Resolusi Rumus Manual (=L15) ──────────────────────────
+            $resolveFormula = function ($val) use ($rows) {
+                if (is_string($val) && preg_match('/^=([A-Z]+)(\d+)$/i', trim($val), $m)) {
+                    $colStr = strtoupper($m[1]);
+                    $rNum = (int) $m[2];
+                    $cIdx = 0;
+                    foreach (str_split($colStr) as $char) {
+                        $cIdx = $cIdx * 26 + (ord($char) - 64);
+                    }
+                    $cIdx -= 1;
+                    $tIdx = $rNum - 8; // PersonnelImport startRow = 8
+
+                    if ($rows->has($tIdx)) {
+                        $targetRow = $rows->get($tIdx);
+                        if ($targetRow instanceof \Illuminate\Support\Collection) {
+                            $targetRow = $targetRow->toArray();
+                        }
+                        if (isset($targetRow[$cIdx])) {
+                            return trim((string) $targetRow[$cIdx]);
+                        }
+                    }
+                }
+
+                return $val;
+            };
+
+            // Ukuran kapor (kolom ukuran terdeteksi secara dinamis)
             $sizes = $sizeSanitizer->sanitizeSubmittedSizes([
-                'topi' => trim($row[8 + $offset] ?? ''),
-                'kemeja' => trim($row[9 + $offset] ?? ''),
-                'celana' => trim($row[10 + $offset] ?? ''),
-                'olahraga' => trim($row[11 + $offset] ?? ''),
-                'sepatu_dinas' => trim($row[12 + $offset] ?? ''),
-                'sepatu_olahraga' => trim($row[13 + $offset] ?? ''),
-                'jaket' => trim($row[14 + $offset] ?? ''),
-                'sabuk' => trim($row[15 + $offset] ?? ''),
-                'jilbab' => trim($row[16 + $offset] ?? ''),
+                'topi' => $resolveFormula(trim($row[$sizeCols['topi']] ?? '')),
+                'kemeja' => $resolveFormula(trim($row[$sizeCols['kemeja']] ?? '')),
+                'celana' => $resolveFormula(trim($row[$sizeCols['celana']] ?? '')),
+                'olahraga' => $resolveFormula(trim($row[$sizeCols['olahraga']] ?? '')),
+                'sepatu_dinas' => $resolveFormula(trim($row[$sizeCols['sepatu_dinas']] ?? '')),
+                'sepatu_olahraga' => $resolveFormula(trim($row[$sizeCols['sepatu_olahraga']] ?? '')),
+                'jaket' => $resolveFormula(trim($row[$sizeCols['jaket']] ?? '')),
+                'sabuk' => $resolveFormula(trim($row[$sizeCols['sabuk']] ?? '')),
+                'jilbab' => $resolveFormula(trim($row[$sizeCols['jilbab']] ?? '')),
             ], $gender);
 
             // Pria tidak butuh jilbab — hapus dari data ukuran
@@ -908,7 +1051,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                         }
                     }
                 } else {
-                    $seenNrps[$nrp] = ['row_num' => $rowIndex + 11, 'preview_idx' => count($preview)];
+                    $seenNrps[$nrp] = ['row_num' => $rowIndex + 8, 'preview_idx' => count($preview)];
                 }
 
                 // 2) Duplikat terhadap database (cross-satker)
@@ -986,7 +1129,6 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $successCount = 0;
         $errorCount = 0;
         $errors = [];
-        $sizeMapping = ['topi', 'kemeja', 'celana', 'olahraga', 'sepatu_dinas', 'sepatu_olahraga', 'jaket', 'sabuk', 'jilbab'];
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
 
         // ── Pre-load sekali ─────────────────────────────────────────────────
@@ -1183,17 +1325,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $satker = Satker::find($this->satkerId) ?? Satker::first();
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
 
-        $sizeMapping = [
-            8 => 'topi',
-            9 => 'kemeja',
-            10 => 'celana',
-            11 => 'olahraga',
-            12 => 'sepatu_dinas',
-            13 => 'sepatu_olahraga',
-            14 => 'jaket',
-            15 => 'sabuk',
-            16 => 'jilbab',
-        ];
+        $offset = self::detectColumnOffset($rows);
+        $colMaps = self::detectDynamicColumns($rows, $offset);
+        $sizeCols = $colMaps['sizes'];
+        $ketCols = $colMaps['kets'];
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
 
         foreach ($rows as $rowIndex => $row) {
@@ -1205,13 +1340,21 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $rankInput = trim($row[2] ?? '');
             $golongan = trim($row[3] ?? '');
             $nrp = trim($row[4] ?? '');
-            $jabatan = trim($row[5] ?? '');
-            $bagian = trim($row[6] ?? '');
-            $genderRaw = strtoupper(trim($row[7] ?? ''));
-            $keterangan = trim($row[17] ?? '');
+            $jabatan = trim($row[5 + $offset] ?? '');
+            $bagian = trim($row[6 + $offset] ?? '');
+            $genderRaw = strtoupper(trim($row[7 + $offset] ?? ''));
+            $keterangan = trim($row[$ketCols['ket1']] ?? '');
 
             if (empty($nrp) || empty($fullName)) {
                 continue;
+            }
+
+            // Abaikan baris header teks asli (sub-headers)
+            $nameLower = strtolower($fullName);
+            if ($nameLower === 'nama' || $nameLower === 'nama lengkap' || $nameLower === 'nama personel') {
+                if (strtolower($rankInput) === 'pangkat' || strtolower(trim($jabatan)) === 'jabatan') {
+                    continue;
+                }
             }
 
             // Gender: P di Excel → L (Laki-laki), W di Excel → P (Perempuan)
