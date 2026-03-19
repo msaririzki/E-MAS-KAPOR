@@ -986,10 +986,18 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
 
         // ── Pre-load sekali agar tidak ada N+1 query ─────────────────────────
+        // PENTING: Hanya lookup personel & user di SATKER YANG SAMA.
+        // Jika NRP sudah ada di satker lain, tetap INSERT baru di satker target
+        // agar jumlah personel sesuai dengan data sumber (Excel).
+        // Duplikat cross-satker tetap terdeteksi via flag has_nrp_issue dari preview.
         $ranksById = Rank::all()->keyBy('id');
         $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
-        $existingPersonnel = Personnel::whereIn('nrp', $allNrp)->get()->keyBy('nrp');
-        $existingUsers = User::whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
+        $existingPersonnel = Personnel::whereIn('nrp', $allNrp)
+            ->where('satker_id', $satkerId)
+            ->get()->keyBy('nrp');
+        $existingUsers = User::whereIn('nrp_nip', $allNrp)
+            ->where('satker_id', $satker->id)
+            ->get()->keyBy('nrp_nip');
 
         // ── Satu transaksi besar untuk semua insert/update ───────────────────
         DB::transaction(function () use (
