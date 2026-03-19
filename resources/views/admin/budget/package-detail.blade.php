@@ -430,21 +430,15 @@
                             <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
                                 <i class="ri-calendar-event-line" style="color: #64748B; font-size: 14px;"></i> Tanggal Sprin
                             </label>
-                            <div style="position: relative;">
-                                <input type="text" name="sprin_date" class="form-control datepicker" style="width: 100%; padding: 12px 14px; padding-left: 36px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #fff; cursor: pointer; transition: all 0.2s;" placeholder="Pilih tanggal sprin" required>
-                                <i class="ri-calendar-2-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 15px; pointer-events: none;"></i>
-                            </div>
+                            <input type="date" name="sprin_date" class="form-control" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #fff; transition: all 0.2s;" required>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
-                            <i class="ri-calendar-check-line" style="color: #64748B; font-size: 14px;"></i> Tanggal Surat (SPPM)
+                            <i class="ri-calendar-check-line" style="color: #64748B; font-size: 14px;"></i> Bulan & Tahun Surat (SPPM)
                         </label>
-                        <div style="position: relative;">
-                            <input type="text" name="sppm_date" class="form-control monthpicker" style="width: 100%; padding: 12px 14px; padding-left: 36px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #fff; cursor: pointer; transition: all 0.2s;" value="{{ strtoupper(\Carbon\Carbon::now()->translatedFormat('F Y')) }}" required placeholder="Pilih bulan dan tahun">
-                            <i class="ri-calendar-2-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 15px; pointer-events: none;"></i>
-                        </div>
+                        <input type="month" name="sppm_date" class="form-control" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #fff; transition: all 0.2s;" required value="{{ \Carbon\Carbon::now()->format('Y-m') }}">
                     </div>
                 </div>
 
@@ -461,10 +455,7 @@
 @endsection
 
 @section('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
 <style>
-    .flatpickr-calendar { z-index: 99999 !important; }
      /* ── Main Layout Stack ── */
      .layout-stack {
         display: flex;
@@ -970,29 +961,8 @@
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize datepickers
-    flatpickr(".datepicker", {
-        locale: "id",
-        dateFormat: "d F Y",
-        allowInput: true
-    });
-    
-    // Initialize monthpickers
-    flatpickr(".monthpicker", {
-        locale: "id",
-        plugins: [
-            new monthSelectPlugin({
-                shorthand: false, // shows full month name
-                dateFormat: "F Y", // e.g. "Maret 2026"
-                altFormat: "F Y"
-            })
-        ]
-    });
     // Download Loading State tersinkronisasi murni via Fetch Blob
     document.querySelectorAll('.export-btn[data-download]').forEach(function(btn) {
         btn.addEventListener('click', async function(e) {

@@ -528,21 +528,25 @@ class BudgetExportController extends Controller
         $validated = $request->validate([
             'sppm_number' => 'nullable|string',
             'sprin_number' => 'nullable|string',
-            'sprin_date' => 'nullable|string',
+            'sprin_date' => 'nullable|date',
             'sppm_date' => 'nullable|string',
         ]);
 
-        // Tanggal Surat sengaja dihilangkan harinya jadi hanya tersisa Bulan dan Tahun, agar tanggal cetaknya kosong untuk tulis tangan "........"
-        $sppmDate = $validated['sppm_date'] ?? '';
-        if (! empty($sppmDate)) {
-            $sppmDate = preg_replace('/^\d{1,2}\s+/', '', $sppmDate);
+        $sprinDateFormatted = '';
+        if (!empty($validated['sprin_date'])) {
+            $sprinDateFormatted = \Carbon\Carbon::parse($validated['sprin_date'])->locale('id')->translatedFormat('d F Y');
+        }
+
+        $sppmDateFormatted = '';
+        if (!empty($validated['sppm_date'])) {
+            $sppmDateFormatted = \Carbon\Carbon::createFromFormat('Y-m', $validated['sppm_date'])->locale('id')->translatedFormat('F Y');
         }
 
         $filePath = $this->sppmExportService->generateForPackage($budgetPackage, [
             'sppm_number' => $validated['sppm_number'] ?? '',
             'sprin_number' => $validated['sprin_number'] ?? '',
-            'sprin_date' => $validated['sprin_date'] ?? '',
-            'date' => $sppmDate,
+            'sprin_date' => $sprinDateFormatted,
+            'date' => $sppmDateFormatted,
         ]);
 
         if (! $filePath) {
