@@ -985,21 +985,20 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $sizeMapping = ['topi', 'kemeja', 'celana', 'olahraga', 'sepatu_dinas', 'sepatu_olahraga', 'jaket', 'sabuk', 'jilbab'];
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
 
-        // ── Pre-load sekali agar tidak ada N+1 query ─────────────────────────
-        // PENTING: existingPersonnel hanya lookup di SATKER YANG SAMA.
-        // Jika NRP sudah ada di satker lain, tetap INSERT baru di satker target
-        // agar jumlah personel sesuai dengan data sumber (Excel).
-        // existingUsers tetap global karena users.nrp_nip UNIQUE constraint.
+        // ── Pre-load sekali ─────────────────────────────────────────────────
         $ranksById = Rank::all()->keyBy('id');
-        $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
-        $existingPersonnel = Personnel::whereIn('nrp', $allNrp)
-            ->where('satker_id', $satkerId)
-            ->get()->keyBy('nrp');
-        $existingUsers = User::whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
 
-        // ── Satu transaksi besar untuk semua insert/update ───────────────────
+        // Kumpulkan semua NRP yang sudah ada di tabel users (UNIQUE constraint)
+        // agar bisa deteksi bentrok dan buat TEMP nrp_nip kalau perlu
+        $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
+        $usedNrpNip = User::whereIn('nrp_nip', $allNrp)->pluck('nrp_nip')->flip();
+
+        // Track NRP yang sudah dipakai dalam batch ini (cegah UNIQUE collision)
+        $batchUsedNrpNip = [];
+
+        // ── Satu transaksi besar untuk semua insert ──────────────────────────
         DB::transaction(function () use (
-            $rows, $satker, $ranksById, $existingPersonnel, $existingUsers, $sizeSanitizer, &$successCount, &$errorCount, &$errors
+            $rows, $satker, $ranksById, $usedNrpNip, &$batchUsedNrpNip, $sizeSanitizer, &$successCount, &$errorCount, &$errors
         ) {
             foreach ($rows as $idx => $data) {
                 $nrp = trim($data['nrp'] ?? '');
@@ -1031,128 +1030,72 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 }
 
                 try {
-                    // Jika NRP kosong, generate ID sementara untuk akun user (login)
-                    // tapi simpan personnels.nrp sebagai NULL agar tampil "—" di UI
-                    $effectiveNrp = $nrp;
                     $isEmptyNrp = empty($nrp);
-                    $isDuplicateNrp = ! empty($data['duplicate_nrp']);
-                    // Cross-satker duplicate: NRP ada di DB tapi di satker LAIN
-                    // Buat TEMP user supaya tidak bentrok UNIQUE constraint di users & personnels
-                    // CATATAN: jika same_satker=true, JANGAN perlakukan sebagai duplikat —
-                    // biarkan existingPersonnel menangani (UPDATE, bukan INSERT baru)
-                    $isCrossSatkerDuplicate = ! empty($data['db_duplicate'])
-                        && ! ($data['db_duplicate']['same_satker'] ?? false);
 
-                    // Perlu TEMP user jika: NRP kosong, duplikat dalam batch, ATAU duplikat cross-satker
-                    // Karena users.nrp_nip UNIQUE, kita tidak bisa buat user dengan NRP yang sama
-                    $needTempUser = $isEmptyNrp || $isDuplicateNrp || $isCrossSatkerDuplicate;
-
-                    if ($needTempUser) {
-                        $effectiveNrp = 'TEMP-'.strtoupper(substr(md5($fullName.$idx.time()), 0, 8));
+                    // ── Tentukan nrp_nip untuk user account ──────────────────
+                    // users.nrp_nip UNIQUE → jika NRP sudah dipakai (di DB atau batch ini),
+                    // buat TEMP agar tidak bentrok. Personnel tetap simpan NRP asli.
+                    $nrpNipForUser = $nrp;
+                    if ($isEmptyNrp || $usedNrpNip->has($nrp) || isset($batchUsedNrpNip[$nrp])) {
+                        $nrpNipForUser = 'TEMP-'.strtoupper(substr(md5($fullName.$idx.microtime(true)), 0, 8));
                     }
 
-                    // Jika NRP duplikat (batch/cross-satker), jangan lookup existing — buat record baru
-                    $personnel = $needTempUser ? null : $existingPersonnel->get($effectiveNrp);
-
-                    if (! $personnel) {
-                        // ── User baru: bcrypt cost=4 (10× lebih cepat, password bisa diubah nanti) ──
-                        $user = $existingUsers->get($effectiveNrp);
-                        if (! $user) {
-                            $user = User::create([
-                                'name' => $fullName,
-                                'nrp_nip' => $effectiveNrp,
-                                'password' => password_hash($effectiveNrp, PASSWORD_BCRYPT, ['cost' => 4]),
-                                'satker_id' => $satker->id,
-                                'is_active' => true,
-                            ]);
-                            $user->assignRole('personil');
-                            $existingUsers->put($effectiveNrp, $user);
-                        }
-
-                        // Tentukan personnel_type berdasarkan rank atau default
-                        $personnelType = 'Polri';
-                        if ($rank && $rank->category === 'PNS') {
-                            $personnelType = 'PNS';
-                        } elseif (! $rank && ! empty($golongan)) {
-                            // Jika tidak ada pangkat tapi ada golongan, kemungkinan PNS
-                            $personnelType = 'PNS';
-                        }
-
-                        // Simpan NRP asli untuk personil (personnels.nrp TIDAK unique)
-                        // Hanya NRP kosong yang disimpan NULL
-                        $saveNrp = $isEmptyNrp ? null : $nrp;
-
-                        $personnel = Personnel::create([
-                            'user_id' => $user->id,
-                            'nrp' => $saveNrp,
-                            'full_name' => $fullName,
-                            'rank_id' => $rank ? $rank->id : null,
-                            'satker_id' => $satker->id,
-                            'jabatan' => $jabatan,
-                            'bagian' => $bagian,
-                            'personnel_type' => $personnelType,
-                            'gender' => $gender,
-                            'golongan' => $golongan,
-                            'keterangan' => $keterangan,
-                            'keterangan_2' => $keterangan2 ?: null,
-                            'keterangan_3' => $keterangan3 ?: null,
-                            'keterangan_4' => $keterangan4 ?: null,
-                            'is_active' => true,
-                            'has_nrp_issue' => ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']),
-                            'nrp_issue_note' => $this->buildNrpIssueNote($data),
-                        ]);
-                        if (! $needTempUser) {
-                            $existingPersonnel->put($effectiveNrp, $personnel);
-                        }
-                    } else {
-                        // ── Update personel yang sudah ada (same-satker) ──
-                        // Tentukan personnel_type ulang agar koreksi dari import sebelumnya
-                        $personnelType = $personnel->personnel_type; // default: pertahankan
-                        if ($rank && $rank->category === 'PNS') {
-                            $personnelType = 'PNS';
-                        } elseif ($rank && $rank->category !== 'PNS') {
-                            $personnelType = 'Polri';
-                        } elseif (! $rank && ! empty($golongan)) {
-                            $personnelType = 'PNS';
-                        }
-
-                        $updateData = [
-                            'full_name' => $fullName,
-                            'satker_id' => $satker->id,
-                            'jabatan' => $jabatan,
-                            'bagian' => $bagian,
-                            'golongan' => $golongan,
-                            'keterangan' => $keterangan,
-                            'keterangan_2' => $keterangan2 ?: null,
-                            'keterangan_3' => $keterangan3 ?: null,
-                            'keterangan_4' => $keterangan4 ?: null,
-                            'gender' => $gender,
-                            'personnel_type' => $personnelType,
-                            'has_nrp_issue' => ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']),
-                            'nrp_issue_note' => $this->buildNrpIssueNote($data),
-                        ];
-                        // Hanya update rank_id jika ada
-                        if ($rank) {
-                            $updateData['rank_id'] = $rank->id;
-                        }
-                        $personnel->update($updateData);
+                    // Tandai NRP ini sudah dipakai dalam batch
+                    if (! $isEmptyNrp) {
+                        $batchUsedNrpNip[$nrp] = true;
                     }
+
+                    // ── Buat user baru ────────────────────────────────────────
+                    $user = User::create([
+                        'name' => $fullName,
+                        'nrp_nip' => $nrpNipForUser,
+                        'password' => password_hash($nrpNipForUser, PASSWORD_BCRYPT, ['cost' => 4]),
+                        'satker_id' => $satker->id,
+                        'is_active' => true,
+                    ]);
+                    $user->assignRole('personil');
+
+                    // ── Tentukan personnel_type ───────────────────────────────
+                    $personnelType = 'Polri';
+                    if ($rank && $rank->category === 'PNS') {
+                        $personnelType = 'PNS';
+                    } elseif (! $rank && ! empty($golongan)) {
+                        $personnelType = 'PNS';
+                    }
+
+                    // ── Buat personnel baru ───────────────────────────────────
+                    // personnels.nrp TIDAK unique → simpan NRP asli (boleh duplikat)
+                    $hasNrpIssue = ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']);
+
+                    $personnel = Personnel::create([
+                        'user_id' => $user->id,
+                        'nrp' => $isEmptyNrp ? null : $nrp,
+                        'full_name' => $fullName,
+                        'rank_id' => $rank ? $rank->id : null,
+                        'satker_id' => $satker->id,
+                        'jabatan' => $jabatan,
+                        'bagian' => $bagian,
+                        'personnel_type' => $personnelType,
+                        'gender' => $gender,
+                        'golongan' => $golongan,
+                        'keterangan' => $keterangan,
+                        'keterangan_2' => $keterangan2 ?: null,
+                        'keterangan_3' => $keterangan3 ?: null,
+                        'keterangan_4' => $keterangan4 ?: null,
+                        'is_active' => true,
+                        'has_nrp_issue' => $hasNrpIssue,
+                        'nrp_issue_note' => $this->buildNrpIssueNote($data),
+                    ]);
 
                     // Simpan ukuran kapor
-                    $kaporSizes = array_merge(
-                        is_array($personnel->kapor_sizes) ? $personnel->kapor_sizes : [],
-                        $sizeSanitizer->sanitizeSubmittedSizes($sizes, $gender),
-                    );
-
-                    // Pria tidak butuh jilbab — hapus dari kapor_sizes
-                    $personnel->kapor_sizes = $kaporSizes;
+                    $personnel->kapor_sizes = $sizeSanitizer->sanitizeSubmittedSizes($sizes, $gender);
                     $personnel->save();
 
                     $successCount++;
                 } catch (\Exception $e) {
                     $errorCount++;
                     $errors[] = "Baris {$idx} (NRP: {$nrp}): ".$e->getMessage();
-                    \Illuminate\Support\Facades\Log::error("[IMPORT ERROR] Baris={$idx} NRP={$nrp} Name={$fullName} needTempUser={$needTempUser} dbDup=".json_encode($data['db_duplicate'] ?? null).' Err='.$e->getMessage());
+                    \Illuminate\Support\Facades\Log::error("[IMPORT ERROR] Baris={$idx} NRP={$nrp} Name={$fullName} Err=".$e->getMessage());
                 }
             }
         });
