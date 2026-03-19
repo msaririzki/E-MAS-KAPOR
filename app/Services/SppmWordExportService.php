@@ -16,7 +16,13 @@ class SppmWordExportService
 {
     private const TEMPLATE_PATH = 'resources/templates/sppm/format_sppm_polda.docx';
 
-    private const BOTTOM_MARGIN_TWIP = '1800';
+    private const TOP_MARGIN_TWIP = '1134';
+
+    private const BOTTOM_MARGIN_TWIP = '567';
+
+    private const LEFT_MARGIN_TWIP = '567';
+
+    private const RIGHT_MARGIN_TWIP = '164';
 
     private const FOOTER_MARGIN_TWIP = '900';
 
@@ -245,7 +251,10 @@ class SppmWordExportService
                 continue;
             }
 
+            $pageMargin->setAttribute('w:top', self::TOP_MARGIN_TWIP);
             $pageMargin->setAttribute('w:bottom', self::BOTTOM_MARGIN_TWIP);
+            $pageMargin->setAttribute('w:left', self::LEFT_MARGIN_TWIP);
+            $pageMargin->setAttribute('w:right', self::RIGHT_MARGIN_TWIP);
             $pageMargin->setAttribute('w:footer', self::FOOTER_MARGIN_TWIP);
         }
     }
