@@ -103,6 +103,16 @@ Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope
     Route::get('/monitor', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'monitor'])->name('monitor');
     Route::get('/reports', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'reports'])->name('reports');
     Route::get('/settings', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'settings'])->name('settings');
+
+    // Identifikasi Kebutuhan (Admin Satker)
+    Route::get('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'index'])->name('kebutuhan.index');
+    Route::get('/kebutuhan/create', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'create'])->name('kebutuhan.create');
+    Route::post('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'store'])->name('kebutuhan.store');
+    Route::get('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'show'])->name('kebutuhan.show');
+    Route::get('/kebutuhan/{kebutuhan}/edit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'edit'])->name('kebutuhan.edit');
+    Route::put('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'update'])->name('kebutuhan.update');
+    Route::delete('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'destroy'])->name('kebutuhan.destroy');
+    Route::post('/kebutuhan/{kebutuhan}/submit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'submit'])->name('kebutuhan.submit');
 });
 
 // â”€â”€ Admin Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -140,6 +150,11 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_satker', 'satker.scope']
     Route::get('/kapor-items/{kaporItem}/sizes', [\App\Http\Controllers\Admin\KaporItemController::class, 'getSizes'])->name('kapor-items.sizes.index');
     Route::post('/kapor-items/{kaporItem}/sizes', [\App\Http\Controllers\Admin\KaporItemController::class, 'addSize'])->name('kapor-items.sizes.store');
     Route::delete('/kapor-items/{kaporItem}/sizes/{size}', [\App\Http\Controllers\Admin\KaporItemController::class, 'deleteSize'])->name('kapor-items.sizes.destroy');
+
+    Route::get('/identifikasi-kebutuhan', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'index'])->name('identifikasi-kebutuhan.index');
+    Route::get('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'show'])->name('identifikasi-kebutuhan.show');
+    Route::post('/identifikasi-kebutuhan/{kebutuhan}/approve', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'approve'])->name('identifikasi-kebutuhan.approve');
+    Route::post('/identifikasi-kebutuhan/{kebutuhan}/reject', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'reject'])->name('identifikasi-kebutuhan.reject');
 
     Route::get('/personnel/print-satker', [\App\Http\Controllers\Admin\PersonnelController::class, 'printSatker'])->name('personnel.print-satker');
     Route::get('/personnel', [\App\Http\Controllers\Admin\PersonnelController::class, 'index'])->name('personnel.index');

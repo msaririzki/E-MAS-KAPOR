@@ -1684,6 +1684,10 @@
                             class="nav-link {{ request()->routeIs('admin.personnel.*') ? 'active' : '' }}">
                             Data Personel
                         </a>
+                        <a href="{{ route('admin-satker.kebutuhan.index') }}"
+                            class="nav-link {{ request()->routeIs('admin-satker.kebutuhan.*') ? 'active' : '' }}">
+                            Identifikasi Kebutuhan
+                        </a>
                         <a href="{{ route('admin-satker.monitor') }}"
                             class="nav-link {{ request()->routeIs('admin-satker.monitor') ? 'active' : '' }}">
                             Monitoring
@@ -1719,7 +1723,7 @@
                     </div>
                 </div>
 
-                <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') ? 'open' : '' }}">
+                <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') || request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-t-shirt-2-line group-icon"></i> Data Master
                         <i class="ri-arrow-down-s-line group-chevron"></i>
@@ -1732,6 +1736,10 @@
                         <a href="{{ route('admin.kapor-items.index') }}"
                             class="nav-link {{ request()->routeIs('admin.kapor-items.*') ? 'active' : '' }}">
                             Item Kapor
+                        </a>
+                        <a href="{{ route('admin.identifikasi-kebutuhan.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'active' : '' }}">
+                            Identifikasi Kebutuhan
                         </a>
                     </div>
                 </div>
