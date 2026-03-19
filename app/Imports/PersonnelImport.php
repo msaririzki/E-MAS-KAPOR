@@ -1138,11 +1138,18 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 } catch (\Exception $e) {
                     $errorCount++;
                     $errors[] = "Baris {$idx} (NRP: {$nrp}): ".$e->getMessage();
+                    \Illuminate\Support\Facades\Log::error("[IMPORT ERROR] Baris={$idx} NRP={$nrp} Name={$fullName} needTempUser={$needTempUser} dbDup=".json_encode($data['db_duplicate'] ?? null)." Err=".$e->getMessage());
                 }
             }
         });
 
         self::recalculateSatkerCount($satkerId);
+
+        // DEBUG LOG — sementara untuk trace masalah import cross-satker
+        $totalRows = count($rows);
+        $dbDupCount = collect($rows)->filter(fn ($r) => ! empty($r['db_duplicate']))->count();
+        $batchDupCount = collect($rows)->filter(fn ($r) => ! empty($r['duplicate_nrp']))->count();
+        \Illuminate\Support\Facades\Log::info("[IMPORT DEBUG] Satker={$satkerId} Total={$totalRows} Success={$successCount} Error={$errorCount} DbDup={$dbDupCount} BatchDup={$batchDupCount}");
 
         return [
             'success_count' => $successCount,
