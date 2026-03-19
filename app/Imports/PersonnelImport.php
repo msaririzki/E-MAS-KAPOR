@@ -1036,13 +1036,16 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     $effectiveNrp = $nrp;
                     $isEmptyNrp = empty($nrp);
                     $isDuplicateNrp = ! empty($data['duplicate_nrp']);
-                    // Cross-satker duplicate: NRP ada di DB tapi di satker lain
-                    // Perlakukan seperti batch duplicate — buat TEMP user, tapi simpan NRP asli
-                    $isDbDuplicate = ! empty($data['db_duplicate']);
+                    // Cross-satker duplicate: NRP ada di DB tapi di satker LAIN
+                    // Buat TEMP user supaya tidak bentrok UNIQUE constraint di users & personnels
+                    // CATATAN: jika same_satker=true, JANGAN perlakukan sebagai duplikat —
+                    // biarkan existingPersonnel menangani (UPDATE, bukan INSERT baru)
+                    $isCrossSatkerDuplicate = ! empty($data['db_duplicate'])
+                        && ! ($data['db_duplicate']['same_satker'] ?? false);
 
                     // Perlu TEMP user jika: NRP kosong, duplikat dalam batch, ATAU duplikat cross-satker
                     // Karena users.nrp_nip UNIQUE, kita tidak bisa buat user dengan NRP yang sama
-                    $needTempUser = $isEmptyNrp || $isDuplicateNrp || $isDbDuplicate;
+                    $needTempUser = $isEmptyNrp || $isDuplicateNrp || $isCrossSatkerDuplicate;
 
                     if ($needTempUser) {
                         $effectiveNrp = 'TEMP-'.strtoupper(substr(md5($fullName.$idx.time()), 0, 8));
@@ -1102,7 +1105,17 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             $existingPersonnel->put($effectiveNrp, $personnel);
                         }
                     } else {
-                        // ── Update personel yang sudah ada ──
+                        // ── Update personel yang sudah ada (same-satker) ──
+                        // Tentukan personnel_type ulang agar koreksi dari import sebelumnya
+                        $personnelType = $personnel->personnel_type; // default: pertahankan
+                        if ($rank && $rank->category === 'PNS') {
+                            $personnelType = 'PNS';
+                        } elseif ($rank && $rank->category !== 'PNS') {
+                            $personnelType = 'Polri';
+                        } elseif (! $rank && ! empty($golongan)) {
+                            $personnelType = 'PNS';
+                        }
+
                         $updateData = [
                             'full_name' => $fullName,
                             'satker_id' => $satker->id,
@@ -1114,6 +1127,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'keterangan_3' => $keterangan3 ?: null,
                             'keterangan_4' => $keterangan4 ?: null,
                             'gender' => $gender,
+                            'personnel_type' => $personnelType,
                             'has_nrp_issue' => ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']),
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ];
@@ -1138,7 +1152,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 } catch (\Exception $e) {
                     $errorCount++;
                     $errors[] = "Baris {$idx} (NRP: {$nrp}): ".$e->getMessage();
-                    \Illuminate\Support\Facades\Log::error("[IMPORT ERROR] Baris={$idx} NRP={$nrp} Name={$fullName} needTempUser={$needTempUser} dbDup=".json_encode($data['db_duplicate'] ?? null)." Err=".$e->getMessage());
+                    \Illuminate\Support\Facades\Log::error("[IMPORT ERROR] Baris={$idx} NRP={$nrp} Name={$fullName} needTempUser={$needTempUser} dbDup=".json_encode($data['db_duplicate'] ?? null).' Err='.$e->getMessage());
                 }
             }
         });
