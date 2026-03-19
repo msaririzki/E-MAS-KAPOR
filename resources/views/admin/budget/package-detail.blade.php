@@ -118,7 +118,7 @@
             <div class="swb-icon"><i class="ri-error-warning-fill"></i></div>
             <div>
                 <div class="swb-title">
-                    {{ number_format(collect($sizeWarnings)->sum('missing')) }} personel belum mengisi data ukuran kapor
+                    {{ number_format(collect($sizeWarnings)->sum('missing')) }} personel belum mengisi ukuran yang relevan
                 </div>
                 <div class="swb-subtitle">
                     Memengaruhi {{ count($sizeWarnings) }} jenis barang — klik untuk melihat rincian
@@ -126,7 +126,7 @@
             </div>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
-            <a href="{{ route('admin.personnel.index', ['status' => 'incomplete']) }}"
+            <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'incomplete_scope' => 'size_only']) }}"
                onclick="event.stopPropagation()"
                class="swb-link-btn"
                title="Buka halaman personel yang belum isi ukuran">
@@ -143,6 +143,9 @@
                 <div class="swb-item-name">
                     <i class="ri-shirt-line"></i>
                     {{ $warn['item_name'] }}
+                    <span style="margin-left:8px; font-size:11px; color:#92400E; background:#FEF3C7; border:1px solid #FCD34D; border-radius:999px; padding:2px 8px;">
+                        {{ $warn['size_label'] }}
+                    </span>
                 </div>
                 <div class="swb-item-stats">
                     <span class="swb-stat">
@@ -191,7 +194,7 @@
                                 <span style="font-size:11px; color:#64748B; margin-left:4px;">{{ $sk['total'] > 0 ? round(($sk['valid'] / $sk['total']) * 100) : 0 }}%</span>
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'satker_id' => $sk['satker_id']]) }}"
+                                <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'incomplete_scope' => 'size_only', 'missing_size' => $warn['size_key'], 'kapor_item_id' => $warn['kapor_item_id'], 'satker_id' => $sk['satker_id']]) }}"
                                    class="swb-satker-link"
                                    title="Lihat personel belum isi ukuran di {{ $sk['satker_name'] }}">
                                     <i class="ri-external-link-line"></i> Isi Ukuran

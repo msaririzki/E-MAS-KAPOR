@@ -121,6 +121,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
     public function generatePreview(Collection $rows): array
     {
         $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
+        $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
 
         // Data seluruh personel dari semua satker untuk deteksi cross-database NRP duplikat
         $allNrpData = Personnel::whereNotNull('nrp')
@@ -200,7 +201,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
 
             $rankResult = PersonnelImport::findRankWithCorrection($rankInput, $ranks, $golongan);
 
-            $sizes = [
+            $sizes = $sizeSanitizer->sanitizeSubmittedSizes([
                 'topi' => trim($row[8] ?? ''),
                 'kemeja' => trim($row[9] ?? ''),
                 'celana' => trim($row[10] ?? ''),
@@ -210,10 +211,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                 'jaket' => trim($row[14] ?? ''),
                 'sabuk' => trim($row[15] ?? ''),
                 'jilbab' => trim($row[16] ?? ''),
-            ];
-            if ($gender === 'L') {
-                unset($sizes['jilbab']);
-            }
+            ], $gender);
 
             // ── Multi-strategy matching ────────────────────────────────
             $match = $this->findMatch($nrp, $fullName, $existingByNrp, $existingByName);
@@ -431,6 +429,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
         $noChangeCount = 0;
         $errorCount = 0;
         $errors = [];
+        $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
 
         DB::beginTransaction();
 
@@ -513,7 +512,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
 
                         // Merge ukuran kapor
                         $existingSizes = is_array($personnel->kapor_sizes) ? $personnel->kapor_sizes : [];
-                        $newSizes = array_filter($data['sizes'] ?? [], fn ($v) => $v !== '');
+                        $newSizes = $sizeSanitizer->sanitizeSubmittedSizes($data['sizes'] ?? [], $updateData['gender'] ?? $personnel->gender);
                         $merged = array_merge($existingSizes, $newSizes);
                         if (! empty($merged)) {
                             $updateData['kapor_sizes'] = $merged;
@@ -568,7 +567,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                             'keterangan_2' => $data['keterangan_2'] ?: null,
                             'keterangan_3' => $data['keterangan_3'] ?: null,
                             'keterangan_4' => $data['keterangan_4'] ?: null,
-                            'kapor_sizes' => array_filter($data['sizes'] ?? [], fn ($v) => $v !== ''),
+                            'kapor_sizes' => $sizeSanitizer->sanitizeSubmittedSizes($data['sizes'] ?? [], $data['gender'] ?: 'L'),
                             'has_nrp_issue' => ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']),
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ]);

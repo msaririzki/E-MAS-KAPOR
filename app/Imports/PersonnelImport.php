@@ -648,6 +648,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
         $preview = [];
         $seenNrps = []; // Track NRPs untuk deteksi duplikat dalam batch
+        $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
 
         // Pre-load semua NRP yang sudah ada di database untuk deteksi cross-DB
         $existingNrpData = Personnel::whereNotNull('nrp')
@@ -846,7 +847,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan, $isSiswaSatker);
 
             // Ukuran kapor (kolom I-Q, index 8-16, ditambah offset jika double-NO)
-            $sizes = [
+            $sizes = $sizeSanitizer->sanitizeSubmittedSizes([
                 'topi' => trim($row[8 + $offset] ?? ''),
                 'kemeja' => trim($row[9 + $offset] ?? ''),
                 'celana' => trim($row[10 + $offset] ?? ''),
@@ -856,13 +857,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 'jaket' => trim($row[14 + $offset] ?? ''),
                 'sabuk' => trim($row[15 + $offset] ?? ''),
                 'jilbab' => trim($row[16 + $offset] ?? ''),
-            ];
+            ], $gender);
 
             // Pria tidak butuh jilbab — hapus dari data ukuran
-            if ($gender === 'L') {
-                unset($sizes['jilbab']);
-            }
-
             $status = 'ok';
             $incompleteFields = [];
 
@@ -986,6 +983,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $errorCount = 0;
         $errors = [];
         $sizeMapping = ['topi', 'kemeja', 'celana', 'olahraga', 'sepatu_dinas', 'sepatu_olahraga', 'jaket', 'sabuk', 'jilbab'];
+        $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
 
         // ── Pre-load sekali agar tidak ada N+1 query ─────────────────────────
         $ranksById = Rank::all()->keyBy('id');
@@ -995,8 +993,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
 
         // ── Satu transaksi besar untuk semua insert/update ───────────────────
         DB::transaction(function () use (
-            $rows, $satker, $ranksById, $existingPersonnel, $existingUsers,
-            $sizeMapping, &$successCount, &$errorCount, &$errors
+            $rows, $satker, $ranksById, $existingPersonnel, $existingUsers, $sizeSanitizer, &$successCount, &$errorCount, &$errors
         ) {
             foreach ($rows as $idx => $data) {
                 $nrp = trim($data['nrp'] ?? '');
@@ -1115,19 +1112,12 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     }
 
                     // Simpan ukuran kapor
-                    $kaporSizes = is_array($personnel->kapor_sizes) ? $personnel->kapor_sizes : [];
-                    foreach ($sizeMapping as $key) {
-                        $val = trim($sizes[$key] ?? '');
-                        if (! empty($val) && $val !== '-' && $val !== '0') {
-                            $kaporSizes[$key] = $val;
-                        }
-                    }
+                    $kaporSizes = array_merge(
+                        is_array($personnel->kapor_sizes) ? $personnel->kapor_sizes : [],
+                        $sizeSanitizer->sanitizeSubmittedSizes($sizes, $gender),
+                    );
 
                     // Pria tidak butuh jilbab — hapus dari kapor_sizes
-                    if ($gender === 'L') {
-                        unset($kaporSizes['jilbab']);
-                    }
-
                     $personnel->kapor_sizes = $kaporSizes;
                     $personnel->save();
 
@@ -1227,6 +1217,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             15 => 'sabuk',
             16 => 'jilbab',
         ];
+        $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
 
         foreach ($rows as $rowIndex => $row) {
             if ($row instanceof Collection) {
@@ -1260,7 +1251,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             }
 
             try {
-                DB::transaction(function () use ($row, $nrp, $fullName, $rank, $satker, $jabatan, $bagian, $gender, $golongan, $keterangan, $sizeMapping) {
+                DB::transaction(function () use ($row, $nrp, $fullName, $rank, $satker, $jabatan, $bagian, $gender, $golongan, $keterangan, $sizeMapping, $sizeSanitizer) {
                     $personnel = Personnel::where('nrp', $nrp)->first();
 
                     if (! $personnel) {
@@ -1301,17 +1292,17 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     }
 
                     $kaporSizes = $personnel->kapor_sizes ?? [];
+                    $rawSizes = [];
                     foreach ($sizeMapping as $colIndex => $key) {
                         $sizeVal = trim($row[$colIndex] ?? '');
-                        if (! empty($sizeVal) && $sizeVal !== '-' && $sizeVal !== '0') {
-                            $kaporSizes[$key] = $sizeVal;
-                        }
+                        $rawSizes[$key] = $sizeVal;
                     }
 
                     // Pria tidak butuh jilbab — hapus dari kapor_sizes
-                    if ($gender === 'L') {
-                        unset($kaporSizes['jilbab']);
-                    }
+                    $kaporSizes = array_merge(
+                        $kaporSizes,
+                        $sizeSanitizer->sanitizeSubmittedSizes($rawSizes, $gender),
+                    );
 
                     $personnel->kapor_sizes = $kaporSizes;
                     $personnel->save();

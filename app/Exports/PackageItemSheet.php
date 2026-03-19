@@ -79,7 +79,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
         if (str_contains($name, 'SEPATU')) {
             return 'sepatu_dinas';
         }
-        if (str_contains($name, 'JAKET')) {
+        if (str_contains($name, 'JAKET') || str_contains($name, 'ROMPI')) {
             return 'jaket';
         }
         if (str_contains($name, 'OLAHRAGA')) {

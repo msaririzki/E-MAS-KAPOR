@@ -39,10 +39,10 @@
             <div class="stat-footer">Polri + PNS</div>
         </div>
 
-        {{-- Sudah Input --}}
+        {{-- Sudah Isi Ukuran --}}
         <div class="stat-card">
             <div class="stat-top">
-                <span class="stat-label">Sudah Input</span>
+                <span class="stat-label">Sudah Isi Ukuran</span>
                 <div class="stat-icon-sm" style="background:var(--info-bg);color:var(--info);"><i
                         class="ri-check-double-line"></i></div>
             </div>
@@ -51,14 +51,14 @@
                 progres</div>
         </div>
 
-        {{-- Belum Input --}}
+        {{-- Belum Isi Ukuran --}}
         <div class="stat-card">
             <div class="stat-top">
-                <span class="stat-label">Belum Input</span>
+                <span class="stat-label">Belum Isi Ukuran</span>
                 <div class="stat-icon-sm" style="background:#fef2f2;color:var(--danger);"><i class="ri-time-line"></i></div>
             </div>
             <div class="stat-value" style="color:var(--danger);">{{ number_format($stats['personnel_pending']) }}</div>
-            <div class="stat-footer">Menunggu pengisian</div>
+            <div class="stat-footer">Menunggu ukuran wajib</div>
         </div>
     </div>
 
@@ -71,7 +71,7 @@
     {{-- Overall Progress --}}
     <div class="card">
         <div class="card-header">
-            <h3><i class="ri-bar-chart-box-line" style="margin-right:8px; color:var(--accent);"></i> Progres Input
+            <h3><i class="ri-bar-chart-box-line" style="margin-right:8px; color:var(--accent);"></i> Progres Ukuran
                 Keseluruhan</h3>
             <span
                 style="font-size:24px; font-weight:800; color:{{ $pct >= 80 ? 'var(--success)' : ($pct >= 50 ? 'var(--warning)' : 'var(--danger)') }};">{{ $pct }}%</span>
@@ -82,7 +82,7 @@
                     style="width:{{ $pct }}%;"></div>
             </div>
             <div style="display:flex; justify-content:space-between; margin-top:12px; font-size:13px; color:#64748B;">
-                <span>{{ number_format($done) }} dari {{ number_format($total) }} personil sudah input</span>
+                <span>{{ number_format($done) }} dari {{ number_format($total) }} personil sudah isi ukuran wajib</span>
                 <span>{{ number_format($stats['total_submissions']) }} total submission</span>
             </div>
         </div>

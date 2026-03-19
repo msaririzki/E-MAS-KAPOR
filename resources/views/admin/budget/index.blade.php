@@ -4,6 +4,9 @@
 @section('breadcrumb', 'Rencana Anggaran')
 
 @section('content')
+@php
+    $nextBudgetYear = max((int) date('Y'), (int) ($years->max('year') ?? date('Y'))) + 1;
+@endphp
 <div class="page-header">
     <div class="page-header-row">
         <div>
@@ -84,11 +87,17 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label>TAHUN</label>
-                    <input type="number" name="year" required class="form-input" value="{{ date('Y') }}" min="2020" max="2050">
+                    <input type="number" name="year" required class="form-input @error('year') is-invalid @enderror" value="{{ old('year', $nextBudgetYear) }}" min="2020" max="2050">
+                    @error('year')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div class="form-group">
                     <label>NAMA (OPSIONAL)</label>
-                    <input type="text" name="name" class="form-input" placeholder="Tahun Anggaran 2026">
+                    <input type="text" name="name" class="form-input @error('name') is-invalid @enderror" placeholder="Tahun Anggaran 2028" value="{{ old('name') }}">
+                    @error('name')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
                     <p style="font-size: 11px; color: #6B7280; margin-top: 4px;">Otomatis jika dikosongkan</p>
                 </div>
             </div>
@@ -149,6 +158,10 @@
     window.onclick = function(e) {
         if (e.target.classList.contains('modal')) e.target.classList.remove('open');
     }
+
+    @if($errors->has('year') || $errors->has('name'))
+        openModal('addYearModal');
+    @endif
 </script>
 @endsection
 
@@ -313,6 +326,8 @@
     .form-group label { display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 6px; text-transform: uppercase; }
     .form-input { width: 100%; padding: 10px 14px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 14px; outline: none; font-family: inherit; }
     .form-input:focus { border-color: #B91C1C; box-shadow: 0 0 0 3px #FEF2F2; }
+    .form-input.is-invalid { border-color: #DC2626; box-shadow: 0 0 0 3px #FEF2F2; }
+    .form-error { font-size: 12px; color: #B91C1C; margin-top: 6px; }
 
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>

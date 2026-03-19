@@ -71,10 +71,10 @@
             <div class="stat-footer">Polri + PNS</div>
         </div>
 
-        {{-- Sudah Input --}}
+        {{-- Sudah Isi Ukuran --}}
         <div class="stat-card">
             <div class="stat-top">
-                <span class="stat-label">Sudah Input</span>
+                <span class="stat-label">Sudah Isi Ukuran</span>
                 <div class="stat-icon-sm" style="background:var(--info-bg);color:var(--info);"><i
                         class="ri-check-double-line"></i></div>
             </div>
@@ -83,14 +83,14 @@
                 progres</div>
         </div>
 
-        {{-- Belum Input --}}
+        {{-- Belum Isi Ukuran --}}
         <div class="stat-card">
             <div class="stat-top">
-                <span class="stat-label">Belum Input</span>
+                <span class="stat-label">Belum Isi Ukuran</span>
                 <div class="stat-icon-sm" style="background:#fef2f2;color:var(--danger);"><i class="ri-time-line"></i></div>
             </div>
             <div class="stat-value" style="color:var(--danger);">{{ number_format($stats['personnel_pending']) }}</div>
-            <div class="stat-footer">Menunggu pengisian</div>
+            <div class="stat-footer">Menunggu ukuran wajib</div>
         </div>
     </div>
 
@@ -118,8 +118,8 @@
                 <div class="card-body" style="padding:16px;">
                     @if($stats['personnel_pending'] > 0)
                         <div style="background:var(--bg-body); border-left:4px solid var(--warning); padding:12px 16px; border-radius:4px; margin-bottom:16px; border:1px solid var(--border-color); border-left-width:4px;">
-                            <div style="font-weight:700; color:var(--text-main); font-size:14px; margin-bottom:4px;">{{ number_format($stats['personnel_pending']) }} Personil Belum Lengkap</div>
-                            <div style="font-size:12px; color:var(--text-muted);">Masih terdapat anggota yang belum melengkapi ukuran Kaporlap atau NRP.</div>
+                            <div style="font-weight:700; color:var(--text-main); font-size:14px; margin-bottom:4px;">{{ number_format($stats['personnel_pending']) }} Personil Belum Isi Ukuran</div>
+                            <div style="font-size:12px; color:var(--text-muted);">Daftar ini hanya menghitung ukuran kapor yang wajib, tidak mencampur biodata umum.</div>
                         </div>
                         
                         <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase;">Daftar Acak:</div>
@@ -134,7 +134,7 @@
                                 </div>
                             @endforeach
                         </div>
-                        <a href="{{ route('admin.personnel.index') }}?status=incomplete" style="display:block; text-align:center; font-size:12px; font-weight:600; color:var(--brand); margin-top:16px; text-decoration:none;">Lihat Semua Data Bermasalah &rarr;</a>
+                        <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'incomplete_scope' => 'size_only']) }}" style="display:block; text-align:center; font-size:12px; font-weight:600; color:var(--brand); margin-top:16px; text-decoration:none;">Lihat Semua Ukuran Bermasalah &rarr;</a>
                     @else
                         <div style="text-align:center; padding:32px 16px;">
                             <i class="ri-checkbox-circle-fill" style="font-size:48px; color:var(--success); margin-bottom:16px; display:inline-block;"></i>

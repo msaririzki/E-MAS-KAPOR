@@ -60,7 +60,10 @@ Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')-
 
             // Menggabungkan dengan json format sebelumnya
             $currentSizes = is_array($personnel->kapor_sizes) ? $personnel->kapor_sizes : [];
-            $newSizes = array_merge($currentSizes, $validated);
+            $newSizes = app(\App\Services\KaporRequirementService::class)->sanitizeSubmittedSizes(
+                array_merge($currentSizes, $validated),
+                $personnel->gender,
+            );
 
             $personnel->kapor_sizes = $newSizes;
             $personnel->save();

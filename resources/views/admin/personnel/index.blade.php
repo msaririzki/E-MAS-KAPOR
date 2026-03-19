@@ -182,7 +182,7 @@
             <i class="ri-checkbox-circle-line"></i>
         </div>
         <div class="stat-content">
-            <span class="stat-label">SUDAH INPUT DATA</span>
+            <span class="stat-label">SUDAH ISI UKURAN</span>
             <span class="stat-number">{{ number_format($stats['submitted']) }}</span>
         </div>
     </div>
@@ -241,12 +241,12 @@
             transform: translateY(-1px);
         }
     </style>
-    <a href="{{ route('admin.personnel.index', ['status' => 'incomplete']) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center;">
+    <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'incomplete_scope' => 'size_only']) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center;">
         <div class="stat-icon icon-red">
             <i class="ri-close-circle-line"></i>
         </div>
         <div class="stat-content" style="flex: 1;">
-            <span class="stat-label">BELUM INPUT DATA</span>
+            <span class="stat-label">BELUM ISI UKURAN</span>
             <span class="stat-number">{{ number_format($stats['pending']) }}</span>
         </div>
         <div style="padding-left: 16px; margin-right: 8px;">
@@ -276,7 +276,13 @@
 <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
     <div style="display: flex; align-items: center; gap: 10px;">
         <i class="ri-filter-3-line" style="font-size: 18px; color: #DC2626;"></i>
-        <span style="font-size: 14px; font-weight: 600; color: #991B1B;">Menampilkan personel dengan data <strong>belum lengkap</strong> ({{ $stats['pending'] }} orang)</span>
+        <span style="font-size: 14px; font-weight: 600; color: #991B1B;">
+            @if(($incompleteScope ?? request('incomplete_scope')) === 'size_only')
+                Menampilkan personel dengan <strong>ukuran wajib belum lengkap</strong> ({{ number_format($personnels->total()) }} orang)
+            @else
+                Menampilkan personel dengan data <strong>belum lengkap</strong> ({{ number_format($personnels->total()) }} orang)
+            @endif
+        </span>
     </div>
     <a href="{{ route('admin.personnel.index') }}" class="btn" style="background: #DC2626; color: white; font-size: 13px; padding: 6px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
         <i class="ri-close-line"></i> Tampilkan Semua
@@ -383,6 +389,10 @@
         {{-- Pertahankan status=incomplete saat filter form di-submit --}}
         @if(request('status') === 'incomplete')
             <input type="hidden" name="status" value="incomplete">
+            <input type="hidden" name="incomplete_scope" value="{{ $incompleteScope ?? request('incomplete_scope') }}">
+            @if(!empty($kaporItemId ?? request('kapor_item_id')))
+                <input type="hidden" name="kapor_item_id" value="{{ $kaporItemId ?? request('kapor_item_id') }}">
+            @endif
         @endif
 
         <div>

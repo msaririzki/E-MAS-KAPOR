@@ -7,6 +7,7 @@ use App\Models\BudgetPackage;
 use App\Models\InvoiceSetting;
 use App\Models\Personnel;
 use App\Services\BudgetCalculationService;
+use App\Services\KaporRequirementService;
 use App\Services\SppmWordExportService;
 use Illuminate\Http\Request;
 
@@ -14,11 +15,14 @@ class BudgetExportController extends Controller
 {
     protected BudgetCalculationService $calcService;
 
+    protected KaporRequirementService $kaporRequirementService;
+
     protected SppmWordExportService $sppmExportService;
 
-    public function __construct(BudgetCalculationService $calcService, SppmWordExportService $sppmExportService)
+    public function __construct(BudgetCalculationService $calcService, KaporRequirementService $kaporRequirementService, SppmWordExportService $sppmExportService)
     {
         $this->calcService = $calcService;
+        $this->kaporRequirementService = $kaporRequirementService;
         $this->sppmExportService = $sppmExportService;
     }
 
@@ -47,42 +51,7 @@ class BudgetExportController extends Controller
                     ->where('is_active', true);
 
                 $filters = $recipient->recipient_filters ?? [];
-
-                if (! empty($filters['personnel_type'])) {
-                    $mappedTypes = array_map(function ($t) {
-                        $lower = strtolower($t);
-                        if ($lower === 'polri') {
-                            return 'Polri';
-                        }
-                        if ($lower === 'pns') {
-                            return 'PNS';
-                        }
-                        if ($lower === 'pppk') {
-                            return 'PPPK';
-                        }
-
-                        return $t;
-                    }, $filters['personnel_type']);
-                    $query->whereIn('personnel_type', $mappedTypes);
-                }
-
-                if (! empty($filters['gender'])) {
-                    $query->whereIn('gender', $filters['gender']);
-                }
-
-                if (! empty($filters['rank_categories'])) {
-                    $query->whereHas('rank', function ($q) use ($filters) {
-                        $q->whereIn('category', $filters['rank_categories']);
-                    });
-                }
-
-                if (! empty($filters['keterangan'])) {
-                    $query->whereIn('keterangan', $filters['keterangan']);
-                }
-
-                if (! empty($filters['golongan'])) {
-                    $query->whereIn('golongan', $filters['golongan']);
-                }
+                $this->kaporRequirementService->applyRecipientFilters($query, $filters);
 
                 $matchedIds = $query->pluck('id')->toArray();
 
@@ -289,7 +258,7 @@ class BudgetExportController extends Controller
             if (str_contains($name, 'SEPATU')) {
                 return 'sepatu_dinas';
             }
-            if (str_contains($name, 'JAKET')) {
+            if (str_contains($name, 'JAKET') || str_contains($name, 'ROMPI')) {
                 return 'jaket';
             }
             if (str_contains($name, 'OLAHRAGA')) {
@@ -316,24 +285,7 @@ class BudgetExportController extends Controller
                 if ($genderFilter !== null) {
                     $query->where('gender', $genderFilter);
                 }
-                if (! empty($filters['personnel_type'])) {
-                    $mappedTypes = array_map(fn ($t) => match (strtolower($t)) {
-                        'polri' => 'Polri', 'pns' => 'PNS', 'pppk' => 'PPPK', default => $t
-                    }, $filters['personnel_type']);
-                    $query->whereIn('personnel_type', $mappedTypes);
-                }
-                if (! empty($filters['gender'])) {
-                    $query->whereIn('gender', $filters['gender']);
-                }
-                if (! empty($filters['rank_categories'])) {
-                    $query->whereHas('rank', fn ($q) => $q->whereIn('category', $filters['rank_categories']));
-                }
-                if (! empty($filters['keterangan'])) {
-                    $query->whereIn('keterangan', $filters['keterangan']);
-                }
-                if (! empty($filters['golongan'])) {
-                    $query->whereIn('golongan', $filters['golongan']);
-                }
+                $this->kaporRequirementService->applyRecipientFilters($query, $filters);
 
                 $personnels = $query->get(['kapor_sizes']);
                 $row = ['satker_name' => $satker->name, 'sizes' => array_fill_keys($availableSizes, 0), 'row_total' => 0];
@@ -369,24 +321,7 @@ class BudgetExportController extends Controller
                 $satker = $recipient->satker;
 
                 $query = \App\Models\Personnel::where('satker_id', $satker->id)->where('is_active', true);
-                if (! empty($filters['personnel_type'])) {
-                    $mappedTypes = array_map(fn ($t) => match (strtolower($t)) {
-                        'polri' => 'Polri', 'pns' => 'PNS', 'pppk' => 'PPPK', default => $t
-                    }, $filters['personnel_type']);
-                    $query->whereIn('personnel_type', $mappedTypes);
-                }
-                if (! empty($filters['gender'])) {
-                    $query->whereIn('gender', $filters['gender']);
-                }
-                if (! empty($filters['rank_categories'])) {
-                    $query->whereHas('rank', fn ($q) => $q->whereIn('category', $filters['rank_categories']));
-                }
-                if (! empty($filters['keterangan'])) {
-                    $query->whereIn('keterangan', $filters['keterangan']);
-                }
-                if (! empty($filters['golongan'])) {
-                    $query->whereIn('golongan', $filters['golongan']);
-                }
+                $this->kaporRequirementService->applyRecipientFilters($query, $filters);
 
                 $personnels = $query->get(['gender', 'kapor_sizes']);
                 $row = [
