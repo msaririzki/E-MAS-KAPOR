@@ -265,6 +265,9 @@ class SppmWordExportService
         $xpath = new DOMXPath($document);
         $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
         $xpath->registerNamespace('m', 'http://schemas.openxmlformats.org/officeDocument/2006/math');
+        $xpath->registerNamespace('wp', 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing');
+        $xpath->registerNamespace('wps', 'http://schemas.microsoft.com/office/word/2010/wordprocessingShape');
+        $xpath->registerNamespace('v', 'urn:schemas-microsoft-com:vml');
 
         $dateParts = $this->extractDateParts($suratData['date'] ?? '');
         $signatureDate = $this->buildSignatureDate($settings->location, $dateParts);
@@ -324,6 +327,7 @@ class SppmWordExportService
         );
 
         $this->replaceItemsTable($xpath, $itemsData);
+        $this->neutralizeFloatingTextboxes($document, $xpath);
         $this->applyPageMargins($xpath);
 
         return $document->saveXML();
@@ -440,6 +444,55 @@ class SppmWordExportService
             if ($node instanceof DOMElement) {
                 $node->nodeValue = $value;
                 $this->applyXmlSpace($node, $value);
+            }
+        }
+    }
+
+    private function neutralizeFloatingTextboxes(DOMDocument $document, DOMXPath $xpath): void
+    {
+        foreach ($xpath->query('//wp:anchor[descendant::wps:txbx]') as $anchor) {
+            if (! $anchor instanceof DOMElement) {
+                continue;
+            }
+
+            $anchor->setAttribute('behindDoc', '1');
+            $anchor->setAttribute('distT', '0');
+            $anchor->setAttribute('distB', '0');
+            $anchor->setAttribute('distL', '0');
+            $anchor->setAttribute('distR', '0');
+
+            foreach ($xpath->query('./wp:wrapSquare | ./wp:wrapTight | ./wp:wrapThrough | ./wp:wrapTopAndBottom | ./wp:wrapNone', $anchor) as $wrapNode) {
+                $anchor->removeChild($wrapNode);
+            }
+
+            $wrapNone = $document->createElementNS(
+                'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing',
+                'wp:wrapNone'
+            );
+
+            $docPr = $xpath->query('./wp:docPr', $anchor)->item(0);
+
+            if ($docPr instanceof DOMNode) {
+                $anchor->insertBefore($wrapNone, $docPr);
+            } else {
+                $anchor->appendChild($wrapNone);
+            }
+        }
+
+        foreach ($xpath->query('//v:shape[v:textbox]') as $shape) {
+            if (! $shape instanceof DOMElement) {
+                continue;
+            }
+
+            $style = $shape->getAttribute('style');
+            if ($style === '') {
+                continue;
+            }
+
+            $updatedStyle = preg_replace('/mso-wrap-style:[^;]+;?/i', 'mso-wrap-style:none;', $style) ?? $style;
+
+            if ($updatedStyle !== $style) {
+                $shape->setAttribute('style', $updatedStyle);
             }
         }
     }
