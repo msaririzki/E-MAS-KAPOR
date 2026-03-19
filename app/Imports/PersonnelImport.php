@@ -643,12 +643,15 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
      * Parse rows menjadi array preview data (TANPA menyimpan ke DB).
      * Digunakan untuk menampilkan preview sebelum konfirmasi import.
      */
-    public function generatePreview(Collection $rows): array
+    public function generatePreview(Collection $rows, int $sheetIndex = 0): array
     {
         $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
         $preview = [];
         $seenNrps = []; // Track NRPs untuk deteksi duplikat dalam batch
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
+
+        // Sheet 0 = POLRI, Sheet >= 1 = PNS
+        $sheetPersonnelType = $sheetIndex >= 1 ? 'PNS' : 'Polri';
 
         // Pre-load semua NRP yang sudah ada di database untuk deteksi cross-DB
         $existingNrpData = Personnel::whereNotNull('nrp')
@@ -964,6 +967,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 'incomplete_fields' => $incompleteFields, // field yang kosong
                 'duplicate_nrp' => $isDuplicateNrp, // true jika NRP duplikat dalam file
                 'db_duplicate' => $dbDuplicate, // info duplikat dari database (null jika tidak ada)
+                'personnel_type' => $sheetPersonnelType, // Polri atau PNS berdasarkan sheet Excel
             ];
         }
 
@@ -1055,13 +1059,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     ]);
                     $user->assignRole('personil');
 
-                    // ── Tentukan personnel_type ───────────────────────────────
-                    $personnelType = 'Polri';
-                    if ($rank && $rank->category === 'PNS') {
-                        $personnelType = 'PNS';
-                    } elseif (! $rank && ! empty($golongan)) {
-                        $personnelType = 'PNS';
-                    }
+                    // ── Personnel type ditentukan dari SHEET asal di Excel ────
+                    // Sheet 0 = Polri, Sheet >= 1 = PNS (sudah di-set saat preview)
+                    $personnelType = $data['personnel_type'] ?? 'Polri';
 
                     // ── Buat personnel baru ───────────────────────────────────
                     // personnels.nrp TIDAK unique → simpan NRP asli (boleh duplikat)

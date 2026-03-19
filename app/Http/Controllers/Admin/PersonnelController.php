@@ -598,7 +598,8 @@ class PersonnelController extends Controller
             $preview = [];
             foreach ($collection as $sheetIndex => $sheetRows) {
                 // generatePreview menerima Collection hasil toCollection langsung
-                $sheetPreview = $import->generatePreview($sheetRows);
+                // sheetIndex menentukan personnel_type: 0=Polri, >=1=PNS
+                $sheetPreview = $import->generatePreview($sheetRows, $sheetIndex);
                 $preview = array_merge($preview, $sheetPreview);
             }
 
