@@ -1192,13 +1192,33 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     }
 
                     // ── Buat user baru ────────────────────────────────────────
-                    $user = User::create([
-                        'name' => $fullName,
-                        'nrp_nip' => $nrpNipForUser,
-                        'password' => password_hash($nrpNipForUser, PASSWORD_BCRYPT, ['cost' => 4]),
-                        'satker_id' => $satker->id,
-                        'is_active' => true,
-                    ]);
+                    // Retry dengan TEMP NRP jika terjadi UNIQUE constraint violation
+                    // (edge case: pre-check $usedNrpNip gagal mendeteksi NRP yang sudah ada
+                    //  di tabel users, misal dari import satker lain atau data orphan)
+                    try {
+                        $user = User::create([
+                            'name' => $fullName,
+                            'nrp_nip' => $nrpNipForUser,
+                            'password' => password_hash($nrpNipForUser, PASSWORD_BCRYPT, ['cost' => 4]),
+                            'satker_id' => $satker->id,
+                            'is_active' => true,
+                        ]);
+                    } catch (\Illuminate\Database\QueryException $qe) {
+                        // Jika error UNIQUE constraint (1062), retry dengan TEMP NRP
+                        if ($qe->errorInfo[1] == 1062 && str_contains($qe->getMessage(), 'nrp_nip')) {
+                            $nrpNipForUser = 'TEMP-'.strtoupper(substr(md5($fullName.$idx.microtime(true).rand()), 0, 8));
+                            $user = User::create([
+                                'name' => $fullName,
+                                'nrp_nip' => $nrpNipForUser,
+                                'password' => password_hash($nrpNipForUser, PASSWORD_BCRYPT, ['cost' => 4]),
+                                'satker_id' => $satker->id,
+                                'is_active' => true,
+                            ]);
+                            \Illuminate\Support\Facades\Log::warning("[IMPORT RETRY] NRP={$nrp} Name={$fullName} → User dibuat dengan TEMP nrp_nip={$nrpNipForUser} (NRP asli bentrok di tabel users)");
+                        } else {
+                            throw $qe; // Re-throw exception non-NRP
+                        }
+                    }
                     $user->assignRole('personil');
 
                     // ── Personnel type ditentukan dari SHEET asal di Excel ────
