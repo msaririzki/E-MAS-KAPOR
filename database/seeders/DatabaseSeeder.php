@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             KaporItemSeeder::class,
             SettingSeeder::class,
             DemoUserSeeder::class,
+            TestimonialSeeder::class,
         ]);
     }
 }

@@ -94,6 +94,104 @@
         </div>
     </div>
 
+    {{-- ═══ Kepuasan & Testimoni (Horizontal Modern) ═══ --}}
+    <div class="satisfaction-horizontal-wrapper">
+        <div class="sat-main-stats">
+            <div class="sat-score-circle">
+                <span class="score-val">{{ $testimonialInsights['serviceScore'] }}</span>
+                <span class="score-lbl">Skor</span>
+            </div>
+            <div class="sat-rating-info">
+                <div class="sat-badge" style="background: {{ $testimonialInsights['dashboardBadge']['background'] }}; color: {{ $testimonialInsights['dashboardBadge']['color'] }};">
+                    <i class="{{ $testimonialInsights['dashboardBadge']['icon'] }}"></i> {{ $testimonialInsights['dashboardBadge']['label'] }}
+                </div>
+                <div class="sat-stars-row">
+                    <h2>{{ number_format($testimonialInsights['averageRating'], 1) }}<small>/5</small></h2>
+                    <div class="stars">
+                        @for($star = 1; $star <= 5; $star++)
+                            <i class="{{ $testimonialInsights['averageRating'] >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
+                        @endfor
+                    </div>
+                </div>
+                <p>Dari <b>{{ number_format($testimonialInsights['totalTestimonials']) }}</b> ulasan masuk</p>
+                <div class="sat-mini-metrics">
+                    <div class="metric-item"><strong>{{ number_format($testimonialInsights['fiveStarRate'], 1) }}%</strong> Bintang 5</div>
+                    <div class="metric-item"><strong>{{ number_format($testimonialInsights['recentTestimonialsCount']) }}</strong> ulasan baru bulan ini</div>
+                </div>
+            </div>
+            
+            <!-- Graphic breakdown of stars -->
+            <div class="sat-rating-breakdown">
+                @foreach($testimonialInsights['ratingBreakdown'] as $breakdown)
+                <div class="breakdown-row">
+                    <div class="star-lbl">{{ $breakdown['stars'] }} <i class="ri-star-fill"></i></div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: {{ $breakdown['percentage'] }}%;"></div>
+                    </div>
+                    <div class="count-lbl">{{ $breakdown['count'] }}</div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        
+        <div class="sat-quotes-marquee">
+            @if($testimonialInsights['dashboardQuotes']->isNotEmpty())
+                <div class="quotes-track">
+                    @foreach($testimonialInsights['dashboardQuotes'] as $quote)
+                        <div class="sat-modern-quote">
+                            <i class="ri-double-quotes-l bg-quote-icon"></i>
+                            <div class="quote-text">"{{ Str::limit($quote['testimonial']->message, 120) }}"</div>
+                            <div class="quote-author">
+                                <div class="ava" style="background: {{ $quote['background'] }}; color: {{ $quote['accent'] }};">
+                                    {{ strtoupper(substr($quote['testimonial']->user->name ?? 'PN', 0, 2)) }}
+                                </div>
+                                <div class="auth-info">
+                                    <div class="name">
+                                        {{ $quote['testimonial']->user->name ?? 'Personel' }} 
+                                    </div>
+                                    <div class="satker">{{ $quote['testimonial']->user->satker->name ?? 'Tanpa Satker' }}</div>
+                                    <div class="star-rating-full">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <i class="{{ ($quote['testimonial']->rating ?? 5) >= $i ? 'ri-star-fill' : 'ri-star-line' }}"></i>
+                                        @endfor
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                    <!-- Duplicate for seamless scroll effect -->
+                    @foreach($testimonialInsights['dashboardQuotes'] as $quote)
+                        <div class="sat-modern-quote" aria-hidden="true">
+                            <i class="ri-double-quotes-l bg-quote-icon"></i>
+                            <div class="quote-text">"{{ Str::limit($quote['testimonial']->message, 120) }}"</div>
+                            <div class="quote-author">
+                                <div class="ava" style="background: {{ $quote['background'] }}; color: {{ $quote['accent'] }};">
+                                    {{ strtoupper(substr($quote['testimonial']->user->name ?? 'PN', 0, 2)) }}
+                                </div>
+                                <div class="auth-info">
+                                    <div class="name">
+                                        {{ $quote['testimonial']->user->name ?? 'Personel' }} 
+                                    </div>
+                                    <div class="satker">{{ $quote['testimonial']->user->satker->name ?? 'Tanpa Satker' }}</div>
+                                    <div class="star-rating-full">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <i class="{{ ($quote['testimonial']->rating ?? 5) >= $i ? 'ri-star-fill' : 'ri-star-line' }}"></i>
+                                        @endfor
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="empty-quotes">
+                    <i class="ri-chat-smile-3-line" style="font-size:24px; color:var(--text-muted); margin-bottom:8px; display:block;"></i>
+                    Belum ada testimoni masuk
+                </div>
+            @endif
+        </div>
+    </div>
     {{-- ═══ Chart Progres per Satker (Full Width) ═══ --}}
     <div class="card" style="margin-bottom:24px;">
                 <div class="card-head">
@@ -200,59 +298,247 @@
                     </div>
                 </div>
             </div>
-            {{-- Kepuasan & Testimoni --}}
-            <div class="card" style="height:100%; margin-bottom:0; display:flex; flex-direction:column; gap:16px;">
-                <div class="card-head" style="border-bottom:none; padding-bottom:0;">
-                    <h3><i class="ri-heart-3-fill" style="margin-right:6px;color:var(--danger);"></i> Tingkat Kepuasan Pengguna</h3>
-                </div>
-                <div class="card-body pt-0">
-                    <div style="display:flex; align-items:center; gap:20px; background:var(--bg-body); padding:20px; border-radius:var(--radius-md); border:1px solid var(--border-color); margin-bottom:20px;">
-                        <div style="background:var(--success-bg); color:var(--success); width:70px; height:70px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700; flex-shrink:0;">
-                            98%
-                        </div>
-                        <div>
-                            <div style="font-size:16px; font-weight:700; color:var(--text-main); margin-bottom:4px;">Sangat Puas</div>
-                            <div style="font-size:12px; color:var(--text-muted); line-height:1.4;">Berdasarkan masukan dan tingkat adopsi seluruh admin Satker dan personil di lingkup Polda NTB.</div>
-                        </div>
-                    </div>
-
-                    <div style="display:flex;flex-direction:column;gap:12px;">
-                        <div style="background:var(--bg-card); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color); position:relative; overflow:hidden;">
-                            <div style="position:absolute; top: -10px; right: 10px; font-size:60px; color:var(--bg-body); opacity:0.5; font-family:serif; pointer-events:none;">"</div>
-                            <div style="font-size:12.5px; font-style:italic; color:var(--text-main); margin-bottom:12px; position:relative; z-index:1; line-height:1.5;">
-                                "Sistem E-MAS KAPOR ini sangat memudahkan kami dalam melakukan pendataan ukuran kaporlap anggota secara real-time. Laporannya instan dan data yang dihasilkan sangat akurat."
-                            </div>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:36px; height:36px; border-radius:50%; background:var(--brand-bg); color:var(--brand); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;">
-                                    KS
-                                </div>
-                                <div style="line-height:1.2;">
-                                    <div style="font-size:13px; font-weight:600; color:var(--text-main);">Kombes Pol Satria</div>
-                                    <div style="font-size:11px; font-weight:500; color:var(--text-muted);">Biro Logistik</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style="background:var(--bg-card); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color); position:relative; overflow:hidden;">
-                            <div style="position:absolute; top: -10px; right: 10px; font-size:60px; color:var(--bg-body); opacity:0.5; font-family:serif; pointer-events:none;">"</div>
-                            <div style="font-size:12.5px; font-style:italic; color:var(--text-main); margin-bottom:12px; position:relative; z-index:1; line-height:1.5;">
-                                "Aplikasi yang sangat revolusioner! Admin satker tidak perlu lagi merekap data ribuan personil menggunakan Excel yang memakan waktu berhari-hari. Cukup pantau dari dashboard."
-                            </div>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:36px; height:36px; border-radius:50%; background:var(--info-bg); color:var(--info); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;">
-                                    BR
-                                </div>
-                                <div style="line-height:1.2;">
-                                    <div style="font-size:13px; font-weight:600; color:var(--text-main);">Bripda Rizky</div>
-                                    <div style="font-size:11px; font-weight:500; color:var(--text-muted);">Admin Satker</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        
     </div>
 <style>
+    .satisfaction-card {
+        background:
+            radial-gradient(circle at top right, rgba(212, 175, 55, 0.14), transparent 30%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 248, 244, 0.95));
+        border: 1px solid rgba(198, 40, 40, 0.12);
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+    .satisfaction-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--brand);
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(198, 40, 40, 0.08);
+    }
+    .satisfaction-hero {
+        display:flex;
+        align-items:center;
+        gap:18px;
+        padding:20px;
+        border-radius:18px;
+        border:1px solid rgba(198, 40, 40, 0.12);
+        background: linear-gradient(135deg, #fff7f5 0%, #ffffff 55%, #fffaf0 100%);
+    }
+    .satisfaction-score-ring {
+        width:84px;
+        height:84px;
+        border-radius:24px;
+        flex-shrink:0;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        background: linear-gradient(135deg, var(--brand), #8b1e1e);
+        color:#fff;
+        box-shadow: 0 14px 28px rgba(198, 40, 40, 0.22);
+    }
+    .satisfaction-score-ring span {
+        font-size:28px;
+        font-weight:800;
+        line-height:1;
+    }
+    .satisfaction-score-ring small {
+        font-size:11px;
+        text-transform:uppercase;
+        letter-spacing:0.08em;
+        opacity:0.88;
+        margin-top:4px;
+    }
+    .satisfaction-status-pill {
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        padding:8px 12px;
+        border-radius:999px;
+        font-size:12px;
+        font-weight:800;
+        margin-bottom:10px;
+    }
+    .satisfaction-rating-line {
+        display:flex;
+        flex-wrap:wrap;
+        align-items:baseline;
+        gap:8px;
+    }
+    .satisfaction-rating-line strong {
+        font-size:28px;
+        color:var(--text-main);
+        letter-spacing:-0.03em;
+    }
+    .satisfaction-rating-line span {
+        font-size:12px;
+        color:var(--text-muted);
+    }
+    .satisfaction-stars {
+        display:flex;
+        gap:4px;
+        color:#F59E0B;
+        font-size:18px;
+        margin:10px 0 14px;
+    }
+    .satisfaction-mini-stats {
+        display:grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap:10px;
+    }
+    .mini-stat-box {
+        padding:10px 12px;
+        border-radius:12px;
+        background: rgba(255, 255, 255, 0.9);
+        border:1px solid var(--border-color);
+    }
+    .mini-stat-label {
+        display:block;
+        font-size:11px;
+        font-weight:700;
+        text-transform:uppercase;
+        letter-spacing:0.06em;
+        color:var(--text-muted);
+        margin-bottom:4px;
+    }
+    .mini-stat-box strong {
+        font-size:18px;
+        color:var(--text-main);
+    }
+    .satisfaction-summary-box {
+        padding:16px 18px;
+        border-radius:16px;
+        border:1px solid rgba(15, 23, 42, 0.06);
+    }
+    .summary-title {
+        display:flex;
+        align-items:center;
+        gap:8px;
+        font-size:13px;
+        font-weight:800;
+        margin-bottom:8px;
+    }
+    .satisfaction-summary-box p {
+        font-size:12.5px;
+        color:var(--text-main);
+        line-height:1.6;
+    }
+    .satisfaction-quotes {
+        display:flex;
+        flex-direction:column;
+        gap:12px;
+    }
+    .quote-card-modern {
+        padding:16px;
+        border-radius:16px;
+        border:1px solid var(--border-color);
+        background: rgba(255, 255, 255, 0.92);
+        position:relative;
+        overflow:hidden;
+    }
+    .quote-card-modern::after {
+        content: '"';
+        position:absolute;
+        right:12px;
+        top:-8px;
+        font-size:56px;
+        line-height:1;
+        color:rgba(15, 23, 42, 0.06);
+        font-family:Georgia, serif;
+    }
+    .quote-badge {
+        display:inline-flex;
+        align-items:center;
+        padding:6px 10px;
+        border-radius:999px;
+        font-size:11px;
+        font-weight:800;
+        margin-bottom:12px;
+        position:relative;
+        z-index:1;
+    }
+    .quote-message {
+        font-size:13px;
+        font-style:italic;
+        color:var(--text-main);
+        line-height:1.6;
+        margin-bottom:14px;
+        position:relative;
+        z-index:1;
+    }
+    .quote-user-row {
+        display:flex;
+        align-items:center;
+        gap:10px;
+        position:relative;
+        z-index:1;
+    }
+    .quote-avatar {
+        width:40px;
+        height:40px;
+        border-radius:14px;
+        border:1px solid var(--border-color);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:12px;
+        font-weight:800;
+        flex-shrink:0;
+    }
+    .quote-user-name {
+        font-size:13px;
+        font-weight:700;
+        color:var(--text-main);
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    .quote-user-meta {
+        display:flex;
+        flex-wrap:wrap;
+        gap:6px;
+        font-size:11px;
+        color:var(--text-muted);
+        margin-top:2px;
+    }
+    .quote-rating {
+        margin-left:auto;
+        display:inline-flex;
+        align-items:center;
+        gap:2px;
+        font-weight:800;
+        font-size:13px;
+        flex-shrink:0;
+    }
+    .satisfaction-empty-state {
+        display:flex;
+        align-items:flex-start;
+        gap:12px;
+        padding:16px;
+        border-radius:16px;
+        border:1px dashed rgba(198, 40, 40, 0.18);
+        background: rgba(255, 255, 255, 0.85);
+    }
+    .satisfaction-empty-state i {
+        font-size:24px;
+        color:var(--brand);
+    }
+    .satisfaction-empty-state strong {
+        display:block;
+        font-size:13px;
+        color:var(--text-main);
+        margin-bottom:4px;
+    }
+    .satisfaction-empty-state p {
+        font-size:12px;
+        color:var(--text-muted);
+        line-height:1.5;
+    }
     @keyframes pulse {
         0% { opacity: 1; transform: scale(1); }
         50% { opacity: 0.7; transform: scale(1.1); }
@@ -294,6 +580,161 @@
         margin-bottom:0; 
         border:1px solid var(--warning); 
         box-shadow:0 4px 6px -1px var(--warning-bg);
+    }
+    .satisfaction-horizontal-wrapper {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 20px;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        border-radius: 24px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
+        overflow: hidden;
+        position: relative;
+    }
+    .satisfaction-horizontal-wrapper::before {
+        content: '';
+        position: absolute;
+        top: -50%; left: -50%;
+        width: 200%; height: 200%;
+        background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.05), transparent 50%), radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.05), transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+    .sat-main-stats {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        background: #fff;
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        border: 1px solid rgba(0,0,0,0.04);
+        min-width: 280px;
+    }
+    @keyframes scorePopIn {
+        0% { opacity: 0; transform: scale(0.6) rotate(-5deg); filter: blur(5px); }
+        60% { opacity: 1; transform: scale(1.08) rotate(3deg); filter: blur(0); }
+        100% { opacity: 1; transform: scale(1) rotate(0); }
+    }
+    @keyframes scorePulseInfinite {
+        0% { box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.4); }
+        70% { box-shadow: 0 0 0 16px rgba(198, 40, 40, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(198, 40, 40, 0); }
+    }
+    .sat-score-circle {
+        width: 76px; height: 76px;
+        border-radius: 22px;
+        background: linear-gradient(135deg, var(--brand), #8b0000);
+        color: white;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        animation: scorePopIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, scorePulseInfinite 2s ease-out infinite 0.8s;
+    }
+    .sat-score-circle .score-val { font-size: 28px; font-weight: 900; line-height: 1; margin-bottom:2px; }
+    .sat-score-circle .score-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+    .sat-rating-info .sat-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-bottom: 8px;
+    }
+    .sat-stars-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+    .sat-stars-row h2 { font-size: 24px; font-weight: 800; margin: 0; color: var(--text-main); }
+    .sat-stars-row h2 small { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+    .sat-stars-row .stars { color: #f59e0b; font-size: 16px; }
+    .sat-rating-info p { font-size: 12px; color: var(--text-muted); margin: 0 0 10px 0; }
+    .sat-mini-metrics { display: flex; gap: 12px; }
+    .sat-mini-metrics .metric-item { font-size: 11px; color: var(--text-muted); background: var(--bg-body); padding: 4px 8px; border-radius: 6px; border:1px solid var(--border-color); }
+    .sat-mini-metrics .metric-item strong { color: var(--text-main); font-size: 12px; }
+    .sat-rating-breakdown {
+        flex: 1; margin-left:16px; min-width:140px; padding-left:16px; border-left:1px dashed var(--border-color); display:flex; flex-direction:column; gap:4px;
+    }
+    .breakdown-row { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; color:var(--text-muted); }
+    .breakdown-row .star-lbl { width:24px; display:flex; justify-content:space-between; align-items:center; }
+    .breakdown-row .star-lbl i { color:#f59e0b; font-size:10px; }
+    .breakdown-row .bar-track { flex:1; height:6px; background:var(--bg-body); border-radius:3px; overflow:hidden; }
+    .breakdown-row .bar-fill { height:100%; background:#f59e0b; border-radius:3px; }
+    .breakdown-row .count-lbl { width:16px; text-align:right; }
+
+    .sat-insight-panel {
+        position: relative;
+        z-index: 1;
+        padding: 24px;
+        border-radius: 16px;
+        display: flex; flex-direction: column; justify-content: center;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .insight-header { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sat-insight-panel p { font-size: 13px; line-height: 1.6; margin: 0 0 16px 0; font-weight: 500;}
+    .btn-detail-sat {
+        align-self: flex-start;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 800; text-decoration: none;
+        padding: 6px 14px; border-radius: 20px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .btn-detail-sat:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); filter: brightness(0.95); }
+
+    .sat-quotes-marquee {
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        mask-image: linear-gradient(to right, transparent, black 2%, black 98%, transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 2%, black 98%, transparent);
+    }
+    .quotes-track {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        animation: marquee 40s linear infinite;
+        width: max-content;
+        padding: 10px 0;
+    }
+    .quotes-track:hover { animation-play-state: paused; }
+    @keyframes marquee {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(calc(-50% - 8px)); }
+    }
+    .sat-modern-quote {
+        width: 290px;
+        background: #fff;
+        border-radius: 18px;
+        padding: 24px 24px 20px 24px;
+        position: relative;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        border: 1px solid rgba(0,0,0,0.04);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .sat-modern-quote:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+    .bg-quote-icon { position: absolute; top: 12px; right: 20px; font-size: 64px; color: rgba(15,23,42,0.02); line-height: 1; font-family: Georgia, serif; }
+    .quote-text { font-size: 13.5px; font-style: italic; color: #475569; line-height: 1.6; margin-bottom: 16px; position: relative; z-index: 1; font-weight: 500; }
+    .quote-author { display: flex; align-items: center; gap: 14px; }
+    .quote-author .ava { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; border: 1px solid rgba(0,0,0,0.05); }
+    .quote-author .auth-info { flex: 1; min-width: 0; }
+    .auth-info .name { font-size: 13.5px; font-weight: 800; color: #0f172a; margin-bottom: 3px; letter-spacing: -0.2px;}
+    .auth-info .star-rating-full { color: #f59e0b; font-size: 16px; display: flex; gap: 3px; margin-top: 8px; filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.2)); }
+    .auth-info .satker { font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
+    .empty-quotes {
+        width: 100%; height: 100%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.5); border-radius: 16px; border: 1px dashed var(--border-color);
+        font-size: 13px; font-weight: 600; color: var(--text-muted);
+    }
+    
+    @media (max-width: 1200px) {
+        .satisfaction-horizontal-wrapper { grid-template-columns: 1fr; }
+        .sat-quotes-marquee { overflow-x: auto; mask-image: none; -webkit-mask-image: none; display: block; }
+        .quotes-track { animation: none; padding: 10px 4px; }
+        .sat-modern-quote { flex-shrink: 0; }
     }
 </style>
 @endsection
@@ -402,3 +843,4 @@
         });
     </script>
 @endsection
+

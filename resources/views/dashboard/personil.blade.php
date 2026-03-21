@@ -22,6 +22,71 @@
     .rating-wrapper input { display: none; }
     .rating-wrapper label { cursor: pointer; color: var(--slate-300); font-size: 24px; transition: color 0.2s; }
     .rating-wrapper label:hover, .rating-wrapper label:hover ~ label, .rating-wrapper input:checked ~ label { color: #F59E0B; }
+    /* Modern Assessment Widget */
+    .testimonial-widget {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 28px;
+        box-shadow: 0 16px 40px -12px rgba(0,0,0,0.06);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s ease;
+        margin-top: 32px;
+    }
+    .testimonial-widget:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 25px 50px -16px rgba(0,0,0,0.08);
+        border-color: rgba(203, 213, 225, 0.8);
+    }
+    .testimonial-widget::before {
+        content: ''; position: absolute; top: 0; right: 0; 
+        width: 300px; height: 300px; 
+        background: radial-gradient(circle, rgba(14, 165, 233, 0.04) 0%, transparent 60%); 
+        border-radius: 50%; pointer-events: none;
+    }
+    .testimonial-header {
+        padding: 32px 32px 20px 32px;
+        border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+    }
+    .testimonial-body { padding: 24px 32px 32px 32px; }
+    
+    .rating-container {
+        display: flex; gap: 4px; flex-direction: row-reverse; justify-content: flex-end;
+        background: #f8fafc; padding: 16px 24px; border-radius: 20px; border: 1px solid #f1f5f9;
+        width: fit-content;
+    }
+    .rating-container input { display: none; }
+    .rating-container label { cursor: pointer; color: #cbd5e1; font-size: 32px; transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+    .rating-container label:hover, .rating-container label:hover ~ label, .rating-container input:checked ~ label { 
+        color: #f59e0b; transform: scale(1.15); filter: drop-shadow(0 4px 6px rgba(245, 158, 11, 0.3));
+    }
+    
+    .testimonial-textarea {
+        width: 100%; border: 2px solid #f1f5f9; border-radius: 20px; padding: 20px;
+        font-family: inherit; font-size: 15px; color: #334155;
+        transition: all 0.3s; background: #ffffff;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        margin-top: 12px;
+    }
+    .testimonial-textarea:focus {
+        outline: none; border-color: rgba(56, 189, 248, 0.5); box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1), inset 0 2px 4px rgba(0,0,0,0.01);
+        background: #fff;
+    }
+    
+    .btn-submit-testimonial {
+        display: inline-flex; align-items: center; gap: 10px;
+        padding: 16px 32px; border-radius: 100px;
+        background: linear-gradient(135deg, #0284c7, #0369a1);
+        color: white; font-weight: 700; font-size: 15.5px;
+        border: none; cursor: pointer;
+        box-shadow: 0 10px 20px -8px rgba(2, 132, 199, 0.5);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-submit-testimonial:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px -10px rgba(2, 132, 199, 0.6);
+        background: linear-gradient(135deg, #0369a1, #075985);
+    }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection
@@ -43,9 +108,9 @@
             <div style="font-size:14px; color: var(--text-muted); margin-top:4px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <span style="display: inline-flex; align-items: center; gap: 4px;"><i class="ri-fingerprint-line" style="color: var(--slate-400);"></i> <strong>{{ $user->nrp_nip }}</strong></span>
                 @if($personnel)
-                    <span style="color: var(--slate-300);">•</span>
+                    <span style="color: var(--slate-300);">???</span>
                     <span style="display: inline-flex; align-items: center; gap: 4px;"><i class="ri-medal-2-line" style="color: var(--slate-400);"></i> {{ $personnel->rank->name ?? '' }}</span>
-                    <span style="color: var(--slate-300);">•</span>
+                    <span style="color: var(--slate-300);">???</span>
                     <span style="display: inline-flex; align-items: center; gap: 4px;"><i class="ri-building-4-line" style="color: var(--slate-400);"></i> {{ $personnel->satker->name ?? '' }}</span>
                 @endif
             </div>
@@ -249,46 +314,48 @@
 @endif
 
 {{-- FORM TESTIMONI KOTAK SARAN --}}
-<div class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-card); position: relative;">
-    <div style="position: absolute; right: 0; top: 0; width: 200px; height: 100%; background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.03)); pointer-events: none;"></div>
-    <div class="card-header" style="background: transparent; border-bottom: 1px solid var(--border-color); padding: 20px 24px;">
-        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
-            <i class="ri-feedback-line" style="color: var(--brand); font-size: 20px;"></i>
-            Kotak Saran & Testimoni
+<div class="testimonial-widget">
+    <div class="testimonial-header">
+        <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;">
+            <div style="width: 42px; height: 42px; border-radius: 14px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.1), rgba(14, 165, 233, 0.15)); display: flex; align-items: center; justify-content: center; color: #0284c7; font-size: 20px;">
+                <i class="ri-feedback-fill"></i>
+            </div>
+            Suara Anda Penting Bagi Kami
         </h3>
+        <p style="margin: 8px 0 0 54px; font-size: 14px; color: #64748b; line-height: 1.6;">Tingkatkan pengalaman sistem bersama. Berikan rating layanan dan jelaskan harapan, kritik, serta kendala yang Anda hadapi.</p>
     </div>
-    <div class="card-body" style="padding: 24px;">
-        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Berikan masukan, kritik, atau pengalaman Anda dalam menggunakan Sistem E-Kaporlap untuk pengembangan kami ke depannya.</p>
-        
+    
+    <div class="testimonial-body">
         <form action="{{ route('personil.testimoni.store') }}" method="POST">
             @csrf
-            <div class="form-group">
-                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
-                    Penilaian Kualitas
-                </label>
-                <div class="rating-wrapper" style="margin-top: 8px;">
-                    <input type="radio" id="star5" name="rating" value="5" checked />
-                    <label for="star5" title="Sangat Bagus"><i class="ri-star-fill"></i></label>
-                    <input type="radio" id="star4" name="rating" value="4" />
-                    <label for="star4" title="Bagus"><i class="ri-star-fill"></i></label>
-                    <input type="radio" id="star3" name="rating" value="3" />
-                    <label for="star3" title="Cukup"><i class="ri-star-fill"></i></label>
-                    <input type="radio" id="star2" name="rating" value="2" />
-                    <label for="star2" title="Buruk"><i class="ri-star-fill"></i></label>
-                    <input type="radio" id="star1" name="rating" value="1" />
-                    <label for="star1" title="Sangat Buruk"><i class="ri-star-fill"></i></label>
+            <div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start;">
+                
+                <div style="flex: 1; min-width: 280px;">
+                    <label style="display:block; font-size:14px; font-weight:700; color:#334155; margin-bottom:12px;">Rating Pengalaman Anda</label>
+                    <div class="rating-container">
+                        <input type="radio" id="star5" name="rating" value="5" checked />
+                        <label for="star5" title="Sangat Bagus (5)"><i class="ri-star-fill"></i></label>
+                        <input type="radio" id="star4" name="rating" value="4" />
+                        <label for="star4" title="Bagus (4)"><i class="ri-star-fill"></i></label>
+                        <input type="radio" id="star3" name="rating" value="3" />
+                        <label for="star3" title="Cukup (3)"><i class="ri-star-fill"></i></label>
+                        <input type="radio" id="star2" name="rating" value="2" />
+                        <label for="star2" title="Buruk (2)"><i class="ri-star-fill"></i></label>
+                        <input type="radio" id="star1" name="rating" value="1" />
+                        <label for="star1" title="Sangat Buruk (1)"><i class="ri-star-fill"></i></label>
+                    </div>
+                    
+                    <div style="margin-top: 24px;">
+                        <label style="display:block; font-size:14px; font-weight:700; color:#334155;">Pesan Testimoni / Saran</label>
+                        <textarea name="message" class="testimonial-textarea" rows="4" placeholder="Ceritakan bagaimana performa aplikasi ini di lapangan..." required style="resize: vertical;"></textarea>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="form-group" style="margin-top:16px;">
-                <label class="form-label">Tulis Pesan Anda</label>
-                <textarea name="message" class="form-control" rows="4" placeholder="Ketik pandangan, harapan, atau kendala Anda di sini..." required style="resize: vertical;"></textarea>
-            </div>
-            
-            <div style="text-align: right; margin-top: 20px;">
-                <button type="submit" class="btn" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 24px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='var(--bg-body)'">
-                    <i class="ri-send-plane-fill" style="color:var(--brand);"></i> Kirim Testimoni
-                </button>
+
+                <div style="width: 100%; display: flex; justify-content: flex-end; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 24px; margin-top: -8px;">
+                    <button type="submit" class="btn-submit-testimonial">
+                        Kirim Kesan & Pesan <i class="ri-send-plane-fill" style="font-size: 18px;"></i>
+                    </button>
+                </div>
             </div>
         </form>
     </div>
@@ -333,6 +400,71 @@
 <style>
     .colored-toast.swal2-icon-info { background-color: var(--info-bg) !important; color: var(--info) !important;}
     .colored-toast.swal2-icon-info .swal2-title { color: var(--info) !important; }
+    /* Modern Assessment Widget */
+    .testimonial-widget {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        border-radius: 28px;
+        box-shadow: 0 16px 40px -12px rgba(0,0,0,0.06);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s ease;
+        margin-top: 32px;
+    }
+    .testimonial-widget:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 25px 50px -16px rgba(0,0,0,0.08);
+        border-color: rgba(203, 213, 225, 0.8);
+    }
+    .testimonial-widget::before {
+        content: ''; position: absolute; top: 0; right: 0; 
+        width: 300px; height: 300px; 
+        background: radial-gradient(circle, rgba(14, 165, 233, 0.04) 0%, transparent 60%); 
+        border-radius: 50%; pointer-events: none;
+    }
+    .testimonial-header {
+        padding: 32px 32px 20px 32px;
+        border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+    }
+    .testimonial-body { padding: 24px 32px 32px 32px; }
+    
+    .rating-container {
+        display: flex; gap: 4px; flex-direction: row-reverse; justify-content: flex-end;
+        background: #f8fafc; padding: 16px 24px; border-radius: 20px; border: 1px solid #f1f5f9;
+        width: fit-content;
+    }
+    .rating-container input { display: none; }
+    .rating-container label { cursor: pointer; color: #cbd5e1; font-size: 32px; transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+    .rating-container label:hover, .rating-container label:hover ~ label, .rating-container input:checked ~ label { 
+        color: #f59e0b; transform: scale(1.15); filter: drop-shadow(0 4px 6px rgba(245, 158, 11, 0.3));
+    }
+    
+    .testimonial-textarea {
+        width: 100%; border: 2px solid #f1f5f9; border-radius: 20px; padding: 20px;
+        font-family: inherit; font-size: 15px; color: #334155;
+        transition: all 0.3s; background: #ffffff;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        margin-top: 12px;
+    }
+    .testimonial-textarea:focus {
+        outline: none; border-color: rgba(56, 189, 248, 0.5); box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1), inset 0 2px 4px rgba(0,0,0,0.01);
+        background: #fff;
+    }
+    
+    .btn-submit-testimonial {
+        display: inline-flex; align-items: center; gap: 10px;
+        padding: 16px 32px; border-radius: 100px;
+        background: linear-gradient(135deg, #0284c7, #0369a1);
+        color: white; font-weight: 700; font-size: 15.5px;
+        border: none; cursor: pointer;
+        box-shadow: 0 10px 20px -8px rgba(2, 132, 199, 0.5);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-submit-testimonial:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px -10px rgba(2, 132, 199, 0.6);
+        background: linear-gradient(135deg, #0369a1, #075985);
+    }
 </style>
 @endif
 

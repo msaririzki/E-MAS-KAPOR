@@ -533,12 +533,12 @@ class BudgetExportController extends Controller
         ]);
 
         $sprinDateFormatted = '';
-        if (!empty($validated['sprin_date'])) {
+        if (! empty($validated['sprin_date'])) {
             $sprinDateFormatted = \Carbon\Carbon::parse($validated['sprin_date'])->locale('id')->translatedFormat('d F Y');
         }
 
         $sppmDateFormatted = '';
-        if (!empty($validated['sppm_date'])) {
+        if (! empty($validated['sppm_date'])) {
             $sppmDateFormatted = \Carbon\Carbon::createFromFormat('Y-m', $validated['sppm_date'])->locale('id')->translatedFormat('F Y');
         }
 

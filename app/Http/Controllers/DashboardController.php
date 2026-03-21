@@ -8,6 +8,7 @@ use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\KaporRequirementService;
+use App\Services\TestimonialInsightService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
@@ -15,7 +16,8 @@ use Spatie\Activitylog\Models\Activity;
 class DashboardController extends Controller
 {
     public function __construct(
-        private readonly KaporRequirementService $kaporRequirementService
+        private readonly KaporRequirementService $kaporRequirementService,
+        private readonly TestimonialInsightService $testimonialInsightService,
     ) {}
 
     /**
@@ -80,7 +82,7 @@ class DashboardController extends Controller
             'total_pns' => $totalPns,
             'total_satkers' => Satker::count(),
             'total_submissions' => $submittedCount,
-            'personnel_submitted' => $submittedCount, // Now consistent
+            'personnel_submitted' => $submittedCount,
             'personnel_pending' => $pendingCount,
             'fill_rate' => $fillRate,
             'total_kapor_items' => KaporItem::where('is_active', true)->count(),
@@ -113,7 +115,7 @@ class DashboardController extends Controller
         // Needs Attention: Incomplete Personnel Limit 5
         $incompletePersonnel = Personnel::with(['satker'])
             ->select(['id', 'full_name', 'nrp', 'satker_id', 'gender', 'kapor_sizes', 'keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'])
-            ->inRandomOrder() // So it feels dynamic, or we can use latest()
+            ->inRandomOrder()
             ->get()
             ->filter(fn (Personnel $personnel) => ! $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
             ->take(5)
@@ -128,6 +130,8 @@ class DashboardController extends Controller
                 ->get();
         }
 
+        $testimonialInsights = $this->testimonialInsightService->getStatistics();
+
         return view('dashboard.superadmin', compact(
             'stats',
             'satkerStats',
@@ -135,7 +139,8 @@ class DashboardController extends Controller
             'fiscalYear',
             'defaultYear',
             'incompletePersonnel',
-            'activities'
+            'activities',
+            'testimonialInsights',
         ));
     }
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SatkerController;
+use App\Http\Controllers\Superadmin\StatisticsController;
 use Illuminate\Support\Facades\Route;
 
 /* |-------------------------------------------------------------------------- | SI-KAPOR Polda NTB â€” Web Routes |-------------------------------------------------------------------------- */
@@ -237,10 +238,7 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::put('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
     Route::post('/settings/next-year', [\App\Http\Controllers\SettingsController::class, 'nextYear'])->name('settings.next-year');
 
-    Route::get('/statistik', function () {
-        return view('superadmin.statistics');
-    }
-    )->name('statistics');
+    Route::get('/statistik', [StatisticsController::class, 'index'])->name('statistics');
 
     Route::get('/kapor-items', function () {
         return view('superadmin.kapor-items.index');
