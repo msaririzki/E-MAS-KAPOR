@@ -98,7 +98,7 @@
     <div class="satisfaction-horizontal-wrapper">
         <div class="sat-main-stats">
             <div class="sat-score-circle">
-                <span class="score-val">{{ $testimonialInsights['serviceScore'] }}</span>
+                <span class="score-val count-up" data-val="{{ $testimonialInsights['serviceScore'] }}">0</span>
                 <span class="score-lbl">Skor</span>
             </div>
             <div class="sat-rating-info">
@@ -106,17 +106,17 @@
                     <i class="{{ $testimonialInsights['dashboardBadge']['icon'] }}"></i> {{ $testimonialInsights['dashboardBadge']['label'] }}
                 </div>
                 <div class="sat-stars-row">
-                    <h2>{{ number_format($testimonialInsights['averageRating'], 1) }}<small>/5</small></h2>
+                    <h2><span class="count-up" data-val="{{ $testimonialInsights['averageRating'] }}" data-decimals="1">0.0</span><small>/5</small></h2>
                     <div class="stars">
                         @for($star = 1; $star <= 5; $star++)
                             <i class="{{ $testimonialInsights['averageRating'] >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
                         @endfor
                     </div>
                 </div>
-                <p>Dari <b>{{ number_format($testimonialInsights['totalTestimonials']) }}</b> ulasan masuk</p>
+                <p>Dari <b class="count-up" data-val="{{ $testimonialInsights['totalTestimonials'] }}">0</b> ulasan masuk</p>
                 <div class="sat-mini-metrics">
-                    <div class="metric-item"><strong>{{ number_format($testimonialInsights['fiveStarRate'], 1) }}%</strong> Bintang 5</div>
-                    <div class="metric-item"><strong>{{ number_format($testimonialInsights['recentTestimonialsCount']) }}</strong> ulasan baru bulan ini</div>
+                    <div class="metric-item"><strong><span class="count-up" data-val="{{ $testimonialInsights['fiveStarRate'] }}" data-decimals="1">0.0</span>%</strong> Bintang 5</div>
+                    <div class="metric-item"><strong><span class="count-up" data-val="{{ $testimonialInsights['recentTestimonialsCount'] }}">0</span></strong> ulasan baru bulan ini</div>
                 </div>
             </div>
             
@@ -126,7 +126,7 @@
                 <div class="breakdown-row">
                     <div class="star-lbl">{{ $breakdown['stars'] }} <i class="ri-star-fill"></i></div>
                     <div class="bar-track">
-                        <div class="bar-fill" style="width: {{ $breakdown['percentage'] }}%;"></div>
+                        <div class="bar-fill" data-width="{{ $breakdown['percentage'] }}" style="width: 0%;"></div>
                     </div>
                     <div class="count-lbl">{{ $breakdown['count'] }}</div>
                 </div>
@@ -842,5 +842,44 @@
             });
         });
     </script>
+
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const counters = document.querySelectorAll('.count-up');
+        counters.forEach(counter => {
+            const target = parseFloat(counter.getAttribute('data-val'));
+            const isDecimal = counter.hasAttribute('data-decimals');
+            const duration = 2000; // 2 seconds
+            const stepTime = 30;
+            const steps = duration / stepTime;
+            const increment = target / steps;
+            let current = 0;
+
+            if(target > 0) {
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    counter.innerText = isDecimal ? current.toFixed(1) : Math.round(current);
+                }, stepTime);
+            } else {
+                counter.innerText = isDecimal ? "0.0" : "0";
+            }
+        });
+
+        const bars = document.querySelectorAll('.bar-fill');
+        bars.forEach(bar => {
+            const targetWidth = bar.getAttribute('data-width');
+            setTimeout(() => {
+                bar.style.transition = 'width 1.5s cubic-bezier(0.1, 0.8, 0.2, 1)';
+                bar.style.width = targetWidth + '%';
+            }, 300);
+        });
+    });
+</script>
+@endsection
 @endsection
 
