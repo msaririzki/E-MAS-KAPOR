@@ -120,9 +120,17 @@
                 </div>
             </div>
             
-            <!-- Trading-style Line Chart for Score Trend -->
-            <div class="sat-trading-chart" style="flex: 1; min-width: 140px; margin-left: 20px; background: #1e293b; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: center; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2); position: relative;">
-                <canvas id="tradingScoreChart" style="height: 60px; max-height: 60px; max-width: 100%;"></canvas>
+            <!-- Graphic breakdown of stars -->
+            <div class="sat-rating-breakdown">
+                @foreach($testimonialInsights['ratingBreakdown'] as $breakdown)
+                <div class="breakdown-row">
+                    <div class="star-lbl">{{ $breakdown['stars'] }} <i class="ri-star-fill"></i></div>
+                    <div class="bar-track">
+                        <div class="bar-fill" data-width="{{ $breakdown['percentage'] }}" style="width: 0%;"></div>
+                    </div>
+                    <div class="count-lbl">{{ $breakdown['count'] }}</div>
+                </div>
+                @endforeach
             </div>
         </div>
 
@@ -783,7 +791,7 @@
                         }
                     },
                     plugins: {
-                        legend: { display: false }, grid: { display: false },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function (context) {
@@ -861,8 +869,6 @@
                 counter.innerText = isDecimal ? "0.0" : "0";
             }
         });
-
-        
 
         const bars = document.querySelectorAll('.bar-fill');
         bars.forEach(bar => {
