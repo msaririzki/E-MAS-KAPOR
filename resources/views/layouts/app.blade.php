@@ -1744,6 +1744,24 @@
                     </div>
                 </div>
 
+                {{-- Data Gudang Top Level Menu --}}
+                <div class="nav-group {{ request()->routeIs('admin.warehouse-items.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-archive-line group-icon"></i> Data Gudang
+                        <i class="ri-arrow-down-s-line chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.warehouse-items.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.warehouse-items.index') ? 'active' : '' }}">
+                            Data Barang
+                        </a>
+                        <a href="{{ route('admin.warehouse-items.reports', ['type' => 'outflow']) }}"
+                            class="nav-link {{ request()->routeIs('admin.warehouse-items.reports') ? 'active' : '' }}">
+                            Laporan Pengeluaran
+                        </a>
+                    </div>
+                </div>
+
                 <div class="nav-group {{ request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-bar-chart-grouped-line group-icon"></i> Keuangan & Laporan
