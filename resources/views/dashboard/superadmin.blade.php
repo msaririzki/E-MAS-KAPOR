@@ -841,45 +841,41 @@
                 }
             });
         });
-    </script>
 
-@section('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const counters = document.querySelectorAll('.count-up');
-        counters.forEach(counter => {
-            const target = parseFloat(counter.getAttribute('data-val'));
-            const isDecimal = counter.hasAttribute('data-decimals');
-            const duration = 2000; // 2 seconds
-            const stepTime = 30;
-            const steps = duration / stepTime;
-            const increment = target / steps;
-            let current = 0;
+    // Count-up animation
+    const counters = document.querySelectorAll('.count-up');
+    counters.forEach(counter => {
+        const target = parseFloat(counter.getAttribute('data-val'));
+        const isDecimal = counter.hasAttribute('data-decimals');
+        const duration = 2000; // 2 seconds
+        const stepTime = 30;
+        const steps = duration / stepTime;
+        const increment = target / steps;
+        let current = 0;
 
-            if(target > 0) {
-                const timer = setInterval(() => {
-                    current += increment;
-                    if (current >= target) {
-                        current = target;
-                        clearInterval(timer);
-                    }
-                    counter.innerText = isDecimal ? current.toFixed(1) : Math.round(current);
-                }, stepTime);
-            } else {
-                counter.innerText = isDecimal ? "0.0" : "0";
-            }
-        });
-
-        const bars = document.querySelectorAll('.bar-fill');
-        bars.forEach(bar => {
-            const targetWidth = bar.getAttribute('data-width');
-            setTimeout(() => {
-                bar.style.transition = 'width 1.5s cubic-bezier(0.1, 0.8, 0.2, 1)';
-                bar.style.width = targetWidth + '%';
-            }, 300);
-        });
+        if(target > 0) {
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                counter.innerText = isDecimal ? current.toFixed(1) : Math.round(current);
+            }, stepTime);
+        } else {
+            counter.innerText = isDecimal ? "0.0" : "0";
+        }
     });
-</script>
-@endsection
+
+    // Bar fill animation
+    const bars = document.querySelectorAll('.bar-fill');
+    bars.forEach(bar => {
+        const targetWidth = bar.getAttribute('data-width');
+        setTimeout(() => {
+            bar.style.transition = 'width 1.5s cubic-bezier(0.1, 0.8, 0.2, 1)';
+            bar.style.width = targetWidth + '%';
+        }, 300);
+    });
+    </script>
 @endsection
 
