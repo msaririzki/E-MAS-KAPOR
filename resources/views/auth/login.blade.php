@@ -1,10 +1,24 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    @php
+        $siteUrl = rtrim(config('app.url') ?: request()->getSchemeAndHttpHost(), '/');
+        $loginDescription = 'Halaman login resmi E-MAS KAPOR untuk personel dan operator Biro Logistik Polda NTB.';
+    @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login — E-Mas Kapor</title>
+    <meta name="description" content="{{ $loginDescription }}">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="{{ $siteUrl }}/login">
+    <meta property="og:type" content="website">
+    <meta property="og:description" content="{{ $loginDescription }}">
+    <meta property="og:url" content="{{ $siteUrl }}/login">
+    <meta property="og:image" content="{{ $siteUrl }}/e-mas-kapor.png">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:description" content="{{ $loginDescription }}">
+    <meta name="twitter:image" content="{{ $siteUrl }}/e-mas-kapor.png">
+    <title>Login E-MAS KAPOR | Biro Logistik Polda NTB</title>
     <link rel="icon" href="{{ asset('e-mas-kapor.png') }}" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -393,7 +407,7 @@
 
         {{-- ===== FLOATING SPLIT CARD ===== --}}
         <div class="login-card-split">
-            {{-- Left — Branding --}}
+            {{-- Left â€” Branding --}}
             <div class="card-brand">
                 <div class="card-brand-inner">
                     <div class="brand-header">
@@ -417,7 +431,7 @@
                 </div>
             </div>
 
-            {{-- Right — Form --}}
+            {{-- Right â€” Form --}}
             <div class="card-form">
                 <div class="form-header">
                     <h2>Selamat Datang</h2>
@@ -456,7 +470,7 @@
                                 name="password"
                                 id="password"
                                 class="field-input pr-icon"
-                                placeholder="••••••••"
+                                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                                 required
                             >
                             <i class="ri-eye-line toggle-pw" id="togglePassword"></i>
@@ -476,11 +490,11 @@
                 </form>
 
                 <div class="help-text">
-                    Tidak bisa login? Hubungi <a href="#">administrator Bagian Logistik</a>.
+                    Tidak bisa login? Hubungi administrator Bagian Logistik atau kembali ke <a href="{{ route('home') }}">halaman informasi resmi</a>.
                 </div>
 
                 <div class="form-footer-text">
-                    © {{ date('Y') }} E-Mas Kapor — Polda Nusa Tenggara Barat
+                    Â© {{ date('Y') }} E-Mas Kapor â€” Polda Nusa Tenggara Barat
                 </div>
             </div>
         </div>

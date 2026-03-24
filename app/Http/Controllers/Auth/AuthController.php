@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
@@ -11,13 +13,15 @@ class AuthController extends Controller
     /**
      * Show the NRP/NIP login form.
      */
-    public function showLogin()
+    public function showLogin(): Response|RedirectResponse
     {
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }
 
-        return view('auth.login');
+        return response()
+            ->view('auth.login')
+            ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
     /**
