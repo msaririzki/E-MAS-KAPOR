@@ -231,10 +231,23 @@ class BudgetExportController extends Controller
             return str_contains($name, 'OLAHRAGA')
                 || str_contains($name, 'T-SHIRT')
                 || str_contains($name, 'T SHIRT')
-                || str_contains($name, 'TOPI')
-                || str_contains($name, 'PET')
-                || str_contains($name, 'BARET')
-                || str_contains($name, 'PECI');
+                || str_contains($name, 'PET');
+        };
+
+        // Helper: apakah item unisex (semua ukuran gender=null)
+        $isUnisexItem = function ($packageItem) {
+            $name = strtoupper($packageItem->kaporItem->item_name);
+
+            if (str_contains($name, 'PET') || str_contains($name, 'BARET') || str_contains($name, 'PECI')) {
+                return false;
+            }
+
+            $sizes = $packageItem->kaporItem->sizes ?? $packageItem->kaporItem->sizes()->get();
+            if ($sizes->isEmpty()) {
+                return false;
+            }
+
+            return $sizes->every(fn ($s) => $s->gender === null);
         };
 
         // Helper: tentukan sizeKey
@@ -366,7 +379,7 @@ class BudgetExportController extends Controller
             if ($gender !== null) {
                 $sizesQuery->where(fn ($q) => $q->where('gender', $gender)->orWhereNull('gender'));
             } else {
-                $sizesQuery->where(fn ($q) => $q->where('gender', 'L')->orWhereNull('gender'));
+                $sizesQuery->whereNull('gender');
             }
             $result = $sizesQuery->pluck('size_label')->toArray();
 
@@ -400,9 +413,27 @@ class BudgetExportController extends Controller
 
             $hasCelana = $needsCelana($packageItem);
             $combineGender = $usesCombinedGenderSheet($packageItem) && isset($gendersInItem['L']) && isset($gendersInItem['P']);
+            $isUnisex = $isUnisexItem($packageItem);
             $upperBase = strtoupper($baseName);
             $hasMaleInName = str_contains($upperBase, 'PRIA') || str_contains($upperBase, 'LAKI');
             $hasFemaleInName = str_contains($upperBase, 'WANITA') || str_contains($upperBase, 'PEREMPUAN');
+
+            // ── Item UNISEX: 1 sheet tanpa breakdown gender ──
+            if ($isUnisex) {
+                $sizeKey = $getSizeKey($packageItem, null);
+                $availableSizes = $getAvailableSizes($kaporItem, null, null);
+                $data = $buildMatrix($packageItem, $sizeKey, $availableSizes, null);
+                $pages[] = array_merge($data, [
+                    'mode' => 'normal',
+                    'item_name' => $itemName,
+                    'gender_label' => null,
+                    'size_label' => null,
+                    'available_sizes' => $availableSizes,
+                    'display_title' => trim($baseName),
+                ]);
+
+                continue;
+            }
 
             // ── Item ukuran gabungan (combined) ──
             if ($combineGender) {

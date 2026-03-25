@@ -302,10 +302,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                         ->orWhereNull('gender');
                 });
             } else {
-                // Combined mode: ambil ukuran dari gender pertama (sama untuk kedua gender di olahraga)
-                $sizesQuery->where(function ($q) {
-                    $q->where('gender', 'L')->orWhereNull('gender');
-                });
+                $sizesQuery->whereNull('gender');
             }
             $sizeObjects = $sizesQuery->get();
             $availableSizes = $sizeObjects->pluck('size_label')->toArray();

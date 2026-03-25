@@ -124,12 +124,10 @@ class KaporSizeStandardSeeder extends Seeder
                 'P' => $this->wanitaSizes,
             ],
             'topi_pati' => [
-                'L' => $this->topiPatiSizes,
-                'P' => $this->topiPatiSizes,
+                'U' => $this->topiPatiSizes,
             ],
             'topi_pns' => [
-                'L' => $this->topiPnsSizes,
-                'P' => $this->topiPnsSizes,
+                'U' => $this->topiPnsSizes,
             ],
             'sepatu_olahraga' => [
                 'L' => $this->sepatuOlahragaSizes,
@@ -168,12 +166,12 @@ class KaporSizeStandardSeeder extends Seeder
             $type = $this->detectType($item->item_name);
             $sizeMap = $this->getSizesForType($type);
 
-            foreach (['L', 'P'] as $gender) {
-                foreach ($sizeMap[$gender] ?? [] as $order => $label) {
+            foreach (['L', 'P', 'U'] as $genderKey) {
+                foreach ($sizeMap[$genderKey] ?? [] as $order => $label) {
                     KaporSize::create([
                         'kapor_item_id' => $item->id,
                         'size_label' => $label,
-                        'gender' => $gender,
+                        'gender' => $genderKey === 'U' ? null : $genderKey,
                         'sort_order' => $order + 1,
                     ]);
                     $totalCreated++;
