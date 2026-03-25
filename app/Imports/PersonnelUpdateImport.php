@@ -6,6 +6,7 @@ use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\User;
+use App\Services\PersonnelKeteranganService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -122,6 +123,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
     {
         $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
+        $keteranganSanitizer = app(PersonnelKeteranganService::class);
 
         // Data seluruh personel dari semua satker untuk deteksi cross-database NRP duplikat
         $allNrpData = Personnel::whereNotNull('nrp')
@@ -176,10 +178,10 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
             $jabatan = trim($row[5] ?? '');
             $bagian = trim($row[6] ?? '');
             $genderRaw = strtoupper(trim($row[7] ?? ''));
-            $keterangan = trim($row[17] ?? '');
-            $keterangan2 = trim($row[18] ?? '');
-            $keterangan3 = trim($row[19] ?? '');
-            $keterangan4 = trim($row[20] ?? '');
+            $keterangan = $keteranganSanitizer->normalizeValue($row[17] ?? null) ?? '';
+            $keterangan2 = $keteranganSanitizer->normalizeValue($row[18] ?? null) ?? '';
+            $keterangan3 = $keteranganSanitizer->normalizeValue($row[19] ?? null) ?? '';
+            $keterangan4 = $keteranganSanitizer->normalizeValue($row[20] ?? null) ?? '';
             $no = trim($row[0] ?? '');
 
             // ── Validasi baris kosong / header ────────────────────────
@@ -456,6 +458,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
         $errorCount = 0;
         $errors = [];
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
+        $keteranganSanitizer = app(PersonnelKeteranganService::class);
 
         DB::beginTransaction();
 
@@ -474,6 +477,11 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                 }
 
                 try {
+                    $normalizedKeterangan = $keteranganSanitizer->normalizeValue($data['keterangan'] ?? null);
+                    $normalizedKeterangan2 = $keteranganSanitizer->normalizeValue($data['keterangan_2'] ?? null);
+                    $normalizedKeterangan3 = $keteranganSanitizer->normalizeValue($data['keterangan_3'] ?? null);
+                    $normalizedKeterangan4 = $keteranganSanitizer->normalizeValue($data['keterangan_4'] ?? null);
+
                     if ($data['action'] === 'update' && ! empty($data['personnel_id'])) {
                         // ── UPDATE ──────────────────────────────────────────
                         $personnel = Personnel::find($data['personnel_id']);
@@ -500,17 +508,17 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         if (! empty($data['gender'])) {
                             $updateData['gender'] = $data['gender'];
                         }
-                        if ($data['keterangan'] !== '') {
-                            $updateData['keterangan'] = $data['keterangan'];
+                        if ($normalizedKeterangan !== null) {
+                            $updateData['keterangan'] = $normalizedKeterangan;
                         }
-                        if (($data['keterangan_2'] ?? '') !== '') {
-                            $updateData['keterangan_2'] = $data['keterangan_2'];
+                        if ($normalizedKeterangan2 !== null) {
+                            $updateData['keterangan_2'] = $normalizedKeterangan2;
                         }
-                        if (($data['keterangan_3'] ?? '') !== '') {
-                            $updateData['keterangan_3'] = $data['keterangan_3'];
+                        if ($normalizedKeterangan3 !== null) {
+                            $updateData['keterangan_3'] = $normalizedKeterangan3;
                         }
-                        if (($data['keterangan_4'] ?? '') !== '') {
-                            $updateData['keterangan_4'] = $data['keterangan_4'];
+                        if ($normalizedKeterangan4 !== null) {
+                            $updateData['keterangan_4'] = $normalizedKeterangan4;
                         }
                         if (! empty($data['rank_id'])) {
                             $updateData['rank_id'] = $data['rank_id'];
@@ -589,10 +597,10 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                             'bagian' => $data['bagian'] ?: null,
                             'golongan' => $data['golongan'] ?: null,
                             'gender' => $data['gender'] ?: 'L',
-                            'keterangan' => $data['keterangan'] ?: null,
-                            'keterangan_2' => $data['keterangan_2'] ?: null,
-                            'keterangan_3' => $data['keterangan_3'] ?: null,
-                            'keterangan_4' => $data['keterangan_4'] ?: null,
+                            'keterangan' => $normalizedKeterangan,
+                            'keterangan_2' => $normalizedKeterangan2,
+                            'keterangan_3' => $normalizedKeterangan3,
+                            'keterangan_4' => $normalizedKeterangan4,
                             'kapor_sizes' => $sizeSanitizer->sanitizeSubmittedSizes($data['sizes'] ?? [], $data['gender'] ?: 'L'),
                             'has_nrp_issue' => ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']),
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),

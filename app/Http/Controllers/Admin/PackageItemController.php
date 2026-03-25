@@ -9,11 +9,16 @@ use App\Models\PackageItem;
 use App\Models\PackageItemRecipient;
 use App\Models\Personnel;
 use App\Models\Satker;
+use App\Services\PersonnelKeteranganService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 class PackageItemController extends Controller
 {
+    public function __construct(
+        private readonly PersonnelKeteranganService $personnelKeteranganService
+    ) {}
+
     /**
      * Langkah 1: Tampilkan semua item aktif untuk dipilih
      */
@@ -254,19 +259,31 @@ class PackageItemController extends Controller
         $keteranganList = [];
 
         foreach ($fields as $field) {
-            $keteranganList[$field] = Personnel::query()
+            $counts = [];
+
+            Personnel::query()
                 ->where('satker_id', $satker->id)
                 ->where('is_active', true)
-                ->whereNotNull($field)
-                ->where($field, '!=', '')
-                ->selectRaw("{$field} as value, COUNT(*) as jumlah")
-                ->groupBy($field)
-                ->orderBy($field)
-                ->get()
-                ->map(fn ($row) => [
-                    'value' => $row->value,
-                    'count' => $row->jumlah,
+                ->select([$field])
+                ->orderBy('id')
+                ->chunk(1000, function ($personnels) use (&$counts, $field) {
+                    foreach ($personnels as $personnel) {
+                        $value = $this->personnelKeteranganService->normalizeValue($personnel->{$field} ?? null);
+
+                        if ($value === null) {
+                            continue;
+                        }
+
+                        $counts[$value] = ($counts[$value] ?? 0) + 1;
+                    }
+                });
+
+            $keteranganList[$field] = collect($counts)
+                ->map(fn ($count, $value) => [
+                    'value' => $value,
+                    'count' => $count,
                 ])
+                ->sortBy(fn ($row) => strtolower($row['value']))
                 ->values();
         }
 
@@ -311,8 +328,8 @@ class PackageItemController extends Controller
                     $scope = $scopeBySatkerId[$personnel->satker_id] ?? 'polda';
 
                     foreach (array_keys($fieldLabels) as $fieldKey) {
-                        $value = trim((string) ($personnel->{$fieldKey} ?? ''));
-                        if ($value === '') {
+                        $value = $this->personnelKeteranganService->normalizeValue($personnel->{$fieldKey} ?? null);
+                        if ($value === null) {
                             continue;
                         }
 

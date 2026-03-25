@@ -7,6 +7,7 @@ use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\PersonnelKeteranganService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -754,6 +755,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $preview = [];
         $seenNrps = []; // Track NRPs untuk deteksi duplikat dalam batch
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
+        $keteranganSanitizer = app(PersonnelKeteranganService::class);
 
         // Sheet 0 = POLRI, Sheet >= 1 = PNS
         $sheetPersonnelType = $sheetIndex >= 1 ? 'PNS' : 'Polri';
@@ -838,10 +840,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $jabatan = trim($row[$colJabatan] ?? '');
             $bagian = trim($row[$colBagian] ?? '');
             $genderRaw = strtoupper(trim($row[$colGender] ?? ''));
-            $keterangan = trim($row[$colKet] ?? '');
-            $keterangan2 = trim($row[$colKet2] ?? '');
-            $keterangan3 = trim($row[$colKet3] ?? '');
-            $keterangan4 = trim($row[$colKet4] ?? '');
+            $keterangan = $keteranganSanitizer->normalizeValue($row[$colKet] ?? null) ?? '';
+            $keterangan2 = $keteranganSanitizer->normalizeValue($row[$colKet2] ?? null) ?? '';
+            $keterangan3 = $keteranganSanitizer->normalizeValue($row[$colKet3] ?? null) ?? '';
+            $keterangan4 = $keteranganSanitizer->normalizeValue($row[$colKet4] ?? null) ?? '';
 
             // Ambil nomor urut dari kolom pertama (NO)
             $no = trim($row[0] ?? '');
@@ -1130,6 +1132,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $errorCount = 0;
         $errors = [];
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
+        $keteranganSanitizer = app(PersonnelKeteranganService::class);
 
         // ── Pre-load sekali ─────────────────────────────────────────────────
         $ranksById = Rank::all()->keyBy('id');
@@ -1154,10 +1157,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 $jabatan = trim($data['jabatan'] ?? '');
                 $bagian = trim($data['bagian'] ?? '');
                 $golongan = trim($data['golongan'] ?? '');
-                $keterangan = trim($data['keterangan'] ?? '');
-                $keterangan2 = trim($data['keterangan_2'] ?? '');
-                $keterangan3 = trim($data['keterangan_3'] ?? '');
-                $keterangan4 = trim($data['keterangan_4'] ?? '');
+                $keterangan = $keteranganSanitizer->normalizeValue($data['keterangan'] ?? null);
+                $keterangan2 = $keteranganSanitizer->normalizeValue($data['keterangan_2'] ?? null);
+                $keterangan3 = $keteranganSanitizer->normalizeValue($data['keterangan_3'] ?? null);
+                $keterangan4 = $keteranganSanitizer->normalizeValue($data['keterangan_4'] ?? null);
                 $sizes = $data['sizes'] ?? [];
 
                 if (empty($fullName)) {
@@ -1241,9 +1244,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                         'gender' => $gender,
                         'golongan' => $golongan,
                         'keterangan' => $keterangan,
-                        'keterangan_2' => $keterangan2 ?: null,
-                        'keterangan_3' => $keterangan3 ?: null,
-                        'keterangan_4' => $keterangan4 ?: null,
+                        'keterangan_2' => $keterangan2,
+                        'keterangan_3' => $keterangan3,
+                        'keterangan_4' => $keterangan4,
                         'is_active' => true,
                         'has_nrp_issue' => $hasNrpIssue,
                         'nrp_issue_note' => $this->buildNrpIssueNote($data),
@@ -1350,6 +1353,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $sizeCols = $colMaps['sizes'];
         $ketCols = $colMaps['kets'];
         $sizeSanitizer = app(\App\Services\KaporRequirementService::class);
+        $keteranganSanitizer = app(PersonnelKeteranganService::class);
 
         foreach ($rows as $rowIndex => $row) {
             if ($row instanceof Collection) {
@@ -1363,7 +1367,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $jabatan = trim($row[5 + $offset] ?? '');
             $bagian = trim($row[6 + $offset] ?? '');
             $genderRaw = strtoupper(trim($row[7 + $offset] ?? ''));
-            $keterangan = trim($row[$ketCols['ket1']] ?? '');
+            $keterangan = $keteranganSanitizer->normalizeValue($row[$ketCols['ket1']] ?? null);
 
             if (empty($nrp) || empty($fullName)) {
                 continue;
