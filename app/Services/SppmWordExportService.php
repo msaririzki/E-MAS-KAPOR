@@ -73,6 +73,26 @@ class SppmWordExportService
             }
         }
 
+        // Urutkan satkerData sesuai urutan di halaman Daftar Satker
+        // Menggunakan query yang sama: Satker::orderBy('sort_order') + global scope
+        $orderedSatkerIds = Satker::orderBy('sort_order', 'asc')
+            ->pluck('id')
+            ->toArray();
+
+        $sortedSatkerData = [];
+        foreach ($orderedSatkerIds as $orderedId) {
+            if (isset($satkerData[$orderedId])) {
+                $sortedSatkerData[$orderedId] = $satkerData[$orderedId];
+            }
+        }
+        // Tambahkan satker yang tidak ada di tabel (safety net)
+        foreach ($satkerData as $id => $data) {
+            if (! isset($sortedSatkerData[$id])) {
+                $sortedSatkerData[$id] = $data;
+            }
+        }
+        $satkerData = $sortedSatkerData;
+
         $sections = [];
 
         foreach ($satkerData as $sd) {
@@ -536,7 +556,7 @@ class SppmWordExportService
     {
         $name = strtoupper(trim($satker->name));
 
-        if (str_contains($name, 'POLDA NTB') || str_starts_with($name, 'POLRES')) {
+        if (str_contains($name, 'POLDA NTB')) {
             return $name;
         }
 

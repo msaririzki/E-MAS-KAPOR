@@ -250,6 +250,11 @@
         .field-input::placeholder { color: #ccc; }
         .field-input.pr-icon { padding-right: 48px; }
 
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
         .toggle-pw {
             position: absolute;
             right: 16px; top: 50%;

@@ -34,12 +34,10 @@
                 <button class="btn-icon-sm" onclick="openEditYearModal({{ json_encode($year) }})" title="Edit">
                     <i class="ri-edit-line"></i>
                 </button>
-                @if($year->packages_count == 0)
-                <form method="POST" action="{{ route('admin.budget.destroy-year', $year) }}" style="display:inline;" onsubmit="return confirm('Hapus tahun anggaran {{ $year->year }}?')">
+                <form method="POST" action="{{ route('admin.budget.destroy-year', $year) }}" style="display:inline;" onsubmit="return confirm('{{ $year->packages_count > 0 ? 'PERINGATAN: Tahun anggaran ' . $year->year . ' memiliki ' . $year->packages_count . ' paket. Semua paket beserta data terkait akan ikut TERHAPUS PERMANEN. Lanjutkan?' : 'Hapus tahun anggaran ' . $year->year . '?' }}')">
                     @csrf @method('DELETE')
                     <button class="btn-icon-sm red" title="Hapus"><i class="ri-delete-bin-line"></i></button>
                 </form>
-                @endif
             </div>
         </div>
         <div class="year-card-body">

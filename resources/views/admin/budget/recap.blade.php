@@ -248,6 +248,7 @@
 @endsection
 
 @section('styles')
+<style>
     /* ── Recap Hero ── */
     .recap-hero {
         background: #ffffff; border-radius: 16px; padding: 24px;
@@ -494,4 +495,5 @@
         .dup-items-header, .dup-items-row { flex-wrap: wrap; }
         .section-header { flex-direction: column; gap: 12px; align-items: flex-start; }
     }
+</style>
 @endsection

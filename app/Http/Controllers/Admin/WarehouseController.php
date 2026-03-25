@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\WarehouseTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Models\WarehouseItem;
 use App\Models\WarehouseItemSize;
@@ -9,9 +10,6 @@ use App\Models\WarehouseOutflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\WarehouseImport;
-use App\Exports\WarehouseExport;
-use App\Exports\WarehouseTemplateExport;
 
 class WarehouseController extends Controller
 {
@@ -62,7 +60,7 @@ class WarehouseController extends Controller
             'price' => $validated['price'],
         ]);
 
-        if (!empty($validated['sizes']) && !empty($validated['quantities'])) {
+        if (! empty($validated['sizes']) && ! empty($validated['quantities'])) {
             foreach ($validated['sizes'] as $index => $sizeLabel) {
                 $qty = $validated['quantities'][$index] ?? 0;
                 $item->sizes()->create([
@@ -105,6 +103,7 @@ class WarehouseController extends Controller
     public function getSizes(WarehouseItem $warehouse)
     {
         $sizes = $warehouse->sizes()->orderBy('size_label')->get();
+
         return response()->json($sizes);
     }
 
@@ -164,7 +163,7 @@ class WarehouseController extends Controller
             'outflow_date' => 'required|date',
             'satker_id' => 'nullable|exists:satkers,id',
             'recipient_name' => 'nullable|string|max:255',
-            'reference_note' => 'nullable|string'
+            'reference_note' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
@@ -172,7 +171,7 @@ class WarehouseController extends Controller
             $size = WarehouseItemSize::findOrFail($request->warehouse_item_size_id);
 
             if ($size->stock < $request->quantity) {
-                return back()->with('error', 'Stok ukuran ' . $size->size_label . ' tidak mencukupi. (Stok tersisa: ' . $size->stock . ')');
+                return back()->with('error', 'Stok ukuran '.$size->size_label.' tidak mencukupi. (Stok tersisa: '.$size->stock.')');
             }
 
             // Kurangi stok
@@ -190,22 +189,24 @@ class WarehouseController extends Controller
             ]);
 
             DB::commit();
-            return back()->with('success', 'Barang berhasil dikeluarkan sebesar ' . $request->quantity . ' ' . $size->item->unit . '.');
+
+            return back()->with('success', 'Barang berhasil dikeluarkan sebesar '.$request->quantity.' '.$size->item->unit.'.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal mengeluarkan barang: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal mengeluarkan barang: '.$e->getMessage());
         }
     }
 
     public function updateSppm(Request $request, $id)
     {
         $request->validate([
-            'reference_note' => 'required|string|in:Sudah Ada,Belum Ada'
+            'reference_note' => 'required|string|in:Sudah Ada,Belum Ada',
         ]);
 
         $outflow = WarehouseOutflow::findOrFail($id);
         $outflow->update([
-            'reference_note' => $request->reference_note
+            'reference_note' => $request->reference_note,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Status SPPM berhasil diperbarui.']);
@@ -224,10 +225,12 @@ class WarehouseController extends Controller
             }
             $outflow->delete();
             DB::commit();
+
             return back()->with('success', 'Pengeluaran barang berhasil dibatalkan dan stok telah dikembalikan.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal membatalkan pengeluaran: ' . $e->getMessage());
+
+            return back()->with('error', 'Gagal membatalkan pengeluaran: '.$e->getMessage());
         }
     }
 
@@ -255,9 +258,9 @@ class WarehouseController extends Controller
         }
 
         $outflows = $query->orderBy('outflow_date', 'desc')
-                          ->orderBy('created_at', 'desc')
-                          ->paginate(15);
-        
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
         $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
 
         // Stats
@@ -276,9 +279,10 @@ class WarehouseController extends Controller
 
         try {
             \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\WarehouseImport, $request->file('file'));
+
             return redirect()->back()->with('success', 'Data Gudang berhasil diimport');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal import: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal import: '.$e->getMessage());
         }
     }
 
@@ -292,6 +296,7 @@ class WarehouseController extends Controller
         $items = \App\Models\WarehouseItem::withSum('sizes', 'stock')->orderBy('name')->get();
         // Uses carlos-meneses/laravel-mpdf
         $pdf = \PDF::loadView('admin.warehouse.export_excel', compact('items'));
+
         return $pdf->download('Data_Gudang.pdf');
     }
 
@@ -314,6 +319,7 @@ class WarehouseController extends Controller
         $totalItemsOut = $query->sum('quantity');
 
         $pdf = \PDF::loadView('admin.warehouse.pdf-reports', compact('outflows', 'totalItemsOut'));
+
         return $pdf->download('Laporan_Pengeluaran_Gudang.pdf');
     }
 

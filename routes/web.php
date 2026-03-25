@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\SatkerController;
 use App\Http\Controllers\Superadmin\StatisticsController;
 use Illuminate\Support\Facades\Route;
@@ -12,9 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 // â”€â”€ Public / Auth Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-Route::get('/', [PublicSiteController::class, 'home'])->name('home');
-Route::get('/sitemap.xml', [PublicSiteController::class, 'sitemap'])->name('sitemap');
-Route::get('/robots.txt', [PublicSiteController::class, 'robots'])->name('robots');
+Route::get('/', fn () => redirect()->route('login'))->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

@@ -20,10 +20,12 @@ class SppmWordExportServiceTest extends TestCase
         $satker = Satker::create([
             'name' => 'ITWASDA',
             'code' => 'ITWASDA',
+            'sort_order' => 1,
         ]);
         $secondSatker = Satker::create([
             'name' => 'POLRES LOMBOK TENGAH',
             'code' => 'POLRES-LOMBOK-TENGAH',
+            'sort_order' => 32,
         ]);
 
         InvoiceSetting::query()->update([
@@ -80,6 +82,7 @@ class SppmWordExportServiceTest extends TestCase
         $filePath = $service->generateForPackage(new BudgetPackage, [
             'sppm_number' => 'SPPM/001/III/LOG.5.16.1./2026/ROLOG',
             'sprin_number' => 'Sprin/123/III/LOG.5.16.1./2026',
+            'sprin_date' => '19 MARET 2026',
             'date' => '19 MARET 2026',
         ]);
 
@@ -89,7 +92,7 @@ class SppmWordExportServiceTest extends TestCase
         $this->assertStringContainsString('Nomor: SPPM/001/III/LOG.5.16.1./2026/ROLOG', $documentXml);
         $this->assertStringContainsString('Diperintahkan untuk mengeluarkan kepada', $documentXml);
         $this->assertStringContainsString('ITWASDA POLDA NTB', $documentXml);
-        $this->assertStringContainsString('POLRES LOMBOK TENGAH', $documentXml);
+        $this->assertStringContainsString('POLRES LOMBOK TENGAH POLDA NTB', $documentXml);
         $this->assertStringContainsString('Sprin/123/III/LOG.5.16.1./2026', $documentXml);
         $this->assertStringContainsString('TANGGAL 19 MARET 2026', $documentXml);
         $this->assertStringContainsString('ROMPI KESELAMATAN', $documentXml);
@@ -101,7 +104,7 @@ class SppmWordExportServiceTest extends TestCase
         $this->assertStringContainsString('KABAG LOGISTIK', $documentXml);
         $this->assertStringContainsString('KOMBES TEST', $documentXml);
         $this->assertStringContainsString('<w:br w:type="page"/>', $documentXml);
-        $this->assertStringContainsString('w:bottom="1800"', $documentXml);
+        $this->assertStringContainsString('w:bottom="567"', $documentXml);
         $this->assertStringNotContainsString('TOPI LAPANGAN PAMEN', $documentXml);
 
         @unlink($filePath);
@@ -116,6 +119,7 @@ class SppmWordExportServiceTest extends TestCase
             $table->string('name');
             $table->string('code')->unique();
             $table->foreignId('parent_id')->nullable();
+            $table->integer('sort_order')->default(0);
             $table->timestamps();
         });
 
