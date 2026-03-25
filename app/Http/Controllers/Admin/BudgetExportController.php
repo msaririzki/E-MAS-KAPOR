@@ -51,7 +51,7 @@ class BudgetExportController extends Controller
                     ->where('is_active', true);
 
                 $filters = $recipient->recipient_filters ?? [];
-                $this->kaporRequirementService->applyRecipientFilters($query, $filters);
+                $this->kaporRequirementService->applyRecipientFilters($query, $filters, $recipient->satker);
 
                 $matchedIds = $query->pluck('id')->toArray();
 
@@ -69,9 +69,7 @@ class BudgetExportController extends Controller
                 if (! empty($filters['rank_categories'])) {
                     $filterLabels = array_merge($filterLabels, $filters['rank_categories']);
                 }
-                if (! empty($filters['keterangan'])) {
-                    $filterLabels = array_merge($filterLabels, $filters['keterangan']);
-                }
+                $filterLabels = array_merge($filterLabels, $this->kaporRequirementService->describeKeteranganFilters($filters));
                 if (! empty($filters['golongan'])) {
                     $filterLabels = array_merge($filterLabels, $filters['golongan']);
                 }
@@ -298,7 +296,7 @@ class BudgetExportController extends Controller
                 if ($genderFilter !== null) {
                     $query->where('gender', $genderFilter);
                 }
-                $this->kaporRequirementService->applyRecipientFilters($query, $filters);
+                $this->kaporRequirementService->applyRecipientFilters($query, $filters, $satker);
 
                 $personnels = $query->get(['kapor_sizes']);
                 $row = ['satker_name' => $satker->name, 'sizes' => array_fill_keys($availableSizes, 0), 'row_total' => 0];
@@ -334,7 +332,7 @@ class BudgetExportController extends Controller
                 $satker = $recipient->satker;
 
                 $query = \App\Models\Personnel::where('satker_id', $satker->id)->where('is_active', true);
-                $this->kaporRequirementService->applyRecipientFilters($query, $filters);
+                $this->kaporRequirementService->applyRecipientFilters($query, $filters, $satker);
 
                 $personnels = $query->get(['gender', 'kapor_sizes']);
                 $row = [

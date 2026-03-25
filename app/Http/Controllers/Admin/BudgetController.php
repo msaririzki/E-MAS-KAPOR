@@ -132,7 +132,8 @@ class BudgetController extends Controller
 
                     $this->kaporRequirementService->applyRecipientFilters(
                         $query,
-                        $recipient->recipient_filters ?? []
+                        $recipient->recipient_filters ?? [],
+                        $recipient->satker
                     );
 
                     $count = $query->count();
@@ -177,7 +178,8 @@ class BudgetController extends Controller
 
                     $this->kaporRequirementService->applyRecipientFilters(
                         $query,
-                        $recipient->recipient_filters ?? []
+                        $recipient->recipient_filters ?? [],
+                        $recipient->satker
                     );
 
                     $count = $query->count();

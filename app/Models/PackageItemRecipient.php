@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\KaporRequirementService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -69,54 +70,11 @@ class PackageItemRecipient extends Model
         $query = Personnel::where('satker_id', $this->satker_id)
             ->where('is_active', true);
 
-        $filters = $this->recipient_filters ?? [];
-
-        // Filter berdasarkan personnel_type (Polri/PNS)
-        if (! empty($filters['personnel_type'])) {
-            $mappedTypes = array_map(function ($t) {
-                $lower = strtolower($t);
-                if ($lower === 'polri') {
-                    return 'Polri';
-                }
-                if ($lower === 'pns') {
-                    return 'PNS';
-                }
-                if ($lower === 'pppk') {
-                    return 'PPPK';
-                }
-
-                return $t;
-            }, $filters['personnel_type']);
-            $query->whereIn('personnel_type', $mappedTypes);
-        }
-
-        // Filter gender: hanya dari filter eksplisit user, tidak auto-detect dari nama item
-        if (! empty($filters['gender'])) {
-            $query->whereIn('gender', $filters['gender']);
-        }
-
-        // Filter berdasarkan rank categories
-        if (! empty($filters['rank_categories'])) {
-            $query->whereHas('rank', function ($q) use ($filters) {
-                $q->whereIn('category', $filters['rank_categories']);
-            });
-        }
-
-        // Filter berdasarkan keterangan (cek di 4 kolom keterangan)
-        if (! empty($filters['keterangan'])) {
-            $ketValues = $filters['keterangan'];
-            $query->where(function ($q) use ($ketValues) {
-                $q->whereIn('keterangan', $ketValues)
-                    ->orWhereIn('keterangan_2', $ketValues)
-                    ->orWhereIn('keterangan_3', $ketValues)
-                    ->orWhereIn('keterangan_4', $ketValues);
-            });
-        }
-
-        // Filter berdasarkan golongan PNS/PPPK
-        if (! empty($filters['golongan'])) {
-            $query->whereIn('golongan', $filters['golongan']);
-        }
+        app(KaporRequirementService::class)->applyRecipientFilters(
+            $query,
+            $this->recipient_filters ?? [],
+            $this->satker
+        );
 
         $count = $query->count();
         $this->update(['matched_count' => $count]);

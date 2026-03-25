@@ -5,11 +5,12 @@ namespace App\Services;
 use App\Models\BudgetPackage;
 use App\Models\KaporItem;
 use App\Models\Personnel;
+use App\Models\Satker;
 use Illuminate\Database\Eloquent\Builder;
 
 class KaporRequirementService
 {
-    public function applyRecipientFilters(Builder $query, array $filters): Builder
+    public function applyRecipientFilters(Builder $query, array $filters, ?Satker $satker = null): Builder
     {
         if (! empty($filters['personnel_type'])) {
             $mappedTypes = array_map(fn ($type) => match (strtolower((string) $type)) {
@@ -30,8 +31,9 @@ class KaporRequirementService
             $query->whereHas('rank', fn ($rankQuery) => $rankQuery->whereIn('category', $filters['rank_categories']));
         }
 
-        if (! empty($filters['keterangan'])) {
-            $this->applyKeteranganFilter($query, $filters['keterangan']);
+        $keteranganFilters = $this->resolveKeteranganFilters($filters, $satker);
+        if ($keteranganFilters !== []) {
+            $this->applyKeteranganFilter($query, $keteranganFilters);
         }
 
         if (! empty($filters['golongan'])) {
@@ -85,7 +87,7 @@ class KaporRequirementService
                     ->where('satker_id', $satker->id)
                     ->where('is_active', true);
 
-                $this->applyRecipientFilters($query, $recipient->recipient_filters ?? []);
+                $this->applyRecipientFilters($query, $recipient->recipient_filters ?? [], $satker);
 
                 $personnels = $query->get([
                     'gender',
@@ -320,20 +322,117 @@ class KaporRequirementService
         return false;
     }
 
-    public function applyKeteranganFilter(Builder $query, array $values): Builder
+    public function applyKeteranganFilter(Builder $query, array $valuesByField): Builder
     {
-        $values = array_values(array_filter($values, fn ($value) => filled($value)));
+        $valuesByField = collect($valuesByField)
+            ->map(function ($values) {
+                return array_values(array_filter((array) $values, fn ($value) => filled($value)));
+            })
+            ->filter(fn ($values) => $values !== [])
+            ->all();
 
-        if ($values === []) {
+        if ($valuesByField === []) {
             return $query;
         }
 
-        return $query->where(function ($keteranganQuery) use ($values) {
-            $keteranganQuery->whereIn('keterangan', $values)
-                ->orWhereIn('keterangan_2', $values)
-                ->orWhereIn('keterangan_3', $values)
-                ->orWhereIn('keterangan_4', $values);
+        return $query->where(function ($keteranganQuery) use ($valuesByField) {
+            $firstCondition = true;
+
+            foreach ($valuesByField as $field => $values) {
+                if (! in_array($field, ['keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'], true)) {
+                    continue;
+                }
+
+                $method = $firstCondition ? 'whereIn' : 'orWhereIn';
+                $keteranganQuery->{$method}($field, $values);
+                $firstCondition = false;
+            }
         });
+    }
+
+    public function resolveKeteranganFilters(array $filters, ?Satker $satker = null): array
+    {
+        if (! empty($filters['keterangan_scoped']) && is_array($filters['keterangan_scoped'])) {
+            $scope = $satker?->recipientScope();
+
+            if ($scope !== null && ! empty($filters['keterangan_scoped'][$scope]) && is_array($filters['keterangan_scoped'][$scope])) {
+                return $filters['keterangan_scoped'][$scope];
+            }
+
+            if ($scope === null) {
+                $merged = [];
+
+                foreach ($filters['keterangan_scoped'] as $scopeFilters) {
+                    if (! is_array($scopeFilters)) {
+                        continue;
+                    }
+
+                    foreach ($scopeFilters as $field => $values) {
+                        $merged[$field] = array_values(array_unique([
+                            ...($merged[$field] ?? []),
+                            ...array_values(array_filter((array) $values, fn ($value) => filled($value))),
+                        ]));
+                    }
+                }
+
+                if ($merged !== []) {
+                    return $merged;
+                }
+            }
+        }
+
+        if (! empty($filters['keterangan']) && is_array($filters['keterangan'])) {
+            $legacyValues = array_values(array_filter($filters['keterangan'], fn ($value) => filled($value)));
+
+            return $legacyValues === [] ? [] : [
+                'keterangan' => $legacyValues,
+                'keterangan_2' => $legacyValues,
+                'keterangan_3' => $legacyValues,
+                'keterangan_4' => $legacyValues,
+            ];
+        }
+
+        return [];
+    }
+
+    public function describeKeteranganFilters(array $filters): array
+    {
+        $labels = [];
+        $fieldLabels = [
+            'keterangan' => 'Keterangan 1',
+            'keterangan_2' => 'Keterangan 2',
+            'keterangan_3' => 'Keterangan 3',
+            'keterangan_4' => 'Keterangan 4',
+        ];
+        $scopeLabels = [
+            'polda' => 'Polda',
+            'polres' => 'Polres',
+        ];
+
+        if (! empty($filters['keterangan_scoped']) && is_array($filters['keterangan_scoped'])) {
+            foreach ($filters['keterangan_scoped'] as $scope => $scopeFilters) {
+                if (! is_array($scopeFilters)) {
+                    continue;
+                }
+
+                foreach ($scopeFilters as $field => $values) {
+                    foreach (array_values(array_filter((array) $values, fn ($value) => filled($value))) as $value) {
+                        $labels[] = sprintf(
+                            '%s %s: %s',
+                            $scopeLabels[$scope] ?? ucfirst((string) $scope),
+                            $fieldLabels[$field] ?? $field,
+                            $value
+                        );
+                    }
+                }
+            }
+
+            if ($labels !== []) {
+                return $labels;
+            }
+        }
+
+        return array_values(array_filter((array) ($filters['keterangan'] ?? []), fn ($value) => filled($value)));
     }
 
     public function applyHijabStatusConstraint(Builder $query): Builder
