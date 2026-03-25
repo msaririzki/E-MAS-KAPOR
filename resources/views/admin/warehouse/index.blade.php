@@ -817,6 +817,11 @@
     .btn-icon:hover { background: #F9FAFB; }
     .btn-icon.blue:hover { color: #3B82F6; background: #EFF6FF; border-color: #BFDBFE;}
     .btn-icon.red:hover { color: #EF4444; background: #FEF2F2; border-color: #FECACA;}
+    .pagination-controls { display: flex; align-items: center; gap: 6px; }
+    .page-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid #E5E7EB; background: #fff; border-radius: 6px; color: #374151; text-decoration: none; transition: all 0.2s; }
+    .page-btn:hover:not(.disabled) { background: #F9FAFB; border-color: #D1D5DB; }
+    .page-btn.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; background: #F3F4F6; }
+    .page-info { font-size: 13px; color: #6B7280; white-space: nowrap; }
 
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 100; backdrop-filter: blur(4px); }
     .modal.open { display: flex; align-items: center; justify-content: center; }

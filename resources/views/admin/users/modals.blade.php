@@ -48,9 +48,9 @@
                                 <div class="options-scroll">
                                     <div class="option" onclick="setSelectValue('edit_role', '', '— Pilih Peran —', this)">— Pilih Peran —</div>
                                     @foreach($roles as $role)
-                                        <div class="option" onclick="setSelectValue('edit_role', '{{ $role->name }}', '{{ ucfirst($role->name) }}', this)"
+                                        <div class="option" onclick="setSelectValue('edit_role', '{{ $role->name }}', '{{ \Illuminate\Support\Str::headline($role->name) }}', this)"
                                              data-value="{{ $role->name }}">
-                                            {{ ucfirst($role->name) }}
+                                            {{ \Illuminate\Support\Str::headline($role->name) }}
                                         </div>
                                     @endforeach
                                 </div>
@@ -115,7 +115,7 @@
                         <i class="ri-information-line" style="font-size: 20px; color: #F97316;"></i>
                         <div>
                             <h4 style="font-size: 14px; font-weight: 700; color: #9A3412; margin-bottom: 4px;">Instruksi Import</h4>
-                            <p style="font-size: 13px; color: #C2410C; line-height: 1.5;"> Pastikan format CSV sesuai dengan templat. Impor ini hanya untuk akun administratif (Superadmin, Admin, Admin Satker).</p>
+                            <p style="font-size: 13px; color: #C2410C; line-height: 1.5;"> Pastikan format CSV sesuai dengan templat. Impor ini hanya untuk akun administratif (Superadmin, Admin, Admin Gudang, Admin Satker).</p>
                             <a href="{{ route('admin.users.template') }}" class="btn-template" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: #B91C1C; font-weight: 700; text-decoration: none; font-size: 13px;">
                                 <i class="ri-download-cloud-2-line"></i> Unduh Templat CSV
                             </a>

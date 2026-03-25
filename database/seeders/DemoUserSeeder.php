@@ -39,6 +39,16 @@ class DemoUserSeeder extends Seeder
         ]);
         $admin->assignRole('admin');
 
+        $adminGudang = User::create([
+            'nrp_nip' => 'GD001',
+            'name' => 'Admin Gudang',
+            'email' => 'admingudang@sikapor.test',
+            'password' => Hash::make('password'),
+            'satker_id' => $polda->id,
+            'is_active' => true,
+        ]);
+        $adminGudang->assignRole('admin_gudang');
+
         // ── 3. Admin Satker (Polresta Mataram) ─────────────────
         $adminSatker = User::create([
             'nrp_nip' => 'AS001',

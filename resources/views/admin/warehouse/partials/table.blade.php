@@ -54,7 +54,7 @@
                             Menampilkan {{ $items->firstItem() }} sampai {{ $items->lastItem() }} dari {{ $items->total() }} entri
                         </div>
                         <div class="pagination">
-                            {{ $items->links('vendor.pagination.bootstrap-4') }}
+                            @include('admin.warehouse.partials.pagination', ['paginator' => $items])
                         </div>
                     </div>
                 </td>

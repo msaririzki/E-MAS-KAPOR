@@ -73,7 +73,7 @@
                          <div class="select-trigger">
                              <span id="roleLabel">
                                  @if(old('role'))
-                                     {{ ucfirst(old('role')) }}
+                                     {{ \Illuminate\Support\Str::headline(old('role')) }}
                                  @else
                                      — Pilih Peran —
                                  @endif
@@ -85,13 +85,16 @@
                                  <div class="option" onclick="setSelectValue('role', '', '— Pilih Peran —', this)">— Pilih Peran —</div>
                                  @foreach($roles as $role)
                                      <div class="option {{ old('role') == $role->name ? 'selected' : '' }}" 
-                                          onclick="setSelectValue('role', '{{ $role->name }}', '{{ ucfirst($role->name) }}', this)">
-                                         {{ ucfirst($role->name) }}
+                                          onclick="setSelectValue('role', '{{ $role->name }}', '{{ \Illuminate\Support\Str::headline($role->name) }}', this)">
+                                         {{ \Illuminate\Support\Str::headline($role->name) }}
                                      </div>
                                  @endforeach
                              </div>
                          </div>
                          <input type="hidden" name="role" id="role_input" value="{{ old('role') }}" required>
+                     </div>
+                     <div style="margin-top: 8px; font-size: 12px; color: #6B7280;">
+                         Pilih <strong>Admin Gudang</strong> jika akun hanya perlu akses ke fitur gudang.
                      </div>
                      @error('role') <span class="error-msg">{{ $message }}</span> @enderror
                  </div>
@@ -188,6 +191,15 @@
         </div>
     </div>
     <div class="stat-card">
+        <div class="stat-icon" style="background: #ECFDF5; color: #059669;">
+            <i class="ri-archive-line"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Admin Gudang</span>
+            <span class="stat-number">{{ $stats['total_admin_gudang'] }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
         <div class="stat-icon icon-orange">
             <i class="ri-group-line"></i>
         </div>
@@ -232,7 +244,7 @@
         <div class="custom-select-wrapper">
             <div class="custom-select" onclick="toggleDropdown(this)">
                 <div class="select-trigger">
-                    <span>{{ request('role') ? ucfirst(request('role')) : 'Semua Peran' }}</span>
+                    <span>{{ request('role') ? \Illuminate\Support\Str::headline(request('role')) : 'Semua Peran' }}</span>
                     <i class="ri-arrow-down-s-line"></i>
                 </div>
                 <div class="custom-options" style="background: #fff !important;">
@@ -240,8 +252,8 @@
                         <div class="option {{ !request('role') ? 'selected' : '' }}" onclick="selectOption(this, 'role', '', 'Semua Peran')">Semua Peran</div>
                         @foreach($roles as $role)
                             <div class="option {{ request('role') == $role->name ? 'selected' : '' }}" 
-                                 onclick="selectOption(this, 'role', '{{ $role->name }}', '{{ ucfirst($role->name) }}')">
-                                {{ ucfirst($role->name) }}
+                                 onclick="selectOption(this, 'role', '{{ $role->name }}', '{{ \Illuminate\Support\Str::headline($role->name) }}')">
+                                {{ \Illuminate\Support\Str::headline($role->name) }}
                             </div>
                         @endforeach
                     </div>
@@ -305,7 +317,7 @@
                     <td>
                         <div class="pill-badges">
                             @foreach($u->roles as $role)
-                                <span class="role-pill">{{ $role->name }}</span>
+                                <span class="role-pill">{{ \Illuminate\Support\Str::headline($role->name) }}</span>
                             @endforeach
                         </div>
                     </td>
@@ -427,7 +439,7 @@
     /* ── Stats ──────────────────────────────────────────── */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 16px;
         margin-bottom: 24px;
     }
@@ -1229,6 +1241,12 @@
         }
     }
 
+    function formatRoleLabel(roleName) {
+        return roleName
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
     function openEditModal(user) {
         document.getElementById('edit_nrp_nip').value = user.nrp_nip;
         document.getElementById('edit_name').value = user.name;
@@ -1250,7 +1268,7 @@
         if (user.roles && user.roles.length > 0) {
             const roleName = user.roles[0].name;
             roleInput.value = roleName;
-            roleLabel.innerText = roleName.charAt(0).toUpperCase() + roleName.slice(1);
+            roleLabel.innerText = formatRoleLabel(roleName);
             
             // Mark as selected in dropdown
             document.querySelectorAll('#editRoleSelect .option').forEach(opt => {
