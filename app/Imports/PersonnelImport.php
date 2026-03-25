@@ -1147,7 +1147,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
 
         // ── Satu transaksi besar untuk semua insert ──────────────────────────
         DB::transaction(function () use (
-            $rows, $satker, $ranksById, $usedNrpNip, &$batchUsedNrpNip, $sizeSanitizer, &$successCount, &$errorCount, &$errors
+            $rows, $satker, $ranksById, $usedNrpNip, &$batchUsedNrpNip, $sizeSanitizer, $keteranganSanitizer, &$successCount, &$errorCount, &$errors
         ) {
             foreach ($rows as $idx => $data) {
                 $nrp = trim($data['nrp'] ?? '');
