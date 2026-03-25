@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WarehouseOutflow extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'warehouse_item_size_id',
         'satker_id',
@@ -14,6 +17,7 @@ class WarehouseOutflow extends Model
         'outflow_date',
         'recipient_name',
         'reference_note',
+        'deletion_reason',
     ];
 
     protected function casts(): array

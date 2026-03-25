@@ -1749,7 +1749,7 @@
                 <div class="nav-group {{ request()->routeIs('admin.warehouse-items.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-archive-line group-icon"></i> Data Gudang
-                        <i class="ri-arrow-down-s-line chevron"></i>
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
                     </button>
                     <div class="nav-group-children">
                         <a href="{{ route('admin.warehouse-items.index') }}"
@@ -1759,6 +1759,10 @@
                         <a href="{{ route('admin.warehouse-items.reports', ['type' => 'outflow']) }}"
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.reports') ? 'active' : '' }}">
                             Laporan Pengeluaran
+                        </a>
+                        <a href="{{ route('admin.warehouse-items.deletion-history') }}"
+                            class="nav-link {{ request()->routeIs('admin.warehouse-items.deletion-history') ? 'active' : '' }}">
+                            Riwayat Penghapusan
                         </a>
                     </div>
                 </div>

@@ -4,6 +4,15 @@
 @section('breadcrumb', 'Data Gudang')
 
 @section('content')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    .modern-swal-popup { border-radius: 16px !important; padding: 2rem !important; }
+    .modern-swal-title { font-size: 1.5rem !important; font-weight: 700 !important; color: #1F2937 !important; margin-bottom: 1rem !important; }
+    .modern-swal-btn { padding: 10px 24px !important; font-weight: 600 !important; border-radius: 8px !important; margin: 0 8px !important; }
+    .modern-swal-btn.btn-danger { background: #DC2626 !important; color: white !important; }
+    .modern-swal-btn.btn-secondary { background: #F3F4F6 !important; color: #4B5563 !important; }
+    .modern-swal-actions { margin-top: 1.5rem !important; }
+</style>
 <div class="page-header">
     <div class="page-header-row">
         <div>
@@ -70,10 +79,20 @@
 
 {{-- Filter --}}
 <div class="filter-bar">
-    <form method="GET" action="{{ route('admin.warehouse-items.index') }}" class="filter-form" onsubmit="return false;">
-        <div class="search-input-wrapper">
+    <form id="filterForm" method="GET" action="{{ route('admin.warehouse-items.index') }}" class="filter-form" onsubmit="return false;" style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="search-input-wrapper" style="max-width:300px; flex:1;">
             <i class="ri-search-line search-icon"></i>
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama barang..." class="search-field" autocomplete="off">
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size: 13px; color: #6B7280; white-space: nowrap;">Tampilkan:</span>
+            <select name="per_page" class="form-input per-page-select" style="width: 70px; padding: 4px 8px; font-size: 13px; height: 36px; border-radius: 8px; border: 1px solid #D1D5DB; outline: none; background: #fff;">
+                <option value="15" {{ request('per_page') == 15 ? 'selected' : '' }}>15</option>
+                <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+            </select>
         </div>
     </form>
 </div>
@@ -131,6 +150,17 @@
                 url.searchParams.set('page', 1);
                 fetchTable(url.toString());
             }, 500);
+        }
+    });
+
+    // Per Page Filter Change
+    document.addEventListener('change', function(e) {
+        if(e.target.classList.contains('per-page-select')) {
+            let val = e.target.value;
+            let url = new URL(window.location.href);
+            url.searchParams.set('per_page', val);
+            url.searchParams.set('page', 1);
+            fetchTable(url.toString());
         }
     });
 
@@ -248,27 +278,12 @@
     </div>
 </div>
 
-{{-- Delete Modal --}}
-<div id="deleteModal" class="modal">
-    <div class="modal-content" style="max-width: 400px;">
-        <div class="modal-header">
-            <h3 style="color: #DC2626; margin: 0;">Hapus Barang?</h3>
-            <button class="modal-close" onclick="closeModal('deleteModal')"><i class="ri-close-line"></i></button>
-        </div>
-        <form id="deleteForm" method="POST">
-            @csrf
-            @method('DELETE')
-            <div class="modal-body">
-                <p>Apakah Anda yakin ingin menghapus <strong id="deleteItemName"></strong> dari Gudang?</p>
-                <p style="font-size: 12px; color: #EF4444; margin-top: 8px;">Semua data stok kelengkapan untuk barang ini juga akan terhapus.</p>
-            </div>
-             <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeModal('deleteModal')">Batal</button>
-                <button type="submit" class="btn" style="background: #DC2626; color: white;">Hapus Data</button>
-            </div>
-        </form>
-    </div>
-</div>
+{{-- Hidden Delete Form --}}
+<form id="globalDeleteForm" method="POST" style="display:none;">
+    @csrf
+    @method('DELETE')
+    <input type="hidden" name="deletion_reason" id="globalDeletionReason">
+</form>
 
 {{-- Import Modal --}}
 <div id="importModal" class="modal">
@@ -318,9 +333,8 @@
                             <span>Panduan Format Kolom (Baris 1)</span>
                         </div>
                         <div class="instruction-badges">
+                            <span class="badge">no</span>
                             <span class="badge">nama_barang</span>
-                            <span class="badge">satuan</span>
-                            <span class="badge">ukuran</span>
                             <span class="badge">kuantitas</span>
                             <span class="badge">harga_satuan</span>
                         </div>
@@ -514,9 +528,43 @@
     }
 
     function confirmDelete(id, name) {
-        document.getElementById('deleteItemName').innerText = name;
-        document.getElementById('deleteForm').action = "/admin/warehouse-items/" + id;
-        openModal('deleteModal');
+        Swal.fire({
+            title: 'Hapus Barang?',
+            html: `Apakah Anda yakin ingin menghapus <strong>${name}</strong> dari Gudang?<br><small style="color:#EF4444; display:block; margin-top:8px;">Semua data stok & ukuran untuk barang ini juga akan terhapus permanen.</small>`,
+            icon: 'warning',
+            input: 'textarea',
+            inputLabel: 'ALASAN PENGHAPUSAN',
+            inputPlaceholder: 'Contoh: Barang rusak / Salah input data...',
+            inputAttributes: {
+                'required': 'true'
+            },
+            showCancelButton: true,
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Ya, Hapus Data!',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            preConfirm: (reason) => {
+                if (!reason) {
+                    Swal.showValidationMessage('Alasan penghapusan wajib diisi!');
+                }
+                return reason;
+            },
+            customClass: {
+                popup: 'modern-swal-popup',
+                title: 'modern-swal-title',
+                confirmButton: 'modern-swal-btn btn-danger',
+                cancelButton: 'modern-swal-btn btn-secondary',
+                actions: 'modern-swal-actions'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('globalDeleteForm');
+                form.action = "/admin/warehouse-items/" + id;
+                document.getElementById('globalDeletionReason').value = result.value;
+                form.submit();
+            }
+        });
     }
 
     // Modal Size Scripts
@@ -613,17 +661,53 @@
             },
             body: JSON.stringify({ stock: newStock })
         }).then(r => {
-            if(r.ok) { window.location.reload(); } else { alert('Gagal update.'); }
+            if(r.ok) { 
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Stok berhasil diperbarui.',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.reload(); 
+                });
+            } else { 
+                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal update stok.' });
+            }
         });
     }
 
     function deleteSize(sizeId) {
-        if(!confirm('Hapus ukuran ini permanen?')) return;
-        fetch(`/admin/warehouse-items/${curWarehouseId}/sizes/${sizeId}`, {
-            method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'X-Requested-With': 'XMLHttpRequest' }
-        }).then(r => {
-            if(r.ok) { window.location.reload(); } else { alert('Gagal hapus.'); }
+        Swal.fire({
+            title: 'Hapus Ukuran?',
+            text: 'Ukuran ini akan dihapus secara permanen dari daftar stok barang ini.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'modern-swal-popup',
+                title: 'modern-swal-title',
+                confirmButton: 'modern-swal-btn btn-danger',
+                cancelButton: 'modern-swal-btn btn-secondary',
+                actions: 'modern-swal-actions'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/admin/warehouse-items/${curWarehouseId}/sizes/${sizeId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(r => {
+                    if(r.ok) { 
+                        window.location.reload(); 
+                    } else { 
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal menghapus ukuran.' });
+                    }
+                });
+            }
         });
     }
 

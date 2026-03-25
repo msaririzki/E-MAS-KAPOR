@@ -86,8 +86,17 @@
             <label style="font-size:12px; font-weight:600; color:#6B7280;">Hingga</label>
             <input type="date" name="end_date" value="{{ request('end_date') }}" class="form-input" style="width:140px; padding:6px 12px; height:36px;">
         </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:12px; font-weight:600; color:#6B7280;">Tampilkan</label>
+            <select name="per_page" class="form-input" style="width:70px; padding:4px 8px; height:36px;" onchange="this.form.submit()">
+                <option value="15" {{ request('per_page') == 15 ? 'selected' : '' }}>15</option>
+                <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+            </select>
+        </div>
         <button type="submit" class="btn btn-primary" style="height:36px; padding:0 16px;">Filter</button>
-        @if(request('search') || request('start_date') || request('end_date'))
+        @if(request('search') || request('start_date') || request('end_date') || request('per_page'))
             <a href="{{ route('admin.warehouse-items.reports') }}" class="btn btn-outline" style="height:36px; padding:0 16px;">Reset</a>
         @endif
     </form>
@@ -143,7 +152,7 @@
                             <option value="Sudah Ada" {{ $row->reference_note == 'Sudah Ada' || $row->reference_note == 'Ada' ? 'selected' : '' }}>Sudah Ada</option>
                         </select>
                     </td>
-                    <td>
+                    <td style="display:flex; gap:8px; align-items:center;">
                         <form action="{{ route('admin.warehouse-items.reports.cancel', $row->id) }}" method="POST" class="cancel-form" id="cancel-form-{{ $row->id }}">
                             @csrf
                             @method('DELETE')
@@ -154,6 +163,14 @@
                                 style="border-color: #DC2626; color: #DC2626; padding: 4px 10px; font-size: 12px; height: auto; {{ $isSppmAda ? 'opacity: 0.5; cursor: not-allowed; pointer-events: none;' : '' }}"
                                 {{ $isSppmAda ? 'disabled title="Tidak dapat dibatalkan karena SPPM sudah ada"' : '' }}>
                                 <i class="ri-arrow-go-back-line"></i> Batal
+                            </button>
+                        </form>
+                        <form action="{{ route('admin.warehouse-items.reports.destroy', $row->id) }}" method="POST" class="delete-form" id="delete-form-{{ $row->id }}">
+                            @csrf
+                            @method('DELETE')
+                            <button type="button" class="btn btn-outline btn-delete" 
+                                style="border-color: #9CA3AF; color: #4B5563; padding: 4px; font-size: 14px; height: auto;" title="Hapus Riwayat Permanen">
+                                <i class="ri-delete-bin-line"></i>
                             </button>
                         </form>
                     </td>
@@ -202,6 +219,52 @@
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+
+        const deleteButtons = document.querySelectorAll('.btn-delete');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const form = this.closest('form');
+                Swal.fire({
+                    title: 'Hapus Riwayat?',
+                    text: 'Riwayat pengeluaran ini akan dihapus secara permanen. Stok TIDAK akan dikembalikan.',
+                    icon: 'error',
+                    input: 'textarea',
+                    inputLabel: 'Alasan Penghapusan',
+                    inputPlaceholder: 'Masukkan alasan penghapusan di sini...',
+                    inputAttributes: {
+                        'aria-label': 'Masukkan alasan penghapusan di sini'
+                    },
+                    showCancelButton: true,
+                    confirmButtonColor: '#DC2626',
+                    cancelButtonColor: '#6B7280',
+                    confirmButtonText: '<i class="ri-delete-bin-line" style="margin-right:4px;"></i> Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    preConfirm: (reason) => {
+                        if (!reason) {
+                            Swal.showValidationMessage('Alasan penghapusan harus diisi');
+                        }
+                        return reason;
+                    },
+                    customClass: {
+                        popup: 'modern-swal-popup',
+                        title: 'modern-swal-title',
+                        confirmButton: 'modern-swal-btn btn-danger',
+                        cancelButton: 'modern-swal-btn btn-secondary',
+                        actions: 'modern-swal-actions'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const reasonInput = document.createElement('input');
+                        reasonInput.type = 'hidden';
+                        reasonInput.name = 'deletion_reason';
+                        reasonInput.value = result.value;
+                        form.appendChild(reasonInput);
                         form.submit();
                     }
                 });

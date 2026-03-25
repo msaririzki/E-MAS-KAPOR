@@ -14,23 +14,14 @@ class WarehouseTemplateExport implements FromArray, ShouldAutoSize, WithHeadings
     {
         return [
             [
+                'no' => '1',
                 'nama_barang' => 'CONTOH BARANG A',
-                'satuan' => 'STEL',
-                'ukuran' => '14',
                 'kuantitas' => '50',
                 'harga_satuan' => '150000',
             ],
             [
-                'nama_barang' => 'CONTOH BARANG A',
-                'satuan' => 'STEL',
-                'ukuran' => '15',
-                'kuantitas' => '30',
-                'harga_satuan' => '150000',
-            ],
-            [
+                'no' => '2',
                 'nama_barang' => 'CONTOH BARANG B',
-                'satuan' => 'PCS',
-                'ukuran' => 'L',
                 'kuantitas' => '100',
                 'harga_satuan' => '25000',
             ],
@@ -40,9 +31,8 @@ class WarehouseTemplateExport implements FromArray, ShouldAutoSize, WithHeadings
     public function headings(): array
     {
         return [
+            'no',
             'nama_barang',
-            'satuan',
-            'ukuran',
             'kuantitas',
             'harga_satuan',
         ];

@@ -14,18 +14,21 @@ class WarehouseImport implements ToCollection, WithHeadingRow
     {
         DB::transaction(function () use ($rows) {
             foreach ($rows as $row) {
+                // Ensure row is treated as array if it's not already
+                $rowArray = is_array($row) ? $row : $row->toArray();
+                
                 // Pastikan nama barang ada
-                if (empty($row['nama_barang'])) {
+                if (empty($rowArray['nama_barang'])) {
                     continue;
                 }
 
-                $itemName = trim($row['nama_barang']);
-                $unit = isset($row['satuan']) ? trim($row['satuan']) : 'PCS';
-                $price = isset($row['harga_satuan']) ? floatval($row['harga_satuan']) : 0;
-
-                // Ambil ukuran dan kuantitas (di Excel mungkin bernama "ukuran" dan "kuantitas" atau "stok")
-                $sizeLabel = isset($row['ukuran']) ? trim($row['ukuran']) : null;
-                $stock = isset($row['kuantitas']) ? intval($row['kuantitas']) : (isset($row['stok']) ? intval($row['stok']) : 0);
+                $itemName = trim($rowArray['nama_barang']);
+                $unit = 'PCS';
+                $price = isset($rowArray['harga_satuan']) ? floatval($rowArray['harga_satuan']) : 0;
+                
+                // Set ukuran default ke "-" dan ambil kuantitas
+                $sizeLabel = '-';
+                $stock = isset($rowArray['kuantitas']) ? intval($rowArray['kuantitas']) : (isset($rowArray['stok']) ? intval($rowArray['stok']) : 0);
 
                 // Update or create WarehouseItem
                 $item = WarehouseItem::updateOrCreate(
@@ -33,8 +36,8 @@ class WarehouseImport implements ToCollection, WithHeadingRow
                     ['unit' => $unit, 'price' => $price]
                 );
 
-                // Jika ada data ukuran, update or create ukurannya
-                if ($sizeLabel) {
+                // Jika ada data kuantitas, update or create ukurannya
+                if ($stock > 0) {
                     $itemSize = $item->sizes()->where('size_label', $sizeLabel)->first();
                     if ($itemSize) {
                         $itemSize->stock += $stock;

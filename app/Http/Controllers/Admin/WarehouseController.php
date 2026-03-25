@@ -15,15 +15,20 @@ class WarehouseController extends Controller
 {
     public function index(Request $request)
     {
-        $query = WarehouseItem::withSum('sizes', 'stock')->orderBy('name');
+        // Build standard query for view
+        $viewQuery = WarehouseItem::with(['sizes' => function ($q) {
+            $q->orderByRaw("CAST(size_label AS UNSIGNED) ASC, size_label ASC");
+        }])->withSum('sizes', 'stock');
 
         if ($request->filled('search')) {
-            $query->where('name', 'LIKE', '%'.$request->search.'%');
+            $viewQuery->where('name', 'like', "%{$request->search}%")
+                      ->orWhere('unit', 'like', "%{$request->search}%");
         }
 
-        $perPage = $request->input('per_page', 10);
-        $items = $query->paginate($perPage)->withQueryString();
+        $perPage = $request->input('per_page', 15);
+        $items = $viewQuery->orderBy('name', 'asc')->paginate($perPage)->appends($request->query());
 
+        // Basic stats for view
         $stats = [
             'total_items' => WarehouseItem::count(),
             'total_stock' => WarehouseItemSize::sum('stock'),
@@ -73,7 +78,7 @@ class WarehouseController extends Controller
         return redirect()->back()->with('success', 'Data Gudang berhasil ditambahkan');
     }
 
-    public function update(Request $request, WarehouseItem $warehouse)
+    public function update(Request $request, WarehouseItem $warehouse_item)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -81,7 +86,7 @@ class WarehouseController extends Controller
             'unit' => 'nullable|string|max:50',
         ]);
 
-        $warehouse->update([
+        $warehouse_item->update([
             'name' => $validated['name'],
             'price' => $validated['price'] ?? 0,
             'unit' => $validated['unit'] ?? 'PCS',
@@ -90,24 +95,34 @@ class WarehouseController extends Controller
         return redirect()->back()->with('success', 'Data Gudang berhasil diperbarui');
     }
 
-    public function destroy(WarehouseItem $warehouse)
+    public function destroy(Request $request, WarehouseItem $warehouse_item)
     {
-        $warehouse->sizes()->delete();
-        $warehouse->delete();
+        $request->validate([
+            'deletion_reason' => 'required|string|max:1000',
+        ]);
 
-        return redirect()->back()->with('success', 'Data Gudang berhasil dihapus');
+        $totalStock = $warehouse_item->sizes()->sum('stock');
+
+        $warehouse_item->update([
+            'deletion_reason' => $request->deletion_reason,
+            'deleted_at_stock' => $totalStock
+        ]);
+
+        $warehouse_item->sizes()->delete();
+        $warehouse_item->delete();
+
+        return redirect()->back()->with('success', 'Data Gudang berhasil dihapus dan dipindahkan ke Riwayat Penghapusan.');
     }
 
     // ── Kelola Ukuran Per Item (AJAX) ──────────────────────────
 
-    public function getSizes(WarehouseItem $warehouse)
+    public function getSizes(WarehouseItem $warehouseItem)
     {
-        $sizes = $warehouse->sizes()->orderBy('size_label')->get();
-
+        $sizes = $warehouseItem->sizes()->orderBy('size_label')->get();
         return response()->json($sizes);
     }
 
-    public function addSize(Request $request, WarehouseItem $warehouse)
+    public function addSize(Request $request, WarehouseItem $warehouseItem)
     {
         $validated = $request->validate([
             'size_label' => 'required|string|max:50',
@@ -115,7 +130,7 @@ class WarehouseController extends Controller
         ]);
 
         // Cek duplikasi ukuran
-        $exists = $warehouse->sizes()
+        $exists = $warehouseItem->sizes()
             ->where('size_label', $validated['size_label'])
             ->exists();
 
@@ -123,7 +138,7 @@ class WarehouseController extends Controller
             return response()->json(['error' => 'Ukuran ini sudah ada. Silakan update stoknya.'], 422);
         }
 
-        $size = $warehouse->sizes()->create([
+        $size = $warehouseItem->sizes()->create([
             'size_label' => $validated['size_label'],
             'stock' => $validated['stock'],
         ]);
@@ -131,9 +146,9 @@ class WarehouseController extends Controller
         return response()->json($size, 201);
     }
 
-    public function updateSize(Request $request, WarehouseItem $warehouse, WarehouseItemSize $size)
+    public function updateSize(Request $request, WarehouseItem $warehouseItem, WarehouseItemSize $size)
     {
-        if ($size->warehouse_item_id !== $warehouse->id) {
+        if ($size->warehouse_item_id !== $warehouseItem->id) {
             return response()->json(['error' => 'Ukuran tidak ditemukan.'], 404);
         }
 
@@ -146,9 +161,11 @@ class WarehouseController extends Controller
         return response()->json(['message' => 'Stok ukuran berhasil diupdate.']);
     }
 
-    public function deleteSize($warehouseId, $sizeId)
+    public function deleteSize(WarehouseItem $warehouseItem, WarehouseItemSize $size)
     {
-        $size = WarehouseItemSize::findOrFail($sizeId);
+        if ($size->warehouse_item_id !== $warehouseItem->id) {
+            return response()->json(['error' => 'Ukuran tidak ditemukan.'], 404);
+        }
         // Validasi opsional: apakah ada outflow terkait?
         $size->delete();
 
@@ -234,39 +251,89 @@ class WarehouseController extends Controller
         }
     }
 
+    public function destroyOutflow(Request $request, $id)
+    {
+        $request->validate([
+            'deletion_reason' => 'required|string|max:255'
+        ]);
+        
+        $outflow = WarehouseOutflow::findOrFail($id);
+        
+        $itemName = $outflow->itemSize ? ($outflow->itemSize->item ? $outflow->itemSize->item->name : 'Unknown') : 'Unknown';
+        $satkerName = $outflow->satker ? $outflow->satker->name : 'Unknown';
+        $quantity = $outflow->quantity;
+        
+        \App\Services\AuditLogger::log('HAPUS_PENGELUARAN', "Riwayat pengeluaran {$itemName} sejumlah {$quantity} untuk {$satkerName} dihapus. Alasan: {$request->deletion_reason}");
+        
+        $outflow->update(['deletion_reason' => $request->deletion_reason]);
+        $outflow->delete();
+        return back()->with('success', 'Riwayat pengeluaran berhasil dihapus dan dipindahkan ke Riwayat Penghapusan.');
+    }
+
     public function reports(Request $request)
     {
-        $query = WarehouseOutflow::with(['itemSize.item', 'satker']);
+        $query = WarehouseOutflow::with([
+            'itemSize' => fn($q) => $q->withTrashed(),
+            'itemSize.item' => fn($q) => $q->withTrashed(),
+            'satker'
+        ]);
 
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('outflow_date', [$request->start_date, $request->end_date]);
+        if ($request->filled('start_date')) {
+            $query->whereDate('outflow_date', '>=', $request->start_date);
         }
-
+        if ($request->filled('end_date')) {
+            $query->whereDate('outflow_date', '<=', $request->end_date);
+        }
         if ($request->filled('satker_id')) {
             $query->where('satker_id', $request->satker_id);
         }
-
         if ($request->filled('sppm_status')) {
-            $query->where('reference_note', $request->sppm_status);
+            $sppm = $request->sppm_status;
+            if ($sppm === 'Sudah Ada') {
+                $query->whereIn('reference_note', ['Sudah Ada', 'Ada']);
+            } elseif ($sppm === 'Belum Ada') {
+                $query->where(function($q) {
+                    $q->whereNull('reference_note')
+                      ->orWhereIn('reference_note', ['Belum Ada', 'Tidak']);
+                });
+            }
         }
-
         if ($request->filled('search')) {
             $searchTerm = $request->search;
             $query->whereHas('itemSize.item', function ($q) use ($searchTerm) {
-                $q->where('name', 'like', "%{$searchTerm}%");
-            });
+                $q->withTrashed()->where('name', 'like', "%{$searchTerm}%");
+            })->orWhere('recipient_name', 'like', "%{$searchTerm}%");
         }
 
-        $outflows = $query->orderBy('outflow_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-
+        $perPage = $request->input('per_page', 15);
+        $totalItemsOut = (clone $query)->sum('quantity');
+        $outflows = $query->latest()->paginate($perPage)->appends($request->query());
         $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
 
-        // Stats
-        $totalItemsOut = $query->sum('quantity');
+        return view('admin.warehouse.reports', compact('outflows', 'satkers', 'totalItemsOut'));
+    }
 
-        return view('admin.warehouse.reports', compact('outflows', 'totalItemsOut', 'satkers'));
+    public function deletionHistory(Request $request)
+    {
+        $search = $request->search;
+        
+        // Tab Barang Terhapus
+        $itemQuery = WarehouseItem::onlyTrashed()->with(['sizes' => fn($q) => $q->withTrashed()]);
+        if ($search) {
+            $itemQuery->where('name', 'like', "%{$search}%");
+        }
+        $items = $itemQuery->latest('deleted_at')->paginate(15, ['*'], 'items_page')->withQueryString();
+
+        // Tab Laporan Pengeluaran Terhapus
+        $outflowQuery = WarehouseOutflow::onlyTrashed()->with(['itemSize.item' => fn($q) => $q->withTrashed(), 'satker']);
+        if ($search) {
+            $outflowQuery->whereHas('itemSize.item', function($q) use ($search) {
+                $q->withTrashed()->where('name', 'like', "%{$search}%");
+            })->orWhere('recipient_name', 'like', "%{$search}%");
+        }
+        $outflows = $outflowQuery->latest('deleted_at')->paginate(15, ['*'], 'outflows_page')->withQueryString();
+        
+        return view('admin.warehouse.deletion_history', compact('items', 'outflows'));
     }
 
     // ── Import / Export ──────────────────────────────────────
