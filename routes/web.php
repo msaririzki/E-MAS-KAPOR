@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\SatkerController;
 use App\Http\Controllers\Superadmin\StatisticsController;
 use Illuminate\Support\Facades\Route;
@@ -12,9 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 // â”€â”€ Public / Auth Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-Route::get('/', [PublicSiteController::class, 'home'])->name('home');
-Route::get('/sitemap.xml', [PublicSiteController::class, 'sitemap'])->name('sitemap');
-Route::get('/robots.txt', [PublicSiteController::class, 'robots'])->name('robots');
+Route::get('/', fn () => redirect()->route('login'))->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -120,6 +117,24 @@ Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope
     Route::post('/kebutuhan/{kebutuhan}/submit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'submit'])->name('kebutuhan.submit');
 });
 
+Route::middleware(['auth', 'role:admin|superadmin|admin_gudang', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
+    // Warehouse Data Gudang
+    Route::post('/warehouse-items/import', [WarehouseController::class, 'import'])->name('warehouse-items.import');
+    Route::get('/warehouse-items/template', [WarehouseController::class, 'downloadTemplate'])->name('warehouse-items.download-template');
+    Route::get('/warehouse-items/export-excel', [WarehouseController::class, 'exportExcel'])->name('warehouse-items.export-excel');
+    Route::get('/warehouse-items/export-pdf', [WarehouseController::class, 'exportPdf'])->name('warehouse-items.export-pdf');
+    Route::get('/warehouse-items/reports/export-pdf', [WarehouseController::class, 'exportReportsPdf'])->name('warehouse-items.reports.export-pdf');
+    Route::post('/warehouse-items/dispense', [WarehouseController::class, 'dispense'])->name('warehouse-items.dispense');
+    Route::get('/warehouse-items/reports', [WarehouseController::class, 'reports'])->name('warehouse-items.reports');
+    Route::delete('/warehouse-items/reports/{outflow}/cancel', [WarehouseController::class, 'cancelOutflow'])->name('warehouse-items.reports.cancel');
+    Route::patch('/warehouse-items/reports/{outflow}/sppm', [WarehouseController::class, 'updateSppm'])->name('warehouse-items.reports.update-sppm');
+    Route::resource('warehouse-items', WarehouseController::class)->except(['create', 'edit', 'show']);
+    Route::get('/warehouse-items/{warehouse}/sizes', [WarehouseController::class, 'getSizes'])->name('warehouse-items.sizes.index');
+    Route::post('/warehouse-items/{warehouse}/sizes', [WarehouseController::class, 'addSize'])->name('warehouse-items.sizes.store');
+    Route::put('/warehouse-items/{warehouse}/sizes/{size}', [WarehouseController::class, 'updateSize'])->name('warehouse-items.sizes.update');
+    Route::delete('/warehouse-items/{warehouse}/sizes/{size}', [WarehouseController::class, 'deleteSize'])->name('warehouse-items.sizes.destroy');
+});
+
 // â”€â”€ Admin Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 Route::middleware(['auth', 'role:admin|superadmin|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
@@ -160,22 +175,6 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_satker', 'satker.scope']
     Route::get('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'show'])->name('identifikasi-kebutuhan.show');
     Route::post('/identifikasi-kebutuhan/{kebutuhan}/approve', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'approve'])->name('identifikasi-kebutuhan.approve');
     Route::post('/identifikasi-kebutuhan/{kebutuhan}/reject', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'reject'])->name('identifikasi-kebutuhan.reject');
-
-    // Warehouse Data Gudang
-    Route::post('/warehouse-items/import', [WarehouseController::class, 'import'])->name('warehouse-items.import');
-    Route::get('/warehouse-items/template', [WarehouseController::class, 'downloadTemplate'])->name('warehouse-items.download-template');
-    Route::get('/warehouse-items/export-excel', [WarehouseController::class, 'exportExcel'])->name('warehouse-items.export-excel');
-    Route::get('/warehouse-items/export-pdf', [\App\Http\Controllers\Admin\WarehouseController::class, 'exportPdf'])->name('warehouse-items.export-pdf');
-    Route::get('/warehouse-items/reports/export-pdf', [\App\Http\Controllers\Admin\WarehouseController::class, 'exportReportsPdf'])->name('warehouse-items.reports.export-pdf');
-    Route::post('/warehouse-items/dispense', [\App\Http\Controllers\Admin\WarehouseController::class, 'dispense'])->name('warehouse-items.dispense');
-    Route::get('/warehouse-items/reports', [\App\Http\Controllers\Admin\WarehouseController::class, 'reports'])->name('warehouse-items.reports');
-    Route::delete('/warehouse-items/reports/{outflow}/cancel', [\App\Http\Controllers\Admin\WarehouseController::class, 'cancelOutflow'])->name('warehouse-items.reports.cancel');
-    Route::patch('/warehouse-items/reports/{outflow}/sppm', [\App\Http\Controllers\Admin\WarehouseController::class, 'updateSppm'])->name('warehouse-items.reports.update-sppm');
-    Route::resource('warehouse-items', \App\Http\Controllers\Admin\WarehouseController::class)->except(['create', 'edit', 'show']);
-    Route::get('/warehouse-items/{warehouse}/sizes', [\App\Http\Controllers\Admin\WarehouseController::class, 'getSizes'])->name('warehouse-items.sizes.index');
-    Route::post('/warehouse-items/{warehouse}/sizes', [\App\Http\Controllers\Admin\WarehouseController::class, 'addSize'])->name('warehouse-items.sizes.store');
-    Route::put('/warehouse-items/{warehouse}/sizes/{size}', [\App\Http\Controllers\Admin\WarehouseController::class, 'updateSize'])->name('warehouse-items.sizes.update');
-    Route::delete('/warehouse-items/{warehouse}/sizes/{size}', [\App\Http\Controllers\Admin\WarehouseController::class, 'deleteSize'])->name('warehouse-items.sizes.destroy');
 
     Route::get('/personnel/print-satker', [\App\Http\Controllers\Admin\PersonnelController::class, 'printSatker'])->name('personnel.print-satker');
     Route::get('/personnel', [\App\Http\Controllers\Admin\PersonnelController::class, 'index'])->name('personnel.index');

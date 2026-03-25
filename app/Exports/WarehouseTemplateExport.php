@@ -3,16 +3,13 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromArray;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class WarehouseTemplateExport implements FromArray, WithHeadings, ShouldAutoSize, WithStyles
+class WarehouseTemplateExport implements FromArray, ShouldAutoSize, WithHeadings, WithStyles
 {
-    /**
-     * @return array
-     */
     public function array(): array
     {
         return [

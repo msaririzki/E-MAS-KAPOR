@@ -1743,8 +1743,9 @@
                         </a>
                     </div>
                 </div>
+            @endif
 
-                {{-- Data Gudang Top Level Menu --}}
+            @if(auth()->user()->hasAnyRole(['admin', 'superadmin', 'admin_gudang']))
                 <div class="nav-group {{ request()->routeIs('admin.warehouse-items.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-archive-line group-icon"></i> Data Gudang
@@ -1761,7 +1762,9 @@
                         </a>
                     </div>
                 </div>
+            @endif
 
+            @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
                 <div class="nav-group {{ request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-bar-chart-grouped-line group-icon"></i> Keuangan & Laporan

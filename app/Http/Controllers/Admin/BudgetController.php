@@ -54,13 +54,22 @@ class BudgetController extends Controller
 
     public function destroyYear(BudgetYear $budgetYear)
     {
-        if ($budgetYear->packages()->exists()) {
-            return redirect()->back()->with('error', 'Tidak dapat menghapus tahun anggaran yang sudah memiliki paket.');
-        }
+        $yearName = $budgetYear->name;
 
-        $budgetYear->delete();
+        DB::transaction(function () use ($budgetYear) {
+            foreach ($budgetYear->packages as $package) {
+                foreach ($package->items as $item) {
+                    $item->recipients()->delete();
+                }
+                $package->items()->delete();
+            }
+            $budgetYear->packages()->delete();
+            $budgetYear->delete();
+        });
 
-        return redirect()->back()->with('success', 'Tahun anggaran berhasil dihapus');
+        \App\Services\AuditLogger::log('Menghapus tahun anggaran: '.$yearName, 'budget');
+
+        return redirect()->back()->with('success', 'Tahun anggaran "'.$yearName.'" beserta semua data terkait berhasil dihapus.');
     }
 
     public function showYear(BudgetYear $budgetYear)

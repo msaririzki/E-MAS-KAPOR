@@ -14,6 +14,13 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+    private const ROLE_SORT_ORDER = [
+        'superadmin' => 1,
+        'admin' => 2,
+        'admin_gudang' => 3,
+        'admin_satker' => 4,
+    ];
+
     /**
      * Display a listing of the resource.
      */
@@ -36,7 +43,7 @@ class UserController extends Controller
         }
 
         // Filter Role
-        if ($request->filled('role')) {
+        if ($request->filled('role') && $this->rolesExist([$request->role])) {
             $query->role($request->role);
         }
 
@@ -51,18 +58,46 @@ class UserController extends Controller
 
         // Order by ID, but put 'SISWA' (id 40) just before 'POLRESTA MATARAM' (id 30)
         $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
-        $roles = Role::where('name', '!=', 'personil')->get();
+        $roles = Role::where('name', '!=', 'personil')
+            ->orderByRaw($this->buildRoleOrderCaseSql())
+            ->get();
 
         // Calculate Stats
         $stats = [
-            'total_admin_satker' => User::role('admin_satker')->count(),
-            'total_admin_polda' => User::role(['admin', 'superadmin'])->count(),
-            'total_personil' => User::role('personil')->count(),
+            'total_admin_satker' => $this->countUsersByExistingRoles(['admin_satker']),
+            'total_admin_polda' => $this->countUsersByExistingRoles(['admin', 'superadmin']),
+            'total_admin_gudang' => $this->countUsersByExistingRoles(['admin_gudang']),
+            'total_personil' => $this->countUsersByExistingRoles(['personil']),
             'active_users' => User::where('is_active', true)->count(),
             'inactive_users' => User::where('is_active', false)->count(),
         ];
 
         return view('admin.users.index', compact('users', 'satkers', 'roles', 'stats', 'perPage'));
+    }
+
+    private function buildRoleOrderCaseSql(): string
+    {
+        $cases = collect(self::ROLE_SORT_ORDER)
+            ->map(fn (int $position, string $role) => "WHEN '{$role}' THEN {$position}")
+            ->implode(' ');
+
+        return "CASE name {$cases} ELSE 999 END";
+    }
+
+    private function countUsersByExistingRoles(array $roleNames): int
+    {
+        $existingRoles = Role::whereIn('name', $roleNames)->pluck('name')->all();
+
+        if ($existingRoles === []) {
+            return 0;
+        }
+
+        return User::role($existingRoles)->count();
+    }
+
+    private function rolesExist(array $roleNames): bool
+    {
+        return Role::whereIn('name', $roleNames)->count() === count($roleNames);
     }
 
     /**

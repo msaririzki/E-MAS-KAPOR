@@ -12,9 +12,10 @@ class WarehouseExport implements FromView, ShouldAutoSize
     public function view(): View
     {
         $items = WarehouseItem::withSum('sizes', 'stock')->orderBy('name')->get();
+
         return view('admin.warehouse.export_excel', [
             'items' => $items,
-            'is_excel' => true
+            'is_excel' => true,
         ]);
     }
 }
