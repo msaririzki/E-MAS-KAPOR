@@ -1706,26 +1706,9 @@
 
             {{-- ══ Admin / Superadmin Roles ══ --}}
             @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
-                <div class="nav-group {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.satkers.*') ? 'open' : '' }}">
-                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-shield-user-line group-icon"></i> Administrasi
-                        <i class="ri-arrow-down-s-line group-chevron"></i>
-                    </button>
-                    <div class="nav-group-children">
-                        <a href="{{ route('admin.users.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                            Manajemen User
-                        </a>
-                        <a href="{{ route('admin.satkers.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.satkers.*') ? 'active' : '' }}">
-                            Data Satker
-                        </a>
-                    </div>
-                </div>
-
                 <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') || request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-t-shirt-2-line group-icon"></i> Data Master
+                        <i class="ri-t-shirt-2-line group-icon"></i> Data Personel
                         <i class="ri-arrow-down-s-line group-chevron"></i>
                     </button>
                     <div class="nav-group-children">
@@ -1740,6 +1723,44 @@
                         <a href="{{ route('admin.identifikasi-kebutuhan.index') }}"
                             class="nav-link {{ request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'active' : '' }}">
                             Identifikasi Kebutuhan
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group {{ request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-bar-chart-grouped-line group-icon"></i> Keuangan & Laporan
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.budget.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.budget.*') ? 'active' : '' }}">
+                            Rencana Anggaran
+                        </a>
+                        <a href="{{ route('admin.reports') }}"
+                            class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
+                            Laporan
+                        </a>
+                        <a href="{{ route('admin.audit-logs.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                            Log Audit
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.satkers.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-shield-user-line group-icon"></i> Administrasi
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.users.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                            Manajemen User
+                        </a>
+                        <a href="{{ route('admin.satkers.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.satkers.*') ? 'active' : '' }}">
+                            Data Satker
                         </a>
                     </div>
                 </div>
@@ -1763,29 +1784,6 @@
                         <a href="{{ route('admin.warehouse-items.deletion-history') }}"
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.deletion-history') ? 'active' : '' }}">
                             Riwayat Penghapusan
-                        </a>
-                    </div>
-                </div>
-            @endif
-
-            @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
-                <div class="nav-group {{ request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
-                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-bar-chart-grouped-line group-icon"></i> Keuangan & Laporan
-                        <i class="ri-arrow-down-s-line group-chevron"></i>
-                    </button>
-                    <div class="nav-group-children">
-                        <a href="{{ route('admin.budget.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.budget.*') ? 'active' : '' }}">
-                            Rencana Anggaran
-                        </a>
-                        <a href="{{ route('admin.reports') }}"
-                            class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
-                            Laporan
-                        </a>
-                        <a href="{{ route('admin.audit-logs.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
-                            Log Audit
                         </a>
                     </div>
                 </div>
