@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Concerns;
 
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 trait HandlesUserAccountFields
 {
@@ -29,6 +30,22 @@ trait HandlesUserAccountFields
                 'max:50',
                 $nrpNipUniqueRule,
             ],
+        ];
+    }
+
+    protected function adminPasswordRules(bool $required = true): array
+    {
+        $presenceRule = $required ? 'required' : 'nullable';
+
+        return [
+            $presenceRule,
+            'string',
+            Password::min(12)
+                ->letters()
+                ->mixedCase()
+                ->numbers()
+                ->symbols()
+                ->uncompromised(),
         ];
     }
 

@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -42,6 +43,13 @@ class AuthController extends Controller
         $login = trim($credentials['login']);
         $password = $credentials['password'];
         $remember = $request->boolean('remember');
+        $throttleKey = $this->throttleKey($request, $login);
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            return $this->loginErrorResponse(
+                'Terlalu banyak percobaan login. Coba lagi dalam '.RateLimiter::availableIn($throttleKey).' detik.'
+            );
+        }
 
         if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
             $response = $this->authenticateByEmail($request, $login, $password, $remember);
@@ -56,6 +64,8 @@ class AuthController extends Controller
                 return $response;
             }
         }
+
+        RateLimiter::hit($throttleKey, 300);
 
         return $this->loginErrorResponse('Gmail/NRP/NIP atau password salah, atau akun tidak aktif.');
     }
@@ -121,8 +131,14 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        RateLimiter::clear($this->throttleKey($request, (string) $request->input('login')));
 
         return redirect()->intended(route('dashboard'));
+    }
+
+    private function throttleKey(Request $request, string $login): string
+    {
+        return Str::lower($login).'|'.$request->ip();
     }
 
     private function loginErrorResponse(string $message): RedirectResponse

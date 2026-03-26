@@ -31,7 +31,7 @@ class UpdateUserRequest extends FormRequest
         return array_merge([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:8',
+            'password' => $this->adminPasswordRules(false),
             'role' => 'required|exists:roles,name',
             'is_active' => 'boolean',
             'satker_id' => 'nullable|exists:satkers,id',

@@ -14,14 +14,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
+        $seeders = [
             RolePermissionSeeder::class,
             RankSeeder::class,
             SatkerSeeder::class,
             KaporItemSeeder::class,
             SettingSeeder::class,
-            DemoUserSeeder::class,
             TestimonialSeeder::class,
-        ]);
+        ];
+
+        if (app()->environment(['local', 'testing'])) {
+            $seeders[] = DemoUserSeeder::class;
+        }
+
+        $this->call($seeders);
     }
 }

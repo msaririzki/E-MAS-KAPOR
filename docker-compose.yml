@@ -12,7 +12,7 @@ services:
     environment:
       DB_HOST: db
       DB_USERNAME: ${DB_USERNAME:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-Ndekutaok987..}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     volumes:
       - app-public:/var/www/html/public
       - app-storage:/var/www/html/storage
@@ -34,7 +34,7 @@ services:
     environment:
       DB_HOST: db
       DB_USERNAME: ${DB_USERNAME:-root}
-      DB_PASSWORD: ${DB_PASSWORD:-Ndekutaok987..}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     volumes:
       - app-public:/var/www/html/public
       - app-storage:/var/www/html/storage
@@ -68,8 +68,7 @@ services:
     environment:
       MYSQL_DATABASE: kapor
       MYSQL_USER: root
-      # Ganti password sesuai dengan yang ada di .env (Ndekutaok987..)
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Ndekutaok987..}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     volumes:
       - db-data:/var/lib/mysql
     ports:

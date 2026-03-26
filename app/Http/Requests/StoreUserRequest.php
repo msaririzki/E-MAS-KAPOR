@@ -29,7 +29,7 @@ class StoreUserRequest extends FormRequest
         return array_merge([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:8',
+            'password' => $this->adminPasswordRules(),
             'role' => 'required|exists:roles,name',
             'satker_id' => 'nullable|exists:satkers,id',
         ], $this->userAccountFieldRules($isPersonnel));

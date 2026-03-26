@@ -40,7 +40,7 @@ class AdminUserManagementGmailTest extends TestCase
             'email' => 'admin.baru@gmail.com',
             'name' => 'Admin Baru',
             'phone' => '081234567890',
-            'password' => 'password123',
+            'password' => 'T9!qR2#vLm8@Xp',
             'role' => 'admin',
             'satker_id' => $satker->id,
         ]);

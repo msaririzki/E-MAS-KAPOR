@@ -83,6 +83,40 @@ class AuthLoginIdentifierTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_login_is_rate_limited_after_five_failed_attempts(): void
+    {
+        $satker = $this->createSatker();
+        $user = User::factory()->create([
+            'email' => 'admin.locked@gmail.com',
+            'nrp_nip' => null,
+            'password' => Hash::make('StrongPass123!'),
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('admin');
+
+        foreach (range(1, 5) as $attempt) {
+            $response = $this->from(route('login'))->post(route('login'), [
+                'login' => 'admin.locked@gmail.com',
+                'password' => 'wrong-password',
+            ]);
+
+            $response->assertRedirect(route('login'));
+            $response->assertSessionHasErrors('login');
+        }
+
+        $response = $this->from(route('login'))->post(route('login'), [
+            'login' => 'admin.locked@gmail.com',
+            'password' => 'wrong-password',
+        ]);
+
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHasErrors('login');
+        $this->assertStringStartsWith(
+            'Terlalu banyak percobaan login. Coba lagi dalam ',
+            session('errors')->first('login')
+        );
+    }
+
     private function createSatker(): Satker
     {
         return Satker::create([

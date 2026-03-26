@@ -10,6 +10,8 @@ use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -298,6 +300,27 @@ class UserController extends Controller
 
         if (! Role::where('name', $row['role'])->exists()) {
             $errors[] = "Role '{$row['role']}' tidak valid.";
+
+            return false;
+        }
+
+        $validator = Validator::make($row, [
+            'password' => [
+                'required',
+                'string',
+                Password::min(12)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(),
+            ],
+        ], [
+            'password.required' => 'Password wajib diisi.',
+        ]);
+
+        if ($validator->fails()) {
+            $errors[] = "Gmail {$row['email']}: ".$validator->errors()->first('password');
 
             return false;
         }
