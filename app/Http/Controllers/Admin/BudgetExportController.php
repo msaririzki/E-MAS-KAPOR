@@ -7,15 +7,23 @@ use App\Models\BudgetPackage;
 use App\Models\InvoiceSetting;
 use App\Models\Personnel;
 use App\Services\BudgetCalculationService;
+use App\Services\KaporRequirementService;
+use App\Services\SppmWordExportService;
 use Illuminate\Http\Request;
 
 class BudgetExportController extends Controller
 {
     protected BudgetCalculationService $calcService;
 
-    public function __construct(BudgetCalculationService $calcService)
+    protected KaporRequirementService $kaporRequirementService;
+
+    protected SppmWordExportService $sppmExportService;
+
+    public function __construct(BudgetCalculationService $calcService, KaporRequirementService $kaporRequirementService, SppmWordExportService $sppmExportService)
     {
         $this->calcService = $calcService;
+        $this->kaporRequirementService = $kaporRequirementService;
+        $this->sppmExportService = $sppmExportService;
     }
 
     /**
@@ -43,42 +51,7 @@ class BudgetExportController extends Controller
                     ->where('is_active', true);
 
                 $filters = $recipient->recipient_filters ?? [];
-
-                if (! empty($filters['personnel_type'])) {
-                    $mappedTypes = array_map(function ($t) {
-                        $lower = strtolower($t);
-                        if ($lower === 'polri') {
-                            return 'Polri';
-                        }
-                        if ($lower === 'pns') {
-                            return 'PNS';
-                        }
-                        if ($lower === 'pppk') {
-                            return 'PPPK';
-                        }
-
-                        return $t;
-                    }, $filters['personnel_type']);
-                    $query->whereIn('personnel_type', $mappedTypes);
-                }
-
-                if (! empty($filters['gender'])) {
-                    $query->whereIn('gender', $filters['gender']);
-                }
-
-                if (! empty($filters['rank_categories'])) {
-                    $query->whereHas('rank', function ($q) use ($filters) {
-                        $q->whereIn('category', $filters['rank_categories']);
-                    });
-                }
-
-                if (! empty($filters['keterangan'])) {
-                    $query->whereIn('keterangan', $filters['keterangan']);
-                }
-
-                if (! empty($filters['golongan'])) {
-                    $query->whereIn('golongan', $filters['golongan']);
-                }
+                $this->kaporRequirementService->applyRecipientFilters($query, $filters, $recipient->satker);
 
                 $matchedIds = $query->pluck('id')->toArray();
 
@@ -96,9 +69,7 @@ class BudgetExportController extends Controller
                 if (! empty($filters['rank_categories'])) {
                     $filterLabels = array_merge($filterLabels, $filters['rank_categories']);
                 }
-                if (! empty($filters['keterangan'])) {
-                    $filterLabels = array_merge($filterLabels, $filters['keterangan']);
-                }
+                $filterLabels = array_merge($filterLabels, $this->kaporRequirementService->describeKeteranganFilters($filters));
                 if (! empty($filters['golongan'])) {
                     $filterLabels = array_merge($filterLabels, $filters['golongan']);
                 }
@@ -251,11 +222,30 @@ class BudgetExportController extends Controller
             return $isStel && ! $isAlreadyCelana && ! $isNonClothing;
         };
 
-        // Helper: apakah item olahraga (combined gender)
-        $isOlahraga = function ($packageItem) {
+        // Helper: apakah item pakai sheet gabungan pria+wanita
+        $usesCombinedGenderSheet = function ($packageItem) {
             $name = strtoupper($packageItem->kaporItem->item_name);
 
-            return str_contains($name, 'OLAHRAGA') || str_contains($name, 'T-SHIRT') || str_contains($name, 'T SHIRT');
+            return str_contains($name, 'OLAHRAGA')
+                || str_contains($name, 'T-SHIRT')
+                || str_contains($name, 'T SHIRT')
+                || str_contains($name, 'PET');
+        };
+
+        // Helper: apakah item unisex (semua ukuran gender=null)
+        $isUnisexItem = function ($packageItem) {
+            $name = strtoupper($packageItem->kaporItem->item_name);
+
+            if (str_contains($name, 'PET') || str_contains($name, 'BARET') || str_contains($name, 'PECI')) {
+                return false;
+            }
+
+            $sizes = $packageItem->kaporItem->sizes ?? $packageItem->kaporItem->sizes()->get();
+            if ($sizes->isEmpty()) {
+                return false;
+            }
+
+            return $sizes->every(fn ($s) => $s->gender === null);
         };
 
         // Helper: tentukan sizeKey
@@ -279,7 +269,7 @@ class BudgetExportController extends Controller
             if (str_contains($name, 'SEPATU')) {
                 return 'sepatu_dinas';
             }
-            if (str_contains($name, 'JAKET')) {
+            if (str_contains($name, 'JAKET') || str_contains($name, 'ROMPI')) {
                 return 'jaket';
             }
             if (str_contains($name, 'OLAHRAGA')) {
@@ -306,24 +296,7 @@ class BudgetExportController extends Controller
                 if ($genderFilter !== null) {
                     $query->where('gender', $genderFilter);
                 }
-                if (! empty($filters['personnel_type'])) {
-                    $mappedTypes = array_map(fn ($t) => match (strtolower($t)) {
-                        'polri' => 'Polri', 'pns' => 'PNS', 'pppk' => 'PPPK', default => $t
-                    }, $filters['personnel_type']);
-                    $query->whereIn('personnel_type', $mappedTypes);
-                }
-                if (! empty($filters['gender'])) {
-                    $query->whereIn('gender', $filters['gender']);
-                }
-                if (! empty($filters['rank_categories'])) {
-                    $query->whereHas('rank', fn ($q) => $q->whereIn('category', $filters['rank_categories']));
-                }
-                if (! empty($filters['keterangan'])) {
-                    $query->whereIn('keterangan', $filters['keterangan']);
-                }
-                if (! empty($filters['golongan'])) {
-                    $query->whereIn('golongan', $filters['golongan']);
-                }
+                $this->kaporRequirementService->applyRecipientFilters($query, $filters, $satker);
 
                 $personnels = $query->get(['kapor_sizes']);
                 $row = ['satker_name' => $satker->name, 'sizes' => array_fill_keys($availableSizes, 0), 'row_total' => 0];
@@ -359,24 +332,7 @@ class BudgetExportController extends Controller
                 $satker = $recipient->satker;
 
                 $query = \App\Models\Personnel::where('satker_id', $satker->id)->where('is_active', true);
-                if (! empty($filters['personnel_type'])) {
-                    $mappedTypes = array_map(fn ($t) => match (strtolower($t)) {
-                        'polri' => 'Polri', 'pns' => 'PNS', 'pppk' => 'PPPK', default => $t
-                    }, $filters['personnel_type']);
-                    $query->whereIn('personnel_type', $mappedTypes);
-                }
-                if (! empty($filters['gender'])) {
-                    $query->whereIn('gender', $filters['gender']);
-                }
-                if (! empty($filters['rank_categories'])) {
-                    $query->whereHas('rank', fn ($q) => $q->whereIn('category', $filters['rank_categories']));
-                }
-                if (! empty($filters['keterangan'])) {
-                    $query->whereIn('keterangan', $filters['keterangan']);
-                }
-                if (! empty($filters['golongan'])) {
-                    $query->whereIn('golongan', $filters['golongan']);
-                }
+                $this->kaporRequirementService->applyRecipientFilters($query, $filters, $satker);
 
                 $personnels = $query->get(['gender', 'kapor_sizes']);
                 $row = [
@@ -421,7 +377,7 @@ class BudgetExportController extends Controller
             if ($gender !== null) {
                 $sizesQuery->where(fn ($q) => $q->where('gender', $gender)->orWhereNull('gender'));
             } else {
-                $sizesQuery->where(fn ($q) => $q->where('gender', 'L')->orWhereNull('gender'));
+                $sizesQuery->whereNull('gender');
             }
             $result = $sizesQuery->pluck('size_label')->toArray();
 
@@ -434,6 +390,7 @@ class BudgetExportController extends Controller
         foreach ($budgetPackage->items as $packageItem) {
             $kaporItem = $packageItem->kaporItem;
             $itemName = $kaporItem->item_name;
+            $baseName = str_replace(['/', '\\', '?', '*', ':', '[', ']'], ' ', $itemName);
 
             // Kumpulkan gender yang ada
             $gendersInItem = [];
@@ -453,9 +410,30 @@ class BudgetExportController extends Controller
             }
 
             $hasCelana = $needsCelana($packageItem);
-            $combineGender = $isOlahraga($packageItem) && isset($gendersInItem['L']) && isset($gendersInItem['P']);
+            $combineGender = $usesCombinedGenderSheet($packageItem) && isset($gendersInItem['L']) && isset($gendersInItem['P']);
+            $isUnisex = $isUnisexItem($packageItem);
+            $upperBase = strtoupper($baseName);
+            $hasMaleInName = str_contains($upperBase, 'PRIA') || str_contains($upperBase, 'LAKI');
+            $hasFemaleInName = str_contains($upperBase, 'WANITA') || str_contains($upperBase, 'PEREMPUAN');
 
-            // ── OLAHRAGA (combined) ──
+            // ── Item UNISEX: 1 sheet tanpa breakdown gender ──
+            if ($isUnisex) {
+                $sizeKey = $getSizeKey($packageItem, null);
+                $availableSizes = $getAvailableSizes($kaporItem, null, null);
+                $data = $buildMatrix($packageItem, $sizeKey, $availableSizes, null);
+                $pages[] = array_merge($data, [
+                    'mode' => 'normal',
+                    'item_name' => $itemName,
+                    'gender_label' => null,
+                    'size_label' => null,
+                    'available_sizes' => $availableSizes,
+                    'display_title' => trim($baseName),
+                ]);
+
+                continue;
+            }
+
+            // ── Item ukuran gabungan (combined) ──
             if ($combineGender) {
                 $sizeKey = $getSizeKey($packageItem, null);
                 $availableSizes = $getAvailableSizes($kaporItem, null, null);
@@ -466,6 +444,7 @@ class BudgetExportController extends Controller
                     'gender_label' => null,
                     'size_label' => null,
                     'available_sizes' => $availableSizes,
+                    'display_title' => trim($baseName),
                 ]);
 
                 continue;
@@ -480,12 +459,23 @@ class BudgetExportController extends Controller
                 $sizeKey = $getSizeKey($packageItem, null);
                 $availableSizes = $getAvailableSizes($kaporItem, $g, null);
                 $data = $buildMatrix($packageItem, $sizeKey, $availableSizes, $g);
+                $bajuLabel = '';
+                if ($hasCelana) {
+                    $bajuLabel = $g === 'L'
+                        ? ($hasMaleInName ? ' Baju' : ' Baju Pria')
+                        : ($hasFemaleInName ? ' Baju' : ' Baju Wanita');
+                } else {
+                    $bajuLabel = $g === 'L'
+                        ? ($hasMaleInName ? '' : ' Pria')
+                        : ($hasFemaleInName ? '' : ' Wanita');
+                }
                 $pages[] = array_merge($data, [
                     'mode' => 'normal',
                     'item_name' => $itemName,
                     'gender_label' => $hasCelana ? 'BAJU '.$genderLabel : $genderLabel,
                     'size_label' => $hasCelana ? 'Ukuran Baju' : null,
                     'available_sizes' => $availableSizes,
+                    'display_title' => trim($baseName).$bajuLabel,
                 ]);
 
                 // ── CELANA (companion STEL) ──
@@ -493,12 +483,16 @@ class BudgetExportController extends Controller
                     $overrideSizes = $g === 'L' ? $celanaPriaSizes : $celanaWanitaSizes;
                     $celanaAvailable = $overrideSizes;
                     $celanaData = $buildMatrix($packageItem, 'celana', $celanaAvailable, $g);
+                    $celanaLabel = $g === 'L'
+                        ? ($hasMaleInName ? ' Celana' : ' Celana Pria')
+                        : ($hasFemaleInName ? ' Celana' : ' Celana Wanita');
                     $pages[] = array_merge($celanaData, [
                         'mode' => 'normal',
                         'item_name' => $itemName,
                         'gender_label' => 'CELANA '.$genderLabel,
                         'size_label' => 'Ukuran Celana',
                         'available_sizes' => $celanaAvailable,
+                        'display_title' => trim($baseName).$celanaLabel,
                     ]);
                 }
             }
@@ -553,5 +547,44 @@ class BudgetExportController extends Controller
         $filename = 'Detail_Penerima_'.str_replace(' ', '_', $budgetPackage->name).'_'.$budgetPackage->budgetYear->year.'.xlsx';
 
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PackageDetailExport($budgetPackage), $filename);
+    }
+
+    /**
+     * Export SPPM Word
+     */
+    public function exportSppmWord(Request $request, BudgetPackage $budgetPackage)
+    {
+        $validated = $request->validate([
+            'sppm_number' => 'nullable|string',
+            'sprin_number' => 'nullable|string',
+            'sprin_date' => 'nullable|date',
+            'sppm_date' => 'nullable|string',
+        ]);
+
+        $sprinDateFormatted = '';
+        if (! empty($validated['sprin_date'])) {
+            $sprinDateFormatted = \Carbon\Carbon::parse($validated['sprin_date'])->locale('id')->translatedFormat('d F Y');
+        }
+
+        $sppmDateFormatted = '';
+        if (! empty($validated['sppm_date'])) {
+            $sppmDateFormatted = \Carbon\Carbon::createFromFormat('Y-m', $validated['sppm_date'])->locale('id')->translatedFormat('F Y');
+        }
+
+        $filePath = $this->sppmExportService->generateForPackage($budgetPackage, [
+            'sppm_number' => $validated['sppm_number'] ?? '',
+            'sprin_number' => $validated['sprin_number'] ?? '',
+            'sprin_date' => $sprinDateFormatted,
+            'date' => $sppmDateFormatted,
+        ]);
+
+        if (! $filePath) {
+            return redirect()->back()->with('error', 'Tidak ada data penerima valid untuk paket ini.');
+        }
+
+        $budgetPackage->load('budgetYear');
+        $fileName = 'SPPM_'.str_replace(' ', '_', $budgetPackage->name).'_'.$budgetPackage->budgetYear->year.'.docx';
+
+        return response()->download($filePath, $fileName)->deleteFileAfterSend(true);
     }
 }

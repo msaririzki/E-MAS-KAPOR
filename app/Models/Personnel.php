@@ -24,12 +24,18 @@ class Personnel extends Model
         'jabatan',
         'bagian',
         'keterangan',
+        'keterangan_2',
+        'keterangan_3',
+        'keterangan_4',
         'satker_id',
         'phone',
         'avatar',
         'address',
         'religion',
         'is_active',
+
+        'nrp_issue_note',
+        'nrp_issue_resolved_at',
         'kapor_sizes',
     ];
 
@@ -37,6 +43,8 @@ class Personnel extends Model
     {
         return [
             'is_active' => 'boolean',
+
+            'nrp_issue_resolved_at' => 'datetime',
             'kapor_sizes' => 'array',
         ];
     }

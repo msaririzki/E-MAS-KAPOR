@@ -254,6 +254,7 @@
 @endsection
 
 @section('styles')
+<style>
     /* ── Hero Section & Wizard (Tetap) ── */
     .package-hero {
         background: #ffffff;
@@ -503,6 +504,7 @@
         .table-wrap { overflow-x: auto; }
         .satker-dropdown-wrapper { padding-left: 16px; }
     }
+</style>
 @endsection
 
 @section('scripts')

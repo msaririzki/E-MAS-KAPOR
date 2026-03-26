@@ -122,6 +122,13 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
     {
         $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
 
+        // Data seluruh personel dari semua satker untuk deteksi cross-database NRP duplikat
+        $allNrpData = Personnel::whereNotNull('nrp')
+            ->where('nrp', '!=', '')
+            ->with('satker:id,name')
+            ->get(['id', 'nrp', 'full_name', 'satker_id'])
+            ->keyBy('nrp');
+
         // Index 1: Semua personel satker yang punya NRP (untuk NRP match)
         $existingByNrp = Personnel::with('rank')
             ->where('satker_id', $this->satkerId)
@@ -169,6 +176,9 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
             $bagian = trim($row[6] ?? '');
             $genderRaw = strtoupper(trim($row[7] ?? ''));
             $keterangan = trim($row[17] ?? '');
+            $keterangan2 = trim($row[18] ?? '');
+            $keterangan3 = trim($row[19] ?? '');
+            $keterangan4 = trim($row[20] ?? '');
             $no = trim($row[0] ?? '');
 
             // ── Validasi baris kosong / header ────────────────────────
@@ -215,15 +225,37 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
             $isDuplicate = false;
             if (! empty($nrp) && isset($processedNrp[$nrp])) {
                 $isDuplicate = true;
+
+                // Tandai juga baris pertama yang ditemukan agar ikut merah di preview
+                $prevIdx = $processedNrp[$nrp]['preview_idx'];
+                if (isset($preview[$prevIdx])) {
+                    $preview[$prevIdx]['duplicate_nrp'] = true;
+                }
+            } elseif (! empty($nrp)) {
+                $processedNrp[$nrp] = ['row_num' => $rowIndex + 11, 'preview_idx' => count($preview)];
             }
-            if (! $isDuplicate && ! empty($nrp)) {
-                $processedNrp[$nrp] = true;
+
+            // ── Deteksi duplikat cross-database ──────────────────────────
+            $dbDuplicate = null;
+            if (! empty($nrp) && isset($allNrpData[$nrp])) {
+                $existingDB = $allNrpData[$nrp];
+                // Jika ini adalah orang yang sama (update diri sendiri), bukan duplikat.
+                // Jika id berbeda, atau record existingP kosong tapi nrp sudah dipakai orang lain, maka duplikat.
+                if (! $existingP || $existingP->id !== $existingDB->id) {
+                    $dbDuplicate = [
+                        'personnel_id' => $existingDB->id,
+                        'full_name' => $existingDB->full_name,
+                        'satker_name' => $existingDB->satker->name ?? 'Satker tidak diketahui',
+                        'satker_id' => $existingDB->satker_id,
+                        'same_satker' => $existingDB->satker_id == $this->satkerId,
+                    ];
+                }
             }
 
             // ── Hitung diff ────────────────────────────────────────────
             $diff = [];
             if ($existingP && ! $isDuplicate) {
-                $diff = $this->computeDiff($existingP, $fullName, $rankResult, $golongan, $jabatan, $bagian, $gender, $keterangan, $sizes);
+                $diff = $this->computeDiff($existingP, $fullName, $rankResult, $golongan, $jabatan, $bagian, $gender, $keterangan, $keterangan2, $keterangan3, $keterangan4, $sizes);
 
                 // Jika NRP akan ditambahkan ke record existing, tampilkan di diff
                 if ($matchBy === 'name_add_nrp' && ! empty($nrp)) {
@@ -277,10 +309,15 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                 'gender' => $gender,
                 'gender_raw' => $genderRaw,
                 'keterangan' => $keterangan,
+                'keterangan_2' => $keterangan2,
+                'keterangan_3' => $keterangan3,
+                'keterangan_4' => $keterangan4,
                 'sizes' => $sizes,
                 'status' => $status,
                 'error_type' => $errorType ?? null,  // 'duplicate' | 'unknown_rank' | null
                 'skip_reason' => $skipReason,
+                'duplicate_nrp' => $isDuplicate,
+                'db_duplicate' => $dbDuplicate,
                 'existing_name' => $existingP?->full_name,
                 'existing_rank_name' => $existingP?->rank?->name ?? $existingP?->golongan,
                 'existing_jabatan' => $existingP?->jabatan,
@@ -308,6 +345,9 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
         string $bagian,
         string $gender,
         string $keterangan,
+        string $keterangan2,
+        string $keterangan3,
+        string $keterangan4,
         array $sizes
     ): array {
         $diff = [];
@@ -339,6 +379,15 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
         }
         if ($keterangan !== '' && $keterangan !== $existing->keterangan) {
             $diff['Keterangan'] = ['from' => $existing->keterangan ?? '(kosong)', 'to' => $keterangan];
+        }
+        if ($keterangan2 !== '' && $keterangan2 !== $existing->keterangan_2) {
+            $diff['Keterangan 2'] = ['from' => $existing->keterangan_2 ?? '(kosong)', 'to' => $keterangan2];
+        }
+        if ($keterangan3 !== '' && $keterangan3 !== $existing->keterangan_3) {
+            $diff['Keterangan 3'] = ['from' => $existing->keterangan_3 ?? '(kosong)', 'to' => $keterangan3];
+        }
+        if ($keterangan4 !== '' && $keterangan4 !== $existing->keterangan_4) {
+            $diff['Keterangan 4'] = ['from' => $existing->keterangan_4 ?? '(kosong)', 'to' => $keterangan4];
         }
 
         $existingSizes = is_array($existing->kapor_sizes) ? $existing->kapor_sizes : [];
@@ -429,6 +478,15 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         if ($data['keterangan'] !== '') {
                             $updateData['keterangan'] = $data['keterangan'];
                         }
+                        if (($data['keterangan_2'] ?? '') !== '') {
+                            $updateData['keterangan_2'] = $data['keterangan_2'];
+                        }
+                        if (($data['keterangan_3'] ?? '') !== '') {
+                            $updateData['keterangan_3'] = $data['keterangan_3'];
+                        }
+                        if (($data['keterangan_4'] ?? '') !== '') {
+                            $updateData['keterangan_4'] = $data['keterangan_4'];
+                        }
                         if (! empty($data['rank_id'])) {
                             $updateData['rank_id'] = $data['rank_id'];
                         }
@@ -459,6 +517,15 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         $merged = array_merge($existingSizes, $newSizes);
                         if (! empty($merged)) {
                             $updateData['kapor_sizes'] = $merged;
+                        }
+
+                        $hasNrpIssue = ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']);
+
+                        if ($hasNrpIssue) {
+                            $updateData['nrp_issue_note'] = $this->buildNrpIssueNote($data);
+                        } else {
+                            $updateData['nrp_issue_note'] = null;
+                            $updateData['nrp_issue_resolved_at'] = null;
                         }
 
                         $personnel->update($updateData);
@@ -498,7 +565,12 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                             'golongan' => $data['golongan'] ?: null,
                             'gender' => $data['gender'] ?: 'L',
                             'keterangan' => $data['keterangan'] ?: null,
+                            'keterangan_2' => $data['keterangan_2'] ?: null,
+                            'keterangan_3' => $data['keterangan_3'] ?: null,
+                            'keterangan_4' => $data['keterangan_4'] ?: null,
                             'kapor_sizes' => array_filter($data['sizes'] ?? [], fn ($v) => $v !== ''),
+
+                            'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ]);
 
                         $newCount++;
@@ -522,5 +594,25 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
             'error_count' => $errorCount,
             'errors' => $errors,
         ];
+    }
+
+    /**
+     * Helper: buat catatan masalah NRP untuk personel yang terdeteksi duplikat.
+     */
+    private function buildNrpIssueNote(array $data): ?string
+    {
+        $notes = [];
+
+        if (! empty($data['db_duplicate'])) {
+            $db = $data['db_duplicate'];
+            $loc = $db['same_satker'] ? 'satker ini' : $db['satker_name'];
+            $notes[] = "NRP duplikat dengan {$db['full_name']} di {$loc}";
+        }
+
+        if (! empty($data['duplicate_nrp'])) {
+            $notes[] = 'NRP duplikat dalam file import';
+        }
+
+        return ! empty($notes) ? implode('; ', $notes) : null;
     }
 }

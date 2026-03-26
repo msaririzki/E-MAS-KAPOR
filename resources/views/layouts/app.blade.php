@@ -1623,8 +1623,8 @@
             }
         }
 
-        @yield('styles')
     </style>
+    @yield('styles')
 </head>
 
 <body class="{{ (auth()->check() && auth()->user()->hasRole('personil')) ? 'theme-default' : (empty(auth()->user()->theme) ? 'theme-default' : auth()->user()->theme) }}">
@@ -1654,22 +1654,14 @@
 
             {{-- ══ Personil Role ══ --}}
             @if(auth()->user()->hasRole('personil'))
-                <div class="nav-group {{ request()->routeIs('personil.kapor.*') ? 'open' : '' }}">
-                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-shirt-line group-icon"></i> Kapor
-                        <i class="ri-arrow-down-s-line group-chevron"></i>
-                    </button>
-                    <div class="nav-group-children">
-                        <a href="{{ route('personil.kapor.index') }}"
-                            class="nav-link {{ request()->routeIs('personil.kapor.index') ? 'active' : '' }}">
-                            Input Ukuran
-                        </a>
-                        <a href="{{ route('personil.kapor.history') }}"
-                            class="nav-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
-                            Riwayat
-                        </a>
-                    </div>
-                </div>
+                <a href="{{ route('personil.kapor.index') }}"
+                    class="nav-link {{ request()->routeIs('personil.kapor.index') ? 'active' : '' }}">
+                    <i class="ri-edit-line"></i> Input Ukuran
+                </a>
+                <a href="{{ route('personil.kapor.history') }}"
+                    class="nav-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
+                    <i class="ri-history-line"></i> Riwayat
+                </a>
             @endif
 
             {{-- ══ Admin Satker Role ══ --}}
@@ -1683,6 +1675,10 @@
                         <a href="{{ route('admin.personnel.index') }}"
                             class="nav-link {{ request()->routeIs('admin.personnel.*') ? 'active' : '' }}">
                             Data Personel
+                        </a>
+                        <a href="{{ route('admin-satker.kebutuhan.index') }}"
+                            class="nav-link {{ request()->routeIs('admin-satker.kebutuhan.*') ? 'active' : '' }}">
+                            Identifikasi Kebutuhan
                         </a>
                         <a href="{{ route('admin-satker.monitor') }}"
                             class="nav-link {{ request()->routeIs('admin-satker.monitor') ? 'active' : '' }}">
@@ -1702,26 +1698,9 @@
 
             {{-- ══ Admin / Superadmin Roles ══ --}}
             @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
-                <div class="nav-group {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.satkers.*') ? 'open' : '' }}">
+                <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') || request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-shield-user-line group-icon"></i> Administrasi
-                        <i class="ri-arrow-down-s-line group-chevron"></i>
-                    </button>
-                    <div class="nav-group-children">
-                        <a href="{{ route('admin.users.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                            Manajemen User
-                        </a>
-                        <a href="{{ route('admin.satkers.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.satkers.*') ? 'active' : '' }}">
-                            Data Satker
-                        </a>
-                    </div>
-                </div>
-
-                <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') ? 'open' : '' }}">
-                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-t-shirt-2-line group-icon"></i> Data Master
+                        <i class="ri-t-shirt-2-line group-icon"></i> Data Personel
                         <i class="ri-arrow-down-s-line group-chevron"></i>
                     </button>
                     <div class="nav-group-children">
@@ -1732,6 +1711,10 @@
                         <a href="{{ route('admin.kapor-items.index') }}"
                             class="nav-link {{ request()->routeIs('admin.kapor-items.*') ? 'active' : '' }}">
                             Item Kapor
+                        </a>
+                        <a href="{{ route('admin.identifikasi-kebutuhan.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'active' : '' }}">
+                            Identifikasi Kebutuhan
                         </a>
                     </div>
                 </div>
@@ -1753,6 +1736,46 @@
                         <a href="{{ route('admin.audit-logs.index') }}"
                             class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
                             Log Audit
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.satkers.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-shield-user-line group-icon"></i> Administrasi
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.users.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                            Manajemen User
+                        </a>
+                        <a href="{{ route('admin.satkers.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.satkers.*') ? 'active' : '' }}">
+                            Data Satker
+                        </a>
+                    </div>
+                </div>
+            @endif
+
+            @if(auth()->user()->hasAnyRole(['admin', 'superadmin', 'admin_gudang']))
+                <div class="nav-group {{ request()->routeIs('admin.warehouse-items.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-archive-line group-icon"></i> Data Gudang
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.warehouse-items.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.warehouse-items.index') ? 'active' : '' }}">
+                            Data Barang
+                        </a>
+                        <a href="{{ route('admin.warehouse-items.reports', ['type' => 'outflow']) }}"
+                            class="nav-link {{ request()->routeIs('admin.warehouse-items.reports') ? 'active' : '' }}">
+                            Laporan Pengeluaran
+                        </a>
+                        <a href="{{ route('admin.warehouse-items.deletion-history') }}"
+                            class="nav-link {{ request()->routeIs('admin.warehouse-items.deletion-history') ? 'active' : '' }}">
+                            Riwayat Penghapusan
                         </a>
                     </div>
                 </div>

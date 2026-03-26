@@ -18,7 +18,7 @@
     {{-- ═══ JUDUL DOKUMEN ═══ --}}
     <tr>
         <td>
-            REKAP DATA UKURAN {{ strtoupper($kaporItem->item_name) }} POLDA NTB TAHUN {{ $budgetPackage->budgetYear->year }}
+            REKAP DATA UKURAN {{ strtoupper($sheetTitle ?? $kaporItem->item_name) }} POLDA NTB TAHUN {{ $budgetPackage->budgetYear->year }}
         </td>
     </tr>
     <tr></tr>
@@ -28,7 +28,7 @@
     <tr>
         <th rowspan="3" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">NO</th>
         <th rowspan="3" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">SATKER</th>
-        <th colspan="{{ $totalHeadersSpan }}" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">UKURAN {{ strtoupper($kaporItem->item_name) }}</th>
+        <th colspan="{{ $totalHeadersSpan }}" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">UKURAN {{ strtoupper($sheetTitle ?? $kaporItem->item_name) }}</th>
         <th rowspan="3" style="font-weight: bold; border: 1px solid #000; text-align: center; vertical-align: middle;">JUMLAH<br>TOTAL</th>
     </tr>
     <!-- Header Row 2 -->

@@ -1,10 +1,24 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    @php
+        $siteUrl = rtrim(config('app.url') ?: request()->getSchemeAndHttpHost(), '/');
+        $loginDescription = 'Halaman login resmi E-MAS KAPOR untuk personel dan operator Biro Logistik Polda NTB.';
+    @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login — E-Mas Kapor</title>
+    <meta name="description" content="{{ $loginDescription }}">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="{{ $siteUrl }}/login">
+    <meta property="og:type" content="website">
+    <meta property="og:description" content="{{ $loginDescription }}">
+    <meta property="og:url" content="{{ $siteUrl }}/login">
+    <meta property="og:image" content="{{ $siteUrl }}/e-mas-kapor.png">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:description" content="{{ $loginDescription }}">
+    <meta name="twitter:image" content="{{ $siteUrl }}/e-mas-kapor.png">
+    <title>Login E-MAS KAPOR | Biro Logistik Polda NTB</title>
     <link rel="icon" href="{{ asset('e-mas-kapor.png') }}" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -236,6 +250,11 @@
         .field-input::placeholder { color: #ccc; }
         .field-input.pr-icon { padding-right: 48px; }
 
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
         .toggle-pw {
             position: absolute;
             right: 16px; top: 50%;
@@ -421,7 +440,7 @@
             <div class="card-form">
                 <div class="form-header">
                     <h2>Selamat Datang</h2>
-                    <p>Masukkan kredensial Anda untuk mengakses sistem.</p>
+                    <p>Superadmin dan admin login dengan Gmail, personil tetap menggunakan NRP/NIP.</p>
                 </div>
 
                 @if($errors->any())
@@ -434,14 +453,14 @@
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
                     <div class="field">
-                        <label class="field-label">NRP / NIP</label>
+                        <label class="field-label">Gmail / NRP / NIP</label>
                         <div class="field-wrap">
                             <input
                                 type="text"
-                                name="nrp_nip"
+                                name="login"
                                 class="field-input"
-                                placeholder="Masukkan NRP atau NIP"
-                                value="{{ old('nrp_nip') }}"
+                                placeholder="Masukkan Gmail atau NRP/NIP"
+                                value="{{ old('login') }}"
                                 autofocus
                                 required
                             >
@@ -476,11 +495,11 @@
                 </form>
 
                 <div class="help-text">
-                    Tidak bisa login? Hubungi <a href="#">administrator Bagian Logistik</a>.
+                    Tidak bisa login? Hubungi administrator Bagian Logistik atau kembali ke <a href="{{ route('home') }}">halaman informasi resmi</a>.
                 </div>
 
                 <div class="form-footer-text">
-                    © {{ date('Y') }} E-Mas Kapor — Polda Nusa Tenggara Barat
+                    &copy; {{ date('Y') }} E-Mas Kapor — Polda Nusa Tenggara Barat
                 </div>
             </div>
         </div>

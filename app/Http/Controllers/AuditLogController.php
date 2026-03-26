@@ -51,7 +51,8 @@ class AuditLogController extends Controller
                     ->orWhere('action', 'LIKE', "%{$search}%")
                     ->orWhereHas('user', function ($uq) use ($search) {
                         $uq->where('name', 'LIKE', "%{$search}%")
-                            ->orWhere('username', 'LIKE', "%{$search}%");
+                            ->orWhere('email', 'LIKE', "%{$search}%")
+                            ->orWhere('nrp_nip', 'LIKE', "%{$search}%");
                     }
                     );
             });

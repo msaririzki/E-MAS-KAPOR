@@ -33,6 +33,9 @@ class RolePermissionSeeder extends Seeder
             // Reports
             'view-global-reports', // Statistik global
 
+            // Warehouse
+            'manage-warehouse', // Kelola data gudang & laporan pengeluaran
+
             // Kapor
             'submit-kapor-sizes', // Input ukuran kapor (personil only)
 
@@ -41,36 +44,44 @@ class RolePermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::findOrCreate($permission, 'web');
         }
 
         // ── Create Roles & Assign Permissions ──────────────────
 
         // Superadmin: God-mode
-        $superadmin = Role::create(['name' => 'superadmin']);
-        $superadmin->givePermissionTo(Permission::all());
+        $superadmin = Role::findOrCreate('superadmin', 'web');
+        $superadmin->syncPermissions(Permission::all());
 
         // Admin: Global tapi tidak bisa kelola superadmin & system settings
-        $admin = Role::create(['name' => 'admin']);
-        $admin->givePermissionTo([
+        $admin = Role::findOrCreate('admin', 'web');
+        $admin->syncPermissions([
             'manage-non-super-users',
             'manage-satker-personnel',
             'view-satker-data',
             'view-global-reports',
+            'manage-warehouse',
+            'view-own-profile',
+        ]);
+
+        // Admin Gudang: fokus pada pengelolaan gudang
+        $adminGudang = Role::findOrCreate('admin_gudang', 'web');
+        $adminGudang->syncPermissions([
+            'manage-warehouse',
             'view-own-profile',
         ]);
 
         // Admin Satker: Scope terbatas ke satker sendiri
-        $adminSatker = Role::create(['name' => 'admin_satker']);
-        $adminSatker->givePermissionTo([
+        $adminSatker = Role::findOrCreate('admin_satker', 'web');
+        $adminSatker->syncPermissions([
             'manage-satker-personnel',
             'view-satker-data',
             'view-own-profile',
         ]);
 
         // Personil: End-user, input kapor
-        $personil = Role::create(['name' => 'personil']);
-        $personil->givePermissionTo([
+        $personil = Role::findOrCreate('personil', 'web');
+        $personil->syncPermissions([
             'submit-kapor-sizes',
             'view-own-profile',
         ]);

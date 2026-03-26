@@ -9,10 +9,16 @@ use App\Models\PackageItem;
 use App\Models\PackageItemRecipient;
 use App\Models\Personnel;
 use App\Models\Satker;
+use App\Services\PersonnelKeteranganService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class PackageItemController extends Controller
 {
+    public function __construct(
+        private readonly PersonnelKeteranganService $personnelKeteranganService
+    ) {}
+
     /**
      * Langkah 1: Tampilkan semua item aktif untuk dipilih
      */
@@ -111,29 +117,12 @@ class PackageItemController extends Controller
                 ->with('error', 'Pilih minimal 1 item terlebih dahulu.');
         }
 
-        // Ambil semua satker level atas (parent_id null = Polda level)
-        $satkers = Satker::whereNull('parent_id')
-            ->with(['children' => function ($q) {
-                $q->orderBy('sort_order')->orderBy('name');
-            }])
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-
         // Flatten semua satker untuk pilihan
         $allSatkers = Satker::orderBy('sort_order')->orderBy('name')->get();
-
-        // Ambil semua keterangan unik dari personel aktif
-        $allKeterangan = Personnel::where('is_active', true)
-            ->whereNotNull('keterangan')
-            ->where('keterangan', '!=', '')
-            ->selectRaw('keterangan, COUNT(*) as jumlah')
-            ->groupBy('keterangan')
-            ->orderByDesc('jumlah')
-            ->get();
+        $keteranganOptions = $this->buildKeteranganOptions($allSatkers);
 
         return view('admin.budget.wizard.step2-recipients', compact(
-            'budgetPackage', 'allSatkers', 'allKeterangan'
+            'budgetPackage', 'allSatkers', 'keteranganOptions'
         ));
     }
 
@@ -152,15 +141,7 @@ class PackageItemController extends Controller
         $packageItem->recipients()->delete();
 
         // Gunakan filter dari user (null = semua personil aktif di satker)
-        $filters = $request->input('filters');
-
-        // Bersihkan filter kosong
-        if (is_array($filters)) {
-            $filters = array_filter($filters, fn ($v) => ! empty($v));
-            if (empty($filters)) {
-                $filters = null;
-            }
-        }
+        $filters = $this->sanitizeRecipientFilters($request->input('filters'));
 
         if (! empty($validated['satker_ids'])) {
             foreach ($validated['satker_ids'] as $satkerId) {
@@ -190,6 +171,7 @@ class PackageItemController extends Controller
             'success' => true,
             'total_recipients' => $packageItem->recipients()->sum('matched_count'),
             'recipients_detail' => $recipientsDetail,
+            'filters' => $filters,
         ]);
     }
 
@@ -273,19 +255,138 @@ class PackageItemController extends Controller
      */
     public function getSatkerKeterangan(Satker $satker)
     {
-        $keteranganList = Personnel::where('satker_id', $satker->id)
-            ->where('is_active', true)
-            ->whereNotNull('keterangan')
-            ->where('keterangan', '!=', '')
-            ->selectRaw('keterangan, COUNT(*) as jumlah')
-            ->groupBy('keterangan')
-            ->orderBy('keterangan')
-            ->get()
-            ->map(fn ($row) => [
-                'value' => $row->keterangan,
-                'count' => $row->jumlah,
-            ]);
+        $fields = ['keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'];
+        $keteranganList = [];
+
+        foreach ($fields as $field) {
+            $counts = [];
+
+            Personnel::query()
+                ->where('satker_id', $satker->id)
+                ->where('is_active', true)
+                ->select([$field])
+                ->orderBy('id')
+                ->chunk(1000, function ($personnels) use (&$counts, $field) {
+                    foreach ($personnels as $personnel) {
+                        $value = $this->personnelKeteranganService->normalizeValue($personnel->{$field} ?? null);
+
+                        if ($value === null) {
+                            continue;
+                        }
+
+                        $counts[$value] = ($counts[$value] ?? 0) + 1;
+                    }
+                });
+
+            $keteranganList[$field] = collect($counts)
+                ->map(fn ($count, $value) => [
+                    'value' => $value,
+                    'count' => $count,
+                ])
+                ->sortBy(fn ($row) => strtolower($row['value']))
+                ->values();
+        }
 
         return response()->json($keteranganList);
+    }
+
+    private function buildKeteranganOptions(Collection $satkers): array
+    {
+        $scopeLabels = [
+            'polda' => 'Polda',
+            'polres' => 'Polres',
+        ];
+        $fieldLabels = [
+            'keterangan' => 'Keterangan 1',
+            'keterangan_2' => 'Keterangan 2',
+            'keterangan_3' => 'Keterangan 3',
+            'keterangan_4' => 'Keterangan 4',
+        ];
+        $scopeBySatkerId = $satkers
+            ->mapWithKeys(fn (Satker $satker) => [$satker->id => $satker->recipientScope()])
+            ->all();
+
+        $options = [];
+        foreach ($scopeLabels as $scope => $scopeLabel) {
+            $options[$scope] = [
+                'label' => $scopeLabel,
+                'fields' => collect($fieldLabels)->mapWithKeys(fn ($fieldLabel, $fieldKey) => [
+                    $fieldKey => [
+                        'label' => $fieldLabel,
+                        'options' => [],
+                    ],
+                ])->all(),
+            ];
+        }
+
+        Personnel::query()
+            ->where('is_active', true)
+            ->select(['satker_id', 'keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'])
+            ->orderBy('id')
+            ->chunk(1000, function ($personnels) use (&$options, $scopeBySatkerId, $fieldLabels) {
+                foreach ($personnels as $personnel) {
+                    $scope = $scopeBySatkerId[$personnel->satker_id] ?? 'polda';
+
+                    foreach (array_keys($fieldLabels) as $fieldKey) {
+                        $value = $this->personnelKeteranganService->normalizeValue($personnel->{$fieldKey} ?? null);
+                        if ($value === null) {
+                            continue;
+                        }
+
+                        $options[$scope]['fields'][$fieldKey]['options'][$value] = ($options[$scope]['fields'][$fieldKey]['options'][$value] ?? 0) + 1;
+                    }
+                }
+            });
+
+        foreach ($options as $scope => $scopeConfig) {
+            foreach ($scopeConfig['fields'] as $fieldKey => $fieldConfig) {
+                $sorted = collect($fieldConfig['options'])
+                    ->map(fn ($count, $value) => [
+                        'value' => $value,
+                        'count' => $count,
+                    ])
+                    ->sort(function (array $left, array $right) {
+                        $countComparison = $right['count'] <=> $left['count'];
+
+                        if ($countComparison !== 0) {
+                            return $countComparison;
+                        }
+
+                        return strcasecmp($left['value'], $right['value']);
+                    })
+                    ->values()
+                    ->all();
+
+                $options[$scope]['fields'][$fieldKey]['options'] = $sorted;
+            }
+        }
+
+        return $options;
+    }
+
+    private function sanitizeRecipientFilters(mixed $filters): ?array
+    {
+        if (! is_array($filters)) {
+            return null;
+        }
+
+        $cleaned = [];
+
+        foreach ($filters as $key => $value) {
+            if (is_array($value)) {
+                $nested = $this->sanitizeRecipientFilters($value);
+                if ($nested !== null) {
+                    $cleaned[$key] = $nested;
+                }
+
+                continue;
+            }
+
+            if (filled($value)) {
+                $cleaned[$key] = $value;
+            }
+        }
+
+        return $cleaned === [] ? null : $cleaned;
     }
 }

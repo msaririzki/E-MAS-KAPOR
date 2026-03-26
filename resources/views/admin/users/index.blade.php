@@ -41,11 +41,11 @@
         <div class="card-body-simple">
             <div class="form-grid-2">
                 <div class="form-group-simple">
-                    <label>Username (NRP/NIP)</label>
-                    <input type="text" name="nrp_nip" value="{{ old('nrp_nip') }}" 
-                        class="form-input-simple @error('nrp_nip') is-invalid @enderror" 
-                        placeholder="Contoh: 123456" required>
-                    @error('nrp_nip') <span class="error-msg">{{ $message }}</span> @enderror
+                    <label>Gmail</label>
+                    <input type="email" name="email" value="{{ old('email') }}"
+                        class="form-input-simple @error('email') is-invalid @enderror"
+                        placeholder="Contoh: admin.kapor@gmail.com" required>
+                    @error('email') <span class="error-msg">{{ $message }}</span> @enderror
                 </div>
                 <div class="form-group-simple">
                      <label>Nama Lengkap</label>
@@ -73,7 +73,7 @@
                          <div class="select-trigger">
                              <span id="roleLabel">
                                  @if(old('role'))
-                                     {{ ucfirst(old('role')) }}
+                                     {{ \Illuminate\Support\Str::headline(old('role')) }}
                                  @else
                                      — Pilih Peran —
                                  @endif
@@ -85,13 +85,16 @@
                                  <div class="option" onclick="setSelectValue('role', '', '— Pilih Peran —', this)">— Pilih Peran —</div>
                                  @foreach($roles as $role)
                                      <div class="option {{ old('role') == $role->name ? 'selected' : '' }}" 
-                                          onclick="setSelectValue('role', '{{ $role->name }}', '{{ ucfirst($role->name) }}', this)">
-                                         {{ ucfirst($role->name) }}
+                                          onclick="setSelectValue('role', '{{ $role->name }}', '{{ \Illuminate\Support\Str::headline($role->name) }}', this)">
+                                         {{ \Illuminate\Support\Str::headline($role->name) }}
                                      </div>
                                  @endforeach
                              </div>
                          </div>
                          <input type="hidden" name="role" id="role_input" value="{{ old('role') }}" required>
+                     </div>
+                     <div style="margin-top: 8px; font-size: 12px; color: #6B7280;">
+                         Superadmin dan seluruh admin login memakai Gmail. Personil tetap dikelola dari Data Personel dengan NRP/NIP.
                      </div>
                      @error('role') <span class="error-msg">{{ $message }}</span> @enderror
                  </div>
@@ -188,6 +191,15 @@
         </div>
     </div>
     <div class="stat-card">
+        <div class="stat-icon" style="background: #ECFDF5; color: #059669;">
+            <i class="ri-archive-line"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Admin Gudang</span>
+            <span class="stat-number">{{ $stats['total_admin_gudang'] }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
         <div class="stat-icon icon-orange">
             <i class="ri-group-line"></i>
         </div>
@@ -221,7 +233,7 @@
     <form method="GET" action="{{ route('admin.users.index') }}" class="filter-form" id="filterForm">
         <div class="search-input">
             <i class="ri-search-line"></i>
-            <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari berdasarkan nama atau username..." autocomplete="off" oninput="debounceSearch()">
+            <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari berdasarkan nama, Gmail, atau NRP/NIP..." autocomplete="off" oninput="debounceSearch()">
             @if(request('search'))
                 <button type="button" class="clear-search" onclick="document.getElementById('searchInput').value=''; document.getElementById('filterForm').submit();">
                     <i class="ri-close-circle-fill"></i>
@@ -232,7 +244,7 @@
         <div class="custom-select-wrapper">
             <div class="custom-select" onclick="toggleDropdown(this)">
                 <div class="select-trigger">
-                    <span>{{ request('role') ? ucfirst(request('role')) : 'Semua Peran' }}</span>
+                    <span>{{ request('role') ? \Illuminate\Support\Str::headline(request('role')) : 'Semua Peran' }}</span>
                     <i class="ri-arrow-down-s-line"></i>
                 </div>
                 <div class="custom-options" style="background: #fff !important;">
@@ -240,8 +252,8 @@
                         <div class="option {{ !request('role') ? 'selected' : '' }}" onclick="selectOption(this, 'role', '', 'Semua Peran')">Semua Peran</div>
                         @foreach($roles as $role)
                             <div class="option {{ request('role') == $role->name ? 'selected' : '' }}" 
-                                 onclick="selectOption(this, 'role', '{{ $role->name }}', '{{ ucfirst($role->name) }}')">
-                                {{ ucfirst($role->name) }}
+                                 onclick="selectOption(this, 'role', '{{ $role->name }}', '{{ \Illuminate\Support\Str::headline($role->name) }}')">
+                                {{ \Illuminate\Support\Str::headline($role->name) }}
                             </div>
                         @endforeach
                     </div>
@@ -298,14 +310,14 @@
                             </div>
                             <div class="details">
                                 <span class="name">{{ $u->name }}</span>
-                                <span class="username">@<span></span>{{ $u->nrp_nip }}</span>
+                                <span class="username">{{ $u->loginIdentifierLabel() }}: {{ $u->loginIdentifier() ?? '-' }}</span>
                             </div>
                         </div>
                     </td>
                     <td>
                         <div class="pill-badges">
                             @foreach($u->roles as $role)
-                                <span class="role-pill">{{ $role->name }}</span>
+                                <span class="role-pill">{{ \Illuminate\Support\Str::headline($role->name) }}</span>
                             @endforeach
                         </div>
                     </td>
@@ -427,7 +439,7 @@
     /* ── Stats ──────────────────────────────────────────── */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 16px;
         margin-bottom: 24px;
     }
@@ -1112,9 +1124,10 @@
         // Specific for edit modal syncing
         if (wrapper.id === 'editRoleSelect') {
             document.getElementById('edit_role').value = value;
+            syncEditLoginFields(value);
         }
         if (wrapper.id === 'editSatkerSelect') {
-            document.getElementById('edit_satker_id').value = value;
+            document.getElementById('edit_satker').value = value;
         }
 
         wrapper.classList.remove('active');
@@ -1229,8 +1242,40 @@
         }
     }
 
+    function formatRoleLabel(roleName) {
+        return roleName
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
+    function syncEditLoginFields(roleName) {
+        const isPersonil = roleName === 'personil';
+        const emailGroup = document.getElementById('edit_email_group');
+        const nrpGroup = document.getElementById('edit_nrp_group');
+        const emailInput = document.getElementById('edit_email');
+        const nrpInput = document.getElementById('edit_nrp_nip');
+
+        if (emailGroup) {
+            emailGroup.style.display = isPersonil ? 'none' : 'block';
+        }
+
+        if (nrpGroup) {
+            nrpGroup.style.display = isPersonil ? 'block' : 'none';
+        }
+
+        if (emailInput) {
+            emailInput.disabled = isPersonil;
+            emailInput.required = !isPersonil;
+        }
+
+        if (nrpInput) {
+            nrpInput.disabled = !isPersonil;
+            nrpInput.required = isPersonil;
+        }
+    }
+
     function openEditModal(user) {
-        document.getElementById('edit_nrp_nip').value = user.nrp_nip;
+        document.getElementById('edit_nrp_nip').value = user.nrp_nip || '';
         document.getElementById('edit_name').value = user.name;
         
         // If role is personil, take phone from personnel data
@@ -1250,12 +1295,15 @@
         if (user.roles && user.roles.length > 0) {
             const roleName = user.roles[0].name;
             roleInput.value = roleName;
-            roleLabel.innerText = roleName.charAt(0).toUpperCase() + roleName.slice(1);
+            roleLabel.innerText = formatRoleLabel(roleName);
+            syncEditLoginFields(roleName);
             
             // Mark as selected in dropdown
             document.querySelectorAll('#editRoleSelect .option').forEach(opt => {
                 opt.classList.toggle('selected', opt.getAttribute('data-value') === roleName);
             });
+        } else {
+            syncEditLoginFields('');
         }
 
         // Set Custom Select for Satker

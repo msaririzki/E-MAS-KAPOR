@@ -647,7 +647,14 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
     {
         $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
         $preview = [];
-        $seenNrps = []; // Track NRPs untuk deteksi duplikat
+        $seenNrps = []; // Track NRPs untuk deteksi duplikat dalam batch
+
+        // Pre-load semua NRP yang sudah ada di database untuk deteksi cross-DB
+        $existingNrpData = Personnel::whereNotNull('nrp')
+            ->where('nrp', '!=', '')
+            ->with('satker:id,name')
+            ->get(['id', 'nrp', 'full_name', 'satker_id'])
+            ->keyBy('nrp');
 
         $isSiswaSatker = false;
         if ($this->satkerId) {
@@ -674,6 +681,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $colBagian = 6 + $offset;
             $colGender = 7 + $offset;
             $colKet = 17 + $offset;
+            $colKet2 = 18 + $offset;
+            $colKet3 = 19 + $offset;
+            $colKet4 = 20 + $offset;
 
             // Bersihkan tanda bintang (*) dan normalisasi enter/spasi ganda (karena sering ada \n di dalam cell Excel)
             $fullNameRtn = str_replace('*', '', $row[$colName] ?? '');
@@ -715,6 +725,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $bagian = trim($row[$colBagian] ?? '');
             $genderRaw = strtoupper(trim($row[$colGender] ?? ''));
             $keterangan = trim($row[$colKet] ?? '');
+            $keterangan2 = trim($row[$colKet2] ?? '');
+            $keterangan3 = trim($row[$colKet3] ?? '');
+            $keterangan4 = trim($row[$colKet4] ?? '');
 
             // Ambil nomor urut dari kolom pertama (NO)
             $no = trim($row[0] ?? '');
@@ -868,13 +881,16 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
 
             // Deteksi NRP duplikat dalam batch yang sama
             $isDuplicateNrp = false;
+            $dbDuplicate = null;
             if (! empty($nrp)) {
+                // 1) Duplikat dalam batch (file Excel)
                 if (isset($seenNrps[$nrp])) {
                     $isDuplicateNrp = true;
                     if ($status !== 'error') {
                         $status = 'corrected';
                     }
-                    $dupeRow = $seenNrps[$nrp];
+                    $dupeInfo = $seenNrps[$nrp];
+                    $dupeRow = $dupeInfo['row_num'];
                     $dupeLabel = "NRP duplikat dengan baris #{$dupeRow}";
                     if ($rankResult['corrected_to']) {
                         $rankResult['corrected_to'] .= ' | '.$dupeLabel;
@@ -882,8 +898,32 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                         $rankResult['corrected'] = true;
                         $rankResult['corrected_to'] = $dupeLabel;
                     }
+
+                    // Tandai juga baris pertama yang ditemukan sebelumnya agar ikut merah
+                    $prevIdx = $dupeInfo['preview_idx'];
+                    if (isset($preview[$prevIdx])) {
+                        $preview[$prevIdx]['duplicate_nrp'] = true;
+                        if ($preview[$prevIdx]['status'] !== 'error') {
+                            $preview[$prevIdx]['status'] = 'corrected';
+                        }
+                    }
+                } else {
+                    $seenNrps[$nrp] = ['row_num' => $rowIndex + 11, 'preview_idx' => count($preview)];
                 }
-                $seenNrps[$nrp] = $rowIndex + 11; // Simpan nomor baris Excel
+
+                // 2) Duplikat terhadap database (cross-satker)
+                if (isset($existingNrpData[$nrp])) {
+                    $existingP = $existingNrpData[$nrp];
+                    $existingSatkerName = $existingP->satker->name ?? 'Satker tidak diketahui';
+                    $isSameSatker = ($existingP->satker_id == $this->satkerId);
+                    $dbDuplicate = [
+                        'personnel_id' => $existingP->id,
+                        'full_name' => $existingP->full_name,
+                        'satker_name' => $existingSatkerName,
+                        'satker_id' => $existingP->satker_id,
+                        'same_satker' => $isSameSatker,
+                    ];
+                }
             }
 
             // Jika pangkat dikoreksi otomatis (misal PPPK, KOMBES POL, dll)
@@ -919,10 +959,14 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 'gender' => $gender,
                 'gender_raw' => $genderRaw,
                 'keterangan' => $keterangan,
+                'keterangan_2' => $keterangan2,
+                'keterangan_3' => $keterangan3,
+                'keterangan_4' => $keterangan4,
                 'sizes' => $sizes,
                 'status' => $status, // 'ok' | 'corrected' | 'error'
                 'incomplete_fields' => $incompleteFields, // field yang kosong
-                'duplicate_nrp' => $isDuplicateNrp, // true jika NRP duplikat
+                'duplicate_nrp' => $isDuplicateNrp, // true jika NRP duplikat dalam file
+                'db_duplicate' => $dbDuplicate, // info duplikat dari database (null jika tidak ada)
             ];
         }
 
@@ -963,6 +1007,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 $bagian = trim($data['bagian'] ?? '');
                 $golongan = trim($data['golongan'] ?? '');
                 $keterangan = trim($data['keterangan'] ?? '');
+                $keterangan2 = trim($data['keterangan_2'] ?? '');
+                $keterangan3 = trim($data['keterangan_3'] ?? '');
+                $keterangan4 = trim($data['keterangan_4'] ?? '');
                 $sizes = $data['sizes'] ?? [];
 
                 if (empty($fullName)) {
@@ -1034,7 +1081,12 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'gender' => $gender,
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
+                            'keterangan_2' => $keterangan2 ?: null,
+                            'keterangan_3' => $keterangan3 ?: null,
+                            'keterangan_4' => $keterangan4 ?: null,
                             'is_active' => true,
+
+                            'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ]);
                         if (! $isDuplicateNrp) {
                             $existingPersonnel->put($effectiveNrp, $personnel);
@@ -1048,7 +1100,12 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'bagian' => $bagian,
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
+                            'keterangan_2' => $keterangan2 ?: null,
+                            'keterangan_3' => $keterangan3 ?: null,
+                            'keterangan_4' => $keterangan4 ?: null,
                             'gender' => $gender,
+
+                            'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ];
                         // Hanya update rank_id jika ada
                         if ($rank) {
@@ -1089,6 +1146,26 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             'error_count' => $errorCount,
             'errors' => $errors,
         ];
+    }
+
+    /**
+     * Helper: buat catatan masalah NRP untuk personel yang terdeteksi duplikat.
+     */
+    private function buildNrpIssueNote(array $data): ?string
+    {
+        $notes = [];
+
+        if (! empty($data['db_duplicate'])) {
+            $db = $data['db_duplicate'];
+            $loc = $db['same_satker'] ? 'satker ini' : $db['satker_name'];
+            $notes[] = "NRP duplikat dengan {$db['full_name']} di {$loc}";
+        }
+
+        if (! empty($data['duplicate_nrp'])) {
+            $notes[] = 'NRP duplikat dalam file import';
+        }
+
+        return ! empty($notes) ? implode('; ', $notes) : null;
     }
 
     /**

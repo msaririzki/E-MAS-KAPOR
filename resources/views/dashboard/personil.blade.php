@@ -13,7 +13,7 @@
     .form-control:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1); }
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
     .btn-submit { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: var(--brand); color: #fff; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; }
-    .btn-submit:hover { background: var(--brand-dark); transform: translateY(-1px); }
+    .btn-submit:hover { background: #B71C1C; transform: translateY(-1px); }
     .colored-toast.swal2-icon-success { background-color: var(--success-bg) !important; color: var(--success) !important; }
     .colored-toast .swal2-title { color: var(--success) !important; }
     
@@ -22,6 +22,8 @@
     .rating-wrapper input { display: none; }
     .rating-wrapper label { cursor: pointer; color: var(--slate-300); font-size: 24px; transition: color 0.2s; }
     .rating-wrapper label:hover, .rating-wrapper label:hover ~ label, .rating-wrapper input:checked ~ label { color: #F59E0B; }
+    
+    .btn-cancel:hover { background: var(--slate-100) !important; color: var(--danger) !important; border-color: var(--danger-border) !important; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection
@@ -77,7 +79,19 @@
     </div>
     
     <div class="card-body" style="padding: 24px;">
-        <form action="{{ route('personil.kapor.store') }}" method="POST">
+        @php
+            $s_head = range(54, 60);
+            $s_shirt_m = ['14', '14,5', '15', '15,5', '16', '16,5', '17', '17,5', '18', '18,5', '19', '19,5', '20', '21', '22'];
+            $s_wom = ['K', 'SD', 'B', 'EB', 'EEB', 'EEEB', 'EEEEB'];
+            $s_pants_m = range(27, 50);
+            $s_shoes = range(36, 48);
+            $s_belt = range(36, 60, 2);
+            $s_jilbab = ['K', 'SD', 'B'];
+            
+            $gender = optional(auth()->user()->personnel)->gender ?? 'L';
+        @endphp
+
+        <form action="{{ route('personil.kapor.store') }}" method="POST" id="kaporForm" style="display: {{ $hasSubmitted ? 'none' : 'block' }};">
             @csrf
             
             <div class="form-card">
@@ -85,19 +99,51 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Kemeja</label>
-                        <input type="text" name="kemeja" class="form-control" value="{{ old('kemeja', $kaporSizes['kemeja'] ?? '') }}" placeholder="Ketik ukuran (cth: M, L, XL...)" required>
+                        <select name="kemeja" class="form-control select-control" required>
+                            <option value="">— Pilih —</option>
+                            @if($gender === 'L')
+                                @foreach($s_shirt_m as $s)
+                                    <option value="{{ $s }}" {{ old('kemeja', $kaporSizes['kemeja'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                                @endforeach
+                            @else
+                                @foreach($s_wom as $s)
+                                    <option value="{{ $s }}" {{ old('kemeja', $kaporSizes['kemeja'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                                @endforeach
+                            @endif
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Celana / Rok</label>
-                        <input type="text" name="celana" class="form-control" value="{{ old('celana', $kaporSizes['celana'] ?? '') }}" placeholder="Ketik ukuran (cth: 32, 34...)" required>
+                        <select name="celana" class="form-control select-control" required>
+                            <option value="">— Pilih —</option>
+                            @if($gender === 'L')
+                                @foreach($s_pants_m as $s)
+                                    <option value="{{ $s }}" {{ old('celana', $kaporSizes['celana'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                                @endforeach
+                            @else
+                                @foreach($s_wom as $s)
+                                    <option value="{{ $s }}" {{ old('celana', $kaporSizes['celana'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                                @endforeach
+                            @endif
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">T.Shirt / Kaos Olahraga</label>
-                        <input type="text" name="olahraga" class="form-control" value="{{ old('olahraga', $kaporSizes['olahraga'] ?? '') }}" placeholder="Ketik ukuran (cth: M, L, XL...)" required>
+                        <select name="olahraga" class="form-control select-control" required>
+                            <option value="">— Pilih —</option>
+                            @foreach($s_wom as $s)
+                                <option value="{{ $s }}" {{ old('olahraga', $kaporSizes['olahraga'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Jaket</label>
-                        <input type="text" name="jaket" class="form-control" value="{{ old('jaket', $kaporSizes['jaket'] ?? '') }}" placeholder="Ketik ukuran (cth: M, L, XL...)" required>
+                        <select name="jaket" class="form-control select-control" required>
+                            <option value="">— Pilih —</option>
+                            @foreach($s_wom as $s)
+                                <option value="{{ $s }}" {{ old('jaket', $kaporSizes['jaket'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
             </div>
@@ -107,16 +153,31 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Tutup Kepala (Topi/Baret)</label>
-                        <input type="text" name="topi" class="form-control" value="{{ old('topi', $kaporSizes['topi'] ?? '') }}" placeholder="Ketik ukuran (cth: 56, 58...)" required>
+                        <select name="topi" class="form-control select-control" required>
+                            <option value="">— Pilih —</option>
+                            @foreach($s_head as $s)
+                                <option value="{{ $s }}" {{ old('topi', $kaporSizes['topi'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Sabuk</label>
-                        <input type="text" name="sabuk" class="form-control" value="{{ old('sabuk', $kaporSizes['sabuk'] ?? '') }}" placeholder="Ketik ukuran (cth: 110, 120...)" required>
+                        <select name="sabuk" class="form-control select-control" required>
+                            <option value="">— Pilih —</option>
+                            @foreach($s_belt as $s)
+                                <option value="{{ $s }}" {{ old('sabuk', $kaporSizes['sabuk'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    @if(optional(auth()->user()->personnel)->gender === 'P')
+                    @if($gender === 'P')
                     <div class="form-group">
                         <label class="form-label">Jilbab <span style="color: var(--brand); font-size: 11px; margin-left: 4px;">(Khusus Polwan)</span></label>
-                        <input type="text" name="jilbab" class="form-control" value="{{ old('jilbab', $kaporSizes['jilbab'] ?? '') }}" placeholder="Ketik ukuran (cth: SD, M...)" required>
+                        <select name="jilbab" class="form-control select-control" required>
+                            <option value="">— Pilih —</option>
+                            @foreach($s_jilbab as $s)
+                                <option value="{{ $s }}" {{ old('jilbab', $kaporSizes['jilbab'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     @endif
                 </div>
@@ -127,16 +188,31 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Sepatu Dinas</label>
-                        <input type="text" name="sepatu_dinas" class="form-control" value="{{ old('sepatu_dinas', $kaporSizes['sepatu_dinas'] ?? '') }}" placeholder="Ketik ukuran (cth: 42, 43...)" required>
+                        <select name="sepatu_dinas" class="form-control select-control" required>
+                            <option value="">— Pilih —</option>
+                            @foreach($s_shoes as $s)
+                                <option value="{{ $s }}" {{ old('sepatu_dinas', $kaporSizes['sepatu_dinas'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Sepatu Olahraga</label>
-                        <input type="text" name="sepatu_olahraga" class="form-control" value="{{ old('sepatu_olahraga', $kaporSizes['sepatu_olahraga'] ?? '') }}" placeholder="Ketik ukuran (cth: 42, 43...)" required>
+                        <select name="sepatu_olahraga" class="form-control select-control" required>
+                            <option value="">— Pilih —</option>
+                            @foreach($s_shoes as $s)
+                                <option value="{{ $s }}" {{ old('sepatu_olahraga', $kaporSizes['sepatu_olahraga'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                @if($hasSubmitted)
+                <button type="button" onclick="document.getElementById('kaporForm').style.display='none'; document.getElementById('kaporSummaryCard').style.display='block';" class="btn btn-cancel" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: var(--radius-md); font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                    <i class="ri-close-line"></i> Batal
+                </button>
+                @endif
                 <button type="submit" class="btn-submit" style="max-width: 250px;">
                     <i class="ri-save-line"></i> Simpan Pilihan Form
                 </button>
@@ -144,6 +220,52 @@
         </form>
     </div>
 </div>
+
+@if($hasSubmitted)
+<div id="kaporSummaryCard" class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; background: var(--bg-card);">
+    <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--success);">
+                    <i class="ri-checkbox-circle-fill" style="font-size: 18px;"></i>
+                </span>
+                Ringkasan Ukuran Tersimpan
+            </h3>
+            <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-muted);">Data Kaporlap Anda untuk TA {{ $fiscalYear }} telah terekam.</p>
+        </div>
+        <button type="button" onclick="document.getElementById('kaporForm').style.display='block'; document.getElementById('kaporSummaryCard').style.display='none';" class="btn" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 8px; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
+            <i class="ri-edit-2-line"></i> Edit Data
+        </button>
+    </div>
+    
+    <div class="card-body" style="padding: 24px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+            @php
+                $summaryItems = [
+                    'Kemeja' => $kaporSizes['kemeja'] ?? '-',
+                    'Celana/Rok' => $kaporSizes['celana'] ?? '-',
+                    'Olahraga' => $kaporSizes['olahraga'] ?? '-',
+                    'Jaket' => $kaporSizes['jaket'] ?? '-',
+                    'Tutup Kepala' => $kaporSizes['topi'] ?? '-',
+                    'Sabuk' => $kaporSizes['sabuk'] ?? '-',
+                    'Jilbab' => $kaporSizes['jilbab'] ?? '-',
+                    'Sepatu Dinas' => $kaporSizes['sepatu_dinas'] ?? '-',
+                    'Sepatu Olahraga' => $kaporSizes['sepatu_olahraga'] ?? '-',
+                ];
+            @endphp
+            @foreach($summaryItems as $label => $val)
+                @if($label === 'Jilbab' && $gender !== 'P')
+                    @continue
+                @endif
+                <div style="background: var(--bg-body); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">{{ $label }}</div>
+                    <div style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-top: 4px;">{{ $val ?: '-' }}</div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- Status Cards (Dipindah ke Bawah Form) --}}
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">

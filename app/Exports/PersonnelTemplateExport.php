@@ -41,6 +41,9 @@ class PersonnelTemplateExport implements FromCollection, ShouldAutoSize, WithEve
                 '42', // Sabuk
                 '-', // Jilbab
                 'CONTOH KETERANGAN',
+                'CONTOH KET.1',
+                'CONTOH KET.2',
+                'CONTOH KET.3',
             ],
         ]);
     }
@@ -57,9 +60,9 @@ class PersonnelTemplateExport implements FromCollection, ShouldAutoSize, WithEve
             ['DATA UKURAN KAPOR PERSONEL SATKER BIRO LOGISTIK'],
             ['UNTUK DUKUNGAN KAPOR TA. '.$fiscalYear],
             [''],
-            ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'UKURAN', '', '', '', '', '', '', '', '', 'KETERANGAN'],
-            ['', '', '', '', '', '', '', '', 'TUTUP KEPALA', 'TUTUP BADAN', '', '', 'TUTUP KAKI SEPATU', '', 'JAKET', 'SABUK', 'JILBAB', ''],
-            ['', '', '', '', '', '', '', '', '', 'KEMEJA', 'CELANA / ROK', 'T.SHIRT / OLAHRAGA', 'DINAS', 'OLAHRAGA', '', '', '', ''],
+            ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'UKURAN', '', '', '', '', '', '', '', '', 'KETERANGAN', 'KET. 1', 'KET.2', 'KET.3'],
+            ['', '', '', '', '', '', '', '', 'TUTUP KEPALA', 'TUTUP BADAN', '', '', 'TUTUP KAKI SEPATU', '', 'JAKET', 'SABUK', 'JILBAB', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', 'KEMEJA', 'CELANA / ROK', 'T.SHIRT / OLAHRAGA', 'DINAS', 'OLAHRAGA', '', '', '', '', '', '', ''],
         ];
     }
 
@@ -84,14 +87,14 @@ class PersonnelTemplateExport implements FromCollection, ShouldAutoSize, WithEve
                 $sheet = $event->sheet->getDelegate();
 
                 // Alignment for central headers
-                $sheet->getStyle('A1:R6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('A1:U6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // Merging Top Headers
                 $sheet->mergeCells('A1:C1');
                 $sheet->mergeCells('A2:C2');
                 $sheet->mergeCells('A3:C3');
-                $sheet->mergeCells('A5:R5');
-                $sheet->mergeCells('A6:R6');
+                $sheet->mergeCells('A5:U5');
+                $sheet->mergeCells('A6:U6');
 
                 // Merging Table Headers
                 $sheet->mergeCells('A8:A10'); // NO
@@ -112,6 +115,9 @@ class PersonnelTemplateExport implements FromCollection, ShouldAutoSize, WithEve
                 $sheet->mergeCells('Q9:Q10'); // JILBAB
 
                 $sheet->mergeCells('R8:R10'); // KETERANGAN
+                $sheet->mergeCells('S8:S10'); // KET.1
+                $sheet->mergeCells('T8:T10'); // KET.2
+                $sheet->mergeCells('U8:U10'); // KET.3
 
                 // ── Format kolom NRP (E) sebagai TEXT agar NIP 18 digit tidak kehilangan presisi ──
                 $sheet->getStyle('E11:E5000')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
@@ -125,10 +131,10 @@ class PersonnelTemplateExport implements FromCollection, ShouldAutoSize, WithEve
                         ],
                     ],
                 ];
-                $sheet->getStyle('A8:R11')->applyFromArray($styleArray);
+                $sheet->getStyle('A8:U11')->applyFromArray($styleArray);
 
                 // Background color for header
-                $sheet->getStyle('A8:R10')->getFill()
+                $sheet->getStyle('A8:U10')->getFill()
                     ->setFillType(Fill::FILL_SOLID)
                     ->getStartColor()->setARGB('F2F2F2');
 

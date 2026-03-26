@@ -118,7 +118,7 @@
             <div class="swb-icon"><i class="ri-error-warning-fill"></i></div>
             <div>
                 <div class="swb-title">
-                    {{ number_format(collect($sizeWarnings)->sum('missing')) }} personel belum mengisi data ukuran kapor
+                    {{ number_format(collect($sizeWarnings)->sum('missing')) }} personel belum mengisi ukuran yang relevan
                 </div>
                 <div class="swb-subtitle">
                     Memengaruhi {{ count($sizeWarnings) }} jenis barang — klik untuk melihat rincian
@@ -126,7 +126,7 @@
             </div>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
-            <a href="{{ route('admin.personnel.index', ['status' => 'incomplete']) }}"
+            <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'incomplete_scope' => 'size_only']) }}"
                onclick="event.stopPropagation()"
                class="swb-link-btn"
                title="Buka halaman personel yang belum isi ukuran">
@@ -143,6 +143,9 @@
                 <div class="swb-item-name">
                     <i class="ri-shirt-line"></i>
                     {{ $warn['item_name'] }}
+                    <span style="margin-left:8px; font-size:11px; color:#92400E; background:#FEF3C7; border:1px solid #FCD34D; border-radius:999px; padding:2px 8px;">
+                        {{ $warn['size_label'] }}
+                    </span>
                 </div>
                 <div class="swb-item-stats">
                     <span class="swb-stat">
@@ -191,7 +194,7 @@
                                 <span style="font-size:11px; color:#64748B; margin-left:4px;">{{ $sk['total'] > 0 ? round(($sk['valid'] / $sk['total']) * 100) : 0 }}%</span>
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'satker_id' => $sk['satker_id']]) }}"
+                                <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'incomplete_scope' => 'size_only', 'missing_size' => $warn['size_key'], 'kapor_item_id' => $warn['kapor_item_id'], 'satker_id' => $sk['satker_id']]) }}"
                                    class="swb-satker-link"
                                    title="Lihat personel belum isi ukuran di {{ $sk['satker_name'] }}">
                                     <i class="ri-external-link-line"></i> Isi Ukuran
@@ -214,72 +217,82 @@
 <div class="layout-stack">
 
     {{-- Top Section: Export Actions --}}
-    <div class="action-panel" style="margin-bottom: 24px; padding: 16px;">
-        <div style="margin-bottom: 12px;">
-            <h3 style="font-size: 13px; font-weight: 700; color: #64748B; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
-                <i class="ri-printer-line" style="margin-right: 4px;"></i> Opsi Cetak & Unduh
-            </h3>
+    <div class="action-panel action-panel-exports" style="margin-bottom: 24px;">
+        <div class="action-panel-header">
+            <div class="action-panel-title-wrap">
+                <div class="action-panel-icon">
+                    <i class="ri-printer-line"></i>
+                </div>
+                <div>
+                    <h3 class="action-panel-title">Opsi Cetak & Unduh</h3>
+                    <p class="action-panel-subtitle">Pilih format keluaran yang dibutuhkan untuk rekap, dokumen kerja, dan pemeriksaan data.</p>
+                </div>
+            </div>
         </div>
-        <div class="export-actions-grid-horizontal" style="gap: 12px;">
-            
-            {{-- Excel / Detail Download --}}
-            <div class="export-card-group-horizontal" style="gap: 12px;">
-                
-                <a href="{{ route('admin.budget.export-csv', $budgetPackage) }}" class="export-btn export-green" data-download data-estimate="10" style="padding: 12px;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-file-excel-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Export Rekapan</h4>
-                        <p style="font-size: 11px;">Unduh file .xlsx</p>
-                    </div>
-                    <div class="export-loading">
-                        <i class="ri-loader-4-line spinner"></i>
-                    </div>
-                </a>
 
-                <a href="{{ route('admin.budget.export-pdf', $budgetPackage) }}" class="export-btn export-red" data-download data-estimate="15" style="padding: 12px;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-file-pdf-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Export Rekapan PDF</h4>
-                        <p style="font-size: 11px;">Unduh file .pdf</p>
-                    </div>
-                    <div class="export-loading">
-                        <i class="ri-loader-4-line spinner"></i>
-                    </div>
-                </a>
-                
-                <a href="{{ route('admin.budget.export-detail', $budgetPackage) }}" class="export-btn export-purple" data-download data-estimate="20" style="padding: 12px;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-team-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Export Nominatif</h4>
-                        <p style="font-size: 11px;">Detail per personil</p>
-                    </div>
-                    <div class="export-loading">
-                        <i class="ri-loader-4-line spinner"></i>
-                    </div>
-                </a>
-            </div>
+        <div class="export-actions-grid">
+            <a href="{{ route('admin.budget.export-csv', $budgetPackage) }}" class="export-btn export-green" data-download data-estimate="10">
+                <div class="export-icon"><i class="ri-file-excel-line"></i></div>
+                <div class="export-info">
+                    <h4>Export Rekapan</h4>
+                    <p>Rekap utama `.xlsx`.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-download-2-line"></i></div>
+                <div class="export-loading">
+                    <i class="ri-loader-4-line spinner"></i>
+                </div>
+            </a>
 
+            <a href="{{ route('admin.budget.export-pdf', $budgetPackage) }}" class="export-btn export-red" data-download data-estimate="15">
+                <div class="export-icon"><i class="ri-file-pdf-line"></i></div>
+                <div class="export-info">
+                    <h4>Export Rekapan PDF</h4>
+                    <p>Rekap siap baca `.pdf`.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-download-2-line"></i></div>
+                <div class="export-loading">
+                    <i class="ri-loader-4-line spinner"></i>
+                </div>
+            </a>
 
-            {{-- HPS & Analysis --}}
-            <div class="export-card-group-horizontal" style="gap: 12px;">
+            <a href="{{ route('admin.budget.export-detail', $budgetPackage) }}" class="export-btn export-purple" data-download data-estimate="20">
+                <div class="export-icon"><i class="ri-team-line"></i></div>
+                <div class="export-info">
+                    <h4>Export Nominatif</h4>
+                    <p>Detail per personil.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-download-2-line"></i></div>
+                <div class="export-loading">
+                    <i class="ri-loader-4-line spinner"></i>
+                </div>
+            </a>
 
-                <a href="{{ route('admin.budget.recap', $budgetPackage) }}" class="export-btn export-blue" style="padding: 12px;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-user-shared-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Analisis Duplikasi</h4>
-                        <p style="font-size: 11px;">Cek personil ganda</p>
-                    </div>
-                </a>
-                
-                <a href="{{ route('admin.budget.invoice', $budgetPackage) }}" class="export-btn export-orange" style="padding: 12px;">
-                    <div class="export-icon" style="width: 32px; height: 32px; font-size: 16px;"><i class="ri-file-text-line"></i></div>
-                    <div class="export-info">
-                        <h4 style="font-size: 12px;">Invoice HPS</h4>
-                        <p style="font-size: 11px;">Generate format HPS</p>
-                    </div>
-                </a>
-            </div>
+            <button type="button" onclick="openSppmModal()" class="export-btn export-indigo export-btn-button">
+                <div class="export-icon"><i class="ri-file-word-line"></i></div>
+                <div class="export-info">
+                    <h4>Cetak SPPM</h4>
+                    <p>Dokumen SPPM Word.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
+            </button>
 
+            <a href="{{ route('admin.budget.recap', $budgetPackage) }}" class="export-btn export-blue">
+                <div class="export-icon"><i class="ri-user-shared-line"></i></div>
+                <div class="export-info">
+                    <h4>Analisis Duplikasi</h4>
+                    <p>Cek personil ganda.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
+            </a>
+
+            <a href="{{ route('admin.budget.invoice', $budgetPackage) }}" class="export-btn export-orange">
+                <div class="export-icon"><i class="ri-file-text-line"></i></div>
+                <div class="export-info">
+                    <h4>Invoice HPS</h4>
+                    <p>Generate format HPS.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
+            </a>
         </div>
     </div>
 
@@ -376,6 +389,69 @@
     </div>
 </div>
 @endif
+
+{{-- Modal Export SPPM --}}
+<div id="sppmModal" class="modal-overlay hidden">
+    <div class="modal-container" style="max-width: 550px; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2);">
+        <div class="modal-header" style="background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border-bottom: 1px solid #E2E8F0; padding: 20px 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="font-size: 17px; font-weight: 800; color: #0F172A; margin: 0; display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #4F46E5; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);">
+                        <i class="ri-file-word-2-fill"></i>
+                    </div>
+                    Pengaturan Cetak SPPM
+                </h3>
+                <button onclick="closeSppmModal()" class="btn-close" style="background: #E2E8F0; border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 16px; cursor: pointer; color: #64748B; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <p style="font-size: 12.5px; color: #64748B; margin: 6px 0 0 42px;">Lengkapi detail surat perintah dan tanggal sebelum mengunduh dokumen.</p>
+        </div>
+        <div class="modal-body" style="padding: 24px; background: #fff;">
+            <form id="sppmForm" method="POST" action="{{ route('admin.budget.export-sppm', $budgetPackage) }}">
+                @csrf
+                <div style="display: flex; flex-direction: column; gap: 18px;">
+                    
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+                            <i class="ri-barcode-box-line" style="color: #64748B; font-size: 14px;"></i> Nomor SPPM
+                        </label>
+                        <input type="text" name="sppm_number" class="form-control" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #F8FAFC; transition: all 0.2s; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" value="SPPM/           /VII/LOG.5.16.1./2025/ROLOG" required placeholder="Masukkan Nomor SPPM">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+                                <i class="ri-file-paper-2-line" style="color: #64748B; font-size: 14px;"></i> Nomor Sprin
+                            </label>
+                            <input type="text" name="sprin_number" class="form-control" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #F8FAFC; transition: all 0.2s; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);" value="Sprin/1006/VII/LOG.5.16.1./2025" required placeholder="Contoh: Sprin/1006/VII/...">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+                                <i class="ri-calendar-event-line" style="color: #64748B; font-size: 14px;"></i> Tanggal Sprin
+                            </label>
+                            <input type="date" name="sprin_date" class="form-control" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #fff; transition: all 0.2s;" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+                            <i class="ri-calendar-check-line" style="color: #64748B; font-size: 14px;"></i> Bulan & Tahun Surat (SPPM)
+                        </label>
+                        <input type="month" name="sppm_date" class="form-control" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 13.5px; background: #fff; transition: all 0.2s;" required value="{{ \Carbon\Carbon::now()->format('Y-m') }}">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; padding-top: 16px; border-top: 1px dashed #E2E8F0;">
+                    <button type="button" onclick="closeSppmModal()" class="btn btn-outline" style="padding: 10px 18px; border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 10px; font-weight: 600; font-size: 13.5px; color: #475569; cursor: pointer; transition: all 0.2s;">Batal</button>
+                    <button type="submit" id="btnSubmitSppm" class="btn" style="padding: 10px 20px; background: #4F46E5; color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3); transition: all 0.2s;">
+                        <i class="ri-download-cloud-2-line"></i> Download Dokumen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('styles')
@@ -653,81 +729,160 @@
         background: #ffffff;
         border: 1px solid #E2E8F0;
         border-radius: 16px;
-        padding: 20px;
+        padding: 16px 18px;
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
     }
-    .export-actions-grid-horizontal {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
+    .action-panel-exports {
+        background:
+            linear-gradient(180deg, rgba(241, 245, 249, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
+        border-color: #D8E1EC;
     }
-    .export-card-group-horizontal {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
+    .action-panel-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 10px;
+    }
+    .action-panel-title-wrap {
+        display: flex;
+        align-items: flex-start;
         gap: 12px;
     }
-    .export-divider {
-        display: flex; align-items: center; text-align: center;
-        position: relative;
+    .action-panel-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        color: #1D4ED8;
+        background: linear-gradient(180deg, #DBEAFE 0%, #EFF6FF 100%);
+        border: 1px solid #BFDBFE;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+        flex-shrink: 0;
     }
-    .export-divider::before {
-        content: ''; position: absolute; left: 0; right: 0; top: 50%;
-        border-top: 1px dashed #E2E8F0; z-index: 1;
+    .action-panel-title {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #334155;
+        margin: 0 0 2px 0;
+        letter-spacing: 0.1px;
     }
-    .export-divider span { position: relative; z-index: 2; margin: 0 auto; }
+    .action-panel-subtitle {
+        font-size: 11px;
+        color: #64748B;
+        margin: 0;
+        line-height: 1.3;
+        max-width: 640px;
+    }
+    .export-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
 
     .export-btn {
         display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px;
-        background: #ffffff;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
+        align-items: flex-start;
+        gap: 11px;
+        padding: 10px 12px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(244,247,251,0.98) 100%);
+        border: 1px solid #DDE6F0;
+        border-radius: 14px;
         text-decoration: none;
         color: inherit;
-        transition: all 0.2s;
+        transition: all 0.22s ease;
         position: relative;
         overflow: hidden;
+        min-height: 68px;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
     }
     .export-btn:hover {
-        border-color: transparent;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        transform: translateY(-2px);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.12);
     }
     .export-icon {
         width: 38px; height: 38px;
-        border-radius: 10px;
+        border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 18px;
+        font-size: 20px;
         flex-shrink: 0;
         transition: transform 0.2s;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 5px rgba(0,0,0,0.08);
     }
-    .export-btn:hover .export-icon { transform: scale(1.1); }
-    .export-info { flex: 1; }
-    .export-info h4 { font-size: 13px; font-weight: 700; color: #1E293B; margin: 0 0 2px 0; }
-    .export-info p { font-size: 12px; color: #64748B; margin: 0; }
+    .export-btn:hover .export-icon { transform: scale(1.1) rotate(5deg); }
+    .export-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .export-info h4 {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #0F172A;
+        margin: 1px 0 2px 0;
+        line-height: 1.2;
+    }
+    .export-info p {
+        font-size: 11px;
+        color: #334155;
+        margin: 0;
+        line-height: 1.25;
+        font-weight: 500;
+    }
+    .export-trailing {
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #475569;
+        background: #ffffff;
+        border: 1px solid #CBD5E1;
+        flex-shrink: 0;
+        align-self: center;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .export-btn:hover .export-trailing {
+        color: #0F172A;
+        transform: translateX(3px);
+        border-color: #94A3B8;
+        background: #F8FAFC;
+    }
+    .export-btn-button {
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+    }
 
-    /* Color Variants for Export Cards */
-    .export-blue { border-color: #E0E7FF; }
-    .export-blue:hover { background: #EEF2FF; border-color: #C7D2FE; }
-    .export-blue .export-icon { background: #E0E7FF; color: #4F46E5; }
+    /* Color Variants for Export Cards - Vibrant and Clear */
+    .export-blue { border-color: #93C5FD; background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); }
+    .export-blue:hover { border-color: #60A5FA; background: linear-gradient(135deg, #E0F2FE 0%, #BFDBFE 100%); }
+    .export-blue .export-icon { background: #3B82F6; color: #ffffff; }
     
-    .export-orange { border-color: #FFEDD5; }
-    .export-orange:hover { background: #FFF7ED; border-color: #FED7AA; }
-    .export-orange .export-icon { background: #FFEDD5; color: #F97316; }
+    .export-orange { border-color: #FDBA74; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); }
+    .export-orange:hover { border-color: #FB923C; background: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%); }
+    .export-orange .export-icon { background: #F97316; color: #ffffff; }
 
-    .export-green { border-color: #DCFCE7; }
-    .export-green:hover { background: #F0FDF4; border-color: #BBF7D0; }
-    .export-green .export-icon { background: #DCFCE7; color: #16A34A; }
+    .export-green { border-color: #86EFAC; background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); }
+    .export-green:hover { border-color: #4ADE80; background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%); }
+    .export-green .export-icon { background: #22C55E; color: #ffffff; }
 
-    .export-purple { border-color: #F3E8FF; }
-    .export-purple:hover { background: #FAF5FF; border-color: #E9D5FF; }
-    .export-purple .export-icon { background: #F3E8FF; color: #9333EA; }
+    .export-purple { border-color: #D8B4FE; background: linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%); }
+    .export-purple:hover { border-color: #C084FC; background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%); }
+    .export-purple .export-icon { background: #A855F7; color: #ffffff; }
 
-    .export-red { border-color: #FECACA; }
-    .export-red:hover { background: #FEF2F2; border-color: #FCA5A5; }
-    .export-red .export-icon { background: #FEE2E2; color: #DC2626; }
+    .export-indigo { border-color: #A5B4FC; background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); }
+    .export-indigo:hover { border-color: #818CF8; background: linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%); }
+    .export-indigo .export-icon { background: #6366F1; color: #ffffff; }
+
+    .export-red { border-color: #FCA5A5; background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%); }
+    .export-red:hover { border-color: #F87171; background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); }
+    .export-red .export-icon { background: #EF4444; color: #ffffff; }
 
     /* Loading overlay */
     .export-btn .export-loading {
@@ -738,6 +893,20 @@
     .export-btn.is-loading .export-loading { display: flex; }
     .spinner { font-size: 24px; color: #C62828; animation: spin 1s linear infinite; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* Modal Standard Styles */
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px);
+        z-index: 9999; display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden; transition: all 0.3s ease;
+    }
+    .modal-overlay:not(.hidden) { opacity: 1; visibility: visible; }
+    .modal-container {
+        background: #fff; width: 100%; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transform: translateY(20px) scale(0.95); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .modal-overlay:not(.hidden) .modal-container { transform: translateY(0) scale(1); }
+    .form-control:focus { outline: none; border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
     /* Responsive */
     @media (min-width: 1600px) {
@@ -772,8 +941,7 @@
         .layout-grid { grid-template-columns: 1fr; }
         .wizard-track { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
         .export-actions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-        .export-card-group { display: contents; }
-        .export-actions-grid-horizontal { grid-template-columns: 1fr; }
+        .export-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 768px) {
         .wizard-track { grid-template-columns: 1fr; }
@@ -781,7 +949,10 @@
         .data-table { min-width: 600px; }
         .table-wrap { overflow-x: auto; }
         .satker-dropdown-wrapper { padding-left: 16px; }
-        .export-card-group-horizontal { grid-template-columns: 1fr; }
+        .action-panel-header { flex-direction: column; }
+        .export-actions-grid { grid-template-columns: 1fr; }
+        .export-btn { min-height: auto; }
+        .action-panel-subtitle { display: none; }
     }
 </style>
 @endsection
@@ -841,6 +1012,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 btn.classList.remove('is-loading');
             }
         });
+    });
+
+    // SPPM Modal Logic
+    window.openSppmModal = function() {
+        const modal = document.getElementById('sppmModal');
+        modal.classList.remove('hidden');
+    };
+
+    window.closeSppmModal = function() {
+        const modal = document.getElementById('sppmModal');
+        modal.classList.add('hidden');
+    };
+
+    document.getElementById('sppmForm').addEventListener('submit', function(e) {
+        // We do not prevent default here, let the form submit normally
+        // which will trigger the download and not navigate away
+        const btn = document.getElementById('btnSubmitSppm');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="ri-loader-4-line spinner" style="color: #fff; font-size: 16px;"></i> Memproses...';
+        btn.disabled = true;
+
+        // Form post directly reloads/downloads. Since it's a file download via POST 
+        // the browser will stay on the current page. We just clean up the modal state after a brief delay.
+        setTimeout(() => {
+            closeSppmModal();
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }, 1500);
+    });
+
+    // Close modal on click outside
+    document.getElementById('sppmModal').addEventListener('click', function(e) {
+        if(e.target === this) {
+            closeSppmModal();
+        }
     });
 });
 
@@ -928,4 +1134,3 @@ function toggleWarnDetail(idx) {
 }
 </script>
 @endsection
-

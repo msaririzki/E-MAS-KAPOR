@@ -1,12 +1,11 @@
 @extends('layouts.app')
 
 @section('title', 'Dashboard Admin Satker')
-@section('page-title', 'Dashboard — ' . $stats['satker_name'])
+@section('page-title', 'Dashboard - ' . $stats['satker_name'])
 @section('page-subtitle', 'Tahun Anggaran ' . $stats['fiscal_year'])
 
 @section('content')
     <div class="stats-row stats-row-5">
-        {{-- Total POLRI --}}
         <div class="stat-card">
             <div class="stat-top">
                 <span class="stat-label">Total POLRI</span>
@@ -17,7 +16,6 @@
             <div class="stat-footer">Personil Aktif</div>
         </div>
 
-        {{-- Total PNS --}}
         <div class="stat-card">
             <div class="stat-top">
                 <span class="stat-label">Total PNS/P3K</span>
@@ -28,7 +26,6 @@
             <div class="stat-footer">Personil Aktif</div>
         </div>
 
-        {{-- Total Personil (Combined) --}}
         <div class="stat-card">
             <div class="stat-top">
                 <span class="stat-label">Total Personil</span>
@@ -39,10 +36,9 @@
             <div class="stat-footer">Polri + PNS</div>
         </div>
 
-        {{-- Sudah Input --}}
         <div class="stat-card">
             <div class="stat-top">
-                <span class="stat-label">Sudah Input</span>
+                <span class="stat-label">Sudah Isi Ukuran</span>
                 <div class="stat-icon-sm" style="background:var(--info-bg);color:var(--info);"><i
                         class="ri-check-double-line"></i></div>
             </div>
@@ -51,21 +47,17 @@
                 progres</div>
         </div>
 
-        {{-- Belum Input --}}
         <div class="stat-card">
             <div class="stat-top">
-                <span class="stat-label">Belum Input</span>
+                <span class="stat-label">Belum Isi Ukuran</span>
                 <div class="stat-icon-sm" style="background:#fef2f2;color:var(--danger);"><i class="ri-time-line"></i></div>
             </div>
             <div class="stat-value" style="color:var(--danger);">{{ number_format($stats['personnel_pending']) }}</div>
-            <div class="stat-footer">Menunggu pengisian</div>
+            <div class="stat-footer">Menunggu ukuran wajib</div>
         </div>
     </div>
 
-    {{-- Progress & Personil Belum Input in a grid layout (optional, or stacked) --}}
     <div style="display: flex; flex-direction: column; gap: 24px;">
-
-        {{-- Progress Panel --}}
         <div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden;">
             <div class="card-header" style="background: rgba(var(--brand-rgb, 198, 40, 40), 0.03); border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between;">
                 <div>
@@ -73,16 +65,16 @@
                         <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--brand-bg); color: var(--brand);">
                             <i class="ri-bar-chart-box-line" style="font-size: 18px;"></i>
                         </span>
-                        Progres Pengisian — {{ $stats['satker_name'] }}
+                        Progres Ukuran - {{ $stats['satker_name'] }}
                     </h3>
                     <p style="margin: 4px 0 0 42px; font-size: 13px; color: var(--text-muted);">
-                        Mendeteksi jumlah personil yang telah melengkapi data kapor.
+                        Mendeteksi jumlah personil yang telah melengkapi ukuran kapor wajib.
                     </p>
                 </div>
             </div>
             <div class="card-body" style="padding: 24px;">
                 @php $pct = $stats['fill_rate']; @endphp
-                
+
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px;">
                     <div style="font-size: 14px; font-weight: 600; color: var(--text-main);">
                         <span style="color: {{ $pct >= 80 ? 'var(--success)' : ($pct >= 50 ? 'var(--warning)' : 'var(--danger)') }}; font-size: 16px;">{{ $stats['personnel_submitted'] }}</span>
@@ -102,7 +94,6 @@
             </div>
         </div>
 
-        {{-- Personil Belum Input Panel --}}
         <div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden;">
             <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
                 <div>
@@ -110,17 +101,17 @@
                         <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--danger-bg); color: var(--danger);">
                             <i class="ri-error-warning-line" style="font-size: 18px;"></i>
                         </span>
-                        Personil Belum Input
+                        Personil Belum Isi Ukuran
                         @if(count($pendingPersonnel) > 0)
-                        <span style="background: var(--danger); color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">Maks. 20 ditampillkan</span>
+                        <span style="background: var(--danger); color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; margin-left: 8px;">Maks. 20 ditampilkan</span>
                         @endif
                     </h3>
                 </div>
-                <a href="{{ route('admin-satker.monitor') }}" class="btn btn-outline" style="border-radius: 8px; font-size: 13px; font-weight: 600; padding: 8px 16px; border-color: var(--border-color); color: var(--text-main); display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                    Lihat Monitoring Lengkap <i class="ri-arrow-right-line"></i>
+                <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'incomplete_scope' => 'size_only']) }}" class="btn btn-outline" style="border-radius: 8px; font-size: 13px; font-weight: 600; padding: 8px 16px; border-color: var(--border-color); color: var(--text-main); display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                    Lihat Daftar Ukuran <i class="ri-arrow-right-line"></i>
                 </a>
             </div>
-            
+
             <div class="card-body flush">
                 @if(count($pendingPersonnel) > 0)
                 <div class="table-responsive" style="overflow-x: auto;">
@@ -148,8 +139,8 @@
                                         {{ $p->rank->name ?? '—' }}
                                     </td>
                                     <td style="padding: 16px 24px;">
-                                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; background: var(--warning-bg); color: var(--warning-border); color: #B45309; border: 1px solid var(--warning-border); white-space: nowrap;">
-                                            <i class="ri-time-line"></i> Belum Input
+                                        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; background: var(--warning-bg); color: #B45309; border: 1px solid var(--warning-border); white-space: nowrap;">
+                                            <i class="ri-time-line"></i> Belum Isi Ukuran
                                         </span>
                                     </td>
                                 </tr>
@@ -163,11 +154,10 @@
                             <i class="ri-checkbox-circle-fill" style="font-size: 32px;"></i>
                         </div>
                         <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #065F46;">Kerja Bagus!</h4>
-                        <p style="margin: 0; font-size: 14px; color: #047857;">Semua personil di {{ $stats['satker_name'] }} telah mengisi data kapor. 🎉</p>
+                        <p style="margin: 0; font-size: 14px; color: #047857;">Semua personil di {{ $stats['satker_name'] }} telah mengisi ukuran wajib kapor.</p>
                     </div>
                 @endif
             </div>
         </div>
-
     </div>
 @endsection

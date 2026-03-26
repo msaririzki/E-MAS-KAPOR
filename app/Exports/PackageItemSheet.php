@@ -7,6 +7,7 @@ use App\Models\InvoiceSetting;
 use App\Models\PackageItem;
 use App\Models\Personnel;
 use App\Models\Satker;
+use App\Services\KaporRequirementService;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -79,7 +80,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
         if (str_contains($name, 'SEPATU')) {
             return 'sepatu_dinas';
         }
-        if (str_contains($name, 'JAKET')) {
+        if (str_contains($name, 'JAKET') || str_contains($name, 'ROMPI')) {
             return 'jaket';
         }
         if (str_contains($name, 'OLAHRAGA')) {
@@ -110,41 +111,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             $query = Personnel::where('satker_id', $satker->id)
                 ->where('is_active', true);
 
-            if (! empty($filters['personnel_type'])) {
-                $mappedTypes = array_map(function ($t) {
-                    $lower = strtolower($t);
-                    if ($lower === 'polri') {
-                        return 'Polri';
-                    }
-                    if ($lower === 'pns') {
-                        return 'PNS';
-                    }
-                    if ($lower === 'pppk') {
-                        return 'PPPK';
-                    }
-
-                    return $t;
-                }, $filters['personnel_type']);
-                $query->whereIn('personnel_type', $mappedTypes);
-            }
-
-            if (! empty($filters['gender'])) {
-                $query->whereIn('gender', $filters['gender']);
-            }
-
-            if (! empty($filters['rank_categories'])) {
-                $query->whereHas('rank', function ($q) use ($filters) {
-                    $q->whereIn('category', $filters['rank_categories']);
-                });
-            }
-
-            if (! empty($filters['keterangan'])) {
-                $query->whereIn('keterangan', $filters['keterangan']);
-            }
-
-            if (! empty($filters['golongan'])) {
-                $query->whereIn('golongan', $filters['golongan']);
-            }
+            app(KaporRequirementService::class)->applyRecipientFilters($query, $filters, $satker);
 
             $personnels = $query->get(['gender', 'kapor_sizes']);
 
@@ -202,41 +169,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             $query = Personnel::where('satker_id', $satker->id)
                 ->where('is_active', true);
 
-            if (! empty($filters['personnel_type'])) {
-                $mappedTypes = array_map(function ($t) {
-                    $lower = strtolower($t);
-                    if ($lower === 'polri') {
-                        return 'Polri';
-                    }
-                    if ($lower === 'pns') {
-                        return 'PNS';
-                    }
-                    if ($lower === 'pppk') {
-                        return 'PPPK';
-                    }
-
-                    return $t;
-                }, $filters['personnel_type']);
-                $query->whereIn('personnel_type', $mappedTypes);
-            }
-
-            if (! empty($filters['gender'])) {
-                $query->whereIn('gender', $filters['gender']);
-            }
-
-            if (! empty($filters['rank_categories'])) {
-                $query->whereHas('rank', function ($q) use ($filters) {
-                    $q->whereIn('category', $filters['rank_categories']);
-                });
-            }
-
-            if (! empty($filters['keterangan'])) {
-                $query->whereIn('keterangan', $filters['keterangan']);
-            }
-
-            if (! empty($filters['golongan'])) {
-                $query->whereIn('golongan', $filters['golongan']);
-            }
+            app(KaporRequirementService::class)->applyRecipientFilters($query, $filters, $satker);
 
             // Ambil gender + kapor_sizes untuk breakdown ukuran
             $personnels = $query->get(['gender', 'kapor_sizes']);
@@ -290,10 +223,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                         ->orWhereNull('gender');
                 });
             } else {
-                // Combined mode: ambil ukuran dari gender pertama (sama untuk kedua gender di olahraga)
-                $sizesQuery->where(function ($q) {
-                    $q->where('gender', 'L')->orWhereNull('gender');
-                });
+                $sizesQuery->whereNull('gender');
             }
             $sizeObjects = $sizesQuery->get();
             $availableSizes = $sizeObjects->pluck('size_label')->toArray();
@@ -325,6 +255,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                 'grandTotalWanita' => $data['grandTotalWanita'],
                 'settings' => $settings,
                 'sizeLabel' => $this->sizeLabel,
+                'sheetTitle' => $this->sheetName,
             ]);
         }
 
@@ -350,6 +281,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             'settings' => $settings,
             'genderLabel' => $genderLabel,
             'sizeLabel' => $this->sizeLabel,
+            'sheetTitle' => $this->sheetName,
         ]);
     }
 

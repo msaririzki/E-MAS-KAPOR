@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -64,6 +65,31 @@ class User extends Authenticatable
     public function personnel(): HasOne
     {
         return $this->hasOne(Personnel::class);
+    }
+
+    public function testimonials(): HasMany
+    {
+        return $this->hasMany(Testimonial::class);
+    }
+
+    public function isPersonnel(): bool
+    {
+        return $this->hasRole('personil');
+    }
+
+    public function usesEmailLogin(): bool
+    {
+        return ! $this->isPersonnel();
+    }
+
+    public function loginIdentifier(): ?string
+    {
+        return $this->usesEmailLogin() ? $this->email : $this->nrp_nip;
+    }
+
+    public function loginIdentifierLabel(): string
+    {
+        return $this->usesEmailLogin() ? 'Gmail' : 'NRP/NIP';
     }
 
     // ── Scopes ────────────────────────────────────────────────

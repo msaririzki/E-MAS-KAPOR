@@ -7,12 +7,19 @@ use App\Models\Personnel;
 use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\KaporRequirementService;
+use App\Services\TestimonialInsightService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly KaporRequirementService $kaporRequirementService,
+        private readonly TestimonialInsightService $testimonialInsightService,
+    ) {}
+
     /**
      * Route to the appropriate dashboard based on user role.
      */
@@ -24,7 +31,7 @@ class DashboardController extends Controller
             return $this->superadminDashboard($request);
         }
 
-        if ($user->hasRole('admin')) {
+        if ($user->hasAnyRole(['admin', 'admin_gudang'])) {
             return $this->adminDashboard();
         }
 
@@ -49,11 +56,7 @@ class DashboardController extends Controller
         // Total personel rill = jumlah record di database (sinkron dengan halaman Personel)
         $totalPersonnel = Personnel::count();
 
-        // Count Personnel who have complete data (kapor_sizes + rank_id + nrp)
-        $submittedCount = Personnel::whereNotNull('kapor_sizes')
-            ->whereNotNull('rank_id')
-            ->whereNotNull('nrp')
-            ->count();
+        $submittedCount = $this->countPersonnelWithCompleteSizes();
         $pendingCount = $totalPersonnel - $submittedCount;
         $fillRate = $totalPersonnel > 0 ? round(($submittedCount / $totalPersonnel) * 100, 1) : 0;
 
@@ -79,7 +82,7 @@ class DashboardController extends Controller
             'total_pns' => $totalPns,
             'total_satkers' => Satker::count(),
             'total_submissions' => $submittedCount,
-            'personnel_submitted' => $submittedCount, // Now consistent
+            'personnel_submitted' => $submittedCount,
             'personnel_pending' => $pendingCount,
             'fill_rate' => $fillRate,
             'total_kapor_items' => KaporItem::where('is_active', true)->count(),
@@ -94,10 +97,7 @@ class DashboardController extends Controller
             ->withCount(['personnels as total_personnel'])
             ->withCount([
                 'personnels as submitted_count' => function ($q) {
-                    // Sinkron dengan PersonnelController: data lengkap = kapor_sizes + rank_id + nrp
-                    $q->whereNotNull('kapor_sizes')
-                        ->whereNotNull('rank_id')
-                        ->whereNotNull('nrp');
+                    $q->whereNotNull('kapor_sizes');
                 },
             ])
             ->where(function ($query) use ($poldaId) {
@@ -106,16 +106,20 @@ class DashboardController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        $satkerStats->transform(function (Satker $satker) {
+            $satker->submitted_count = $this->countPersonnelWithCompleteSizes($satker->id);
+
+            return $satker;
+        });
+
         // Needs Attention: Incomplete Personnel Limit 5
         $incompletePersonnel = Personnel::with(['satker'])
-            ->where(function ($q) {
-                $q->whereNull('kapor_sizes')
-                    ->orWhereNull('rank_id')
-                    ->orWhereNull('nrp');
-            })
-            ->inRandomOrder() // So it feels dynamic, or we can use latest()
-            ->limit(5)
-            ->get();
+            ->select(['id', 'full_name', 'nrp', 'satker_id', 'gender', 'kapor_sizes', 'keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'])
+            ->inRandomOrder()
+            ->get()
+            ->filter(fn (Personnel $personnel) => ! $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
+            ->take(5)
+            ->values();
 
         // Activity Log (Spatie)
         $activities = [];
@@ -126,6 +130,8 @@ class DashboardController extends Controller
                 ->get();
         }
 
+        $testimonialInsights = $this->testimonialInsightService->getStatistics();
+
         return view('dashboard.superadmin', compact(
             'stats',
             'satkerStats',
@@ -133,7 +139,8 @@ class DashboardController extends Controller
             'fiscalYear',
             'defaultYear',
             'incompletePersonnel',
-            'activities'
+            'activities',
+            'testimonialInsights',
         ));
     }
 
@@ -144,10 +151,7 @@ class DashboardController extends Controller
         $totalPolri = Satker::sum('polri_count');
         $totalPns = Satker::sum('pns_count');
 
-        $submittedCount = Personnel::whereNotNull('kapor_sizes')
-            ->whereNotNull('rank_id')
-            ->whereNotNull('nrp')
-            ->count();
+        $submittedCount = $this->countPersonnelWithCompleteSizes();
         $totalPersonnel = Personnel::count();
 
         $stats = [
@@ -175,30 +179,7 @@ class DashboardController extends Controller
         $totalPns = $satker->pns_count ?? 0;
 
         $totalPersonnel = Personnel::where('satker_id', $satkerId)->count();
-
-        // Sinkron dengan PersonnelController::index() — cek kelengkapan setiap field kapor_sizes
-        $submittedCount = Personnel::where('satker_id', $satkerId)
-            ->whereNotNull('rank_id')
-            ->whereNotNull('nrp')
-            ->whereNotNull('kapor_sizes')
-            ->where(function ($q) {
-                $q->whereNotNull('kapor_sizes->topi')
-                    ->whereNotNull('kapor_sizes->kemeja')
-                    ->whereNotNull('kapor_sizes->celana')
-                    ->whereNotNull('kapor_sizes->olahraga')
-                    ->whereNotNull('kapor_sizes->sepatu_dinas')
-                    ->whereNotNull('kapor_sizes->sepatu_olahraga')
-                    ->whereNotNull('kapor_sizes->jaket')
-                    ->whereNotNull('kapor_sizes->sabuk');
-            })
-            ->where(function ($q) {
-                $q->where('gender', 'L')
-                    ->orWhere(function ($q2) {
-                        $q2->where('gender', 'P')
-                            ->whereNotNull('kapor_sizes->jilbab');
-                    });
-            })
-            ->count();
+        $submittedCount = $this->countPersonnelWithCompleteSizes($satkerId);
 
         $stats = [
             'satker_name' => $satker->name ?? '-',
@@ -213,13 +194,11 @@ class DashboardController extends Controller
 
         $pendingPersonnel = Personnel::with(['user', 'rank'])
             ->where('satker_id', $satkerId)
-            ->where(function ($q) {
-                $q->whereNull('kapor_sizes')
-                    ->orWhereNull('rank_id')
-                    ->orWhereNull('nrp');
-            })
-            ->limit(20)
-            ->get();
+            ->select(['id', 'user_id', 'rank_id', 'satker_id', 'full_name', 'nrp', 'gender', 'kapor_sizes', 'keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'])
+            ->get()
+            ->filter(fn (Personnel $personnel) => ! $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
+            ->take(20)
+            ->values();
 
         return view('dashboard.admin-satker', compact('stats', 'pendingPersonnel'));
     }
@@ -238,5 +217,25 @@ class DashboardController extends Controller
         }
 
         return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'fiscalYear'));
+    }
+
+    private function countPersonnelWithCompleteSizes(?int $satkerId = null): int
+    {
+        $query = Personnel::query()
+            ->select(['id', 'gender', 'kapor_sizes', 'keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4']);
+
+        if ($satkerId !== null) {
+            $query->where('satker_id', $satkerId);
+        }
+
+        $count = 0;
+
+        foreach ($query->cursor() as $personnel) {
+            if ($this->kaporRequirementService->personnelHasAllRequiredSizes($personnel)) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }
