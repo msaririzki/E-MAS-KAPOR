@@ -412,7 +412,7 @@
 
         {{-- ===== FLOATING SPLIT CARD ===== --}}
         <div class="login-card-split">
-            {{-- Left â€” Branding --}}
+            {{-- Left — Branding --}}
             <div class="card-brand">
                 <div class="card-brand-inner">
                     <div class="brand-header">
@@ -436,7 +436,7 @@
                 </div>
             </div>
 
-            {{-- Right â€” Form --}}
+            {{-- Right — Form --}}
             <div class="card-form">
                 <div class="form-header">
                     <h2>Selamat Datang</h2>
@@ -475,7 +475,7 @@
                                 name="password"
                                 id="password"
                                 class="field-input pr-icon"
-                                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                                placeholder="••••••••"
                                 required
                             >
                             <i class="ri-eye-line toggle-pw" id="togglePassword"></i>
@@ -499,7 +499,7 @@
                 </div>
 
                 <div class="form-footer-text">
-                    Â© {{ date('Y') }} E-Mas Kapor â€” Polda Nusa Tenggara Barat
+                    &copy; {{ date('Y') }} E-Mas Kapor — Polda Nusa Tenggara Barat
                 </div>
             </div>
         </div>
