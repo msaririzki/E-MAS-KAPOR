@@ -799,61 +799,58 @@
         min-height: 68px;
         box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
     }
-    .export-btn::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(135deg, rgba(255,255,255,0.76) 0%, rgba(255,255,255,0) 58%);
-        pointer-events: none;
-    }
     .export-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.12);
     }
     .export-icon {
-        width: 34px; height: 34px;
-        border-radius: 10px;
+        width: 38px; height: 38px;
+        border-radius: 12px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 17px;
+        font-size: 20px;
         flex-shrink: 0;
         transition: transform 0.2s;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 2px 5px rgba(0,0,0,0.08);
     }
-    .export-btn:hover .export-icon { transform: scale(1.1); }
+    .export-btn:hover .export-icon { transform: scale(1.1) rotate(5deg); }
     .export-info {
         flex: 1;
         min-width: 0;
     }
     .export-info h4 {
-        font-size: 12.5px;
+        font-size: 13.5px;
         font-weight: 800;
-        color: #1E293B;
-        margin: 1px 0 1px 0;
+        color: #0F172A;
+        margin: 1px 0 2px 0;
         line-height: 1.2;
     }
     .export-info p {
-        font-size: 10.5px;
-        color: #64748B;
+        font-size: 11px;
+        color: #334155;
         margin: 0;
         line-height: 1.25;
+        font-weight: 500;
     }
     .export-trailing {
-        width: 26px;
-        height: 26px;
-        border-radius: 9px;
+        width: 28px;
+        height: 28px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #64748B;
-        background: rgba(255, 255, 255, 0.82);
-        border: 1px solid rgba(203, 213, 225, 0.95);
+        color: #475569;
+        background: #ffffff;
+        border: 1px solid #CBD5E1;
         flex-shrink: 0;
         align-self: center;
         transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
     .export-btn:hover .export-trailing {
-        color: #475569;
-        transform: translateX(2px);
+        color: #0F172A;
+        transform: translateX(3px);
+        border-color: #94A3B8;
+        background: #F8FAFC;
     }
     .export-btn-button {
         width: 100%;
@@ -862,30 +859,30 @@
         font: inherit;
     }
 
-    /* Color Variants for Export Cards */
-    .export-blue { border-color: #C7D2FE; background: linear-gradient(180deg, #F2F7FF 0%, #E4EEFF 100%); }
-    .export-blue:hover { background: #E8F0FF; border-color: #A5B4FC; }
-    .export-blue .export-icon { background: linear-gradient(180deg, #DBEAFE 0%, #E0E7FF 100%); color: #4F46E5; }
+    /* Color Variants for Export Cards - Vibrant and Clear */
+    .export-blue { border-color: #93C5FD; background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); }
+    .export-blue:hover { border-color: #60A5FA; background: linear-gradient(135deg, #E0F2FE 0%, #BFDBFE 100%); }
+    .export-blue .export-icon { background: #3B82F6; color: #ffffff; }
     
-    .export-orange { border-color: #FED7AA; background: linear-gradient(180deg, #FFF5EC 0%, #FFEBD8 100%); }
-    .export-orange:hover { background: #FFF1E5; border-color: #FDBA74; }
-    .export-orange .export-icon { background: linear-gradient(180deg, #FFEDD5 0%, #FED7AA 100%); color: #EA580C; }
+    .export-orange { border-color: #FDBA74; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); }
+    .export-orange:hover { border-color: #FB923C; background: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%); }
+    .export-orange .export-icon { background: #F97316; color: #ffffff; }
 
-    .export-green { border-color: #BBF7D0; background: linear-gradient(180deg, #F0FFF4 0%, #DDFBE8 100%); }
-    .export-green:hover { background: #EAFBF0; border-color: #86EFAC; }
-    .export-green .export-icon { background: linear-gradient(180deg, #DCFCE7 0%, #BBF7D0 100%); color: #15803D; }
+    .export-green { border-color: #86EFAC; background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); }
+    .export-green:hover { border-color: #4ADE80; background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%); }
+    .export-green .export-icon { background: #22C55E; color: #ffffff; }
 
-    .export-purple { border-color: #E9D5FF; background: linear-gradient(180deg, #FBF5FF 0%, #F2E6FF 100%); }
-    .export-purple:hover { background: #F7EEFF; border-color: #D8B4FE; }
-    .export-purple .export-icon { background: linear-gradient(180deg, #F3E8FF 0%, #E9D5FF 100%); color: #9333EA; }
+    .export-purple { border-color: #D8B4FE; background: linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%); }
+    .export-purple:hover { border-color: #C084FC; background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%); }
+    .export-purple .export-icon { background: #A855F7; color: #ffffff; }
 
-    .export-indigo { border-color: #C7D2FE; background: linear-gradient(180deg, #F2F5FF 0%, #E2E9FF 100%); }
-    .export-indigo:hover { background: #E8ECFF; border-color: #A5B4FC; }
-    .export-indigo .export-icon { background: linear-gradient(180deg, #E0E7FF 0%, #C7D2FE 100%); color: #4338CA; }
+    .export-indigo { border-color: #A5B4FC; background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); }
+    .export-indigo:hover { border-color: #818CF8; background: linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%); }
+    .export-indigo .export-icon { background: #6366F1; color: #ffffff; }
 
-    .export-red { border-color: #FECACA; background: linear-gradient(180deg, #FFF4F4 0%, #FEE7E7 100%); }
-    .export-red:hover { background: #FEEBEC; border-color: #FCA5A5; }
-    .export-red .export-icon { background: linear-gradient(180deg, #FEE2E2 0%, #FECACA 100%); color: #DC2626; }
+    .export-red { border-color: #FCA5A5; background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%); }
+    .export-red:hover { border-color: #F87171; background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); }
+    .export-red .export-icon { background: #EF4444; color: #ffffff; }
 
     /* Loading overlay */
     .export-btn .export-loading {
