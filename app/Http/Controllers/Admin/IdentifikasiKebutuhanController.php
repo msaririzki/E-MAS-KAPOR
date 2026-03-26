@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\KaporItem;
 use App\Models\Kebutuhan;
+use App\Models\KebutuhanItem;
 use App\Models\Satker;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class IdentifikasiKebutuhanController extends Controller
 {
@@ -48,7 +51,59 @@ class IdentifikasiKebutuhanController extends Controller
             'ditolak' => Kebutuhan::where('status', 'ditolak')->count(),
         ];
 
-        return view('admin.identifikasi-kebutuhan.index', compact('kebutuhans', 'satkers', 'stats'));
+        // ── Item Popularity Statistics ─────────────────────────────
+        $totalKebutuhans = Kebutuhan::whereIn('status', ['diajukan', 'disetujui'])->count();
+
+        $itemStats = collect();
+        $categoryStats = collect();
+        if ($totalKebutuhans > 0) {
+            // Top 10 most requested items
+            $itemStats = KebutuhanItem::query()
+                ->select('kapor_item_id', DB::raw('COUNT(DISTINCT kebutuhan_id) as submission_count'))
+                ->whereHas('kebutuhan', fn ($q) => $q->whereIn('status', ['diajukan', 'disetujui']))
+                ->groupBy('kapor_item_id')
+                ->orderByDesc('submission_count')
+                ->limit(10)
+                ->get()
+                ->map(function ($row) use ($totalKebutuhans) {
+                    $kaporItem = KaporItem::find($row->kapor_item_id);
+
+                    return [
+                        'item_name' => $kaporItem->item_name ?? '-',
+                        'category' => $kaporItem->category ?? '-',
+                        'submission_count' => $row->submission_count,
+                        'percentage' => round(($row->submission_count / $totalKebutuhans) * 100, 1),
+                    ];
+                });
+
+            // Category summary: how many unique items per category were requested
+            $categoryStats = KebutuhanItem::query()
+                ->join('kapor_items', 'kebutuhan_items.kapor_item_id', '=', 'kapor_items.id')
+                ->join('kebutuhans', 'kebutuhan_items.kebutuhan_id', '=', 'kebutuhans.id')
+                ->whereIn('kebutuhans.status', ['diajukan', 'disetujui'])
+                ->select('kapor_items.category', DB::raw('COUNT(DISTINCT kebutuhan_items.kapor_item_id) as unique_items'), DB::raw('COUNT(kebutuhan_items.id) as total_requests'))
+                ->groupBy('kapor_items.category')
+                ->get()
+                ->map(function ($row) {
+                    $totalInCategory = KaporItem::where('category', $row->category)->count();
+                    return [
+                        'category' => $row->category,
+                        'unique_items' => $row->unique_items,
+                        'total_in_category' => $totalInCategory,
+                        'total_requests' => $row->total_requests,
+                        'coverage' => $totalInCategory > 0 ? round(($row->unique_items / $totalInCategory) * 100) : 0,
+                    ];
+                });
+        }
+
+        return view('admin.identifikasi-kebutuhan.index', compact(
+            'kebutuhans',
+            'satkers',
+            'stats',
+            'itemStats',
+            'categoryStats',
+            'totalKebutuhans',
+        ));
     }
 
     /**

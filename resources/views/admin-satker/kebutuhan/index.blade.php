@@ -32,41 +32,20 @@
 </div>
 
 {{-- Stats --}}
-<div class="stats-row" style="grid-template-columns: repeat(5, 1fr);">
+<div class="stats-row" style="grid-template-columns: repeat(2, 1fr);">
     <div class="stat-card">
         <div class="stat-top">
-            <span class="stat-label">Total</span>
+            <span class="stat-label">Total Pengajuan</span>
             <div class="stat-icon-sm" style="background: var(--info-bg); color: var(--info);"><i class="ri-file-list-3-line"></i></div>
         </div>
         <div class="stat-value">{{ $stats['total'] }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-top">
-            <span class="stat-label">Draft</span>
-            <div class="stat-icon-sm" style="background: var(--slate-100); color: var(--slate-600);"><i class="ri-draft-line"></i></div>
-        </div>
-        <div class="stat-value">{{ $stats['draft'] }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-top">
             <span class="stat-label">Diajukan</span>
-            <div class="stat-icon-sm" style="background: var(--warning-bg); color: var(--warning);"><i class="ri-time-line"></i></div>
-        </div>
-        <div class="stat-value">{{ $stats['diajukan'] }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-top">
-            <span class="stat-label">Disetujui</span>
             <div class="stat-icon-sm" style="background: var(--success-bg); color: var(--success);"><i class="ri-checkbox-circle-line"></i></div>
         </div>
-        <div class="stat-value">{{ $stats['disetujui'] }}</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-top">
-            <span class="stat-label">Ditolak</span>
-            <div class="stat-icon-sm" style="background: var(--danger-bg); color: var(--danger);"><i class="ri-close-circle-line"></i></div>
-        </div>
-        <div class="stat-value">{{ $stats['ditolak'] }}</div>
+        <div class="stat-value">{{ $stats['diajukan'] + ($stats['disetujui'] ?? 0) }}</div>
     </div>
 </div>
 
@@ -82,25 +61,6 @@
     </div>
 @endif
 
-{{-- Filter --}}
-<div class="card" style="margin-bottom: 16px;">
-    <div class="card-body" style="padding: 14px 20px;">
-        <form method="GET" action="{{ route('admin-satker.kebutuhan.index') }}" style="display: flex; gap: 12px; align-items: center;">
-            <select name="status" style="padding: 7px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; background: var(--input-bg); color: var(--text-main); min-width: 140px;">
-                <option value="">Semua Status</option>
-                <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                <option value="diajukan" {{ request('status') === 'diajukan' ? 'selected' : '' }}>Diajukan</option>
-                <option value="disetujui" {{ request('status') === 'disetujui' ? 'selected' : '' }}>Disetujui</option>
-                <option value="ditolak" {{ request('status') === 'ditolak' ? 'selected' : '' }}>Ditolak</option>
-            </select>
-            <button type="submit" class="btn btn-primary btn-sm"><i class="ri-filter-line"></i> Filter</button>
-            @if(request('status'))
-                <a href="{{ route('admin-satker.kebutuhan.index') }}" class="btn btn-ghost btn-sm"><i class="ri-refresh-line"></i> Reset</a>
-            @endif
-        </form>
-    </div>
-</div>
-
 {{-- Table --}}
 <div class="card">
     <div class="card-head"><h3>Daftar Pengajuan</h3></div>
@@ -112,8 +72,7 @@
                     <th>Judul</th>
                     <th style="text-align: center;">Jumlah Item</th>
                     <th>Tahun</th>
-                    <th style="text-align: center;">Status</th>
-                    <th>Tanggal</th>
+                    <th>Tanggal Pengajuan</th>
                     <th style="text-align: center;">Aksi</th>
                 </tr>
             </thead>
@@ -122,31 +81,30 @@
                 <tr>
                     <td style="text-align: center;">{{ $kebutuhans->firstItem() + $index }}</td>
                     <td>
-                        <div class="cell-name">{{ $k->title }}</div>
+                        <a href="{{ route('admin-satker.kebutuhan.show', $k) }}" style="text-decoration: none; color: inherit;">
+                            <div class="cell-name" style="color: var(--brand);">{{ $k->title }}</div>
+                        </a>
                         @if($k->notes)
                             <div class="cell-sub">{{ Str::limit($k->notes, 50) }}</div>
                         @endif
                     </td>
                     <td style="text-align: center;"><span class="badge badge-neutral">{{ $k->items->count() }} item</span></td>
                     <td>{{ $k->fiscal_year }}</td>
-                    <td style="text-align: center;"><span class="badge {{ $k->status_badge }}">{{ $k->status_label }}</span></td>
-                    <td>{{ $k->created_at->format('d/m/Y') }}</td>
+                    <td style="font-size: 12px;">{{ $k->submitted_at ? $k->submitted_at->format('d/m/Y H:i') : $k->created_at->format('d/m/Y H:i') }}</td>
                     <td style="text-align: center;">
                         <div style="display: flex; gap: 4px; justify-content: center;">
                             <a href="{{ route('admin-satker.kebutuhan.show', $k) }}" class="btn btn-outline btn-xs" title="Lihat Detail"><i class="ri-eye-line"></i></a>
-                            @if($k->isDraft())
-                                <a href="{{ route('admin-satker.kebutuhan.edit', $k) }}" class="btn btn-outline btn-xs" title="Edit"><i class="ri-edit-line"></i></a>
-                                <button type="button" class="btn btn-outline btn-xs" style="color: var(--danger);" title="Hapus"
-                                    onclick="openDeleteModal({{ $k->id }}, '{{ addslashes($k->title) }}')">
-                                    <i class="ri-delete-bin-line"></i>
-                                </button>
-                            @endif
+                            <a href="{{ route('admin-satker.kebutuhan.print', $k) }}" target="_blank" class="btn btn-outline btn-xs" title="Cetak PDF"><i class="ri-printer-line"></i></a>
+                            <button type="button" class="btn btn-outline btn-xs" style="color: var(--danger);" title="Hapus"
+                                onclick="openDeleteModal({{ $k->id }}, '{{ addslashes($k->title) }}')">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                    <td colspan="6" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
                         <i class="ri-file-list-3-line" style="font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.5;"></i>
                         Belum ada pengajuan. <a href="{{ route('admin-satker.kebutuhan.create') }}" style="color: var(--brand); text-decoration: none; font-weight: 600;">Buat pengajuan baru →</a>
                     </td>
@@ -193,11 +151,9 @@ function openDeleteModal(id, title) {
     document.getElementById('deleteDesc').innerHTML = `Anda akan menghapus pengajuan "<strong>${title}</strong>". Tindakan ini tidak dapat dibatalkan.`;
     document.getElementById('deleteModal').classList.add('active');
 }
-
 function closeModal(id) {
     document.getElementById(id).classList.remove('active');
 }
-
 document.querySelectorAll('.km-overlay').forEach(overlay => {
     overlay.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
 });

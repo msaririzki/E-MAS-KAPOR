@@ -115,6 +115,7 @@ Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope
     Route::put('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'update'])->name('kebutuhan.update');
     Route::delete('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'destroy'])->name('kebutuhan.destroy');
     Route::post('/kebutuhan/{kebutuhan}/submit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'submit'])->name('kebutuhan.submit');
+    Route::get('/kebutuhan/{kebutuhan}/print', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'printPdf'])->name('kebutuhan.print');
 });
 
 // ── Admin Central Routes ──────────────────────────────────────────────
