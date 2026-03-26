@@ -31,7 +31,12 @@ class AppServiceProvider extends ServiceProvider
         });
 
         \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Failed::class, function ($event) {
-            \App\Services\AuditLogger::log('Login Gagal', 'Autentikasi', null, null, null, 'failed', 'Percobaan masuk gagal untuk username: '.($event->credentials['username'] ?? 'unknown'));
+            $identifier = $event->credentials['login']
+                ?? $event->credentials['email']
+                ?? $event->credentials['nrp_nip']
+                ?? 'unknown';
+
+            \App\Services\AuditLogger::log('Login Gagal', 'Autentikasi', null, null, null, 'failed', 'Percobaan masuk gagal untuk identifier: '.$identifier);
         });
     }
 }

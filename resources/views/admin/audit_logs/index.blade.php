@@ -163,7 +163,7 @@
                             </div>
                             <div class="details">
                                 <span class="name">{{ $log->user->name }}</span>
-                                <span class="username">{{ $log->user->username }}</span>
+                                <span class="username">{{ $log->user->loginIdentifier() ?? '-' }}</span>
                             </div>
                         </div>
                     @else

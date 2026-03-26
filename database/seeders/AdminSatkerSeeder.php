@@ -67,13 +67,15 @@ class AdminSatkerSeeder extends Seeder
             $satker = Satker::where('name', $u['name'])->first();
 
             if ($satker) {
+                $email = strtolower($u['username'].'@gmail.com');
+
                 // Check if user already exists
-                $user = User::where('nrp_nip', $u['username'])->first();
+                $user = User::where('email', $email)->first();
 
                 if (! $user) {
                     $user = User::create([
                         'name' => 'Admin '.$u['name'],
-                        'nrp_nip' => $u['username'],
+                        'email' => $email,
                         'password' => Hash::make($u['password']),
                         'satker_id' => $satker->id,
                         'is_active' => true,

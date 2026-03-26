@@ -440,7 +440,7 @@
             <div class="card-form">
                 <div class="form-header">
                     <h2>Selamat Datang</h2>
-                    <p>Masukkan kredensial Anda untuk mengakses sistem.</p>
+                    <p>Superadmin dan admin login dengan Gmail, personil tetap menggunakan NRP/NIP.</p>
                 </div>
 
                 @if($errors->any())
@@ -453,14 +453,14 @@
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
                     <div class="field">
-                        <label class="field-label">NRP / NIP</label>
+                        <label class="field-label">Gmail / NRP / NIP</label>
                         <div class="field-wrap">
                             <input
                                 type="text"
-                                name="nrp_nip"
+                                name="login"
                                 class="field-input"
-                                placeholder="Masukkan NRP atau NIP"
-                                value="{{ old('nrp_nip') }}"
+                                placeholder="Masukkan Gmail atau NRP/NIP"
+                                value="{{ old('login') }}"
                                 autofocus
                                 required
                             >

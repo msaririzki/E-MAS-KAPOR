@@ -19,9 +19,8 @@ class DemoUserSeeder extends Seeder
 
         // ── 1. Superadmin ──────────────────────────────────────
         $superadmin = User::create([
-            'nrp_nip' => 'SA001',
             'name' => 'Super Administrator',
-            'email' => 'superadmin@sikapor.test',
+            'email' => 'superadmin.kapor@gmail.com',
             'password' => Hash::make('password'),
             'satker_id' => $polda->id,
             'is_active' => true,
@@ -30,9 +29,8 @@ class DemoUserSeeder extends Seeder
 
         // ── 2. Admin ───────────────────────────────────────────
         $admin = User::create([
-            'nrp_nip' => 'ADM001',
             'name' => 'Administrator',
-            'email' => 'admin@sikapor.test',
+            'email' => 'admin.kapor@gmail.com',
             'password' => Hash::make('password'),
             'satker_id' => $polda->id,
             'is_active' => true,
@@ -40,9 +38,8 @@ class DemoUserSeeder extends Seeder
         $admin->assignRole('admin');
 
         $adminGudang = User::create([
-            'nrp_nip' => 'GD001',
             'name' => 'Admin Gudang',
-            'email' => 'admingudang@sikapor.test',
+            'email' => 'admin.gudang.kapor@gmail.com',
             'password' => Hash::make('password'),
             'satker_id' => $polda->id,
             'is_active' => true,
@@ -51,9 +48,8 @@ class DemoUserSeeder extends Seeder
 
         // ── 3. Admin Satker (Polresta Mataram) ─────────────────
         $adminSatker = User::create([
-            'nrp_nip' => 'AS001',
             'name' => 'Admin Satker Polresta Mataram',
-            'email' => 'adminsatker@sikapor.test',
+            'email' => 'admin.satker.mataram@gmail.com',
             'password' => Hash::make('password'),
             'satker_id' => $resMataram->id,
             'is_active' => true,
@@ -62,9 +58,8 @@ class DemoUserSeeder extends Seeder
 
         // ── 4. Admin Satker (Polres Lombok Timur) ──────────────
         $adminSatker2 = User::create([
-            'nrp_nip' => 'AS002',
             'name' => 'Admin Satker Polres Lotim',
-            'email' => 'adminsatker2@sikapor.test',
+            'email' => 'admin.satker.lotim@gmail.com',
             'password' => Hash::make('password'),
             'satker_id' => $resLotim->id,
             'is_active' => true,

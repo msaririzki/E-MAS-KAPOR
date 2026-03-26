@@ -2,11 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\HandlesUserAccountFields;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateUserRequest extends FormRequest
 {
+    use HandlesUserAccountFields;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -22,15 +24,27 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'nrp_nip' => ['required', 'string', 'max:20', Rule::unique('users')->ignore($this->user->id)],
+        $user = $this->route('user');
+        $role = $this->input('role') ?: $user?->getRoleNames()->first();
+        $isPersonnel = $role === 'personil';
+
+        return array_merge([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users')->ignore($this->user->id)],
             'password' => 'nullable|string|min:8',
             'role' => 'required|exists:roles,name',
             'is_active' => 'boolean',
             'satker_id' => 'nullable|exists:satkers,id',
-        ];
+        ], $this->userAccountFieldRules($isPersonnel, $user?->id));
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->prepareUserAccountFieldsForValidation();
+    }
+
+    public function attributes(): array
+    {
+        return $this->userAccountAttributes();
     }
 }
