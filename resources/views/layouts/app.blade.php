@@ -1560,6 +1560,10 @@
             .sidebar {
                 width: 280px;
             }
+            /* Hide sidebar collapse arrow on mobile — not relevant */
+            .sidebar-toggle-float {
+                display: none !important;
+            }
         }
 
         /* ── Mobile (≤768px) ── */
