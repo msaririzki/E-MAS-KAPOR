@@ -231,7 +231,7 @@
 </div>
 
 {{-- FORM INPUT UTAMA (PRIORITAS DEPAN) --}}
-<div class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; background: var(--bg-card);">
+<div id="kaporFormCard" class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; background: var(--bg-card); display: {{ $hasSubmitted ? 'none' : 'block' }};">
     <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 20px 24px;">
         <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
             <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(var(--brand-rgb, 198,40,40), 0.1); color: var(--brand);">
@@ -255,7 +255,7 @@
             $gender = optional(auth()->user()->personnel)->gender ?? 'L';
         @endphp
 
-        <form action="{{ route('personil.kapor.store') }}" method="POST" id="kaporForm" style="display: {{ $hasSubmitted ? 'none' : 'block' }};">
+        <form action="{{ route('personil.kapor.store') }}" method="POST" id="kaporForm">
             @csrf
             
             <div class="form-card">
@@ -373,7 +373,7 @@
 
             <div class="personil-form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
                 @if($hasSubmitted)
-                <button type="button" onclick="document.getElementById('kaporForm').style.display='none'; document.getElementById('kaporSummaryCard').style.display='block';" class="btn btn-cancel" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: var(--radius-md); font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                <button type="button" onclick="document.getElementById('kaporFormCard').style.display='none'; document.getElementById('kaporSummaryCard').style.display='block';" class="btn btn-cancel" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: var(--radius-md); font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
                     <i class="ri-close-line"></i> Batal
                 </button>
                 @endif
@@ -393,11 +393,11 @@
                 <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--success);">
                     <i class="ri-checkbox-circle-fill" style="font-size: 18px;"></i>
                 </span>
-                Ringkasan Ukuran Tersimpan
+                Form Biodata Kelengkapan Kaporlap
             </h3>
             <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-muted);">Data Kaporlap Anda untuk TA {{ $fiscalYear }} telah terekam.</p>
         </div>
-        <button type="button" onclick="document.getElementById('kaporForm').style.display='block'; document.getElementById('kaporSummaryCard').style.display='none';" class="btn" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 8px; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
+        <button type="button" onclick="document.getElementById('kaporFormCard').style.display='block'; document.getElementById('kaporSummaryCard').style.display='none';" class="btn" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 8px; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
             <i class="ri-edit-2-line"></i> Edit Data
         </button>
     </div>
@@ -520,70 +520,7 @@
     </div>
 </div>
 
-{{-- Submission History Tab --}}
-@if($hasSubmitted)
-<div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px;">
-    <div class="card-header personil-card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(var(--brand-rgb, 198,40,40), 0.1); color: var(--brand);">
-                <i class="ri-shirt-line" style="font-size: 18px;"></i>
-            </span>
-            Ringkasan Ukuran Tersimpan
-        </h3>
-        <span style="background: var(--info-bg); color: var(--info); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 12px;">TA {{ $fiscalYear }}</span>
-    </div>
-    <div class="card-body flush">
-        <div class="table-responsive" style="overflow-x: auto;">
-            <table class="table personil-table" style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background: var(--hover-bg); border-bottom: 1px solid var(--border-color);">
-                        <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; width: 60px;">No</th>
-                        <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Kategori</th>
-                        <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Nama Item</th>
-                        <th style="padding: 14px 24px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Ukuran Pilihan</th>
-                        <th style="padding: 14px 24px; text-align: right; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Waktu Diperbarui</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @php
-                        $itemMap = [
-                            'topi' => ['label' => 'TUTUP KEPALA', 'category' => 'Tutup Kepala', 'icon' => 'ri-spy-line'],
-                            'jilbab' => ['label' => 'Jilbab', 'category' => 'Tutup Kepala', 'icon' => 'ri-spy-line'],
-                            'kemeja' => ['label' => 'Kemeja (PDH/PDL)', 'category' => 'Tutup Badan', 'icon' => 'ri-t-shirt-line'],
-                            'celana' => ['label' => 'Celana/Rok', 'category' => 'Tutup Badan', 'icon' => 'ri-t-shirt-line'],
-                            'jaket' => ['label' => 'Jaket', 'category' => 'Tutup Badan', 'icon' => 'ri-t-shirt-line'],
-                            'olahraga' => ['label' => 'T-Shirt/Olahraga', 'category' => 'Tutup Badan', 'icon' => 'ri-basketball-line'],
-                            'sabuk' => ['label' => 'Sabuk', 'category' => 'Perlengkapan', 'icon' => 'ri-medal-line'],
-                            'sepatu_dinas' => ['label' => 'Sepatu Dinas', 'category' => 'Tutup Kaki', 'icon' => 'ri-footprint-line'],
-                            'sepatu_olahraga' => ['label' => 'Sepatu Olahraga', 'category' => 'Tutup Kaki', 'icon' => 'ri-footprint-line'],
-                        ];
-                        $idx = 0;
-                    @endphp
-                    @foreach($itemMap as $key => $meta)
-                        @if(isset($kaporSizes[$key]) && !empty($kaporSizes[$key]))
-                            <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.15s;" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='transparent'">
-                                <td style="padding: 16px 24px; font-size: 13px; color: var(--text-muted);">{{ ++$idx }}</td>
-                                <td style="padding: 16px 24px;">
-                                    <span class="cell-category" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; background: var(--info-bg); color: var(--info);">
-                                        <i class="{{ $meta['icon'] }}"></i> {{ $meta['category'] }}
-                                    </span>
-                                </td>
-                                <td style="padding: 16px 24px; font-size: 14px; font-weight: 600; color: var(--text-main);">{{ $meta['label'] }}</td>
-                                <td style="padding: 16px 24px;">
-                                    <span class="cell-size-badge" style="display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 32px; padding: 0 8px; border-radius: 6px; background: rgba(var(--brand-rgb, 198,40,40), 0.08); border: 1px solid rgba(var(--brand-rgb, 198,40,40), 0.2); font-size: 14px; font-weight: 800; color: var(--brand);">
-                                        {{ $kaporSizes[$key] }}
-                                    </span>
-                                </td>
-                                <td style="padding: 16px 24px; font-size: 13px; color: var(--text-muted); text-align: right;">{{ optional($personnel->updated_at)->format('d M Y, H:i') ?? '-' }}</td>
-                            </tr>
-                        @endif
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-@endif
+
 
 {{-- FORM TESTIMONI KOTAK SARAN --}}
 <div class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-card); position: relative;">
