@@ -148,13 +148,21 @@
                         </tbody>
                     </table>
                 </div>
-                @else
+                @elseif($stats['total_personnel'] > 0)
                     <div style="text-align: center; padding: 60px 20px; background: var(--success-bg); border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
                         <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #ffffff; color: var(--success); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1), 0 2px 4px -1px rgba(16, 185, 129, 0.06); margin-bottom: 16px;">
                             <i class="ri-checkbox-circle-fill" style="font-size: 32px;"></i>
                         </div>
                         <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #065F46;">Kerja Bagus!</h4>
                         <p style="margin: 0; font-size: 14px; color: #047857;">Semua personil di {{ $stats['satker_name'] }} telah mengisi ukuran wajib kapor.</p>
+                    </div>
+                @else
+                    <div style="text-align: center; padding: 60px 20px; background: var(--bg-body); border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+                        <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #ffffff; color: var(--slate-400); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 16px;">
+                            <i class="ri-folder-info-line" style="font-size: 32px;"></i>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: var(--text-main);">Belum Ada Personil</h4>
+                        <p style="margin: 0; font-size: 14px; color: var(--text-muted);">Tidak ada personil yang terdaftar pada {{ $stats['satker_name'] }}.</p>
                     </div>
                 @endif
             </div>
