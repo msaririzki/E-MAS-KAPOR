@@ -432,22 +432,73 @@
 @endif
 
 {{-- Status Cards (Dipindah ke Bawah Form) --}}
+@php
+    // Tentukan total item berdasarkan gender dan agama/hijab status
+    $personnelGender = optional($personnel)->gender ?? 'L';
+    $personnelReligion = strtoupper(trim(optional($personnel)->religion ?? ''));
+    $isIslam = in_array($personnelReligion, ['ISLAM']);
+
+    if ($personnelGender === 'L') {
+        // Laki-laki: 8 item (tanpa jilbab)
+        $totalItems = 8;
+        $isJilbabRequired = false;
+        $itemNote = '';
+    } elseif ($personnelGender === 'P' && $isIslam) {
+        // Perempuan Islam: 9 item (termasuk jilbab)
+        $totalItems = 9;
+        $isJilbabRequired = true;
+        $itemNote = '';
+    } else {
+        // Perempuan non-Islam: 8 dari 9 item (jilbab tidak diwajibkan)
+        $totalItems = 9;
+        $isJilbabRequired = false;
+        $itemNote = 'Item Jilbab tidak diwajibkan (non-Islam).';
+    }
+
+    // Hitung jumlah item yang sudah terisi
+    $filledCount = 0;
+    if (is_array($kaporSizes)) {
+        foreach ($kaporSizes as $key => $val) {
+            if (!empty($val)) {
+                // Untuk laki-laki, skip jilbab dari hitungan
+                if ($personnelGender === 'L' && $key === 'jilbab') continue;
+                $filledCount++;
+            }
+        }
+    }
+
+    // Untuk perempuan non-Islam, max filled = 8 (jilbab tidak diminta)
+    $maxExpected = ($personnelGender === 'P' && !$isIslam) ? 8 : $totalItems;
+    $isComplete = $filledCount >= $maxExpected;
+@endphp
 <div class="personil-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
     {{-- Card 1: Item Terisi --}}
     <div class="card personil-stat-card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; padding: 32px 28px; background: var(--bg-card); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-md)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm)';">
         <div style="flex: 1;">
             <p style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 12px 0;">Item Data Terisi</p>
             <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span class="stat-number" style="font-size: 42px; font-weight: 800; color: var(--text-main); line-height: 1;">{{ is_array($kaporSizes) ? count(array_filter($kaporSizes)) : 0 }}</span>
-                <span class="stat-suffix" style="font-size: 16px; font-weight: 600; color: var(--text-muted);">/ 9 Total Barang</span>
+                <span class="stat-number" style="font-size: 42px; font-weight: 800; color: var(--text-main); line-height: 1;">{{ $filledCount }}</span>
+                <span class="stat-suffix" style="font-size: 16px; font-weight: 600; color: var(--text-muted);">/ {{ $totalItems }} Total Barang</span>
             </div>
-            <p class="stat-desc" style="font-size: 14px; font-weight: 500; color: {{ $hasSubmitted ? 'var(--success)' : 'var(--slate-400)' }}; margin: 16px 0 0 0; display: flex; align-items: center; gap: 8px;">
+            <p class="stat-desc" style="font-size: 14px; font-weight: 500; color: {{ ($hasSubmitted && $isComplete) ? 'var(--success)' : 'var(--slate-400)' }}; margin: 16px 0 0 0; display: flex; align-items: center; gap: 8px;">
                 <i class="ri-checkbox-circle-fill" style="font-size: 18px;"></i>
-                {{ $hasSubmitted ? 'Kaporlap Anda sudah direkam.' : 'Masih ada data ukuran kosong.' }}
+                @if($hasSubmitted && $isComplete)
+                    Kaporlap Anda sudah direkam.
+                @elseif($hasSubmitted && !$isComplete)
+                    Kaporlap direkam, namun ada item belum terisi.
+                @else
+                    Masih ada data ukuran kosong.
+                @endif
             </p>
+            @if(!empty($itemNote) && $filledCount < $totalItems)
+                <p style="font-size: 12px; font-weight: 500; color: var(--info); margin: 8px 0 0 0; display: flex; align-items: center; gap: 6px;">
+                    <i class="ri-information-line" style="font-size: 14px;"></i>
+                    {{ $itemNote }}
+                </p>
+            @endif
         </div>
-        <div class="stat-icon-circle" style="width: 72px; height: 72px; border-radius: 50%; background: {{ $hasSubmitted ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)' }}; display: flex; align-items: center; justify-content: center; color: {{ $hasSubmitted ? 'var(--success)' : 'var(--warning)' }}; font-size: 32px; box-shadow: 0 4px 12px {{ $hasSubmitted ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)' }};">
-            <i class="ri-{{ $hasSubmitted ? 'shopping-bag-3-fill' : 'edit-2-fill' }}"></i>
+        <div class="stat-icon-circle" style="width: 72px; height: 72px; border-radius: 50%; background: {{ ($hasSubmitted && $isComplete) ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)' }}; display: flex; align-items: center; justify-content: center; color: {{ ($hasSubmitted && $isComplete) ? 'var(--success)' : 'var(--warning)' }}; font-size: 32px; box-shadow: 0 4px 12px {{ ($hasSubmitted && $isComplete) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)' }};">
+            <i class="ri-{{ ($hasSubmitted && $isComplete) ? 'shopping-bag-3-fill' : 'edit-2-fill' }}"></i>
         </div>
     </div>
 
