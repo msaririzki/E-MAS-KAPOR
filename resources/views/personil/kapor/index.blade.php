@@ -151,7 +151,7 @@
             font-size: 16px !important;
         }
         .kapor-summary-grid {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: repeat(2, 1fr) !important;
         }
     }
 </style>

@@ -181,7 +181,7 @@
             font-size: 22px !important;
         }
         .personil-summary-grid {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: repeat(2, 1fr) !important;
         }
         .personil-status-badge {
             padding: 8px 14px !important;
