@@ -78,16 +78,16 @@
             </div>
             <input type="hidden" name="sppm_status" id="sppm_status" value="{{ request('sppm_status') }}">
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <label style="font-size:12px; font-weight:600; color:#6B7280;">DARI</label>
-            <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-input" style="width:140px; padding:6px 12px; height:36px;">
+        <div class="date-group" style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:12px; font-weight:600; color:#6B7280; width: 60px;">DARI</label>
+            <input type="date" name="start_date" value="{{ request('start_date') }}" class="form-input date-input" style="width:140px; padding:6px 12px; height:36px;">
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <label style="font-size:12px; font-weight:600; color:#6B7280;">Hingga</label>
-            <input type="date" name="end_date" value="{{ request('end_date') }}" class="form-input" style="width:140px; padding:6px 12px; height:36px;">
+        <div class="date-group" style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:12px; font-weight:600; color:#6B7280; width: 60px;">Hingga</label>
+            <input type="date" name="end_date" value="{{ request('end_date') }}" class="form-input date-input" style="width:140px; padding:6px 12px; height:36px;">
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <label style="font-size:12px; font-weight:600; color:#6B7280;">Tampilkan</label>
+        <div class="per-page-group" style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:12px; font-weight:600; color:#6B7280; width: 60px;">Tampilkan</label>
             <select name="per_page" class="form-input" style="width:70px; padding:4px 8px; height:36px;" onchange="this.form.submit()">
                 <option value="15" {{ request('per_page') == 15 ? 'selected' : '' }}>15</option>
                 <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
@@ -551,5 +551,15 @@
     /* Toast customizations */
     .colored-toast.swal2-icon-success { background-color: #ECFDF5 !important; color: #059669 !important; border: 1px solid #A7F3D0 !important; }
     .colored-toast .swal2-title { color: inherit !important; font-size: 14px !important;}
+
+    @media (max-width: 768px) {
+        .filter-satker, .filter-sppm { width: 100% !important; }
+        .date-group, .per-page-group { 
+            justify-content: space-between !important; 
+            width: 100% !important; 
+        }
+        .date-input { width: 100% !important; flex: 1; margin-left: auto; }
+        .per-page-select { width: 100% !important; flex: 1; margin-left: auto;}
+    }
 </style>
 @endsection

@@ -265,37 +265,39 @@
                 <div class="table-card-head">
                     <h4>Riwayat Tahun Anggaran</h4>
                 </div>
-                <table class="modern-table">
-                    <thead>
-                        <tr>
-                            <th>Periode</th>
-                            <th style="text-align:right;">Total Item Direkap</th>
-                            <th style="text-align:right;">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($yearlyStats as $ys)
-                        <tr class="{{ $ys->is_active ? 'active-row' : '' }}">
-                            <td>
-                                <div class="year-cell">
-                                    <span class="year-text">TA {{ $ys->fiscal_year }}</span>
-                                    @if($ys->is_active)
-                                        <span class="pulse-badge">AKTIF</span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td align="right"><strong>{{ number_format($ys->total) }}</strong> entri</td>
-                            <td align="right">
-                                <span class="status-pill {{ $ys->status == 'Aktif' ? 'success' : 'neutral' }}">
-                                    {{ $ys->status == 'Aktif' ? 'Berjalan' : 'Arsip' }}
-                                </span>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr><td colspan="3" class="empty-state">Belum ada riwayat data sebelumnya.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+                    <table class="modern-table" style="min-width: 500px;">
+                        <thead>
+                            <tr>
+                                <th>Periode</th>
+                                <th style="text-align:right;">Total Item Direkap</th>
+                                <th style="text-align:right;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($yearlyStats as $ys)
+                            <tr class="{{ $ys->is_active ? 'active-row' : '' }}">
+                                <td>
+                                    <div class="year-cell">
+                                        <span class="year-text">TA {{ $ys->fiscal_year }}</span>
+                                        @if($ys->is_active)
+                                            <span class="pulse-badge">AKTIF</span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td align="right"><strong>{{ number_format($ys->total) }}</strong> entri</td>
+                                <td align="right">
+                                    <span class="status-pill {{ $ys->status == 'Aktif' ? 'success' : 'neutral' }}">
+                                        {{ $ys->status == 'Aktif' ? 'Berjalan' : 'Arsip' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="3" class="empty-state">Belum ada riwayat data sebelumnya.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </div>

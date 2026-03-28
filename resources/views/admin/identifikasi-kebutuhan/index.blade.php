@@ -34,6 +34,38 @@
     .top-pct { font-size: 14px; font-weight: 800; color: var(--brand); min-width: 50px; text-align: right; }
     .top-bar-mini { width: 80px; height: 6px; background: var(--slate-100); border-radius: 99px; overflow: hidden; }
     .top-bar-mini-fill { height: 100%; background: var(--brand); border-radius: 99px; }
+
+    @media (max-width: 768px) {
+        .stats-row { grid-template-columns: 1fr !important; }
+        .responsive-filter { flex-direction: column !important; align-items: stretch !important; }
+        .responsive-filter > * { width: 100% !important; flex: none !important; margin-bottom: 8px; }
+        .responsive-filter > .btn { justify-content: center; }
+        .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+        .table-wrap table { min-width: 700px; }
+        
+        /* Fix Top 10 Item agar padat namun tetap membungkus */
+        .top-item {
+            display: grid !important;
+            grid-template-columns: auto 1fr;
+            gap: 4px 12px;
+            padding: 12px 0;
+            align-items: center;
+        }
+        .top-rank { grid-column: 1; grid-row: 1; align-self: flex-start; margin-top: 2px; }
+        .top-info { grid-column: 2; grid-row: 1; min-width: 0; display: block; }
+        .top-name { white-space: normal; line-height: 1.3; margin-bottom: 4px; display: block; overflow: visible; }
+        .top-percent-wrap { 
+            grid-column: 2; 
+            grid-row: 2; 
+            width: 100%; 
+            justify-content: space-between !important; 
+            margin-top: 4px; 
+            background: transparent; 
+            padding: 0; 
+        }
+        .top-bar-mini { flex: 1; margin-right: 12px; }
+        .card { min-width: 0; }
+    }
 </style>
 <div class="page-header">
     <div class="page-header-row">
@@ -45,7 +77,7 @@
 </div>
 
 {{-- Stats Cards --}}
-<div class="stats-row" style="grid-template-columns: repeat(3, 1fr);">
+<div class="stats-row">
     <div class="stat-card">
         <div class="stat-top">
             <span class="stat-label">Total Pengajuan</span>
@@ -78,7 +110,7 @@
 
 {{-- ═══ Compact Statistics Section ═══ --}}
 @if($totalKebutuhans > 0)
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+<div class="grid-2" style="margin-bottom: 16px;">
 
     {{-- Category Coverage Cards --}}
     <div class="card">
@@ -123,9 +155,9 @@
                 </div>
                 <div class="top-info">
                     <div class="top-name" title="{{ $stat['item_name'] }}">{{ $stat['item_name'] }}</div>
-                    <span class="top-cat top-cat-{{ $stat['category'] }}">{{ str_replace('_', ' ', $stat['category']) }}</span>
+                    <span class="top-cat top-cat-{{ $stat['category'] }}" style="margin-top: 4px;">{{ str_replace('_', ' ', $stat['category']) }}</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="top-percent-wrap" style="display: flex; align-items: center; gap: 8px;">
                     <div class="top-bar-mini"><div class="top-bar-mini-fill" style="width: {{ $stat['percentage'] }}%;"></div></div>
                     <div class="top-pct">{{ $stat['percentage'] }}%</div>
                 </div>
@@ -139,7 +171,7 @@
 {{-- Filters --}}
 <div class="card" style="margin-bottom: 16px;">
     <div class="card-body" style="padding: 14px 20px;">
-        <form method="GET" action="{{ route('admin.identifikasi-kebutuhan.index') }}" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <form method="GET" action="{{ route('admin.identifikasi-kebutuhan.index') }}" class="responsive-filter" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 180px;">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari judul / satker..." class="search-input" style="width: 100%;">
             </div>
