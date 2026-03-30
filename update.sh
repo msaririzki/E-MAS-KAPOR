@@ -4,6 +4,8 @@ set -e
 BOOTSTRAP_EMAIL="${BOOTSTRAP_SUPERADMIN_EMAIL:-}"
 BOOTSTRAP_NAME="${BOOTSTRAP_SUPERADMIN_NAME:-Bootstrap Super Administrator}"
 BOOTSTRAP_ON_UPDATE="${BOOTSTRAP_SUPERADMIN_ON_UPDATE:-false}"
+RUN_SEED_ON_UPDATE="${RUN_SEED_ON_UPDATE:-false}"
+RUN_DEMO_SEED_ON_UPDATE="${RUN_DEMO_SEED_ON_UPDATE:-false}"
 CURRENT_BRANCH="$(git branch --show-current 2>/dev/null || true)"
 TARGET_BRANCH="${TARGET_BRANCH:-${CURRENT_BRANCH:-main}}"
 
@@ -63,6 +65,16 @@ wait_for_database
 
 echo "==> Menjalankan migrasi database..."
 docker compose exec -T app php artisan migrate --force
+
+if [ "$RUN_SEED_ON_UPDATE" = "true" ]; then
+    echo "==> Menjalankan seeder inti aplikasi..."
+    docker compose exec -T app php artisan db:seed --force
+fi
+
+if [ "$RUN_DEMO_SEED_ON_UPDATE" = "true" ]; then
+    echo "==> Menjalankan seeder demo user (khusus server uji)..."
+    docker compose exec -T app php artisan db:seed --class=DemoUserSeeder --force
+fi
 
 echo "==> Menjalankan optimasi Laravel dan cache config..."
 docker compose exec -T app php artisan optimize:clear
