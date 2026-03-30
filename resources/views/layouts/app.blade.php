@@ -1887,10 +1887,24 @@
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.index') ? 'active' : '' }}">
                             Data Barang
                         </a>
+                        <a href="{{ route('admin.warehouse-items.dispense-form') }}"
+                            class="nav-link {{ request()->routeIs('admin.warehouse-items.dispense-form') ? 'active' : '' }}">
+                            Pengeluaran Barang
+                        </a>
                         <a href="{{ route('admin.warehouse-items.reports', ['type' => 'outflow']) }}"
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.reports') ? 'active' : '' }}">
-                            Laporan Pengeluaran
+                            Laporan Detail
                         </a>
+                        @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
+                            <a href="{{ route('admin.warehouse-items.sppm') }}"
+                                class="nav-link {{ request()->routeIs('admin.warehouse-items.sppm') ? 'active' : '' }}">
+                                SPPM
+                            </a>
+                            <a href="{{ route('admin.warehouse-items.signatories') }}"
+                                class="nav-link {{ request()->routeIs('admin.warehouse-items.signatories') ? 'active' : '' }}">
+                                Penanda Tangan
+                            </a>
+                        @endif
                         <a href="{{ route('admin.warehouse-items.deletion-history') }}"
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.deletion-history') ? 'active' : '' }}">
                             Riwayat Penghapusan

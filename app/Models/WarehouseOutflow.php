@@ -17,6 +17,8 @@ class WarehouseOutflow extends Model
         'outflow_date',
         'recipient_name',
         'reference_note',
+        'letter_number',
+        'letter_date',
         'deletion_reason',
     ];
 
@@ -24,6 +26,7 @@ class WarehouseOutflow extends Model
     {
         return [
             'outflow_date' => 'date',
+            'letter_date' => 'date',
         ];
     }
 
