@@ -7,6 +7,7 @@ use App\Models\InvoiceSetting;
 use App\Models\PackageItem;
 use App\Models\Personnel;
 use App\Models\Satker;
+use App\Services\KaporRequirementService;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -110,47 +111,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             $query = Personnel::where('satker_id', $satker->id)
                 ->where('is_active', true);
 
-            if (! empty($filters['personnel_type'])) {
-                $mappedTypes = array_map(function ($t) {
-                    $lower = strtolower($t);
-                    if ($lower === 'polri') {
-                        return 'Polri';
-                    }
-                    if ($lower === 'pns') {
-                        return 'PNS';
-                    }
-                    if ($lower === 'pppk') {
-                        return 'PPPK';
-                    }
-
-                    return $t;
-                }, $filters['personnel_type']);
-                $query->whereIn('personnel_type', $mappedTypes);
-            }
-
-            if (! empty($filters['gender'])) {
-                $query->whereIn('gender', $filters['gender']);
-            }
-
-            if (! empty($filters['rank_categories'])) {
-                $query->whereHas('rank', function ($q) use ($filters) {
-                    $q->whereIn('category', $filters['rank_categories']);
-                });
-            }
-
-            if (! empty($filters['keterangan'])) {
-                $ketValues = $filters['keterangan'];
-                $query->where(function ($q) use ($ketValues) {
-                    $q->whereIn('keterangan', $ketValues)
-                        ->orWhereIn('keterangan_2', $ketValues)
-                        ->orWhereIn('keterangan_3', $ketValues)
-                        ->orWhereIn('keterangan_4', $ketValues);
-                });
-            }
-
-            if (! empty($filters['golongan'])) {
-                $query->whereIn('golongan', $filters['golongan']);
-            }
+            app(KaporRequirementService::class)->applyRecipientFilters($query, $filters, $satker);
 
             $personnels = $query->get(['gender', 'kapor_sizes']);
 
@@ -208,47 +169,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
             $query = Personnel::where('satker_id', $satker->id)
                 ->where('is_active', true);
 
-            if (! empty($filters['personnel_type'])) {
-                $mappedTypes = array_map(function ($t) {
-                    $lower = strtolower($t);
-                    if ($lower === 'polri') {
-                        return 'Polri';
-                    }
-                    if ($lower === 'pns') {
-                        return 'PNS';
-                    }
-                    if ($lower === 'pppk') {
-                        return 'PPPK';
-                    }
-
-                    return $t;
-                }, $filters['personnel_type']);
-                $query->whereIn('personnel_type', $mappedTypes);
-            }
-
-            if (! empty($filters['gender'])) {
-                $query->whereIn('gender', $filters['gender']);
-            }
-
-            if (! empty($filters['rank_categories'])) {
-                $query->whereHas('rank', function ($q) use ($filters) {
-                    $q->whereIn('category', $filters['rank_categories']);
-                });
-            }
-
-            if (! empty($filters['keterangan'])) {
-                $ketValues = $filters['keterangan'];
-                $query->where(function ($q) use ($ketValues) {
-                    $q->whereIn('keterangan', $ketValues)
-                        ->orWhereIn('keterangan_2', $ketValues)
-                        ->orWhereIn('keterangan_3', $ketValues)
-                        ->orWhereIn('keterangan_4', $ketValues);
-                });
-            }
-
-            if (! empty($filters['golongan'])) {
-                $query->whereIn('golongan', $filters['golongan']);
-            }
+            app(KaporRequirementService::class)->applyRecipientFilters($query, $filters, $satker);
 
             // Ambil gender + kapor_sizes untuk breakdown ukuran
             $personnels = $query->get(['gender', 'kapor_sizes']);

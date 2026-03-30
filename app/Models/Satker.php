@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Satker extends Model
 {
@@ -70,5 +71,22 @@ class Satker extends Model
     public function personnels(): HasMany
     {
         return $this->hasMany(Personnel::class);
+    }
+
+    public function recipientScope(): string
+    {
+        return static::resolveRecipientScope($this->name, $this->code);
+    }
+
+    public static function resolveRecipientScope(?string $name, ?string $code = null): string
+    {
+        $normalizedName = Str::upper(trim((string) $name));
+        $normalizedCode = Str::upper(trim((string) $code));
+
+        if (Str::startsWith($normalizedName, ['POLRES', 'POLRESTA']) || Str::startsWith($normalizedCode, 'RES-')) {
+            return 'polres';
+        }
+
+        return 'polda';
     }
 }

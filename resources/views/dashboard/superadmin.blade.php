@@ -736,6 +736,40 @@
         .quotes-track { animation: none; padding: 10px 4px; }
         .sat-modern-quote { flex-shrink: 0; }
     }
+
+    @media (max-width: 768px) {
+        .satisfaction-horizontal-wrapper { padding: 16px; border-radius: 16px; }
+        .sat-main-stats { 
+            flex-direction: column; 
+            align-items: center; 
+            text-align: center; 
+            gap: 16px; 
+            padding: 16px 12px; 
+            min-width: 0; 
+        }
+        .sat-score-circle { margin: 0 auto; width: 64px; height: 64px; }
+        .sat-score-circle .score-val { font-size: 24px; }
+        
+        .sat-rating-info { width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .sat-stars-row { justify-content: center; }
+        .sat-mini-metrics { flex-direction: column; gap: 8px; width: 100%; }
+        .sat-mini-metrics .metric-item { width: 100%; }
+
+        .sat-rating-breakdown {
+            margin-left: 0; 
+            padding-left: 0; 
+            border-left: none; 
+            border-top: 1px dashed var(--border-color); 
+            padding-top: 16px; 
+            width: 100%; 
+        }
+
+        #chartWrapper { min-width: 100% !important; }
+        .card { min-width: 0; }
+        
+        /* Memperbaiki tinggi chart di mobile agar tetap enak dilihat bar-nya */
+        .card-body canvas { min-height: 400px; }
+    }
 </style>
 @endsection
 

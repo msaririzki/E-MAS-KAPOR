@@ -10,6 +10,8 @@ use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
@@ -27,30 +29,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::with(['satker', 'roles']);
-
-        // Filter Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('nrp_nip', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhereHas('satker', function ($sq) use ($search) {
-                        $sq->where('name', 'like', "%{$search}%");
-                    }
-                    );
-            });
-        }
-
-        // Filter Role
-        if ($request->filled('role') && $this->rolesExist([$request->role])) {
-            $query->role($request->role);
-        }
-
-        // Filter Status
-        if ($request->filled('status')) {
-            $query->where('is_active', $request->status === 'active');
-        }
+        $this->applyFilters($query, $request);
 
         // Pagination
         $perPage = $request->get('per_page', 10);
@@ -107,15 +86,7 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
-        $user = User::create([
-            'nrp_nip' => $validated['nrp_nip'],
-            'name' => $validated['name'],
-            'phone' => $validated['phone'] ?? null,
-            'email' => $request->email ?? null,
-            'password' => Hash::make($validated['password']),
-            'is_active' => true, // Default active for new users
-            'satker_id' => $validated['satker_id'] ?? null,
-        ]);
+        $user = User::create($this->buildUserPayload($validated, true));
 
         $user->assignRole($validated['role']);
 
@@ -130,21 +101,7 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user)
     {
         $validated = $request->validated();
-
-        $updateData = [
-            'nrp_nip' => $validated['nrp_nip'],
-            'name' => $validated['name'],
-            'phone' => $validated['phone'],
-            'email' => $validated['email'],
-            'is_active' => $request->has('is_active'),
-            'satker_id' => $validated['satker_id'] ?? null,
-        ];
-
-        if (! empty($validated['password'])) {
-            $updateData['password'] = Hash::make($validated['password']);
-        }
-
-        $user->update($updateData);
+        $user->update($this->buildUserPayload($validated, $request->has('is_active')));
 
         // Update roles
         $user->syncRoles([$validated['role']]);
@@ -185,13 +142,13 @@ class UserController extends Controller
             'Expires' => '0',
         ];
 
-        $columns = ['nrp_nip', 'name', 'phone', 'role', 'password'];
+        $columns = ['email', 'name', 'phone', 'role', 'password'];
 
         $callback = function () use ($columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
             // Example row
-            fputcsv($file, ['ADM123', 'Nama Admin', '08123456789', 'admin', 'password']);
+            fputcsv($file, ['admin.kapor@gmail.com', 'Nama Admin', '08123456789', 'admin', 'password']);
             fclose($file);
         };
 
@@ -223,55 +180,29 @@ class UserController extends Controller
         DB::beginTransaction();
         try {
             while (($data = fgetcsv($handle, 1000, ',')) !== false) {
-                if (count($data) < 5) {
+                $row = $this->parseImportRow($data);
+
+                if ($row === null) {
                     continue;
                 }
 
-                $nrp_nip = trim($data[0]);
-                $name = trim($data[1]);
-                $phone = trim($data[2]);
-                $roleName = strtolower(trim($data[3]));
-                $password = trim($data[4]);
-
-                if (empty($nrp_nip) || empty($name)) {
+                if (! $this->validateImportRow($row, $errors)) {
                     $errorCount++;
-
-                    continue;
-                }
-
-                // Check for 'personil' role restriction
-                if ($roleName === 'personil') {
-                    $errorCount++;
-                    $errors[] = "NRP {$nrp_nip}: Peran 'personil' harus diinput melalui Data Personel.";
-
-                    continue;
-                }
-
-                // Role validation
-                $role = Role::where('name', $roleName)->first();
-                if (! $role) {
-                    $errorCount++;
-                    $errors[] = "Role '{$roleName}' tidak valid.";
 
                     continue;
                 }
 
                 try {
                     $user = User::updateOrCreate(
-                        ['nrp_nip' => $nrp_nip],
-                        [
-                            'name' => $name,
-                            'phone' => $phone,
-                            'password' => Hash::make($password),
-                            'is_active' => true,
-                        ]
+                        ['email' => $row['email']],
+                        $this->buildImportedUserPayload($row)
                     );
 
-                    $user->syncRoles([$roleName]);
+                    $user->syncRoles([$row['role']]);
                     $successCount++;
                 } catch (\Exception $e) {
                     $errorCount++;
-                    $errors[] = "Gagal memproses {$nrp_nip}: ".$e->getMessage();
+                    $errors[] = "Gagal memproses {$row['email']}: ".$e->getMessage();
                 }
             }
             DB::commit();
@@ -290,5 +221,121 @@ class UserController extends Controller
         }
 
         return redirect()->route('admin.users.index')->with('success', "Berhasil mengimpor {$successCount} pengguna.");
+    }
+
+    private function applyFilters($query, Request $request): void
+    {
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('nrp_nip', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhereHas('satker', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('role') && $this->rolesExist([$request->role])) {
+            $query->role($request->role);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+    }
+
+    private function buildUserPayload(array $validated, bool $isActive): array
+    {
+        $payload = [
+            'nrp_nip' => $validated['nrp_nip'] ?? null,
+            'name' => $validated['name'],
+            'phone' => $validated['phone'] ?? null,
+            'email' => $validated['email'] ?? null,
+            'is_active' => $isActive,
+            'satker_id' => $validated['satker_id'] ?? null,
+        ];
+
+        if (! empty($validated['password'])) {
+            $payload['password'] = Hash::make($validated['password']);
+        }
+
+        return $payload;
+    }
+
+    private function parseImportRow(array $data): ?array
+    {
+        if (count($data) < 5) {
+            return null;
+        }
+
+        return [
+            'email' => strtolower(trim($data[0])),
+            'name' => trim($data[1]),
+            'phone' => trim($data[2]),
+            'role' => strtolower(trim($data[3])),
+            'password' => trim($data[4]),
+        ];
+    }
+
+    private function validateImportRow(array $row, array &$errors): bool
+    {
+        if ($row['email'] === '' || $row['name'] === '') {
+            return false;
+        }
+
+        if (! filter_var($row['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "Gmail {$row['email']} tidak valid.";
+
+            return false;
+        }
+
+        if ($row['role'] === 'personil') {
+            $errors[] = "Gmail {$row['email']}: Peran 'personil' harus diinput melalui Data Personel.";
+
+            return false;
+        }
+
+        if (! Role::where('name', $row['role'])->exists()) {
+            $errors[] = "Role '{$row['role']}' tidak valid.";
+
+            return false;
+        }
+
+        $validator = Validator::make($row, [
+            'password' => [
+                'required',
+                'string',
+                Password::min(12)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(),
+            ],
+        ], [
+            'password.required' => 'Password wajib diisi.',
+        ]);
+
+        if ($validator->fails()) {
+            $errors[] = "Gmail {$row['email']}: ".$validator->errors()->first('password');
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function buildImportedUserPayload(array $row): array
+    {
+        return [
+            'name' => $row['name'],
+            'phone' => $row['phone'],
+            'nrp_nip' => null,
+            'password' => Hash::make($row['password']),
+            'is_active' => true,
+        ];
     }
 }

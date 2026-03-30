@@ -72,6 +72,26 @@ class User extends Authenticatable
         return $this->hasMany(Testimonial::class);
     }
 
+    public function isPersonnel(): bool
+    {
+        return $this->hasRole('personil');
+    }
+
+    public function usesEmailLogin(): bool
+    {
+        return ! $this->isPersonnel();
+    }
+
+    public function loginIdentifier(): ?string
+    {
+        return $this->usesEmailLogin() ? $this->email : $this->nrp_nip;
+    }
+
+    public function loginIdentifierLabel(): string
+    {
+        return $this->usesEmailLogin() ? 'Gmail' : 'NRP/NIP';
+    }
+
     // ── Scopes ────────────────────────────────────────────────
 
     public function scopeActive($query)

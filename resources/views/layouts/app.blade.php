@@ -88,6 +88,12 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-body);
@@ -1560,6 +1566,10 @@
             .sidebar {
                 width: 280px;
             }
+            /* Hide sidebar collapse arrow on mobile — not relevant */
+            .sidebar-toggle-float {
+                display: none !important;
+            }
         }
 
         /* ── Mobile (≤768px) ── */
@@ -1601,13 +1611,20 @@
             }
             .stats-row,
             .stats-row-5 {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
             }
             .stat-card {
-                padding: 14px;
+                padding: 12px;
+                gap: 8px;
             }
             .stat-value {
                 font-size: 18px;
+            }
+            .stat-label {
+                font-size: 11px;
+            }
+            .stat-footer {
+                font-size: 10px;
             }
             .page-header h1 {
                 font-size: 17px;
@@ -1620,6 +1637,107 @@
             }
             .sidebar {
                 width: 260px;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           Global Responsive Overrides for Admin & Super Admin Pages
+           ═══════════════════════════════════════════════════════ */
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            /* Stats */
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            
+            /* Page Header */
+            .page-header-row {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 16px !important;
+            }
+            .page-header-actions {
+                width: 100% !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+            }
+            .page-header-actions .btn, .page-header-actions .btn-maroon, .page-header-actions .btn-outline {
+                flex: 1;
+                justify-content: center !important;
+                text-align: center !important;
+            }
+            
+            /* Filters */
+            .filter-form {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+            }
+            .filter-group {
+                flex-direction: column !important;
+                width: 100% !important;
+                gap: 12px !important;
+            }
+            .search-container {
+                width: 100% !important;
+                flex: none !important;
+            }
+            .custom-select-wrapper {
+                width: 100% !important;
+            }
+            
+            /* Data Tables */
+            .table-container {
+                border-radius: 0 !important;
+                border-left: none !important;
+                border-right: none !important;
+                border-top: 1px solid var(--border-color) !important;
+                overflow-x: auto !important;
+            }
+            .user-table {
+                min-width: 800px !important;
+            }
+            
+            /* Forms / Modals Grid */
+            .form-grid-2, .form-grid-3, .form-grid {
+                grid-template-columns: 1fr !important;
+                gap: 16px !important;
+            }
+            
+            /* Modals */
+            .modal-content {
+                width: 95% !important;
+                margin: 20px auto !important;
+            }
+            .modal-header h3 {
+                font-size: 16px !important;
+            }
+            .modal-footer {
+                flex-direction: column !important;
+                gap: 10px !important;
+                padding: 16px !important;
+            }
+            .modal-footer .btn-simple, .modal-footer .btn, .modal-footer .btn-outline, .modal-footer .btn-maroon {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+            
+            /* Table Footer / Pagination */
+            .table-footer {
+                flex-direction: column !important;
+                gap: 16px !important;
+                text-align: center !important;
+                align-items: center !important;
+            }
+            .footer-left {
+                flex-direction: column !important;
+                gap: 12px !important;
             }
         }
 
@@ -1654,22 +1772,14 @@
 
             {{-- ══ Personil Role ══ --}}
             @if(auth()->user()->hasRole('personil'))
-                <div class="nav-group {{ request()->routeIs('personil.kapor.*') ? 'open' : '' }}">
-                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-shirt-line group-icon"></i> Kapor
-                        <i class="ri-arrow-down-s-line group-chevron"></i>
-                    </button>
-                    <div class="nav-group-children">
-                        <a href="{{ route('personil.kapor.index') }}"
-                            class="nav-link {{ request()->routeIs('personil.kapor.index') ? 'active' : '' }}">
-                            Input Ukuran
-                        </a>
-                        <a href="{{ route('personil.kapor.history') }}"
-                            class="nav-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
-                            Riwayat
-                        </a>
-                    </div>
-                </div>
+                <a href="{{ route('personil.kapor.index') }}"
+                    class="nav-link {{ request()->routeIs('personil.kapor.index') ? 'active' : '' }}">
+                    <i class="ri-edit-line"></i> Input Ukuran
+                </a>
+                <a href="{{ route('personil.kapor.history') }}"
+                    class="nav-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
+                    <i class="ri-history-line"></i> Riwayat
+                </a>
             @endif
 
             {{-- ══ Admin Satker Role ══ --}}
@@ -1706,26 +1816,9 @@
 
             {{-- ══ Admin / Superadmin Roles ══ --}}
             @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
-                <div class="nav-group {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.satkers.*') ? 'open' : '' }}">
-                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-shield-user-line group-icon"></i> Administrasi
-                        <i class="ri-arrow-down-s-line group-chevron"></i>
-                    </button>
-                    <div class="nav-group-children">
-                        <a href="{{ route('admin.users.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                            Manajemen User
-                        </a>
-                        <a href="{{ route('admin.satkers.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.satkers.*') ? 'active' : '' }}">
-                            Data Satker
-                        </a>
-                    </div>
-                </div>
-
                 <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') || request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-t-shirt-2-line group-icon"></i> Data Master
+                        <i class="ri-t-shirt-2-line group-icon"></i> Data Personel
                         <i class="ri-arrow-down-s-line group-chevron"></i>
                     </button>
                     <div class="nav-group-children">
@@ -1740,6 +1833,44 @@
                         <a href="{{ route('admin.identifikasi-kebutuhan.index') }}"
                             class="nav-link {{ request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'active' : '' }}">
                             Identifikasi Kebutuhan
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group {{ request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-bar-chart-grouped-line group-icon"></i> Keuangan & Laporan
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.budget.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.budget.*') ? 'active' : '' }}">
+                            Rencana Anggaran
+                        </a>
+                        <a href="{{ route('admin.reports') }}"
+                            class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
+                            Laporan
+                        </a>
+                        <a href="{{ route('admin.audit-logs.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                            Log Audit
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.satkers.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-shield-user-line group-icon"></i> Administrasi
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('admin.users.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                            Manajemen User
+                        </a>
+                        <a href="{{ route('admin.satkers.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.satkers.*') ? 'active' : '' }}">
+                            Data Satker
                         </a>
                     </div>
                 </div>
@@ -1777,29 +1908,6 @@
                         <a href="{{ route('admin.warehouse-items.deletion-history') }}"
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.deletion-history') ? 'active' : '' }}">
                             Riwayat Penghapusan
-                        </a>
-                    </div>
-                </div>
-            @endif
-
-            @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
-                <div class="nav-group {{ request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
-                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-bar-chart-grouped-line group-icon"></i> Keuangan & Laporan
-                        <i class="ri-arrow-down-s-line group-chevron"></i>
-                    </button>
-                    <div class="nav-group-children">
-                        <a href="{{ route('admin.budget.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.budget.*') ? 'active' : '' }}">
-                            Rencana Anggaran
-                        </a>
-                        <a href="{{ route('admin.reports') }}"
-                            class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
-                            Laporan
-                        </a>
-                        <a href="{{ route('admin.audit-logs.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
-                            Log Audit
                         </a>
                     </div>
                 </div>

@@ -31,9 +31,11 @@
         <div class="card-header"><h3><i class="ri-user-line" style="margin-right:8px; color:var(--accent);"></i> Informasi Akun</h3></div>
         <div class="card-body">
             <table style="width:100%;">
-                <tr><td style="font-weight:600; width:140px; padding:10px 0; color:#64748B; font-size:13px; border:none;">NRP/NIP</td><td style="padding:10px 0; border:none;">{{ $user->nrp_nip }}</td></tr>
+                <tr><td style="font-weight:600; width:140px; padding:10px 0; color:#64748B; font-size:13px; border:none;">{{ $user->loginIdentifierLabel() }}</td><td style="padding:10px 0; border:none;">{{ $user->loginIdentifier() ?? '-' }}</td></tr>
                 <tr><td style="font-weight:600; padding:10px 0; color:#64748B; font-size:13px; border:none;">Nama</td><td style="padding:10px 0; border:none;">{{ $user->name }}</td></tr>
+                @if($user->isPersonnel())
                 <tr><td style="font-weight:600; padding:10px 0; color:#64748B; font-size:13px; border:none;">Email</td><td style="padding:10px 0; border:none;">{{ $user->email ?? '-' }}</td></tr>
+                @endif
                 <tr><td style="font-weight:600; padding:10px 0; color:#64748B; font-size:13px; border:none;">Satker</td><td style="padding:10px 0; border:none;">{{ $user->satker->name ?? '-' }}</td></tr>
                 <tr><td style="font-weight:600; padding:10px 0; color:#64748B; font-size:13px; border:none;">Status</td><td style="padding:10px 0; border:none;">
                     @if($user->is_active) <span class="badge badge-success">Aktif</span> @else <span class="badge badge-danger">Nonaktif</span> @endif

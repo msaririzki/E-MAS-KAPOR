@@ -40,14 +40,15 @@ class KebutuhanController extends Controller
     }
 
     /**
-     * Form buat pengajuan baru.
+     * Form buat pengajuan baru — menampilkan semua item kapor sebagai card selectable.
      */
     public function create()
     {
         $kaporItems = KaporItem::where('is_active', true)
             ->orderBy('category')
             ->orderBy('item_name')
-            ->get();
+            ->get()
+            ->groupBy('category');
 
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
 
@@ -55,7 +56,7 @@ class KebutuhanController extends Controller
     }
 
     /**
-     * Simpan pengajuan baru.
+     * Simpan pengajuan baru — hanya item IDs (tanpa quantity).
      */
     public function store(Request $request)
     {
@@ -63,9 +64,7 @@ class KebutuhanController extends Controller
             'title' => 'required|string|max:255',
             'notes' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
-            'items.*.kapor_item_id' => 'required|exists:kapor_items,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.notes' => 'nullable|string|max:500',
+            'items.*' => 'exists:kapor_items,id',
         ], [
             'items.required' => 'Minimal pilih 1 item kebutuhan.',
             'items.min' => 'Minimal pilih 1 item kebutuhan.',
@@ -79,15 +78,15 @@ class KebutuhanController extends Controller
                 'user_id' => $request->user()->id,
                 'title' => $request->title,
                 'fiscal_year' => $fiscalYear,
-                'status' => 'draft',
+                'status' => 'diajukan',
                 'notes' => $request->notes,
+                'submitted_at' => now(),
             ]);
 
-            foreach ($request->items as $item) {
+            foreach ($request->items as $kaporItemId) {
                 $kebutuhan->items()->create([
-                    'kapor_item_id' => $item['kapor_item_id'],
-                    'quantity' => $item['quantity'],
-                    'notes' => $item['notes'] ?? null,
+                    'kapor_item_id' => $kaporItemId,
+                    'quantity' => 1,
                 ]);
             }
 
@@ -95,7 +94,7 @@ class KebutuhanController extends Controller
         });
 
         return redirect()->route('admin-satker.kebutuhan.show', $kebutuhan)
-            ->with('success', 'Draft pengajuan berhasil disimpan. Silakan klik "Kirim Pengajuan" agar dapat direview oleh Admin.');
+            ->with('success', 'Pengajuan kebutuhan berhasil dikirim!');
     }
 
     /**
@@ -111,7 +110,7 @@ class KebutuhanController extends Controller
     }
 
     /**
-     * Form edit pengajuan (draft only).
+     * Form edit pengajuan (draft only) — card selectable.
      */
     public function edit(Kebutuhan $kebutuhan)
     {
@@ -126,13 +125,16 @@ class KebutuhanController extends Controller
         $kaporItems = KaporItem::where('is_active', true)
             ->orderBy('category')
             ->orderBy('item_name')
-            ->get();
+            ->get()
+            ->groupBy('category');
 
-        return view('admin-satker.kebutuhan.edit', compact('kebutuhan', 'kaporItems'));
+        $selectedIds = $kebutuhan->items->pluck('kapor_item_id')->toArray();
+
+        return view('admin-satker.kebutuhan.edit', compact('kebutuhan', 'kaporItems', 'selectedIds'));
     }
 
     /**
-     * Update pengajuan (draft only).
+     * Update pengajuan (draft only) — hanya item IDs.
      */
     public function update(Request $request, Kebutuhan $kebutuhan)
     {
@@ -146,9 +148,7 @@ class KebutuhanController extends Controller
             'title' => 'required|string|max:255',
             'notes' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
-            'items.*.kapor_item_id' => 'required|exists:kapor_items,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.notes' => 'nullable|string|max:500',
+            'items.*' => 'exists:kapor_items,id',
         ]);
 
         DB::transaction(function () use ($request, $kebutuhan) {
@@ -159,11 +159,10 @@ class KebutuhanController extends Controller
 
             // Replace items
             $kebutuhan->items()->delete();
-            foreach ($request->items as $item) {
+            foreach ($request->items as $kaporItemId) {
                 $kebutuhan->items()->create([
-                    'kapor_item_id' => $item['kapor_item_id'],
-                    'quantity' => $item['quantity'],
-                    'notes' => $item['notes'] ?? null,
+                    'kapor_item_id' => $kaporItemId,
+                    'quantity' => 1,
                 ]);
             }
         });
@@ -210,6 +209,18 @@ class KebutuhanController extends Controller
         ]);
 
         return back()->with('success', 'Pengajuan kebutuhan berhasil dikirim untuk direview.');
+    }
+
+    /**
+     * Cetak / Print halaman pengajuan kebutuhan (render view khusus print).
+     */
+    public function printPdf(Kebutuhan $kebutuhan)
+    {
+        $this->authorizeSatker($kebutuhan);
+
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+
+        return view('admin-satker.kebutuhan.print', compact('kebutuhan'));
     }
 
     /**

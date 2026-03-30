@@ -41,11 +41,11 @@
         <div class="card-body-simple">
             <div class="form-grid-2">
                 <div class="form-group-simple">
-                    <label>Username (NRP/NIP)</label>
-                    <input type="text" name="nrp_nip" value="{{ old('nrp_nip') }}" 
-                        class="form-input-simple @error('nrp_nip') is-invalid @enderror" 
-                        placeholder="Contoh: 123456" required>
-                    @error('nrp_nip') <span class="error-msg">{{ $message }}</span> @enderror
+                    <label>Gmail</label>
+                    <input type="email" name="email" value="{{ old('email') }}"
+                        class="form-input-simple @error('email') is-invalid @enderror"
+                        placeholder="Contoh: admin.kapor@gmail.com" required>
+                    @error('email') <span class="error-msg">{{ $message }}</span> @enderror
                 </div>
                 <div class="form-group-simple">
                      <label>Nama Lengkap</label>
@@ -94,7 +94,7 @@
                          <input type="hidden" name="role" id="role_input" value="{{ old('role') }}" required>
                      </div>
                      <div style="margin-top: 8px; font-size: 12px; color: #6B7280;">
-                         Pilih <strong>Admin Gudang</strong> jika akun hanya perlu akses ke fitur gudang.
+                         Superadmin dan seluruh admin login memakai Gmail. Personil tetap dikelola dari Data Personel dengan NRP/NIP.
                      </div>
                      @error('role') <span class="error-msg">{{ $message }}</span> @enderror
                  </div>
@@ -233,7 +233,7 @@
     <form method="GET" action="{{ route('admin.users.index') }}" class="filter-form" id="filterForm">
         <div class="search-input">
             <i class="ri-search-line"></i>
-            <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari berdasarkan nama atau username..." autocomplete="off" oninput="debounceSearch()">
+            <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari berdasarkan nama, Gmail, atau NRP/NIP..." autocomplete="off" oninput="debounceSearch()">
             @if(request('search'))
                 <button type="button" class="clear-search" onclick="document.getElementById('searchInput').value=''; document.getElementById('filterForm').submit();">
                     <i class="ri-close-circle-fill"></i>
@@ -310,7 +310,7 @@
                             </div>
                             <div class="details">
                                 <span class="name">{{ $u->name }}</span>
-                                <span class="username">@<span></span>{{ $u->nrp_nip }}</span>
+                                <span class="username">{{ $u->loginIdentifierLabel() }}: {{ $u->loginIdentifier() ?? '-' }}</span>
                             </div>
                         </div>
                     </td>
@@ -1124,9 +1124,10 @@
         // Specific for edit modal syncing
         if (wrapper.id === 'editRoleSelect') {
             document.getElementById('edit_role').value = value;
+            syncEditLoginFields(value);
         }
         if (wrapper.id === 'editSatkerSelect') {
-            document.getElementById('edit_satker_id').value = value;
+            document.getElementById('edit_satker').value = value;
         }
 
         wrapper.classList.remove('active');
@@ -1247,8 +1248,34 @@
             .replace(/\b\w/g, char => char.toUpperCase());
     }
 
+    function syncEditLoginFields(roleName) {
+        const isPersonil = roleName === 'personil';
+        const emailGroup = document.getElementById('edit_email_group');
+        const nrpGroup = document.getElementById('edit_nrp_group');
+        const emailInput = document.getElementById('edit_email');
+        const nrpInput = document.getElementById('edit_nrp_nip');
+
+        if (emailGroup) {
+            emailGroup.style.display = isPersonil ? 'none' : 'block';
+        }
+
+        if (nrpGroup) {
+            nrpGroup.style.display = isPersonil ? 'block' : 'none';
+        }
+
+        if (emailInput) {
+            emailInput.disabled = isPersonil;
+            emailInput.required = !isPersonil;
+        }
+
+        if (nrpInput) {
+            nrpInput.disabled = !isPersonil;
+            nrpInput.required = isPersonil;
+        }
+    }
+
     function openEditModal(user) {
-        document.getElementById('edit_nrp_nip').value = user.nrp_nip;
+        document.getElementById('edit_nrp_nip').value = user.nrp_nip || '';
         document.getElementById('edit_name').value = user.name;
         
         // If role is personil, take phone from personnel data
@@ -1269,11 +1296,14 @@
             const roleName = user.roles[0].name;
             roleInput.value = roleName;
             roleLabel.innerText = formatRoleLabel(roleName);
+            syncEditLoginFields(roleName);
             
             // Mark as selected in dropdown
             document.querySelectorAll('#editRoleSelect .option').forEach(opt => {
                 opt.classList.toggle('selected', opt.getAttribute('data-value') === roleName);
             });
+        } else {
+            syncEditLoginFields('');
         }
 
         // Set Custom Select for Satker

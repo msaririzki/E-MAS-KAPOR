@@ -240,6 +240,21 @@
         .stat-card-clickable:active {
             transform: translateY(-1px);
         }
+        @media (max-width: 768px) {
+            .stat-card-clickable {
+                grid-column: span 2 !important; /* Biar lega dari pinggir-ke-pinggir di mobile */
+            }
+            .alert-bar {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+                text-align: center;
+            }
+            .alert-bar .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
     <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'incomplete_scope' => 'size_only']) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center;">
         <div class="stat-icon icon-red">
@@ -258,7 +273,7 @@
 </div>
 
 @if(($stats['nrp_issues'] ?? 0) > 0)
-<div style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+<div class="alert-bar" style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
     <div style="display: flex; align-items: center; gap: 12px;">
         <i class="ri-error-warning-fill" style="font-size: 24px; color: #EA580C;"></i>
         <span style="font-size: 14px; color: #9A3412; line-height: 1.4;">
@@ -273,7 +288,7 @@
 @endif
 
 @if(request('status') === 'incomplete')
-<div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+<div class="alert-bar" style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
     <div style="display: flex; align-items: center; gap: 10px;">
         <i class="ri-filter-3-line" style="font-size: 18px; color: #DC2626;"></i>
         <span style="font-size: 14px; font-weight: 600; color: #991B1B;">
@@ -770,100 +785,7 @@
                     <p style="font-size: 12px; color: #6B7280; margin-top: 8px;">Format yang didukung: .xlsx, .xls, atau .csv</p>
                 </div>
 
-                <div style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-                    <div style="display: flex; gap: 12px;">
-                        <i class="ri-information-line" style="font-size: 24px; color: #F97316;"></i>
-                        <div>
-                            <h4 style="font-size: 14px; font-weight: 700; color: #9A3412; margin-bottom: 4px;">Instruksi Format Import</h4>
-                            <p style="font-size: 13px; color: #C2410C; line-height: 1.5;">Setelah upload, sistem akan menampilkan <strong>halaman preview</strong> untuk memeriksa data sebelum disimpan. Pangkat yang mengandung typo akan dikoreksi otomatis dan dapat diedit manual jika diperlukan.</p>
-                            <a href="{{ route('admin.personnel.template') }}" class="btn btn-primary" style="background: #B91C1C; margin-top: 12px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;">
-                                <i class="ri-download-cloud-2-line"></i> Unduh Tabel Format Import (Excel)
-                            </a>
-                        </div>
-                    </div>
-                </div>
 
-                <div style="margin-bottom: 24px;">
-                    <h5 style="font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 12px;">Struktur Tabel Excel (Data mulai baris 11):</h5>
-                    <div style="overflow-x: auto; border: 1px solid #E5E7EB; border-radius: 8px;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
-                            <thead>
-                                <tr style="background: #F9FAFB;">
-                                    <th style="padding: 10px; border-bottom: 1px solid #E5E7EB;">Kolom</th>
-                                    <th style="padding: 10px; border-bottom: 1px solid #E5E7EB;">Wajib</th>
-                                    <th style="padding: 10px; border-bottom: 1px solid #E5E7EB;">Isi / Keterangan</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">NAMA LENGKAP</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; color: #EF4444;">Ya</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Tanpa gelar (Contoh: BUDI SANTOSO) - <strong>Kolom B</strong>.</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">PANGKAT</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; color: #EF4444;">Ya</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Gunakan singkatan standar (Contoh: BRIPDA, AKP, KOMBES POL, PENATA) - <strong>Kolom C</strong>.</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">GOLONGAN</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; color: #EF4444;">Ya</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Isi kategori pangkat (Contoh: PATI, PAMEN, PAMA, BINTARA, IV/a, III/b) - <strong>Kolom D</strong>.</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">NRP / NIP</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; color: #EF4444;">Ya</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Identitas unik. Wajib diisi benar karena akan menjadi <strong>username & password</strong> login personel - <strong>Kolom E</strong>.</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">JABATAN</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; color: #EF4444;">Ya</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Nama jabatan resmi (Contoh: KANIT, BANUM, dsb) - <strong>Kolom F</strong>.</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">BAG / FUNGSI</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; color: #EF4444;">Ya</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">
-                                        Satuan fungsi (Contoh: BAG PAL, BAG ADA, dsb) - <strong>Kolom G</strong>. 
-                                        <div style="margin-top: 4px; font-size: 11px; color: #6B7280; font-style: italic;">Note: Diisi sesuai KEP Penempatan karena berpengaruh pada jenis kapor yang diterima.</div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">JENIS KELAMIN</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Tidak</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Isi dengan <strong>P</strong> (Pria/Laki-laki) atau <strong>W</strong> (Wanita/Perempuan) - <strong>Kolom H</strong>.</td>
-                                </tr>
-                                <tr style="background: #FEF2F2;">
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">DATA UKURAN</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Tidak</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">
-                                        <div style="font-weight: 700; margin-bottom: 4px; color: #111827;">PANDUAN ISI UKURAN (Kolom I s/d Q):</div>
-                                        <ul style="margin: 0; padding-left: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 11px;">
-                                            <li><strong>T. Kepala:</strong> 54 s/d 60</li>
-                                            <li><strong>Kemeja:</strong> Pria: 14-22 | Wan: K, SD, B, EB, EEB, EEEB, EEEEB</li>
-                                            <li><strong>Celana/Rok:</strong> Pria: 27-50 | Wan: K, SD, B, EB, EEB, EEEB, EEEEB</li>
-                                            <li><strong>T-Shirt/Jaket:</strong> K, SD, B, EB, EEB, EEEB, EEEEB</li>
-                                            <li><strong>Sepatu:</strong> 36 s/d 48</li>
-                                            <li><strong>Sabuk:</strong> 36, 38, ..., 60 (Genap)</li>
-                                            <li><strong>Jilbab:</strong> K, SD, B</li>
-                                        </ul>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6; font-weight: 700; color: #374151;">KETERANGAN</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Tidak</td>
-                                    <td style="padding: 10px; border-bottom: 1px solid #F3F4F6;">Catatan tambahan - <strong>Kolom R</strong>.</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3" style="padding: 12px; background: #F8FAFC; font-size: 11px; color: #475569;">
-                                        <strong>KHUSUS POLRES, ISI BAG/FUNGSI SEBAGAI BERIKUT:</strong><br>
-                                        BAG OPS, BAG REN, BAG SDM, BA POLRES (BAG SDM), BAG LOG, SI WAS, SIHUMAS, SIKUM, SI TIK, SIUM, SIKEU, SI DOKKES, SI PROPAM, SAT BINMAS, SAT SAMAPTA, SAT PAMOBVIT, SAT LANTAS, SAT POLAIRUD, SAT TAHTI, SPKT, SAT INTELKAM, SAT RESKRIM, SAT RESNARKOBA.
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
             <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">
                 <button type="button" class="btn btn-outline" onclick="closeModal('importModal')">Tutup</button>

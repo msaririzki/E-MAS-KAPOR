@@ -14,18 +14,21 @@
             <div class="modal-body">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>NRP / NIP <span class="required">*</span></label>
-                        <input type="text" name="nrp_nip" id="edit_nrp_nip" class="form-input" required>
-                    </div>
-                    <div class="form-group">
                         <label>Nama Lengkap <span class="required">*</span></label>
                         <input type="text" name="name" id="edit_name" class="form-input" required>
+                    </div>
+                    <div class="form-group" id="edit_email_group">
+                        <label>Gmail <span class="required">*</span></label>
+                        <input type="email" name="email" id="edit_email" class="form-input" placeholder="Contoh: admin.kapor@gmail.com">
+                    </div>
+                    <div class="form-group" id="edit_nrp_group" style="display: none;">
+                        <label>NRP / NIP <span class="required">*</span></label>
+                        <input type="text" name="nrp_nip" id="edit_nrp_nip" class="form-input">
                     </div>
                 </div>
                 <div class="form-group">
                     <label>No. HP (WhatsApp)</label>
                     <input type="text" name="phone" id="edit_phone" class="form-input" placeholder="Contoh: 08123456789">
-                    <input type="hidden" name="email" id="edit_email"> {{-- Hidden for logic compatibility --}}
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -115,7 +118,7 @@
                         <i class="ri-information-line" style="font-size: 20px; color: #F97316;"></i>
                         <div>
                             <h4 style="font-size: 14px; font-weight: 700; color: #9A3412; margin-bottom: 4px;">Instruksi Import</h4>
-                            <p style="font-size: 13px; color: #C2410C; line-height: 1.5;"> Pastikan format CSV sesuai dengan templat. Impor ini hanya untuk akun administratif (Superadmin, Admin, Admin Gudang, Admin Satker).</p>
+                            <p style="font-size: 13px; color: #C2410C; line-height: 1.5;"> Pastikan format CSV sesuai dengan templat. Impor ini hanya untuk akun administratif dan kolom pertama harus berisi Gmail login admin.</p>
                             <a href="{{ route('admin.users.template') }}" class="btn-template" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: #B91C1C; font-weight: 700; text-decoration: none; font-size: 13px;">
                                 <i class="ri-download-cloud-2-line"></i> Unduh Templat CSV
                             </a>
@@ -138,7 +141,7 @@
                 <div style="margin-top: 16px; padding: 12px; background: #F9FAFB; border-radius: 10px; border: 1px dashed #E5E7EB;">
                     <p style="font-size: 12px; color: #6B7280; font-weight: 500;">
                         <strong>Kolom yang dibutuhkan:</strong><br>
-                        nrp_nip, name, phone, role, password
+                        email, name, phone, role, password
                     </p>
                 </div>
             </div>
