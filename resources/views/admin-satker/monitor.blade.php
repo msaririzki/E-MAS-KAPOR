@@ -18,7 +18,7 @@
 </div>
 
 {{-- Stats Cards --}}
-<div class="stats-row" style="grid-template-columns: repeat(4, 1fr);">
+<div class="stats-row monitoring-stats">
     <div class="stat-card">
         <div class="stat-top">
             <span class="stat-label">Total Personel</span>
@@ -77,8 +77,8 @@
             <i class="ri-list-check-2" style="color: var(--brand);"></i> Daftar Personel
         </h3>
 
-        <form method="GET" action="{{ route('admin-satker.monitor') }}" style="display: flex; gap: 8px; align-items: center;">
-            <div style="position: relative;">
+        <form method="GET" action="{{ route('admin-satker.monitor') }}" class="monitoring-filter">
+            <div class="search-container" style="position: relative;">
                 <i class="ri-search-line" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 14px;"></i>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, NRP..."
                     style="padding: 7px 12px 7px 32px; border: 1px solid var(--slate-200); border-radius: 8px; font-size: 13px; width: 220px; font-family: inherit;">
@@ -101,8 +101,8 @@
     </div>
 
     <div class="card-body flush">
-        <div class="table-wrap">
-            <table>
+        <div class="table-wrap" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <table style="min-width: 600px;">
                 <thead>
                     <tr>
                         <th style="width: 50px;">No</th>
@@ -190,4 +190,43 @@
         @endif
     </div>
 </div>
+@endsection
+
+@section('styles')
+<style>
+    .monitoring-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    
+    .monitoring-filter {
+        display: flex; 
+        gap: 8px; 
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 992px) {
+        .monitoring-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .monitoring-filter {
+            width: 100%;
+        }
+        .monitoring-filter .search-container,
+        .monitoring-filter .search-container input,
+        .monitoring-filter select,
+        .monitoring-filter button,
+        .monitoring-filter a {
+            width: 100% !important;
+            flex: 1 1 100%;
+        }
+    }
+</style>
 @endsection
