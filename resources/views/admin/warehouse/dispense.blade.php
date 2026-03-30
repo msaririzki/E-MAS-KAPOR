@@ -104,6 +104,8 @@
     .section-label i { font-size: 16px; color: #D97706; }
 
     /* Item rows */
+    .ss-wrap.disabled { opacity: 0.6; cursor: not-allowed; }
+    .ss-wrap.disabled .ss-trigger { pointer-events: none; background: var(--bg-body, #F9FAFB); }
     .item-rows { display: flex; flex-direction: column; gap: 16px; }
     .item-row {
         background: var(--bg-body, #F9FAFB); border: 1px solid var(--border-color, #E5E7EB);
@@ -246,18 +248,43 @@
                         <div class="item-row-fields">
                             <div class="form-group" style="margin-bottom:0;">
                                 <label>Nama Barang <span class="req">*</span></label>
-                                <select class="f-select item-select" onchange="loadSizes(this, 0)" data-index="0">
-                                    <option value="">-- Pilih Barang --</option>
-                                    @foreach($items as $item)
-                                        <option value="{{ $item->id }}" data-stock="{{ $item->sizes_sum_stock ?? 0 }}">{{ $item->name }}</option>
-                                    @endforeach
-                                </select>
+                                <div class="ss-wrap" id="itemSelect_0">
+                                    <div class="ss-trigger" onclick="ssToggle('itemSelect_0')">
+                                        <span class="ss-text ss-placeholder" id="item_text_0">-- Pilih Barang --</span>
+                                        <i class="ri-arrow-down-s-line ss-arrow"></i>
+                                    </div>
+                                    <div class="ss-dropdown" id="itemSelect_0_dd">
+                                        <div class="ss-search">
+                                            <input type="text" placeholder="Cari barang..." oninput="ssFilter(this, 'itemSelect_0')">
+                                        </div>
+                                        <div class="ss-list">
+                                            @foreach($items as $item)
+                                                <div class="ss-opt" data-val="{{ $item->id }}" data-label="{{ $item->name }}" onclick="ssSelect('itemSelect_0', '{{ $item->id }}', '{{ $item->name }}', 0)">
+                                                    {{ $item->name }}
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <input type="hidden" class="item-val" id="itemSelect_0_val" required>
+                                </div>
                             </div>
                             <div class="form-group" style="margin-bottom:0;">
                                 <label>Ukuran <span class="req">*</span></label>
-                                <select class="f-select size-select" name="items[0][warehouse_item_size_id]" data-index="0" disabled>
-                                    <option value="">-- Pilih Barang Dulu --</option>
-                                </select>
+                                <div class="ss-wrap disabled" id="sizeSelect_0">
+                                    <div class="ss-trigger" onclick="ssToggle('sizeSelect_0')">
+                                        <span class="ss-text ss-placeholder" id="size_text_0">-- Pilih Barang Dulu --</span>
+                                        <i class="ri-arrow-down-s-line ss-arrow"></i>
+                                    </div>
+                                    <div class="ss-dropdown" id="sizeSelect_0_dd">
+                                        <div class="ss-search">
+                                            <input type="text" placeholder="Cari ukuran..." oninput="ssFilter(this, 'sizeSelect_0')">
+                                        </div>
+                                        <div class="ss-list">
+                                            {{-- Populated via JS --}}
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="items[0][warehouse_item_size_id]" class="size-val" id="sizeSelect_0_val" required>
+                                </div>
                                 <div class="stock-badge" id="stockBadge_0" style="display:none;">
                                     <i class="ri-information-line"></i> Stok: <span id="stockVal_0">0</span>
                                 </div>
@@ -290,13 +317,15 @@
 
 <script>
     // Items data for dynamic use
-    const itemsData = @json($items->map(fn($i) => ['id' => $i->id, 'name' => $i->name, 'stock' => $i->sizes_sum_stock ?? 0]));
+    const itemsData = @json(collect($items)->map(fn($i) => ['id' => $i->id, 'name' => $i->name, 'stock' => $i->sizes_sum_stock ?? 0]));
     let rowCount = 1;
     let stockLimits = {};
 
     // ── Searchable Select ──
     function ssToggle(id) {
         const wrap = document.getElementById(id);
+        if (wrap.classList.contains('disabled')) return;
+
         const dd = document.getElementById(id + '_dd');
         const trigger = wrap.querySelector('.ss-trigger');
         const isOpen = dd.classList.contains('open');
@@ -314,16 +343,31 @@
         const opts = document.getElementById(id + '_dd').querySelectorAll('.ss-opt');
         opts.forEach(o => { o.style.display = (o.dataset.label || o.textContent).toLowerCase().includes(val) ? '' : 'none'; });
     }
-    function ssSelect(id, value, label) {
+    function ssSelect(id, value, label, idx) {
         document.getElementById(id + '_val').value = value;
-        const textEl = document.getElementById(id.replace('Select', '') + '_text');
+        const textEl = document.getElementById(id.replace('Select', '_text'));
         textEl.textContent = label;
         textEl.classList.remove('ss-placeholder');
+
         // Mark selected
         document.getElementById(id + '_dd').querySelectorAll('.ss-opt').forEach(o => o.classList.toggle('selected', o.dataset.val === value));
         // Close
         document.getElementById(id + '_dd').classList.remove('open');
         document.getElementById(id).querySelector('.ss-trigger').classList.remove('open');
+
+        // SPECIAL: If Item selected, load sizes
+        if (id.startsWith('itemSelect')) {
+            loadSizes(value, idx);
+        }
+        // SPECIAL: If Size selected, update stock badge
+        if (id.startsWith('sizeSelect')) {
+            const opt = document.querySelector(`#${id}_dd .ss-opt[data-val="${value}"]`);
+            const stock = parseInt(opt.dataset.stock || 0);
+            stockLimits[idx] = stock;
+            document.getElementById('stockVal_' + idx).textContent = stock;
+            document.getElementById('stockBadge_' + idx).style.display = stock > 0 ? 'inline-flex' : 'none';
+            checkStock(idx);
+        }
     }
     document.addEventListener('click', e => {
         if (!e.target.closest('.ss-wrap')) {
@@ -332,44 +376,44 @@
     });
 
     // ── Load sizes via AJAX ──
-    function loadSizes(selectEl, index) {
-        const itemId = selectEl.value;
-        const sizeSelect = document.querySelector(`.size-select[data-index="${index}"]`);
+    function loadSizes(itemId, index) {
+        const sizeWrap = document.getElementById('sizeSelect_' + index);
+        const sizeList = sizeWrap.querySelector('.ss-list');
+        const sizeText = document.getElementById('size_text_' + index);
+        const sizeVal = document.getElementById('sizeSelect_' + index + '_val');
         const stockBadge = document.getElementById('stockBadge_' + index);
         const stockWarn = document.getElementById('stockWarn_' + index);
 
-        sizeSelect.innerHTML = '<option value="">Memuat...</option>';
-        sizeSelect.disabled = true;
+        sizeList.innerHTML = '<div style="padding:10px; font-size:12px; color:#9CA3AF;">Memuat...</div>';
+        sizeWrap.classList.add('disabled');
+        sizeText.textContent = '-- Pilih Barang Dulu --';
+        sizeText.classList.add('ss-placeholder');
+        sizeVal.value = '';
         if (stockBadge) stockBadge.style.display = 'none';
         if (stockWarn) stockWarn.style.display = 'none';
         stockLimits[index] = 0;
 
-        if (!itemId) {
-            sizeSelect.innerHTML = '<option value="">-- Pilih Barang Dulu --</option>';
-            return;
-        }
+        if (!itemId) return;
 
         fetch(`{{ url('admin/warehouse-items/api/item-sizes') }}/${itemId}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(r => r.json())
         .then(sizes => {
             if (!sizes.length) {
-                sizeSelect.innerHTML = '<option value="">Tidak ada stok</option>';
+                sizeList.innerHTML = '<div style="padding:10px; font-size:12px; color:#9CA3AF;">Tidak ada stok / ukuran</div>';
+                sizeText.textContent = 'Tidak ada stok';
                 return;
             }
-            let html = '<option value="">-- Pilih Ukuran --</option>';
-            sizes.forEach(s => { html += `<option value="${s.id}" data-stock="${s.stock}">${s.size_label} (stok: ${s.stock})</option>`; });
-            sizeSelect.innerHTML = html;
-            sizeSelect.disabled = false;
-            sizeSelect.onchange = function() {
-                const opt = this.options[this.selectedIndex];
-                const stock = parseInt(opt.dataset.stock || 0);
-                stockLimits[index] = stock;
-                document.getElementById('stockVal_' + index).textContent = stock;
-                document.getElementById('stockBadge_' + index).style.display = stock > 0 ? 'inline-flex' : 'none';
-                checkStock(index);
-            };
+            let html = '';
+            sizes.forEach(s => {
+                html += `<div class="ss-opt" data-val="${s.id}" data-label="${s.size_label}" data-stock="${s.stock}" onclick="ssSelect('sizeSelect_${index}', '${s.id}', '${s.size_label} (stok: ${s.stock})', ${index})">
+                            ${s.size_label} <span class="ss-badge">Stok: ${s.stock}</span>
+                         </div>`;
+            });
+            sizeList.innerHTML = html;
+            sizeWrap.classList.remove('disabled');
+            sizeText.textContent = '-- Pilih Ukuran --';
         })
-        .catch(() => { sizeSelect.innerHTML = '<option value="">Gagal memuat</option>'; });
+        .catch(() => { sizeList.innerHTML = '<div style="padding:10px; font-size:12px; color:#EF4444;">Gagal memuat</div>'; });
     }
 
     function checkStock(index) {
@@ -389,8 +433,10 @@
         div.className = 'item-row';
         div.dataset.index = idx;
 
-        let itemOptions = '<option value="">-- Pilih Barang --</option>';
-        itemsData.forEach(i => { itemOptions += `<option value="${i.id}" data-stock="${i.stock}">${i.name}</option>`; });
+        let itemOptsHTML = '';
+        itemsData.forEach(i => {
+            itemOptsHTML += `<div class="ss-opt" data-val="${i.id}" data-label="${i.name}" onclick="ssSelect('itemSelect_${idx}', '${i.id}', '${i.name}', ${idx})">${i.name}</div>`;
+        });
 
         div.innerHTML = `
             <div class="item-row-header">
@@ -402,15 +448,39 @@
             <div class="item-row-fields">
                 <div class="form-group" style="margin-bottom:0;">
                     <label>Nama Barang <span class="req">*</span></label>
-                    <select class="f-select item-select" onchange="loadSizes(this, ${idx})" data-index="${idx}">
-                        ${itemOptions}
-                    </select>
+                    <div class="ss-wrap" id="itemSelect_${idx}">
+                        <div class="ss-trigger" onclick="ssToggle('itemSelect_${idx}')">
+                            <span class="ss-text ss-placeholder" id="item_text_${idx}">-- Pilih Barang --</span>
+                            <i class="ri-arrow-down-s-line ss-arrow"></i>
+                        </div>
+                        <div class="ss-dropdown" id="itemSelect_${idx}_dd">
+                            <div class="ss-search">
+                                <input type="text" placeholder="Cari barang..." oninput="ssFilter(this, 'itemSelect_${idx}')">
+                            </div>
+                            <div class="ss-list">
+                                ${itemOptsHTML}
+                            </div>
+                        </div>
+                        <input type="hidden" class="item-val" id="itemSelect_${idx}_val" required>
+                    </div>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
                     <label>Ukuran <span class="req">*</span></label>
-                    <select class="f-select size-select" name="items[${idx}][warehouse_item_size_id]" data-index="${idx}" disabled>
-                        <option value="">-- Pilih Barang Dulu --</option>
-                    </select>
+                    <div class="ss-wrap disabled" id="sizeSelect_${idx}">
+                        <div class="ss-trigger" onclick="ssToggle('sizeSelect_${idx}')">
+                            <span class="ss-text ss-placeholder" id="size_text_${idx}">-- Pilih Barang Dulu --</span>
+                            <i class="ri-arrow-down-s-line ss-arrow"></i>
+                        </div>
+                        <div class="ss-dropdown" id="sizeSelect_${idx}_dd">
+                            <div class="ss-search">
+                                <input type="text" placeholder="Cari ukuran..." oninput="ssFilter(this, 'sizeSelect_${idx}')">
+                            </div>
+                            <div class="ss-list">
+                                {{-- Populated via JS --}}
+                            </div>
+                        </div>
+                        <input type="hidden" name="items[${idx}][warehouse_item_size_id]" class="size-val" id="sizeSelect_${idx}_val" required>
+                    </div>
                     <div class="stock-badge" id="stockBadge_${idx}" style="display:none;">
                         <i class="ri-information-line"></i> Stok: <span id="stockVal_${idx}">0</span>
                     </div>
@@ -442,8 +512,8 @@
         const satker = document.getElementById('satkerSelect_val').value;
         if (!satker) { e.preventDefault(); Swal.fire({ icon: 'warning', title: 'Pilih Satker', text: 'Harap pilih satker penerima.' }); return; }
 
-        const sizeSelects = document.querySelectorAll('.size-select');
-        for (const s of sizeSelects) {
+        const sizeVals = document.querySelectorAll('.size-val');
+        for (const s of sizeVals) {
             if (!s.value) { e.preventDefault(); Swal.fire({ icon: 'warning', title: 'Lengkapi Data', text: 'Harap pilih barang & ukuran untuk semua baris.' }); return; }
         }
 

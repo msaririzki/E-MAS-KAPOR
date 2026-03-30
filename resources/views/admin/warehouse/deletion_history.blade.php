@@ -18,19 +18,31 @@
     </div>
 </div>
 
-{{-- Filter --}}
-<div class="filter-bar">
-    <form method="GET" action="{{ route('admin.warehouse-items.deletion-history') }}" class="filter-form" style="display:flex; gap:16px;">
-        <div class="search-input-wrapper">
-            <i class="ri-search-line search-icon"></i>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama barang..." class="search-field" autocomplete="off">
+{{-- Filter & Content --}}
+<div class="card">
+    <div class="card-body">
+        <div class="filter-bar-modern" style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+            <form method="GET" action="{{ route('admin.warehouse-items.deletion-history') }}" class="filter-form" style="display:flex; flex-wrap: wrap; gap:12px; align-items: flex-end;">
+                <div class="filter-group" style="flex: 1; min-width: 300px;">
+                    <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">Pencarian Riwayat</label>
+                    <div class="search-wrap">
+                        <i class="ri-search-line"></i>
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama barang..." class="search-input" autocomplete="off" style="padding-left: 36px;">
+                    </div>
+                </div>
+
+                <div class="filter-actions" style="display:flex; gap:8px;">
+                    <button type="submit" class="btn btn-primary" style="height:36px; padding:0 20px;">
+                        <i class="ri-search-2-line"></i> Cari
+                    </button>
+                    @if(request('search'))
+                        <a href="{{ route('admin.warehouse-items.deletion-history') }}" class="btn btn-outline" style="height:36px; padding:0 16px;" title="Reset">
+                            <i class="ri-refresh-line"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
         </div>
-        <button type="submit" class="btn btn-primary" style="height:36px; padding:0 16px;">Cari</button>
-        @if(request('search'))
-            <a href="{{ route('admin.warehouse-items.deletion-history') }}" class="btn btn-outline" style="height:36px; padding:0 16px;">Reset</a>
-        @endif
-    </form>
-</div>
 
 {{-- Tabs --}}
 <div class="tabs-container">
@@ -47,8 +59,8 @@
 
     {{-- Items Tab Content --}}
     <div id="items-tab" class="tab-content {{ !request('outflows_page') ? 'active' : '' }}">
-        <div class="table-container">
-            <table class="user-table">
+            <div class="table-wrap">
+                <table class="user-table">
                 <thead>
                     <tr>
                         <th style="width: 50px;">NO</th>
@@ -97,8 +109,13 @@
                 </tbody>
             </table>
             @if($items->hasPages())
-                <div style="padding: 16px 24px; border-top: 1px solid #F3F4F6;">
-                    {{ $items->appends(request()->except('items_page'))->links() }}
+                <div class="pagination-footer">
+                    <div class="pagination-info">
+                        Menampilkan <strong>{{ $items->firstItem() }}</strong> - <strong>{{ $items->lastItem() }}</strong> dari <strong>{{ $items->total() }}</strong>
+                    </div>
+                    <div class="pagination-links">
+                        {{ $items->appends(request()->except('items_page'))->links('pagination::bootstrap-4') }}
+                    </div>
                 </div>
             @endif
         </div>
@@ -106,7 +123,7 @@
 
     {{-- Outflows Tab Content --}}
     <div id="outflows-tab" class="tab-content {{ request('outflows_page') ? 'active' : '' }}">
-        <div class="table-container">
+        <div class="table-wrap">
             <table class="user-table">
                 <thead>
                     <tr>
@@ -160,12 +177,18 @@
                 </tbody>
             </table>
             @if($outflows->hasPages())
-                <div style="padding: 16px 24px; border-top: 1px solid #F3F4F6;">
-                    {{ $outflows->appends(request()->except('outflows_page'))->links() }}
+                <div class="pagination-footer">
+                    <div class="pagination-info">
+                        Menampilkan <strong>{{ $outflows->firstItem() }}</strong> - <strong>{{ $outflows->lastItem() }}</strong> dari <strong>{{ $outflows->total() }}</strong>
+                    </div>
+                    <div class="pagination-links">
+                        {{ $outflows->appends(request()->except('outflows_page'))->links('pagination::bootstrap-4') }}
+                    </div>
                 </div>
             @endif
-        </div>
     </div>
+</div>
+</div>
 </div>
 
 <script>
@@ -181,30 +204,76 @@
 
 @section('styles')
 <style>
-    .page-title { font-size: 24px; font-weight: 700; color: #111827; }
-    .page-subtitle { color: #6B7280; font-size: 14px; margin-top: 4px; }
-    .page-header { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
-    .page-header-row { display: flex; justify-content: space-between; width: 100%; align-items: center; }
+    /* Style Overrides and Refinements */
+    .user-table thead th {
+        background: var(--slate-50);
+        padding: 14px 20px;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        color: var(--slate-500);
+        font-weight: 700;
+        border-bottom: 2px solid var(--slate-100);
+    }
+    .user-table tbody td {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--slate-100);
+    }
     
-    .table-container { background: #fff; border: 1px solid #E5E7EB; border-radius: 0 0 12px 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02);}
-    .user-table { width: 100%; border-collapse: collapse; }
-    .user-table th { background: #F9FAFB; padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 600; color: #6B7280; border-bottom: 1px solid #E5E7EB; }
-    .user-table td { padding: 16px 24px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; color: #374151; font-size: 14px; }
-    
-    .tabs-header { display: flex; gap: 8px; margin-bottom: -1px; position: relative; z-index: 10; padding: 0 4px; }
-    .tab-btn { padding: 12px 20px; font-size: 14px; font-weight: 600; color: #6B7280; background: #F9FAFB; border: 1px solid #E5E7EB; border-bottom: none; border-radius: 10px 10px 0 0; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
-    .tab-btn i { font-size: 18px; }
-    .tab-btn:hover { background: #F3F4F6; color: #374151; }
-    .tab-btn.active { background: #fff; color: #059669; border: 1px solid #E5E7EB; border-bottom: 1px solid #fff; position: relative; }
-    .tab-count { background: #F3F4F6; padding: 2px 8px; border-radius: 20px; font-size: 11px; color: #6B7280; }
-    .tab-btn.active .tab-count { background: #ECFDF5; color: #059669; }
+    /* Pagination Styling */
+    .pagination-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 20px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .pagination-info {
+        font-size: 13px;
+        color: var(--slate-500);
+    }
+    .pagination-links .pagination {
+        display: flex;
+        list-style: none;
+        gap: 4px;
+        margin: 0;
+        padding: 0;
+    }
+    .pagination-links .page-item .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: #fff;
+        color: var(--slate-600);
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .pagination-links .page-item.active .page-link {
+        background: var(--brand);
+        border-color: var(--brand);
+        color: #fff;
+    }
+
+    .tabs-header { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 1px; }
+    .tab-btn { padding: 10px 20px; font-size: 13px; font-weight: 700; color: var(--slate-500); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; position: relative; }
+    .tab-btn:hover { color: var(--brand); }
+    .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .tab-count { background: var(--slate-100); padding: 2px 8px; border-radius: 20px; font-size: 10px; color: var(--slate-500); font-weight: 700; }
+    .tab-btn.active .tab-count { background: var(--brand-bg); color: var(--brand); }
     
     .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
 
-    .filter-bar { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); margin-bottom: 24px; }
-    .search-input-wrapper { flex: 1; position: relative; display: flex; align-items: center; max-width: 400px; }
-    .search-icon { position: absolute; left: 14px; color: #9CA3AF; font-size: 18px; pointer-events: none; }
-    .search-field { width: 100%; height: 36px; border: 1px solid #D1D5DB; border-radius: 8px; padding: 0 16px 0 38px; font-size: 14px; color: #374151; outline: none; background: #fff; }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>
 @endsection
