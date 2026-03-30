@@ -412,6 +412,10 @@ class SppmWordExportService
 
                 if ($cell instanceof DOMElement) {
                     $this->replaceNodeTexts($xpath, $cell, [$value]);
+
+                    if ($cellIndex === 5 || $cellIndex === 6) {
+                        $this->setAlignmentRight($xpath, $cell);
+                    }
                 }
             }
 
@@ -475,6 +479,38 @@ class SppmWordExportService
             if ($node instanceof DOMElement) {
                 $node->nodeValue = $value;
                 $this->applyXmlSpace($node, $value);
+            }
+        }
+    }
+
+    private function setAlignmentRight(DOMXPath $xpath, DOMElement $cell): void
+    {
+        $paragraphs = $xpath->query('.//w:p', $cell);
+
+        foreach ($paragraphs as $p) {
+            if (! $p instanceof DOMElement) {
+                continue;
+            }
+
+            $pPr = $xpath->query('./w:pPr', $p)->item(0);
+
+            if (! $pPr instanceof DOMElement) {
+                $pPr = $p->ownerDocument->createElementNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main', 'w:pPr');
+                if ($p->firstChild) {
+                    $p->insertBefore($pPr, $p->firstChild);
+                } else {
+                    $p->appendChild($pPr);
+                }
+            }
+
+            $jc = $xpath->query('./w:jc', $pPr)->item(0);
+
+            if ($jc instanceof DOMElement) {
+                $jc->setAttribute('w:val', 'right');
+            } else {
+                $jc = $p->ownerDocument->createElementNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main', 'w:jc');
+                $jc->setAttribute('w:val', 'right');
+                $pPr->appendChild($jc);
             }
         }
     }
