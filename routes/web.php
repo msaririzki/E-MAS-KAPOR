@@ -160,8 +160,8 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     // Identifikasi Kebutuhan (Admin View)
     Route::get('/identifikasi-kebutuhan', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'index'])->name('identifikasi-kebutuhan.index');
     Route::get('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'show'])->name('identifikasi-kebutuhan.show');
-    Route::post('/identifikasi-kebutuhan/{kebutuhan}/approve', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'approve'])->name('identifikasi-kebutuhan.approve');
     Route::post('/identifikasi-kebutuhan/{kebutuhan}/reject', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'reject'])->name('identifikasi-kebutuhan.reject');
+    Route::delete('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'destroy'])->name('identifikasi-kebutuhan.destroy');
 
     // Warehouse Data Gudang (Unified)
     Route::post('/warehouse-items/import', [WarehouseController::class, 'import'])->name('warehouse-items.import');
