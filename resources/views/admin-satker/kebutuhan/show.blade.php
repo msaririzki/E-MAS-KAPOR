@@ -10,9 +10,10 @@
             <h1>Detail Pengajuan</h1>
             <p>{{ $kebutuhan->title }}</p>
         </div>
-        <div class="page-header-actions">
+        <div class="page-header-actions" style="display: flex; gap: 8px;">
             <a href="{{ route('admin-satker.kebutuhan.index') }}" class="btn btn-outline btn-sm"><i class="ri-arrow-left-line"></i> Kembali</a>
-            <a href="{{ route('admin-satker.kebutuhan.print', $kebutuhan) }}" target="_blank" class="btn btn-outline btn-sm"><i class="ri-printer-line"></i> Cetak PDF</a>
+            <a href="{{ route('admin-satker.kebutuhan.export-excel', $kebutuhan) }}" class="btn btn-outline btn-sm" style="color: #059669; border-color: #059669; background: #ECFDF5;"><i class="ri-file-excel-2-line"></i> Excel</a>
+            <a href="{{ route('admin-satker.kebutuhan.export-pdf', $kebutuhan) }}" class="btn btn-outline btn-sm" style="color: #DC2626; border-color: #DC2626; background: #FEF2F2;"><i class="ri-file-pdf-line"></i> PDF</a>
         </div>
     </div>
 </div>

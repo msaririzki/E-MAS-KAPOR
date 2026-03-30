@@ -2,131 +2,214 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Pengajuan Kebutuhan — {{ $kebutuhan->title }}</title>
+    <title>Usulan Kaporlap — {{ $kebutuhan->satker->name ?? '' }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px; color: #1e293b; background: #fff; }
+        body { font-family: 'Times New Roman', Times, serif; font-size: 12px; color: #000; background: #fff; padding: 0; }
         .print-container { max-width: 800px; margin: 0 auto; padding: 30px 40px; }
-        .print-header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 3px double #1e293b; }
-        .print-header h1 { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-        .print-header h2 { font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 8px; }
-        .print-header .subtitle { font-size: 11px; color: #64748b; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0; }
-        .info-item { display: flex; gap: 8px; font-size: 12px; }
-        .info-item .label { color: #64748b; min-width: 110px; font-weight: 600; }
-        .info-item .value { color: #1e293b; font-weight: 500; }
-        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        .data-table th { background: #1e293b; color: #fff; padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-        .data-table th:first-child { text-align: center; width: 40px; }
-        .data-table td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
-        .data-table td:first-child { text-align: center; }
-        .data-table tbody tr:nth-child(even) { background: #f8fafc; }
-        .data-table .category-row { background: #f1f5f9; font-weight: 700; color: #475569; }
-        .data-table .category-row td { padding: 6px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #cbd5e1; }
-        .print-footer { margin-top: 40px; display: flex; justify-content: space-between; }
-        .signature-box { text-align: center; width: 200px; }
-        .signature-box .sig-title { font-size: 11px; color: #64748b; margin-bottom: 60px; }
-        .signature-box .sig-line { border-top: 1px solid #1e293b; padding-top: 4px; font-weight: 700; font-size: 12px; }
-        .signature-box .sig-nip { font-size: 10px; color: #64748b; margin-top: 2px; }
-        .no-print { text-align: center; margin-bottom: 20px; }
-        .no-print button { padding: 10px 24px; background: #c62828; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
-        .no-print button:hover { background: #991b1b; }
+
+        /* ── KOP SURAT ── */
+        .kop-surat { width: 350px; text-align: center; margin-bottom: 30px; }
+        .kop-logo { height: 50px; margin-bottom: 4px; }
+        .kop-text { font-size: 13px; font-weight: bold; line-height: 1.2; font-family: Arial, Helvetica, sans-serif; }
+        .kop-line-1 { border-bottom: 2px solid #000; margin-top: 4px; width: 100%; }
+
+        /* ── JUDUL DOKUMEN ── */
+        .doc-title {
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 20px;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.4;
+        }
+
+        /* ── TABEL DATA ── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            border: 2px solid #000;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .data-table th {
+            border: 1px solid #000;
+            padding: 8px 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            background: #fff;
+            text-transform: uppercase;
+        }
+        .data-table td {
+            border: 1px solid #000;
+            padding: 6px 10px;
+            font-size: 12px;
+            vertical-align: top;
+        }
+        .data-table td:first-child {
+            text-align: center;
+            font-weight: bold;
+        }
+        .data-table .category-row {
+            font-weight: bold;
+            background: #fff;
+        }
+        .data-table .category-row td {
+            padding: 8px 10px;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        /* ── FOOTER TTD ── */
+        .print-footer {
+            margin-top: 40px;
+            float: right;
+            width: 350px;
+            text-align: center;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .print-footer .ttd-location {
+            margin-bottom: 10px;
+        }
+        .print-footer .ttd-an {
+            margin-bottom: 0px;
+        }
+        .print-footer .ttd-jabatan {
+            margin-bottom: 70px;
+        }
+        .print-footer .ttd-nama {
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .print-footer .ttd-nrp {
+            font-size: 11px;
+        }
+
+        .clearfix::after { content: ""; clear: both; display: table; }
+
+        /* ── TOMBOL CETAK ── */
+        .no-print {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-top: 20px;
+        }
+        .no-print button {
+            padding: 10px 24px;
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .no-print button:hover { background: #2563eb; }
+
         @media print {
             .no-print { display: none !important; }
             body { background: #fff; }
-            .print-container { padding: 20px; }
+            .print-container { padding: 15px 20px; width: 100%; max-width: 100%; }
         }
     </style>
 </head>
 <body>
-    <div class="print-container">
-        <div class="no-print">
-            <button onclick="window.print()"><i class="ri-printer-line"></i> Cetak / Simpan PDF</button>
+    <div class="print-container clearfix">
+        <!-- Tanda tangan dihapus dari tombol cetak web, karena hanya digunakan untuk export PDF -->
+        {{-- KOP SURAT --}}
+        <div class="kop-surat">
+            <?php 
+                $path = public_path('kop suratt.png');
+                $type = pathinfo($path, PATHINFO_EXTENSION);
+                $data = file_get_contents($path);
+                $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+            ?>
+            <img src="{{ $base64 }}" alt="Logo Polri" class="kop-logo">
+            <div class="kop-text">
+                KEPOLISIAN NEGARA REPUBLIK INDONESIA<br>
+                DAERAH NUSA TENGGARA BARAT<br>
+                {{ strtoupper($kebutuhan->satker->name ?? '') }}
+            </div>
+            <div class="kop-line-1"></div>
         </div>
 
-        <div class="print-header">
-            <h1>Kepolisian Negara Republik Indonesia</h1>
-            <h2>Laporan Pengajuan Kebutuhan Kapor</h2>
-            <div class="subtitle">Sistem Informasi E-MAS KAPOR — {{ $kebutuhan->satker->name ?? '-' }}</div>
+        {{-- JUDUL --}}
+        <div class="doc-title">
+            USULAN KAPORLAP {{ strtoupper($kebutuhan->satker->name ?? '') }} TAHUN ANGGARAN {{ $kebutuhan->fiscal_year }}
         </div>
 
-        <div class="info-grid">
-            <div class="info-item">
-                <span class="label">Judul Pengajuan</span>
-                <span class="value">: {{ $kebutuhan->title }}</span>
-            </div>
-            <div class="info-item">
-                <span class="label">Status</span>
-                <span class="value">: {{ $kebutuhan->status_label }}</span>
-            </div>
-            <div class="info-item">
-                <span class="label">Satker</span>
-                <span class="value">: {{ $kebutuhan->satker->name ?? '-' }}</span>
-            </div>
-            <div class="info-item">
-                <span class="label">Tahun Anggaran</span>
-                <span class="value">: {{ $kebutuhan->fiscal_year }}</span>
-            </div>
-            <div class="info-item">
-                <span class="label">Pengaju</span>
-                <span class="value">: {{ $kebutuhan->user->name ?? '-' }}</span>
-            </div>
-            <div class="info-item">
-                <span class="label">Tanggal</span>
-                <span class="value">: {{ $kebutuhan->submitted_at ? $kebutuhan->submitted_at->format('d M Y') : $kebutuhan->created_at->format('d M Y') }}</span>
-            </div>
-            <div class="info-item">
-                <span class="label">Total Item</span>
-                <span class="value">: {{ $kebutuhan->items->count() }} barang yang diajukan</span>
-            </div>
-        </div>
-
-        @if($kebutuhan->notes)
-        <div style="margin-bottom: 16px; padding: 10px 14px; background: #f8fafc; border-left: 3px solid #3b82f6; border-radius: 2px; font-size: 12px;">
-            <strong>Catatan:</strong> {{ $kebutuhan->notes }}
-        </div>
-        @endif
-
+        {{-- TABEL ITEM --}}
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>No</th>
-                    <th>Nama Item Kapor</th>
-                    <th>Kategori</th>
+                    <th style="width: 5%;">NO</th>
+                    <th style="width: 60%;">JENIS KAPORLAP</th>
+                    <th style="width: 35%;">KATEGORI</th>
                 </tr>
             </thead>
             <tbody>
                 @php
                     $grouped = $kebutuhan->items->groupBy(fn($item) => $item->kaporItem->category ?? 'Lainnya');
-                    $no = 1;
+                    $noCategory = 1;
                 @endphp
                 @foreach($grouped as $category => $items)
                     <tr class="category-row">
-                        <td colspan="3">{{ str_replace('_', ' ', $category) }} ({{ $items->count() }} item)</td>
+                        <td>{{ $noCategory++ }}</td>
+                        <td colspan="2">{{ strtoupper(str_replace('_', ' ', $category)) }}</td>
                     </tr>
+                    @php $alphaNum = 'A'; @endphp
                     @foreach($items as $item)
                     <tr>
-                        <td>{{ $no++ }}</td>
-                        <td>{{ $item->kaporItem->item_name ?? '-' }}</td>
-                        <td>{{ str_replace('_', ' ', $item->kaporItem->category ?? '-') }}</td>
+                        <td></td>
+                        <td style="padding-left: 20px;">{{ $alphaNum++ }}. {{ strtoupper($item->kaporItem->item_name ?? '-') }}</td>
+                        <td>{{ strtoupper(str_replace('_', ' ', $item->kaporItem->category ?? '-')) }}</td>
                     </tr>
                     @endforeach
                 @endforeach
             </tbody>
         </table>
 
+        {{-- ── FOOTER TANDA TANGAN ── --}}
+        @php
+            $satkerName = strtoupper($kebutuhan->satker->name ?? '');
+            
+            // ── Bulan Indonesia ──
+            $bulanIndo = [
+                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
+                7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            ];
+            $bulan = $bulanIndo[date('n')];
+            $tahun = date('Y');
+
+            // ── Tentukan nama kepala dan Jabatan ──
+            if (str_starts_with($satkerName, 'POLRESTA ')) {
+                $an = 'a.n. KEPALA KEPOLISIAN RESOR KOTA ' . str_replace('POLRESTA ', '', $satkerName);
+                $jabatan = 'KEPALA BAGIAN LOGISTIK';
+            } elseif (str_starts_with($satkerName, 'POLRES ')) {
+                $an = 'a.n. KEPALA KEPOLISIAN RESOR ' . str_replace('POLRES ', '', $satkerName);
+                $jabatan = 'KEPALA BAGIAN LOGISTIK';
+            } else {
+                $an = 'a.n. KEPALA KEPOLISIAN ' . $satkerName;
+                $jabatan = 'KEPALA BAGIAN ' . $satkerName;
+            }
+
+            // ── User pengaju ──
+            $userName = '..........................................';
+            $userNrpNip = '.............................';
+        @endphp
+
         <div class="print-footer">
-            <div class="signature-box">
-                <div class="sig-title">Mengetahui,<br>Pimpinan Satker</div>
-                <div class="sig-line">( ................................ )</div>
-                <div class="sig-nip">NIP/NRP.</div>
-            </div>
-            <div class="signature-box">
-                <div class="sig-title">{{ $kebutuhan->submitted_at ? $kebutuhan->submitted_at->format('d M Y') : $kebutuhan->created_at->format('d M Y') }},<br>Pengaju</div>
-                <div class="sig-line">{{ $kebutuhan->user->name ?? '................................' }}</div>
-                <div class="sig-nip">Admin Satker</div>
-            </div>
+            <div class="ttd-location">................................., ................. {{ $bulan }} {{ $tahun }}</div>
+            <div class="ttd-an">{{ $an }}</div>
+            <div class="ttd-jabatan">{{ $jabatan }}</div>
+            <div class="ttd-nama">{{ $userName }}</div>
+            <div class="ttd-nrp">NRP/NIP. {{ $userNrpNip }}</div>
         </div>
     </div>
 </body>

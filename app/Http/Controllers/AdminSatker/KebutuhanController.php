@@ -224,6 +224,35 @@ class KebutuhanController extends Controller
     }
 
     /**
+     * Export to Excel.
+     */
+    public function exportExcel(Kebutuhan $kebutuhan)
+    {
+        $this->authorizeSatker($kebutuhan);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+
+        $filename = 'Usulan_Kaporlap_' . ($kebutuhan->satker->name ?? 'Satker') . '_' . $kebutuhan->fiscal_year . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\KebutuhanExport($kebutuhan), $filename);
+    }
+
+    /**
+     * Export to PDF.
+     */
+    public function exportPdf(Kebutuhan $kebutuhan)
+    {
+        $this->authorizeSatker($kebutuhan);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+
+        $filename = 'Usulan_Kaporlap_' . ($kebutuhan->satker->name ?? 'Satker') . '_' . $kebutuhan->fiscal_year . '.pdf';
+        
+        // We will reuse the 'print' view or a new 'pdf' view for actual PDF download
+        $pdf = \PDF::loadView('admin-satker.kebutuhan.print', compact('kebutuhan'));
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download($filename);
+    }
+
+    /**
      * Pastikan kebutuhan milik satker user saat ini.
      */
     private function authorizeSatker(Kebutuhan $kebutuhan): void
