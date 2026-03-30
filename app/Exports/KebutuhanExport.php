@@ -11,7 +11,10 @@ use Maatwebsite\Excel\Concerns\WithDrawings;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
-class KebutuhanExport implements FromView, ShouldAutoSize, WithStyles, WithDrawings
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
+
+class KebutuhanExport implements FromView, ShouldAutoSize, WithStyles, WithDrawings, WithEvents
 {
     protected $kebutuhan;
 
@@ -44,5 +47,26 @@ class KebutuhanExport implements FromView, ShouldAutoSize, WithStyles, WithDrawi
         $drawing->setOffsetY(10);
 
         return $drawing;
+    }
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                
+                // --- Page Setup ---
+                $sheet->getPageSetup()
+                    ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_PORTRAIT)
+                    ->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4)
+                    ->setFitToWidth(1)
+                    ->setFitToHeight(0); // 0 means automatic height
+
+                // --- Margins ---
+                $sheet->getPageMargins()->setTop(0.75);
+                $sheet->getPageMargins()->setRight(0.75);
+                $sheet->getPageMargins()->setLeft(0.75);
+                $sheet->getPageMargins()->setBottom(0.75);
+            },
+        ];
     }
 }
