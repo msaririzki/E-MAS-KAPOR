@@ -192,6 +192,7 @@
 @endsection
 
 @section('styles')
+<style>
 @media print {
     /* 1. GLOBAL UI HIDING - Menghilangkan elemen navigasi & UI web */
     nav, aside, header, footer, 
@@ -327,4 +328,5 @@
         margin: 1cm 0.7cm;
     }
 }
+</style>
 @endsection

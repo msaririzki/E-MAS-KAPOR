@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Input Ukuran Kapor - SI-KAPOR')
+@section('breadcrumb', 'Input Ukuran')
 
 @section('styles')
 <style>
@@ -97,6 +98,62 @@
     }
     
     .btn-cancel:hover { background: var(--slate-100) !important; color: var(--danger) !important; border-color: var(--danger-border) !important; }
+
+    /* ══ Mobile Responsive — Kapor Input ══ */
+    @media (max-width: 768px) {
+        .kapor-form-header h1 {
+            font-size: 18px !important;
+        }
+        .kapor-form-header p {
+            font-size: 13px;
+        }
+        .form-card {
+            padding: 14px !important;
+        }
+        .form-card h3 {
+            font-size: 15px !important;
+        }
+        .form-grid {
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+        }
+        .kapor-summary-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+        }
+        .kapor-form-actions {
+            flex-direction: column !important;
+            gap: 10px !important;
+        }
+        .kapor-form-actions .btn-submit,
+        .kapor-form-actions .btn-cancel,
+        .kapor-form-actions .btn {
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+        .kapor-summary-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+            padding-bottom: 16px !important;
+        }
+        .kapor-summary-header .btn {
+            width: 100% !important;
+            justify-content: center !important;
+        }
+        .kapor-summary-body {
+            padding-top: 16px !important;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .kapor-form-header h1 {
+            font-size: 16px !important;
+        }
+        .kapor-summary-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+    }
 </style>
 @endsection
 
@@ -247,7 +304,7 @@
             </div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
+        <div class="kapor-form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
             @if($hasSubmitted)
             <button type="button" onclick="document.getElementById('kaporForm').style.display='none'; document.getElementById('kaporSummaryCard').style.display='block';" class="btn btn-cancel" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: var(--radius-md); font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
                 <i class="ri-close-line"></i> Batal
@@ -261,7 +318,7 @@
 
     @if($hasSubmitted)
     <div id="kaporSummaryCard" class="form-card" style="border: none; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 24px;">
-        <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div class="card-header kapor-summary-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
             <div>
                 <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
                     <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--success);">
@@ -276,8 +333,8 @@
             </button>
         </div>
         
-        <div class="card-body" style="padding-top: 24px;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+        <div class="card-body kapor-summary-body" style="padding-top: 24px;">
+            <div class="kapor-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
                 @php
                     $summaryItems = [
                         'Kemeja' => $kaporSizes['kemeja'] ?? '-',

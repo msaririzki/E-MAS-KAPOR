@@ -34,6 +34,38 @@
     .top-pct { font-size: 14px; font-weight: 800; color: var(--brand); min-width: 50px; text-align: right; }
     .top-bar-mini { width: 80px; height: 6px; background: var(--slate-100); border-radius: 99px; overflow: hidden; }
     .top-bar-mini-fill { height: 100%; background: var(--brand); border-radius: 99px; }
+
+    @media (max-width: 768px) {
+        .stats-row { grid-template-columns: 1fr !important; }
+        .responsive-filter { flex-direction: column !important; align-items: stretch !important; }
+        .responsive-filter > * { width: 100% !important; flex: none !important; margin-bottom: 8px; }
+        .responsive-filter > .btn { justify-content: center; }
+        .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+        .table-wrap table { min-width: 700px; }
+        
+        /* Fix Top 10 Item agar padat namun tetap membungkus */
+        .top-item {
+            display: grid !important;
+            grid-template-columns: auto 1fr;
+            gap: 4px 12px;
+            padding: 12px 0;
+            align-items: center;
+        }
+        .top-rank { grid-column: 1; grid-row: 1; align-self: flex-start; margin-top: 2px; }
+        .top-info { grid-column: 2; grid-row: 1; min-width: 0; display: block; }
+        .top-name { white-space: normal; line-height: 1.3; margin-bottom: 4px; display: block; overflow: visible; }
+        .top-percent-wrap { 
+            grid-column: 2; 
+            grid-row: 2; 
+            width: 100%; 
+            justify-content: space-between !important; 
+            margin-top: 4px; 
+            background: transparent; 
+            padding: 0; 
+        }
+        .top-bar-mini { flex: 1; margin-right: 12px; }
+        .card { min-width: 0; }
+    }
 </style>
 <div class="page-header">
     <div class="page-header-row">
@@ -45,7 +77,7 @@
 </div>
 
 {{-- Stats Cards --}}
-<div class="stats-row" style="grid-template-columns: repeat(3, 1fr);">
+<div class="stats-row">
     <div class="stat-card">
         <div class="stat-top">
             <span class="stat-label">Total Pengajuan</span>
@@ -78,7 +110,7 @@
 
 {{-- ═══ Compact Statistics Section ═══ --}}
 @if($totalKebutuhans > 0)
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+<div class="grid-2" style="margin-bottom: 16px;">
 
     {{-- Category Coverage Cards --}}
     <div class="card">
@@ -123,9 +155,9 @@
                 </div>
                 <div class="top-info">
                     <div class="top-name" title="{{ $stat['item_name'] }}">{{ $stat['item_name'] }}</div>
-                    <span class="top-cat top-cat-{{ $stat['category'] }}">{{ str_replace('_', ' ', $stat['category']) }}</span>
+                    <span class="top-cat top-cat-{{ $stat['category'] }}" style="margin-top: 4px;">{{ str_replace('_', ' ', $stat['category']) }}</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="top-percent-wrap" style="display: flex; align-items: center; gap: 8px;">
                     <div class="top-bar-mini"><div class="top-bar-mini-fill" style="width: {{ $stat['percentage'] }}%;"></div></div>
                     <div class="top-pct">{{ $stat['percentage'] }}%</div>
                 </div>
@@ -139,7 +171,7 @@
 {{-- Filters --}}
 <div class="card" style="margin-bottom: 16px;">
     <div class="card-body" style="padding: 14px 20px;">
-        <form method="GET" action="{{ route('admin.identifikasi-kebutuhan.index') }}" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <form method="GET" action="{{ route('admin.identifikasi-kebutuhan.index') }}" class="responsive-filter" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 180px;">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari judul / satker..." class="search-input" style="width: 100%;">
             </div>
@@ -190,9 +222,20 @@
                     <td style="text-align: center;"><span class="badge badge-neutral">{{ $k->items->count() }}</span></td>
                     <td style="font-size: 12px;">{{ $k->submitted_at ? $k->submitted_at->format('d/m/Y') : $k->created_at->format('d/m/Y') }}</td>
                     <td style="text-align: center;">
-                        <a href="{{ route('admin.identifikasi-kebutuhan.show', $k) }}" class="btn btn-outline btn-xs" title="Lihat Detail">
-                            <i class="ri-eye-line"></i> Detail
-                        </a>
+                        <div style="display: flex; gap: 4px; justify-content: center;">
+                            <a href="{{ route('admin.identifikasi-kebutuhan.show', $k) }}" class="btn btn-outline btn-xs" title="Lihat Detail">
+                                <i class="ri-eye-line"></i>
+                            </a>
+                            @role('superadmin')
+                            <form action="{{ route('admin.identifikasi-kebutuhan.destroy', $k) }}" method="POST" style="display: inline-block;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button" class="btn btn-error btn-xs btn-delete-kebutuhan" title="Hapus">
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            </form>
+                            @endrole
+                        </div>
                     </td>
                 </tr>
                 @empty
@@ -213,4 +256,90 @@
     {{ $kebutuhans->links('pagination::simple-default') }}
 </div>
 @endif
+@endsection
+
+@section('scripts')
+<!-- SweetAlert2 Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const deleteButtons = document.querySelectorAll('.btn-delete-kebutuhan');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const form = this.closest('form');
+                Swal.fire({
+                    title: 'Hapus Pengajuan?',
+                    text: 'Apakah Anda yakin ingin menghapus data pengajuan ini secara permanen?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#DC2626',
+                    cancelButtonColor: '#6B7280',
+                    confirmButtonText: '<i class="ri-delete-bin-line" style="margin-right:4px;"></i> Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'modern-swal-popup',
+                        title: 'modern-swal-title',
+                        confirmButton: 'modern-swal-btn btn-danger',
+                        cancelButton: 'modern-swal-btn btn-secondary',
+                        actions: 'modern-swal-actions'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    });
+</script>
+@endsection
+
+@section('styles')
+<style>
+    /* Modern SweetAlert Custom Styles */
+    .modern-swal-popup {
+        border-radius: 16px !important;
+        padding: 24px !important;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    }
+    .modern-swal-title {
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        color: #111827 !important;
+    }
+    div:where(.swal2-container) div:where(.swal2-html-container) {
+        color: #4B5563 !important;
+        font-size: 15px !important;
+        margin-top: 12px !important;
+    }
+    .modern-swal-actions {
+        margin-top: 24px !important;
+        gap: 12px;
+    }
+    .modern-swal-btn {
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 10px 24px !important;
+        font-size: 14px !important;
+        letter-spacing: 0.3px;
+        transition: all 0.2s;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    .modern-swal-btn.btn-danger {
+        background-color: #DC2626 !important;
+        color: white !important;
+        border: none !important;
+        box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2) !important;
+    }
+    .modern-swal-btn.btn-danger:hover { background-color: #B91C1C !important; transform: translateY(-1px); }
+    .modern-swal-btn.btn-secondary {
+        background-color: #F3F4F6 !important;
+        color: #374151 !important;
+        border: 1px solid #E5E7EB !important;
+    }
+    .modern-swal-btn.btn-secondary:hover { background-color: #E5E7EB !important; }
+</style>
 @endsection

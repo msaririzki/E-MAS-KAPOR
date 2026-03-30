@@ -249,6 +249,21 @@
         .stat-card-clickable:active {
             transform: translateY(-1px);
         }
+        @media (max-width: 768px) {
+            .stat-card-clickable {
+                grid-column: span 2 !important; /* Biar lega dari pinggir-ke-pinggir di mobile */
+            }
+            .alert-bar {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+                text-align: center;
+            }
+            .alert-bar .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
     <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'incomplete_scope' => 'size_only']) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center;">
         <div class="stat-icon icon-red">
@@ -267,7 +282,7 @@
 </div>
 
 @if(($stats['nrp_issues'] ?? 0) > 0)
-<div style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+<div class="alert-bar" style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
     <div style="display: flex; align-items: center; gap: 12px;">
         <i class="ri-error-warning-fill" style="font-size: 24px; color: #EA580C;"></i>
         <span style="font-size: 14px; color: #9A3412; line-height: 1.4;">
@@ -282,7 +297,7 @@
 @endif
 
 @if(request('status') === 'incomplete')
-<div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+<div class="alert-bar" style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
     <div style="display: flex; align-items: center; gap: 10px;">
         <i class="ri-filter-3-line" style="font-size: 18px; color: #DC2626;"></i>
         <span style="font-size: 14px; font-weight: 600; color: #991B1B;">

@@ -40,10 +40,12 @@
                 <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px;">Tahun Anggaran</div>
                 <div style="font-size: 14px; font-weight: 600;">{{ $kebutuhan->fiscal_year }}</div>
             </div>
+            @unlessrole('superadmin')
             <div>
                 <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px;">Status</div>
                 <span class="badge {{ $kebutuhan->status_badge }}">{{ $kebutuhan->status_label }}</span>
             </div>
+            @endunlessrole
             <div>
                 <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px;">Tanggal Pengajuan</div>
                 <div style="font-size: 13px;">{{ $kebutuhan->submitted_at ? $kebutuhan->submitted_at->format('d M Y, H:i') : $kebutuhan->created_at->format('d M Y, H:i') }}</div>

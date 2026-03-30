@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Models\WarehouseItem;
 use App\Models\WarehouseItemSize;
 use App\Models\WarehouseOutflow;
+use App\Models\WarehouseSignatory;
+use App\Services\WarehouseSppmExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -172,47 +174,241 @@ class WarehouseController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function dispenseForm()
+    {
+        $items = WarehouseItem::with(['sizes' => function ($q) {
+            $q->where('stock', '>', 0)->orderByRaw("CAST(size_label AS UNSIGNED) ASC, size_label ASC");
+        }])->withSum('sizes', 'stock')->having('sizes_sum_stock', '>', 0)->orderBy('name')->get();
+
+        $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
+
+        return view('admin.warehouse.dispense', compact('items', 'satkers'));
+    }
+
+    public function getItemSizes($id)
+    {
+        $sizes = WarehouseItemSize::where('warehouse_item_id', $id)
+            ->where('stock', '>', 0)
+            ->orderByRaw("CAST(size_label AS UNSIGNED) ASC, size_label ASC")
+            ->get(['id', 'size_label', 'stock']);
+
+        return response()->json($sizes);
+    }
+
     public function dispense(Request $request)
     {
         $request->validate([
-            'warehouse_item_size_id' => 'required|exists:warehouse_item_sizes,id',
-            'quantity' => 'required|integer|min:1',
             'outflow_date' => 'required|date',
-            'satker_id' => 'nullable|exists:satkers,id',
-            'recipient_name' => 'nullable|string|max:255',
-            'reference_note' => 'nullable|string',
+            'satker_id' => 'required|exists:satkers,id',
+            'recipient_name' => 'required|string|max:255',
+            'letter_number' => 'nullable|string|max:255',
+            'letter_date' => 'nullable|date',
+            'items' => 'required|array|min:1',
+            'items.*.warehouse_item_size_id' => 'required|exists:warehouse_item_sizes,id',
+            'items.*.quantity' => 'required|integer|min:1',
         ]);
 
         DB::beginTransaction();
         try {
-            $size = WarehouseItemSize::findOrFail($request->warehouse_item_size_id);
+            $createdCount = 0;
 
-            if ($size->stock < $request->quantity) {
-                return back()->with('error', 'Stok ukuran '.$size->size_label.' tidak mencukupi. (Stok tersisa: '.$size->stock.')');
+            foreach ($request->items as $itemData) {
+                $size = WarehouseItemSize::with('item')->findOrFail($itemData['warehouse_item_size_id']);
+
+                if ($size->stock < $itemData['quantity']) {
+                    DB::rollBack();
+
+                    return back()->withInput()->with('error', 'Stok ' . $size->item->name . ' ukuran ' . $size->size_label . ' tidak mencukupi. (Stok tersisa: ' . $size->stock . ')');
+                }
+
+                // Kurangi stok
+                $size->stock -= $itemData['quantity'];
+                $size->save();
+
+                // Catat pengeluaran
+                WarehouseOutflow::create([
+                    'warehouse_item_size_id' => $size->id,
+                    'satker_id' => $request->satker_id,
+                    'quantity' => $itemData['quantity'],
+                    'outflow_date' => $request->outflow_date,
+                    'recipient_name' => $request->recipient_name,
+                    'reference_note' => 'Belum Ada',
+                    'letter_number' => $request->letter_number,
+                    'letter_date' => $request->letter_date,
+                ]);
+
+                $createdCount++;
             }
-
-            // Kurangi stok
-            $size->stock -= $request->quantity;
-            $size->save();
-
-            // Catat pengeluaran
-            WarehouseOutflow::create([
-                'warehouse_item_size_id' => $size->id,
-                'satker_id' => $request->satker_id,
-                'quantity' => $request->quantity,
-                'outflow_date' => $request->outflow_date,
-                'recipient_name' => $request->recipient_name,
-                'reference_note' => $request->reference_note,
-            ]);
 
             DB::commit();
 
-            return back()->with('success', 'Barang berhasil dikeluarkan sebesar '.$request->quantity.' '.$size->item->unit.'.');
+            return redirect()->route('admin.warehouse-items.reports')
+                ->with('success', $createdCount . ' barang berhasil dikeluarkan. Silakan klik tombol "Buat SPPM" pada Laporan Pengeluaran jika diperlukan.');
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return back()->with('error', 'Gagal mengeluarkan barang: '.$e->getMessage());
+            return back()->withInput()->with('error', 'Gagal mengeluarkan barang: ' . $e->getMessage());
         }
+    }
+
+    public function downloadSppm($id)
+    {
+        $outflow = WarehouseOutflow::with(['itemSize.item', 'satker'])->findOrFail($id);
+
+        $sppmService = app(WarehouseSppmExportService::class);
+        $filePath = $sppmService->generate([
+            'satker_name' => $outflow->satker ? $outflow->satker->name : '-',
+            'outflow_date' => $outflow->outflow_date->format('Y-m-d'),
+            'recipient_name' => $outflow->recipient_name ?? '-',
+            'letter_number' => $outflow->letter_number ?? '-',
+            'letter_date' => $outflow->letter_date ? $outflow->letter_date->format('Y-m-d') : null,
+            'items' => [
+                [
+                    'item_name' => $outflow->itemSize->item->name ?? '-',
+                    'unit' => $outflow->itemSize->item->unit ?? 'PCS',
+                    'size_label' => $outflow->itemSize->size_label ?? '-',
+                    'quantity' => $outflow->quantity,
+                    'price' => $outflow->itemSize->item->price ?? 0,
+                ]
+            ]
+        ]);
+
+        $fileName = 'SPPM_' . str_replace(' ', '_', $outflow->itemSize->item->name ?? 'GUDANG') . '_' . date('Ymd') . '.docx';
+
+        return response()->download($filePath, $fileName)->deleteFileAfterSend(true);
+    }
+
+    public function sppm(Request $request)
+    {
+        $query = WarehouseOutflow::with(['satker'])
+            ->select(
+                'satker_id',
+                'outflow_date',
+                'recipient_name',
+                'letter_number',
+                'letter_date',
+                DB::raw('COUNT(*) as item_count'),
+                DB::raw('SUM(quantity) as total_quantity'),
+                DB::raw('MAX(id) as last_id'), // To identify the group
+                DB::raw('GROUP_CONCAT(id) as group_ids') // Added for downloading
+            );
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('outflow_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('outflow_date', '<=', $request->end_date);
+        }
+        if ($request->filled('satker_id')) {
+            $query->where('satker_id', $request->satker_id);
+        }
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function (\Illuminate\Database\Eloquent\Builder $q) use ($searchTerm) {
+                $q->where('recipient_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('letter_number', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        $perPage = $request->input('per_page', 15);
+        $groupedOutflows = $query->groupBy('satker_id', 'outflow_date', 'recipient_name', 'letter_number', 'letter_date')
+            ->orderBy('outflow_date', 'desc')
+            ->orderBy(DB::raw('MAX(id)'), 'desc')
+            ->paginate($perPage)
+            ->appends($request->query());
+
+        $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
+
+        return view('admin.warehouse.sppm', compact('groupedOutflows', 'satkers'));
+    }
+
+    public function downloadSppmGrouped(Request $request)
+    {
+        $request->validate([
+            'group_ids' => 'required',
+            'letter_number' => 'required',
+            'letter_date' => 'required|date',
+        ]);
+
+        $ids = explode(',', $request->group_ids);
+        $outflows = WarehouseOutflow::with(['itemSize.item', 'satker'])
+            ->whereIn('id', $ids)
+            ->get();
+
+        if ($outflows->isEmpty()) {
+            return back()->with('error', 'Data SPPM tidak ditemukan.');
+        }
+
+        // Perbarui letter number dan date di DB beserta status
+        WarehouseOutflow::whereIn('id', $ids)->update([
+            'letter_number' => $request->letter_number,
+            'letter_date' => $request->letter_date,
+            'reference_note' => 'Sudah Ada'
+        ]);
+
+        // Refresh data setelah diupdate
+        $outflows = $outflows->fresh(['itemSize.item', 'satker']);
+
+        $first = $outflows->first();
+        $itemsDataMap = [];
+        foreach ($outflows as $outflow) {
+            $itemName = $outflow->itemSize->item->name ?? '-';
+            if (isset($itemsDataMap[$itemName])) {
+                $itemsDataMap[$itemName]['quantity'] += $outflow->quantity;
+            } else {
+                $itemsDataMap[$itemName] = [
+                    'item_name' => $itemName,
+                    'unit' => $outflow->itemSize->item->unit ?? 'PCS',
+                    'size_label' => $outflow->itemSize->size_label ?? '-',
+                    'quantity' => $outflow->quantity,
+                    'price' => $outflow->itemSize->item->price ?? 0,
+                ];
+            }
+        }
+        $itemsData = array_values($itemsDataMap);
+
+        $sppmService = app(WarehouseSppmExportService::class);
+        $filePath = $sppmService->generate([
+            'satker_name' => $first->satker ? $first->satker->name : '-',
+            'outflow_date' => $first->outflow_date->format('Y-m-d'),
+            'recipient_name' => $first->recipient_name ?? '-',
+            'letter_number' => $first->letter_number ?? '-',
+            'letter_date' => $first->letter_date ? $first->letter_date->format('Y-m-d') : null,
+            'items' => $itemsData,
+        ]);
+
+        $fileName = 'SPPM_' . str_replace(' ', '_', $first->satker->name ?? 'GUDANG') . '_' . $first->outflow_date->format('Ymd') . '.docx';
+
+        // Mark as "Sudah Ada" automatically when downloaded? 
+        // Let's do it to make it easier for user.
+        WarehouseOutflow::whereIn('id', $outflows->pluck('id')->toArray())
+            ->update(['reference_note' => 'Sudah Ada']);
+
+        return response()->download($filePath, $fileName)->deleteFileAfterSend(true);
+    }
+
+    public function saveSppmGrouped(Request $request)
+    {
+        $request->validate([
+            'group_ids' => 'required',
+            'letter_number' => 'required',
+            'letter_date' => 'required|date',
+        ]);
+
+        $ids = explode(',', $request->group_ids);
+        $outflows = WarehouseOutflow::whereIn('id', $ids)->get();
+
+        if ($outflows->isEmpty()) {
+            return back()->with('error', 'Data SPPM tidak ditemukan.');
+        }
+
+        WarehouseOutflow::whereIn('id', $ids)->update([
+            'letter_number' => $request->letter_number,
+            'letter_date' => $request->letter_date,
+            'reference_note' => 'Sudah Ada'
+        ]);
+
+        return back()->with('success', 'Data SPPM berhasil disimpan. Anda dapat mengunduhnya melalui sub menu SPPM.');
     }
 
     public function updateSppm(Request $request, $id)
@@ -221,8 +417,8 @@ class WarehouseController extends Controller
             'reference_note' => 'required|string|in:Sudah Ada,Belum Ada',
         ]);
 
-        $outflow = WarehouseOutflow::findOrFail($id);
-        $outflow->update([
+        $ids = explode(',', $id);
+        WarehouseOutflow::whereIn('id', $ids)->update([
             'reference_note' => $request->reference_note,
         ]);
 
@@ -233,14 +429,24 @@ class WarehouseController extends Controller
     {
         DB::beginTransaction();
         try {
-            $outflow = WarehouseOutflow::findOrFail($id);
-            if ($outflow->reference_note === 'Sudah Ada' || $outflow->reference_note === 'Ada') {
-                return back()->with('error', 'Gagal membatalkan: Barang ini sudah memiliki SPPM.');
+            // Handle multiple IDs (grouped)
+            $ids = explode(',', $id);
+            $outflows_to_cancel = WarehouseOutflow::whereIn('id', $ids)->get();
+
+            if ($outflows_to_cancel->isEmpty()) {
+                return back()->with('error', 'Data pengeluaran tidak ditemukan.');
             }
-            if ($outflow->itemSize) {
-                $outflow->itemSize->increment('stock', $outflow->quantity);
+
+            foreach ($outflows_to_cancel as $outflow) {
+                if ($outflow->reference_note === 'Sudah Ada' || $outflow->reference_note === 'Ada') {
+                    return back()->with('error', 'Gagal membatalkan: Salah satu barang dlm transaksi ini sudah memiliki SPPM.');
+                }
+                if ($outflow->itemSize) {
+                    $outflow->itemSize->increment('stock', $outflow->quantity);
+                }
+                $outflow->delete();
             }
-            $outflow->delete();
+
             DB::commit();
 
             return back()->with('success', 'Pengeluaran barang berhasil dibatalkan dan stok telah dikembalikan.');
@@ -257,26 +463,41 @@ class WarehouseController extends Controller
             'deletion_reason' => 'required|string|max:255'
         ]);
         
-        $outflow = WarehouseOutflow::findOrFail($id);
+        $ids = explode(',', $id);
+        $outflows = WarehouseOutflow::whereIn('id', $ids)->get();
+
+        if ($outflows->isEmpty()) {
+            return back()->with('error', 'Data pengeluaran tidak ditemukan.');
+        }
+
+        $satkerName = $outflows->first()->satker ? $outflows->first()->satker->name : 'Unknown';
+        $totalQuantity = $outflows->sum('quantity');
+        $itemCount = $outflows->count();
         
-        $itemName = $outflow->itemSize ? ($outflow->itemSize->item ? $outflow->itemSize->item->name : 'Unknown') : 'Unknown';
-        $satkerName = $outflow->satker ? $outflow->satker->name : 'Unknown';
-        $quantity = $outflow->quantity;
+        \App\Services\AuditLogger::log('HAPUS_PENGELUARAN', "Riwayat pengeluaran dari {$satkerName} sejumlah {$itemCount} item (Total Qty: {$totalQuantity}) dihapus. Alasan: {$request->deletion_reason}");
         
-        \App\Services\AuditLogger::log('HAPUS_PENGELUARAN', "Riwayat pengeluaran {$itemName} sejumlah {$quantity} untuk {$satkerName} dihapus. Alasan: {$request->deletion_reason}");
-        
-        $outflow->update(['deletion_reason' => $request->deletion_reason]);
-        $outflow->delete();
+        foreach ($outflows as $outflow) {
+            $outflow->update(['deletion_reason' => $request->deletion_reason]);
+            $outflow->delete();
+        }
+
         return back()->with('success', 'Riwayat pengeluaran berhasil dihapus dan dipindahkan ke Riwayat Penghapusan.');
     }
 
     public function reports(Request $request)
     {
-        $query = WarehouseOutflow::with([
-            'itemSize' => fn($q) => $q->withTrashed(),
-            'itemSize.item' => fn($q) => $q->withTrashed(),
-            'satker'
-        ]);
+        $query = WarehouseOutflow::with(['satker'])
+            ->select(
+                'satker_id',
+                'outflow_date',
+                'recipient_name',
+                'letter_number',
+                'letter_date',
+                DB::raw('COUNT(*) as item_count'),
+                DB::raw('SUM(quantity) as total_quantity'),
+                DB::raw('GROUP_CONCAT(id) as group_ids'), // To identify group for actions
+                DB::raw('MAX(reference_note) as group_status') // Aggregate status
+            );
 
         if ($request->filled('start_date')) {
             $query->whereDate('outflow_date', '>=', $request->start_date);
@@ -290,24 +511,52 @@ class WarehouseController extends Controller
         if ($request->filled('sppm_status')) {
             $sppm = $request->sppm_status;
             if ($sppm === 'Sudah Ada') {
-                $query->whereIn('reference_note', ['Sudah Ada', 'Ada']);
+                $query->having('group_status', 'Sudah Ada');
             } elseif ($sppm === 'Belum Ada') {
-                $query->where(function($q) {
-                    $q->whereNull('reference_note')
-                      ->orWhereIn('reference_note', ['Belum Ada', 'Tidak']);
-                });
+                $query->havingRaw("group_status IS NULL OR group_status IN ('Belum Ada', 'Tidak')");
             }
         }
         if ($request->filled('search')) {
             $searchTerm = $request->search;
-            $query->whereHas('itemSize.item', function ($q) use ($searchTerm) {
-                $q->withTrashed()->where('name', 'like', "%{$searchTerm}%");
-            })->orWhere('recipient_name', 'like', "%{$searchTerm}%");
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('recipient_name', 'like', "%{$searchTerm}%")
+                  ->orWhere('letter_number', 'like', "%{$searchTerm}%");
+            });
         }
 
         $perPage = $request->input('per_page', 15);
-        $totalItemsOut = (clone $query)->sum('quantity');
-        $outflows = $query->latest()->paginate($perPage)->appends($request->query());
+        
+        // Finalize query for pagination
+        $outflows = $query->groupBy('satker_id', 'outflow_date', 'recipient_name', 'letter_number', 'letter_date')
+            ->orderByRaw("CASE WHEN MAX(reference_note) = 'Sudah Ada' THEN 1 ELSE 0 END")
+            ->orderBy('outflow_date', 'desc')
+            ->orderBy(DB::raw('MAX(id)'), 'desc')
+            ->paginate($perPage)
+            ->appends($request->query());
+
+        // Attach item details manually to each group for display
+        $outflows->getCollection()->each(function ($group) {
+            $ids = explode(',', $group->group_ids);
+            $items = WarehouseOutflow::whereIn('id', $ids)
+                ->with(['itemSize' => fn($q) => $q->withTrashed(), 'itemSize.item' => fn($q) => $q->withTrashed()])
+                ->get();
+            
+            $group->items_detail = $items;
+            $group->items_json = $items->map(fn($d) => [
+                'name' => $d->itemSize->item->name ?? '-',
+                'size' => $d->itemSize->size_label ?? '-',
+                'qty' => $d->quantity,
+                'unit' => $d->itemSize->item->unit ?? 'PCS'
+            ])->toJson();
+        });
+
+        // Calculate total items out for the stat card (individual total)
+        $totalItemsOut = WarehouseOutflow::query()
+            ->when($request->filled('start_date'), fn($q) => $q->whereDate('outflow_date', '>=', $request->start_date))
+            ->when($request->filled('end_date'), fn($q) => $q->whereDate('outflow_date', '<=', $request->end_date))
+            ->when($request->filled('satker_id'), fn($q) => $q->where('satker_id', $request->satker_id))
+            ->sum('quantity');
+
         $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
 
         return view('admin.warehouse.reports', compact('outflows', 'satkers', 'totalItemsOut'));
@@ -393,5 +642,67 @@ class WarehouseController extends Controller
     public function downloadTemplate()
     {
         return Excel::download(new WarehouseTemplateExport, 'template_import_gudang.xlsx');
+    }
+
+    // ── Penanda Tangan (Signatories) CRUD ──────────────────
+
+    public function signatories()
+    {
+        $signatories = WarehouseSignatory::orderBy('created_at', 'desc')->get();
+
+        return view('admin.warehouse.signatories', compact('signatories'));
+    }
+
+    public function storeSignatory(Request $request)
+    {
+        $validated = $request->validate([
+            'satuan_kerja' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'jabatan' => 'required|string|max:255',
+            'pangkat' => 'nullable|string|max:255',
+            'nrp' => 'nullable|string|max:100',
+            'atribut' => 'nullable|string|max:255',
+            'wakil' => 'nullable|string|max:255',
+        ]);
+
+        // Deactivate all others, set new as active
+        WarehouseSignatory::query()->update(['is_active' => false]);
+
+        WarehouseSignatory::create(array_merge($validated, ['is_active' => true]));
+
+        return redirect()->back()->with('success', 'Penanda tangan berhasil ditambahkan.');
+    }
+
+    public function updateSignatory(Request $request, WarehouseSignatory $signatory)
+    {
+        $validated = $request->validate([
+            'satuan_kerja' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'jabatan' => 'required|string|max:255',
+            'pangkat' => 'nullable|string|max:255',
+            'nrp' => 'nullable|string|max:100',
+            'atribut' => 'nullable|string|max:255',
+            'wakil' => 'nullable|string|max:255',
+        ]);
+
+        $signatory->update($validated);
+
+        return redirect()->back()->with('success', 'Penanda tangan berhasil diperbarui.');
+    }
+
+    public function deleteSignatory(WarehouseSignatory $signatory)
+    {
+        $signatory->delete();
+
+        return redirect()->back()->with('success', 'Penanda tangan berhasil dihapus.');
+    }
+
+    public function toggleSignatoryActive(WarehouseSignatory $signatory)
+    {
+        // Deactivate all, activate this one
+        WarehouseSignatory::query()->update(['is_active' => false]);
+        $signatory->update(['is_active' => true]);
+
+        return redirect()->back()->with('success', 'Penanda tangan aktif berhasil diubah.');
     }
 }

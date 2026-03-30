@@ -28,9 +28,6 @@
                     </td>
                     <td style="text-align: right; padding: 12px 24px;">
                         <div class="action-buttons">
-                            <button class="btn-icon" onclick="openDispenseModal({{ $item->id }}, '{{ addslashes($item->name) }}')" title="Keluarkan Barang" style="color: #F59E0B;" onmouseover="this.style.background='#FEF3C7'" onmouseout="this.style.background=''">
-                                <i class="ri-upload-cloud-2-line"></i>
-                            </button>
                             <button onclick="openSizeModal({{ $item->id }}, '{{ addslashes($item->name) }}')" class="btn-icon" title="Kelola Ukuran & Stok">
                                 <i class="ri-list-check"></i>
                             </button>

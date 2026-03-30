@@ -167,4 +167,38 @@ class IdentifikasiKebutuhanController extends Controller
 
         return back()->with('success', 'Pengajuan kebutuhan telah ditolak.');
     }
+
+    /**
+     * Hapus pengajuan kebutuhan (Superadmin only).
+     */
+    public function destroy(Request $request, Kebutuhan $kebutuhan)
+    {
+        if (! $request->user()->hasRole('superadmin')) {
+            abort(403, 'Hanya Superadmin yang dapat menghapus pengajuan ini.');
+        }
+
+        try {
+            DB::transaction(function () use ($kebutuhan) {
+                // Hapus item-item terkait terlebih dahulu
+                $kebutuhan->items()->delete();
+                
+                // Kemudian hapus kebutuhan
+                $kebutuhan->delete();
+            });
+
+            // Log action jika AuditLogger digunakan
+            if (class_exists(\App\Services\AuditLogger::class)) {
+                \App\Services\AuditLogger::log(
+                    action: 'delete_kebutuhan',
+                    category: 'Identifikasi Kebutuhan',
+                    model: $kebutuhan,
+                    details: "Menghapus pengajuan kebutuhan secara permanen: {$kebutuhan->title} (Satker: " . ($kebutuhan->satker->name ?? '-') . ")"
+                );
+            }
+
+            return back()->with('success', 'Pengajuan kebutuhan berhasil dihapus secara permanen.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menghapus pengajuan kebutuhan: ' . $e->getMessage());
+        }
+    }
 }
