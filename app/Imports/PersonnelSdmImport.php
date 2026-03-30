@@ -5,196 +5,177 @@ namespace App\Imports;
 use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
-use App\Models\Setting;
 use App\Models\User;
+use App\Services\SdmSatkerResolver;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
-use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
-use Maatwebsite\Excel\Concerns\WithStartRow;
 
-/**
- * Import khusus untuk Super Admin (Data SDM).
- * Hanya membaca data pokok: Nama, NRP/NIP, Pangkat, Golongan, Jenis Kelamin, Agama.
- * Kolom lainnya (Jabatan, Bagian, Keterangan, Ukuran Kapor) akan dikosongkan secara paksa.
- */
 class PersonnelSdmImport extends PersonnelImport
 {
-    /**
-     * Override generatePreview untuk memaksa kolom spesifik kosong.
-     * Mengasumsikan urutan standar SDM Excel: 
-     * 0=NO, 1=NAMA, 2=NRP/NIP, 3=PANGKAT, 4=GOLONGAN, 5=JENIS KELAMIN, 6=AGAMA.
-     */
-    public function startRow(): int
-    {
-        // Template SDM Super Admin diasumsikan hanya punya 1 baris header, data mulai dari baris 2
-        return 2;
+    public function __construct(
+        private readonly ?SdmSatkerResolver $satkerResolver = null
+    ) {
+        parent::__construct(null);
     }
 
-    public function generatePreview(Collection $rows): array
+    public function sheets(): array
     {
-        $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
+        return collect(range(0, 99))
+            ->mapWithKeys(fn (int $index) => [$index => $this])
+            ->all();
+    }
+
+    public function startRow(): int
+    {
+        return 3;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function generatePreview(Collection $rows, string|int|null $sheetName = null): array
+    {
+        $ranks = Rank::all()->keyBy(fn ($rank) => strtoupper($rank->name));
         $preview = [];
         $seenNrps = [];
-
-        $isSiswaSatker = false;
-        if ($this->satkerId) {
-            $satker = Satker::find($this->satkerId);
-            if ($satker && strtoupper($satker->code) === 'SISWA') {
-                $isSiswaSatker = true;
-            }
-        }
-
-        // Untuk import SDM, format sudah baku (tidak ada double-NO offset)
-        $offset = 0;
+        $resolver = $this->satkerResolver ?? app(SdmSatkerResolver::class);
 
         foreach ($rows as $rowIndex => $row) {
             if ($row instanceof Collection) {
                 $row = $row->toArray();
             }
 
-            $colName = 1 + $offset;
-            $colNrp = 2 + $offset;
-            $colRank = 3 + $offset;
-            $colGol = 4 + $offset;
-            $colGender = 5 + $offset;
-            $colAgama = 6 + $offset;
+            $fullName = $this->normalizeText($row[1] ?? '');
+            $rankInput = $this->normalizeText($row[2] ?? '');
+            $nrp = $this->normalizeNrp($row[3] ?? '');
+            $jabatan = $this->normalizeText($row[4] ?? '');
+            $genderRaw = $this->normalizeText($row[5] ?? '');
+            $religionRaw = $this->normalizeText($row[6] ?? '');
 
-            $fullNameRtn = str_replace('*', '', $row[$colName] ?? '');
-            $fullName = trim(preg_replace('/\s+/', ' ', $fullNameRtn));
-
-            $rankInputRtn = str_replace('*', '', $row[$colRank] ?? '');
-            $rankInput = trim(preg_replace('/\s+/', ' ', $rankInputRtn));
-
-            $golongan = trim($row[$colGol] ?? '');
-            $nrpRaw = $row[$colNrp] ?? '';
-
-            // NRP Precision fix copy
-            if ((is_int($nrpRaw) || is_float($nrpRaw)) && $nrpRaw >= 1000000000000000) {
-                $strNrp = sprintf('%.15g', (float) $nrpRaw);
-                if (stripos($strNrp, 'e') !== false) {
-                    $parts = explode('e', strtolower($strNrp));
-                    $base = str_replace('.', '', $parts[0]);
-                    $exp = (int) $parts[1];
-                    $nrp = str_pad($base, $exp + 1, '0', STR_PAD_RIGHT);
-                } else {
-                    $nrp = str_replace('.', '', $strNrp);
-                }
-            } else {
-                $trimNrp = trim((string) $nrpRaw);
-                if (is_numeric($trimNrp) && stripos($trimNrp, 'E') !== false) {
-                    $nrp = number_format((float) $trimNrp, 0, '', '');
-                } else {
-                    $nrp = $trimNrp;
-                }
-            }
-
-            // SDM: Paksa kosongkan Jabatan, Bagian, Keterangan, Ukuran
-            $jabatan = '';
-            $bagian = '';
-            $keterangan = '';
-            $sizes = [];
-
-            $genderRaw = strtoupper(trim($row[$colGender] ?? ''));
-            $agamaRaw = trim($row[$colAgama] ?? '');
-
-            $no = trim($row[0] ?? '');
-
-            if (empty($fullName)) {
+            if ($fullName === '') {
                 continue;
             }
 
             $nameLower = strtolower($fullName);
-            if (str_starts_with($fullName, '=')) continue;
-            if ($nameLower === 'jumlah' || $nameLower === 'total' || $nameLower === 'dst' || $nameLower === 'dst.') continue;
-            if ($nameLower === 'nama' || $nameLower === 'nama lengkap' || $nameLower === 'nama personel') continue;
-
-            $golLower = strtolower($golongan);
-            if ($golLower === 'jumlah' || $golLower === 'total' || $golLower === 'sub total' || $golLower === 'sub jumlah') continue;
-
-            $rankIsPlaceholder = empty($rankInput) || preg_match('/^[\-\.]+$/', $rankInput) || (is_numeric($rankInput) && strlen($rankInput) <= 3);
-            if (empty($nrp) && $rankIsPlaceholder && empty($golongan) && empty($genderRaw)) continue;
-
-            if (strlen($fullName) < 2 || is_numeric(str_replace([' ', '.', ','], '', $fullName))) continue;
-
-            if (preg_match('/^[\-\.]+$/', $nrp)) {
-                $nrp = '';
-            }
-            if (!empty($nrp)) {
-                $nrpLower = strtolower($nrp);
-                if (str_starts_with($nrp, '=')) continue;
-                if ($nrpLower === 'jumlah' || $nrpLower === 'total') continue;
-                if (strlen($nrp) < 4) $nrp = '';
+            if (
+                str_starts_with($fullName, '=')
+                || in_array($nameLower, ['jumlah', 'total', 'dst', 'dst.', 'nama', 'nama lengkap', 'nama personel'], true)
+            ) {
+                continue;
             }
 
-            $gender = ($genderRaw === 'W') ? 'P' : 'L';
-            $rankResult = parent::findRankWithCorrection($rankInput, $ranks, $golongan, $isSiswaSatker);
+            $rankIsPlaceholder = $rankInput === ''
+                || preg_match('/^[\-\.]+$/', $rankInput) === 1
+                || (is_numeric($rankInput) && strlen($rankInput) <= 3);
+
+            if ($nrp === '' && $rankIsPlaceholder && $jabatan === '' && $genderRaw === '' && $religionRaw === '') {
+                continue;
+            }
+
+            if (strlen($fullName) < 2 || is_numeric(str_replace([' ', '.', ','], '', $fullName))) {
+                continue;
+            }
+
+            $gender = $this->normalizeGender($genderRaw);
+            $religion = $this->normalizeReligion($religionRaw);
+            $rankResult = parent::findRankWithCorrection($rankInput, $ranks);
+            $resolvedSatker = $resolver->resolve($jabatan);
+            $golongan = $this->deriveGolongan($rankResult['rank']);
 
             $status = 'ok';
+            $statusNotes = [];
             $incompleteFields = [];
+            $fatalError = false;
+            $requiresManualSatker = false;
+            $requiresManualRank = false;
 
-            if (!$rankResult['rank'] && !empty($rankInput) && !$rankIsPlaceholder) {
+            if ($rankResult['rank'] === null && ! $rankIsPlaceholder) {
                 $status = 'error';
-            } elseif (!$rankResult['rank']) {
+                $requiresManualRank = true;
+                $statusNotes[] = 'Pangkat tidak dikenali';
+            } elseif ($rankResult['rank'] === null) {
+                $status = 'corrected';
                 $incompleteFields[] = 'Pangkat';
             }
-            if (empty($nrp)) {
+
+            if ($jabatan === '') {
+                $status = 'error';
+                $fatalError = true;
+                $statusNotes[] = 'Jabatan kosong';
+            }
+
+            if ($resolvedSatker['satker_id'] === null && $jabatan !== '') {
+                $status = 'error';
+                $requiresManualSatker = true;
+                $statusNotes[] = 'Satker dari jabatan tidak dikenali';
+            }
+
+            if ($gender === null) {
+                $status = 'error';
+                $fatalError = true;
+                $statusNotes[] = 'Jenis kelamin tidak valid';
+            }
+
+            if ($religion === null) {
+                $status = 'error';
+                $fatalError = true;
+                $statusNotes[] = 'Agama tidak valid';
+            }
+
+            if ($nrp === '') {
+                if ($status !== 'error') {
+                    $status = 'corrected';
+                }
                 $incompleteFields[] = 'NRP/NIP';
+                $statusNotes[] = 'NRP/NIP kosong';
             }
 
             $isDuplicateNrp = false;
-            if (!empty($nrp)) {
+            if ($nrp !== '') {
                 if (isset($seenNrps[$nrp])) {
                     $isDuplicateNrp = true;
-                    if ($status !== 'error') $status = 'corrected';
-                    $dupeRow = $seenNrps[$nrp];
-                    $dupeLabel = "NRP duplikat dengan baris #{$dupeRow}";
-                    if ($rankResult['corrected_to']) {
-                        $rankResult['corrected_to'] .= ' | ' . $dupeLabel;
-                    } else {
-                        $rankResult['corrected'] = true;
-                        $rankResult['corrected_to'] = $dupeLabel;
-                    }
+                    $status = 'error';
+                    $fatalError = true;
+                    $statusNotes[] = 'NRP/NIP duplikat dalam file';
+                } else {
+                    $seenNrps[$nrp] = true;
                 }
-                $seenNrps[$nrp] = $rowIndex + 11;
             }
 
             if ($rankResult['corrected'] && $status !== 'error') {
                 $status = 'corrected';
             }
 
-            if (!empty($incompleteFields) && $status !== 'error') {
-                $status = 'corrected';
-                $missingLabel = '— (Belum Lengkap: ' . implode(', ', $incompleteFields) . ')';
-                if ($rankResult['corrected_to']) {
-                    $rankResult['corrected_to'] .= ' | ' . implode(', ', $incompleteFields) . ' kosong';
-                } else {
-                    $rankResult['corrected'] = true;
-                    $rankResult['corrected_to'] = $missingLabel;
-                }
+            if ($status === 'corrected' && $incompleteFields !== []) {
+                $statusNotes[] = 'Belum lengkap: '.implode(', ', $incompleteFields);
             }
 
             $preview[] = [
                 'row_num' => $rowIndex + $this->startRow(),
+                'sheet_name' => $sheetName,
                 'full_name' => $fullName,
+                'nrp' => $nrp,
                 'rank_input' => $rankInput,
-                'rank_corrected' => $rankResult['corrected_to'],
                 'rank_id' => $rankResult['rank']?->id,
                 'rank_name' => $rankResult['rank']?->name,
+                'rank_corrected' => $rankResult['corrected_to'],
                 'golongan' => $golongan,
-                'nrp' => $nrp,
-                'jabatan' => $jabatan,
-                'bagian' => $bagian,
-                'keterangan' => $keterangan,
                 'gender' => $gender,
                 'gender_raw' => $genderRaw,
-                'religion' => $agamaRaw, // Tambahan field Agama
-                'sizes' => $sizes,
+                'religion' => $religion,
+                'religion_raw' => $religionRaw,
+                'jabatan' => $jabatan,
+                'satker_id' => $resolvedSatker['satker_id'],
+                'satker_name' => $resolvedSatker['satker_name'],
+                'satker_match' => $resolvedSatker['matched_alias'],
+                'personnel_type' => $this->resolvePersonnelType($rankResult['rank']),
                 'status' => $status,
+                'status_notes' => array_values(array_unique($statusNotes)),
                 'incomplete_fields' => $incompleteFields,
                 'duplicate_nrp' => $isDuplicateNrp,
+                'fatal_error' => $fatalError,
+                'requires_manual_satker' => $requiresManualSatker,
+                'requires_manual_rank' => $requiresManualRank,
             ];
         }
 
@@ -202,135 +183,274 @@ class PersonnelSdmImport extends PersonnelImport
     }
 
     /**
-     * Override saveFromPreviewData untuk memasukkan field agama yang baru.
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array{success_count:int,error_count:int,errors:array<int, string>}
      */
-    public function saveFromPreviewData(array $rows, int $satkerId): array
+    public function saveFromPreviewData(array $rows, int $satkerId = 0): array
     {
         set_time_limit(0);
         ini_set('memory_limit', '2G');
 
-        $satker = Satker::findOrFail($satkerId);
         $successCount = 0;
         $errorCount = 0;
         $errors = [];
+        $touchedSatkers = [];
 
         $ranksById = Rank::all()->keyBy('id');
-        $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
+        $satkersById = Satker::all()->keyBy('id');
+        $allNrp = collect($rows)
+            ->pluck('nrp')
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
         $existingPersonnel = Personnel::whereIn('nrp', $allNrp)->get()->keyBy('nrp');
         $existingUsers = User::whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
 
         DB::transaction(function () use (
-            $rows, $satker, $ranksById, $existingPersonnel, $existingUsers,
-            &$successCount, &$errorCount, &$errors
+            $rows,
+            $ranksById,
+            $satkersById,
+            $existingPersonnel,
+            $existingUsers,
+            &$successCount,
+            &$errorCount,
+            &$errors,
+            &$touchedSatkers
         ) {
             foreach ($rows as $idx => $data) {
-                $nrp = trim($data['nrp'] ?? '');
-                $fullName = trim($data['full_name'] ?? '');
+                $fullName = trim((string) ($data['full_name'] ?? ''));
+                $nrp = trim((string) ($data['nrp'] ?? ''));
                 $rankId = (int) ($data['rank_id'] ?? 0);
-                $gender = $data['gender'] ?? 'L';
-                $jabatan = ''; // SDM form kosong
-                $bagian = '';
-                $golongan = trim($data['golongan'] ?? '');
-                $keterangan = '';
-                $religion = trim($data['religion'] ?? '');
+                $satkerId = (int) ($data['satker_id'] ?? 0);
+                $jabatan = trim((string) ($data['jabatan'] ?? ''));
+                $gender = $data['gender'] ?? null;
+                $religion = trim((string) ($data['religion'] ?? ''));
+                $golongan = trim((string) ($data['golongan'] ?? ''));
 
-                if (empty($fullName)) {
+                if ($fullName === '') {
                     $errorCount++;
                     $errors[] = "Baris {$idx}: Nama kosong, dilewati.";
+
                     continue;
                 }
 
-                $rank = $rankId ? $ranksById->get($rankId) : null;
-                if ($rankId && !$rank) {
+                $rank = $rankId > 0 ? $ranksById->get($rankId) : null;
+                if ($rankId > 0 && $rank === null) {
                     $errorCount++;
-                    $errors[] = "Baris {$idx}: Pangkat ID={$rankId} tidak ditemukan (NRP: {$nrp}).";
+                    $errors[] = "Baris {$idx} ({$fullName}): Pangkat tidak ditemukan.";
+
+                    continue;
+                }
+
+                $satker = $satkersById->get($satkerId);
+                if ($satker === null) {
+                    $errorCount++;
+                    $errors[] = "Baris {$idx} ({$fullName}): Satker tidak ditemukan.";
+
+                    continue;
+                }
+
+                if (! in_array($gender, ['L', 'P'], true)) {
+                    $errorCount++;
+                    $errors[] = "Baris {$idx} ({$fullName}): Jenis kelamin tidak valid.";
+
+                    continue;
+                }
+
+                if ($religion === '') {
+                    $errorCount++;
+                    $errors[] = "Baris {$idx} ({$fullName}): Agama kosong.";
+
                     continue;
                 }
 
                 try {
                     $effectiveNrp = $nrp;
-                    $isEmptyNrp = empty($nrp);
-                    $isDuplicateNrp = !empty($data['duplicate_nrp']);
+                    $isEmptyNrp = $nrp === '';
+                    $isDuplicateNrp = (bool) ($data['duplicate_nrp'] ?? false);
 
                     if ($isEmptyNrp || $isDuplicateNrp) {
-                        $effectiveNrp = 'TEMP-' . strtoupper(substr(md5($fullName . $idx . time()), 0, 8));
+                        $effectiveNrp = 'TEMP-'.strtoupper(substr(md5($fullName.$idx.time()), 0, 8));
                     }
 
                     $personnel = ($isEmptyNrp || $isDuplicateNrp) ? null : $existingPersonnel->get($effectiveNrp);
+                    $user = $existingUsers->get($effectiveNrp);
 
-                    if (!$personnel) {
-                        $user = $existingUsers->get($effectiveNrp);
-                        if (!$user) {
-                            $user = User::create([
-                                'name' => $fullName,
-                                'nrp_nip' => $effectiveNrp,
-                                'password' => password_hash($effectiveNrp, PASSWORD_BCRYPT, ['cost' => 4]),
-                                'satker_id' => $satker->id,
-                                'is_active' => true,
-                            ]);
-                            $user->assignRole('personil');
-                            $existingUsers->put($effectiveNrp, $user);
-                        }
+                    if ($personnel?->user !== null) {
+                        $user = $personnel->user;
+                    }
 
-                        $personnelType = 'Polri';
-                        if ($rank && $rank->category === 'PNS') {
-                            $personnelType = 'PNS';
-                        } elseif (!$rank && !empty($golongan)) {
-                            $personnelType = 'PNS';
-                        }
-
-                        $saveNrp = $isEmptyNrp ? null : ($isDuplicateNrp ? $nrp : $effectiveNrp);
-
-                        $personnel = Personnel::create([
-                            'user_id' => $user->id,
-                            'nrp' => $saveNrp,
-                            'full_name' => $fullName,
-                            'rank_id' => $rank ? $rank->id : null,
+                    if ($user === null) {
+                        $user = User::create([
+                            'name' => $fullName,
+                            'nrp_nip' => $effectiveNrp,
+                            'password' => password_hash($effectiveNrp, PASSWORD_BCRYPT, ['cost' => 4]),
                             'satker_id' => $satker->id,
-                            'jabatan' => $jabatan,
-                            'bagian' => $bagian,
-                            'personnel_type' => $personnelType,
-                            'gender' => $gender,
-                            'golongan' => $golongan,
-                            'religion' => $religion, // AGAMA
-                            'keterangan' => $keterangan,
-                            'kapor_sizes' => [], // KOSONGKAN UKURAN
                             'is_active' => true,
                         ]);
-                        if (!$isDuplicateNrp) {
+                        $user->assignRole('personil');
+                        $existingUsers->put($effectiveNrp, $user);
+                    } else {
+                        $user->update([
+                            'name' => $fullName,
+                            'satker_id' => $satker->id,
+                            'is_active' => true,
+                        ]);
+                    }
+
+                    $payload = [
+                        'user_id' => $user->id,
+                        'full_name' => $fullName,
+                        'rank_id' => $rank?->id,
+                        'satker_id' => $satker->id,
+                        'jabatan' => $jabatan,
+                        'bagian' => null,
+                        'personnel_type' => $this->resolvePersonnelType($rank),
+                        'gender' => $gender,
+                        'golongan' => $golongan !== '' ? $golongan : $this->deriveGolongan($rank),
+                        'religion' => $religion,
+                        'is_active' => true,
+                    ];
+
+                    if ($personnel === null) {
+                        $payload['nrp'] = $isEmptyNrp ? null : ($isDuplicateNrp ? $nrp : $effectiveNrp);
+                        $payload['kapor_sizes'] = [];
+                        $payload['keterangan'] = null;
+                        $payload['keterangan_2'] = null;
+                        $payload['keterangan_3'] = null;
+                        $payload['keterangan_4'] = null;
+
+                        $personnel = Personnel::create($payload);
+                        if (! $isDuplicateNrp) {
                             $existingPersonnel->put($effectiveNrp, $personnel);
                         }
                     } else {
-                        $updateData = [
-                            'full_name' => $fullName,
-                            'satker_id' => $satker->id,
-                            'golongan' => $golongan,
-                            'gender' => $gender,
-                            'religion' => $religion, // Tambahkan agama ke update
-                        ];
-                        if ($rank) {
-                            $updateData['rank_id'] = $rank->id;
-                        }
-                        // Update tanpa menimpa ukuran yang sudah diisi personil/admin_satker
-                        $personnel->update($updateData);
+                        $personnel->update($payload);
                     }
 
+                    $touchedSatkers[] = $satker->id;
                     $successCount++;
-                } catch (\Exception $e) {
+                } catch (\Throwable $throwable) {
                     $errorCount++;
-                    $errors[] = "Baris {$idx} (NRP: {$nrp}): " . $e->getMessage();
+                    $errors[] = "Baris {$idx} ({$fullName}): ".$throwable->getMessage();
                 }
             }
         });
 
-        // Pakai scope parent jika ini class murni. self:: merujuk ke class ini (PersonnelSdmImport), 
-        // tapi since recalculateSatkerCount exists on parent, call it explicitly per static bindings.
-        parent::recalculateSatkerCount($satkerId);
+        foreach (array_unique($touchedSatkers) as $satkerId) {
+            parent::recalculateSatkerCount((int) $satkerId);
+        }
 
         return [
             'success_count' => $successCount,
             'error_count' => $errorCount,
             'errors' => $errors,
         ];
+    }
+
+    private function normalizeText(mixed $value): string
+    {
+        $text = str_replace('*', '', trim((string) $value));
+
+        return trim(preg_replace('/\s+/', ' ', $text) ?? $text);
+    }
+
+    private function normalizeNrp(mixed $nrpRaw): string
+    {
+        if ((is_int($nrpRaw) || is_float($nrpRaw)) && $nrpRaw >= 1000000000000000) {
+            $strNrp = sprintf('%.15g', (float) $nrpRaw);
+            if (stripos($strNrp, 'e') !== false) {
+                $parts = explode('e', strtolower($strNrp));
+                $base = str_replace('.', '', $parts[0]);
+                $exp = (int) $parts[1];
+
+                return str_pad($base, $exp + 1, '0', STR_PAD_RIGHT);
+            }
+
+            return str_replace('.', '', $strNrp);
+        }
+
+        $nrp = trim((string) $nrpRaw);
+        $nrp = ltrim($nrp, "'");
+        if ($nrp === '' || preg_match('/^[\-\.]+$/', $nrp) === 1) {
+            return '';
+        }
+
+        if (is_numeric($nrp) && stripos($nrp, 'E') !== false) {
+            $nrp = number_format((float) $nrp, 0, '', '');
+        }
+
+        if (str_starts_with($nrp, '=') || in_array(strtolower($nrp), ['jumlah', 'total'], true)) {
+            return '';
+        }
+
+        return strlen($nrp) < 4 ? '' : $nrp;
+    }
+
+    private function normalizeGender(string $genderRaw): ?string
+    {
+        $normalized = strtoupper(trim($genderRaw));
+
+        return match ($normalized) {
+            'P', 'WANITA', 'PEREMPUAN', 'W' => 'P',
+            'L', 'PRIA', 'LAKI-LAKI', 'LAKI LAKI' => 'L',
+            default => null,
+        };
+    }
+
+    private function normalizeReligion(string $religionRaw): ?string
+    {
+        $normalized = strtoupper(trim($religionRaw));
+
+        return match ($normalized) {
+            'ISLAM' => 'Islam',
+            'KRISTEN', 'KRISTEN PROTESTAN', 'PROTESTAN' => 'Kristen',
+            'KATOLIK', 'KATHOLIK', 'CATHOLIC' => 'Katolik',
+            'HINDU' => 'Hindu',
+            'BUDDHA', 'BUDHA', 'BUDHAA' => 'Buddha',
+            'KONGHUCU', 'KHONGHUCU' => 'Konghucu',
+            default => null,
+        };
+    }
+
+    private function resolvePersonnelType(?Rank $rank): string
+    {
+        return $rank?->category === 'PNS' ? 'PNS' : 'Polri';
+    }
+
+    private function deriveGolongan(?Rank $rank): string
+    {
+        if ($rank === null) {
+            return '';
+        }
+
+        if ($rank->category !== 'PNS') {
+            return $rank->category ?? '';
+        }
+
+        return match ($rank->name) {
+            'Juru Muda' => 'I/a',
+            'Juru Muda Tingkat I' => 'I/b',
+            'Juru' => 'I/c',
+            'Juru Tingkat I' => 'I/d',
+            'Pengatur Muda' => 'II/a',
+            'Pengatur Muda Tingkat I' => 'II/b',
+            'Pengatur' => 'II/c',
+            'Pengatur Tingkat I' => 'II/d',
+            'Penata Muda' => 'III/a',
+            'Penata Muda Tingkat I' => 'III/b',
+            'Penata' => 'III/c',
+            'Penata Tingkat I' => 'III/d',
+            'Pembina' => 'IV/a',
+            'Pembina Tingkat I' => 'IV/b',
+            'Pembina Utama Muda' => 'IV/c',
+            'Pembina Utama Madya' => 'IV/d',
+            'Pembina Utama' => 'IV/e',
+            'PPPK' => 'PPPK',
+            default => '',
+        };
     }
 }

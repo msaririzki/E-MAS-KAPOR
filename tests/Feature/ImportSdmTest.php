@@ -2,16 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Imports\PersonnelSdmImport;
 use App\Models\Personnel;
-use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\User;
+use Database\Seeders\RankSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Hash;
-use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
-use Database\Seeders\RankSeeder;
 
 class ImportSdmTest extends TestCase
 {
@@ -20,53 +19,90 @@ class ImportSdmTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
-        // Seed ranks
+
         $this->seed(RankSeeder::class);
+
+        Role::findOrCreate('superadmin');
+        Role::findOrCreate('admin_satker');
+        Role::findOrCreate('personil');
     }
 
-    public function test_superadmin_can_preview_sdm_import()
+    public function test_superadmin_can_access_sdm_import_route_without_satker_selection(): void
     {
-        // Require superadmin role and permission (assuming roles exist or just testing the controller logic)
-        // For simplicity, we just mock the user having role
         $superAdmin = User::factory()->create();
-        $superAdmin->assignRole('superadmin'); // Assuming Spatie Permission is set up
+        $superAdmin->assignRole('superadmin');
 
-        $satker = Satker::factory()->create();
-
-        // Create a fake Excel file
         $file = UploadedFile::fake()->create('sdm_data.xlsx', 100);
 
-        // We mock Excel facade to prevent actual parsing or use real parsing if possible
-        // Actually, since we created PersonnelSdmImport to use Maatwebsite, let's just assert the redirect happens
-
         $response = $this->actingAs($superAdmin)
-                         ->post(route('admin.personnel.import-sdm'), [
-                             'satker_id' => $satker->id,
-                             'file' => $file,
-                         ]);
+            ->post(route('admin.personnel.import-sdm'), [
+                'files' => [$file],
+            ]);
 
-        // It should redirect to preview
-        // Since we supply a fake file without real excel content, it might fail in parsing
-        // But we just want to ensure the route works and is accessible by superadmin
         $response->assertStatus(302);
     }
 
-    public function test_non_superadmin_cannot_access_sdm_import()
+    public function test_non_superadmin_cannot_access_sdm_import(): void
     {
         $adminSatker = User::factory()->create();
         $adminSatker->assignRole('admin_satker');
 
-        $satker = Satker::factory()->create();
         $file = UploadedFile::fake()->create('sdm_data.xlsx', 100);
 
         $response = $this->actingAs($adminSatker)
-                         ->post(route('admin.personnel.import-sdm'), [
-                             'satker_id' => $satker->id,
-                             'file' => $file,
-                         ]);
+            ->post(route('admin.personnel.import-sdm'), [
+                'files' => [$file],
+            ]);
 
-        // Should return to back with error or 403
         $response->assertSessionHas('error');
+    }
+
+    public function test_sdm_import_can_resolve_satker_from_jabatan_and_persist_baseline_data(): void
+    {
+        Satker::create([
+            'name' => 'POLDA NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        $satbrimob = Satker::create([
+            'name' => 'SATBRIMOB',
+            'code' => 'SATBRIMOB',
+            'sort_order' => 2,
+        ]);
+
+        $import = new PersonnelSdmImport;
+
+        $preview = $import->generatePreview(collect([
+            [1, 'EGAS DOSANTOS', 'AIPDA', "'76100151", 'BANIT II SUBDEN IV DENGEGANA SATBRIMOB POLDA NTB', 'PRIA', 'KATOLIK'],
+        ]), 'Worksheet');
+
+        $this->assertCount(1, $preview);
+        $this->assertSame('SATBRIMOB', $preview[0]['satker_name']);
+        $this->assertSame($satbrimob->id, $preview[0]['satker_id']);
+        $this->assertSame('L', $preview[0]['gender']);
+        $this->assertSame('Katolik', $preview[0]['religion']);
+        $this->assertSame('AIPDA', $preview[0]['rank_name']);
+        $this->assertSame('BINTARA', $preview[0]['golongan']);
+
+        $result = $import->saveFromPreviewData($preview);
+
+        $this->assertSame(1, $result['success_count']);
+        $this->assertSame(0, $result['error_count']);
+
+        $this->assertDatabaseHas('personnels', [
+            'full_name' => 'EGAS DOSANTOS',
+            'nrp' => '76100151',
+            'satker_id' => $satbrimob->id,
+            'jabatan' => 'BANIT II SUBDEN IV DENGEGANA SATBRIMOB POLDA NTB',
+            'gender' => 'L',
+            'religion' => 'Katolik',
+            'golongan' => 'BINTARA',
+            'personnel_type' => 'Polri',
+        ]);
+
+        $personnel = Personnel::where('full_name', 'EGAS DOSANTOS')->firstOrFail();
+        $this->assertSame($satbrimob->id, $personnel->user->satker_id);
+        $this->assertTrue($personnel->user->hasRole('personil'));
     }
 }

@@ -4,78 +4,75 @@
 @section('breadcrumb', 'Preview Import SDM')
 
 @section('content')
-
-{{-- Flash Messages: tampilkan error/warning dari controller --}}
 @if(session('error'))
 <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; padding:14px 18px; margin-bottom:16px; display:flex; gap:10px; align-items:flex-start;">
     <i class="ri-error-warning-fill" style="color:#EF4444; font-size:20px; flex-shrink:0;"></i>
     <div style="color:#B91C1C; font-size:14px; font-weight:600;">{{ session('error') }}</div>
 </div>
 @endif
-@if(session('warning'))
-<div style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:10px; padding:14px 18px; margin-bottom:16px; display:flex; gap:10px; align-items:flex-start;">
-    <i class="ri-alert-fill" style="color:#F59E0B; font-size:20px; flex-shrink:0;"></i>
-    <div style="color:#92400E; font-size:14px; font-weight:600;">{{ session('warning') }}</div>
-</div>
-@endif
+
 <style>
     .filter-pill {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 6px 14px; border-radius: 40px; cursor: pointer;
-        font-weight: 600; font-size: 13px; border: 2px solid transparent;
-        transition: all 0.18s ease; user-select: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 40px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        border: 2px solid transparent;
+        transition: all 0.18s ease;
+        user-select: none;
     }
-    .filter-pill.all   { background: #F3F4F6; color: #374151; border-color: #D1D5DB; }
-    .filter-pill.ok    { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
-    .filter-pill.warn  { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
+    .filter-pill.all { background: #F3F4F6; color: #374151; border-color: #D1D5DB; }
+    .filter-pill.ok { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
+    .filter-pill.warn { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
     .filter-pill.error { background: #FEE2E2; color: #B91C1C; border-color: #FECACA; }
-    .filter-pill.active.all   { background: #374151; color: #fff; border-color: #374151; }
-    .filter-pill.active.ok    { background: #059669; color: #fff; border-color: #059669; }
-    .filter-pill.active.warn  { background: #D97706; color: #fff; border-color: #D97706; }
+    .filter-pill.active.all { background: #374151; color: #fff; border-color: #374151; }
+    .filter-pill.active.ok { background: #059669; color: #fff; border-color: #059669; }
+    .filter-pill.active.warn { background: #D97706; color: #fff; border-color: #D97706; }
     .filter-pill.active.error { background: #DC2626; color: #fff; border-color: #DC2626; }
     .filter-pill .badge {
-        background: rgba(0,0,0,0.08); border-radius: 20px;
-        padding: 2px 8px; font-size: 12px; font-weight: 700;
+        background: rgba(0,0,0,0.08);
+        border-radius: 20px;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 700;
     }
-    .filter-pill.active .badge { background: rgba(255,255,255,0.25); }
-    .row-ok       { }
-    .row-corrected{ background: #FFFDF0 !important; }
-    .row-error    { background: #FFF5F5 !important; }
-    .hidden-row   { display: none !important; }
+    .filter-pill.active .badge {
+        background: rgba(255,255,255,0.25);
+    }
+    .row-corrected { background: #FFFDF0 !important; }
+    .row-error { background: #FFF5F5 !important; }
+    .hidden-row { display: none !important; }
 </style>
 
-{{-- FORM BATALKAN --}}
 <form action="{{ route('admin.personnel.import-sdm-cancel') }}" method="POST" id="cancelForm">
     @csrf
 </form>
 
-{{-- FORM KONFIRMASI --}}
-<form action="{{ route('admin.personnel.import-sdm-confirm') }}" method="POST"
-      id="importConfirmForm" onsubmit="return doConfirm(event)">
+<form action="{{ route('admin.personnel.import-sdm-confirm') }}" method="POST" id="importConfirmForm" onsubmit="return doConfirm(event)">
     @csrf
 
-    {{-- Header --}}
     <div class="page-header">
         <div class="page-header-row">
             <div>
-                <h1 class="page-title">Preview Import Data SDM (Super Admin)</h1>
-                <p class="page-subtitle">Satker: <strong>{{ $satker->name }}</strong>
-                    &mdash; <span style="color:#6B7280;">{{ $stats['total'] }} baris data</span>
+                <h1 class="page-title">Preview Import Data SDM</h1>
+                <p class="page-subtitle">
+                    Total baris: <strong>{{ $stats['total'] }}</strong>
+                    <span style="color:#6B7280;">| File: <strong>{{ $stats['file_count'] ?? 1 }}</strong></span>
+                    <span style="color:#6B7280;">| Satker terdeteksi: <strong>{{ $stats['satker_count'] ?? 0 }}</strong></span>
                 </p>
-                <p style="font-size: 12px; color: var(--brand); margin-top: 4px;">Hanya Merekam: Nama, NRP/NIP, Pangkat, Golongan, Jenis Kelamin, dan Agama.</p>
+                <p style="font-size:12px; color:var(--brand); margin-top:4px;">
+                    Baseline SDM: Nama, NRP/NIP, Pangkat, Jabatan, Jenis Kelamin, Agama, lalu satker ditentukan otomatis dari teks jabatan.
+                </p>
             </div>
         </div>
     </div>
 
-    {{-- Filter Pills & Aksi Import --}}
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:16px;">
-        
-        {{-- Bagian Kiri: Filter --}}
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:16px; flex-wrap:wrap;">
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1;">
-            @if($stats['error'] == 0)
-            <span style="font-size:13px; font-weight:600; color:#6B7280; margin-right:4px;">TAMPILKAN:</span>
-            @endif
-            
             <div class="filter-pill all active" onclick="setFilter('all')" id="pill-all">
                 <i class="ri-list-check-2"></i> Semua <span class="badge">{{ $stats['total'] }}</span>
             </div>
@@ -84,24 +81,22 @@
             </div>
             @if($stats['corrected'] > 0)
             <div class="filter-pill warn" onclick="setFilter('corrected')" id="pill-corrected">
-                <i class="ri-edit-box-line"></i> Auto Koreksi <span class="badge">{{ $stats['corrected'] }}</span>
+                <i class="ri-edit-box-line"></i> Perlu Cek <span class="badge">{{ $stats['corrected'] }}</span>
             </div>
             @endif
             @if($stats['error'] > 0)
             <div class="filter-pill error" onclick="setFilter('error')" id="pill-error">
-                <i class="ri-error-warning-line"></i> Pilih Manual <span class="badge">{{ $stats['error'] }}</span>
+                <i class="ri-error-warning-line"></i> Error <span class="badge">{{ $stats['error'] }}</span>
             </div>
             @endif
         </div>
 
-        {{-- Bagian Kanan: Aksi --}}
-        <div id="header-confirm" style="display:none; gap:12px; align-items:center; white-space:nowrap;">
-            <button type="submit" form="cancelForm" class="btn btn-outline" style="padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px;">
+        <div style="display:flex; gap:12px; align-items:center;">
+            <button type="submit" form="cancelForm" class="btn btn-outline">
                 <i class="ri-close-line"></i> Batalkan
             </button>
-            <button type="submit" class="btn btn-primary btn-submit-import" style="background:#059669; padding:8px 18px; border-radius:8px; font-weight:700; font-size:13px; box-shadow:0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -1px rgba(5, 150, 105, 0.1);">
-                <i class="ri-check-double-line" style="margin-right:6px;"></i> Konfirmasi SDM
-                <span style="background:rgba(255,255,255,0.25); margin-left:6px; padding:2px 8px; border-radius:12px; font-size:11px;">{{ $stats['total'] }}</span>
+            <button type="submit" class="btn btn-primary btn-submit-import" style="background:#059669; border-color:#059669;">
+                <i class="ri-check-double-line"></i> Konfirmasi Import SDM
             </button>
         </div>
     </div>
@@ -110,25 +105,28 @@
     <div style="background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; padding:12px 16px; margin-bottom:16px; display:flex; gap:10px; align-items:center;">
         <i class="ri-error-warning-fill" style="color:#EF4444; font-size:20px; flex-shrink:0;"></i>
         <div style="font-size:13px;">
-            <strong style="color:#B91C1C;">{{ $stats['error'] }} baris dengan pangkat tidak dikenali.</strong>
-            Klik <strong>"Pilih Manual"</strong> di atas untuk menemukan baris yang perlu diperbaiki.
+            <strong style="color:#B91C1C;">Masih ada baris error.</strong>
+            Pangkat dan satker bisa Anda koreksi manual di tabel. Error fatal seperti NRP duplikat dalam file harus diperbaiki dari file sumber.
         </div>
     </div>
     @endif
 
-    {{-- Tabel Preview --}}
     <div class="table-container">
         <div class="table-responsive" style="overflow-x:auto;">
-            <table class="user-table" style="font-size:12px; min-width:900px;">
+            <table class="user-table" style="font-size:12px; min-width:1500px;">
                 <thead>
                     <tr>
-                        <th style="width:40px; border-top-left-radius:12px;">#</th>
-                        <th style="width:200px;">NAMA LENGKAP</th>
-                        <th style="width:195px;">PANGKAT</th>
-                        <th style="width:70px;">GOL</th>
+                        <th style="width:50px; border-top-left-radius:12px;">#</th>
+                        <th style="width:90px;">SHEET</th>
+                        <th style="width:220px;">NAMA</th>
                         <th style="width:130px;">NRP / NIP</th>
-                        <th style="width:55px;">JK</th>
-                        <th style="border-top-right-radius:12px;">AGAMA</th>
+                        <th style="width:230px;">PANGKAT</th>
+                        <th style="width:90px;">GOL</th>
+                        <th style="width:320px;">JABATAN</th>
+                        <th style="width:230px;">SATKER HASIL BACA</th>
+                        <th style="width:80px;">JK</th>
+                        <th style="width:110px;">AGAMA</th>
+                        <th style="border-top-right-radius:12px; min-width:230px;">CATATAN</th>
                     </tr>
                 </thead>
                 <tbody id="previewTableBody">
@@ -136,121 +134,92 @@
                 @php
                     $trClass = match($row['status']) {
                         'corrected' => 'row-corrected',
-                        'error'     => 'row-error',
-                        default     => 'row-ok',
+                        'error' => 'row-error',
+                        default => '',
                     };
                 @endphp
                 <tr class="{{ $trClass }}" id="row-{{ $i }}" data-status="{{ $row['status'] }}">
-
-                    @if($row['status'] === 'error' || $row['status'] === 'corrected')
-                    <input type="hidden"
-                           name="rank_overrides[{{ $i }}]"
-                           value="{{ $row['rank_id'] ?? '' }}"
-                           id="rank_id_{{ $i }}">
-                    @endif
+                    <input type="hidden" name="rank_overrides[{{ $i }}]" value="{{ $row['rank_id'] ?? '' }}" id="rank_id_{{ $i }}">
+                    <input type="hidden" name="satker_overrides[{{ $i }}]" value="{{ $row['satker_id'] ?? '' }}" id="satker_id_{{ $i }}">
 
                     <td style="color:#9CA3AF; font-size:10px;">{{ $row['row_num'] }}</td>
+                    <td style="color:#6B7280;">{{ $row['sheet_name'] ?? '0' }}</td>
                     <td style="font-weight:600; color:#111827;">{{ $row['full_name'] }}</td>
-
-                    {{-- Kolom Pangkat --}}
-                    <td>
-                    @if($row['status'] === 'error')
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <div style="font-size:11px; color:#DC2626; display:flex; align-items:center; gap:4px;">
-                                <i class="ri-error-warning-fill"></i> N/A: <strong>{{ $row['rank_input'] }}</strong>
-                            </div>
-                            <select onchange="updateOverride({{ $i }}, this)"
-                                style="font-size:12px; padding:6px 10px; border:1.5px solid #EF4444; border-radius:6px; background:#FEF2F2; min-width:148px; color:#B91C1C; font-weight:600; cursor:pointer;">
-                                <option value="">Pilih Pangkat Manual...</option>
-                                @foreach($ranks as $rank)
-                                <option value="{{ $rank->id }}" {{ ($row['rank_id'] == $rank->id) ? 'selected' : '' }}>
-                                    {{ $rank->name }} ({{ $rank->category }})
-                                </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                    @elseif($row['status'] === 'corrected')
-                        <div style="display:flex; flex-direction:column; gap:3px;">
-                            @if($row['rank_corrected'])
-                            <span style="font-size:10px; color:#92400E;">
-                                @if($row['rank_input'])
-                                <s style="color:#9CA3AF;">{{ $row['rank_input'] }}</s>
-                                &rarr; <strong>{{ $row['rank_name'] ?? '—' }}</strong>
-                                @else
-                                <strong>{{ $row['rank_name'] ?? '— (Pangkat Kosong)' }}</strong>
-                                @endif
-                            </span>
-                            <span style="font-size:10px; background:#FDE68A; color:#92400E; padding:1px 7px; border-radius:10px; font-weight:700; display:inline-block; width:fit-content;">AUTO KOREKSI</span>
-                            @else
-                            <span style="font-weight:600; color:#059669;">{{ $row['rank_name'] }}</span>
-                            @endif
-                            @if(!empty($row['incomplete_fields']))
-                            <span style="font-size:9px; background:#FED7AA; color:#9A3412; padding:1px 7px; border-radius:10px; font-weight:600; display:inline-block; width:fit-content;">
-                                <i class="ri-alert-line"></i> {{ implode(', ', $row['incomplete_fields']) }} kosong
-                            </span>
-                            @endif
-                            <button type="button" onclick="toggleEdit({{ $i }})"
-                                style="font-size:10px; color:#6B7280; background:none; border:none; cursor:pointer; padding:0; text-align:left;">
-                                <i class="ri-edit-line"></i> Edit
-                            </button>
-                            <div id="rank-edit-{{ $i }}" style="display:none; margin-top:2px;">
-                                <select onchange="updateOverride({{ $i }}, this)"
-                                    style="font-size:11px; padding:4px 6px; border:1.5px solid #F59E0B; border-radius:6px; background:#fff; min-width:148px;">
-                                    <option value="">-- Pilih Pangkat --</option>
-                                    @foreach($ranks as $rank)
-                                    <option value="{{ $rank->id }}" {{ ($row['rank_id'] == $rank->id) ? 'selected' : '' }}>
-                                        {{ $rank->name }} ({{ $rank->category }})
-                                    </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                    @else
-                        <div style="display:flex; flex-direction:column; gap:3px;">
-                            <span style="font-weight:600; color:#059669;">{{ $row['rank_name'] }}</span>
-                            <button type="button" onclick="toggleEdit({{ $i }})"
-                                style="font-size:10px; color:#9CA3AF; background:none; border:none; cursor:pointer; padding:0; text-align:left;">
-                                <i class="ri-edit-line"></i> Edit
-                            </button>
-                            <div id="rank-edit-{{ $i }}" style="display:none; margin-top:2px;">
-                                <input type="hidden" name="rank_overrides[{{ $i }}]"
-                                       value="{{ $row['rank_id'] ?? '' }}" id="rank_id_{{ $i }}">
-                                <select onchange="updateOverride({{ $i }}, this)"
-                                    style="font-size:11px; padding:4px 6px; border:1.5px solid #D1D5DB; border-radius:6px; background:#fff; min-width:148px;">
-                                    @foreach($ranks as $rank)
-                                    <option value="{{ $rank->id }}" {{ ($row['rank_id'] == $rank->id) ? 'selected' : '' }}>
-                                        {{ $rank->name }} ({{ $rank->category }})
-                                    </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    @endif
-                    </td>
-
-                    <td style="color:#6B7280;">{{ $row['golongan'] ?: '—' }}</td>
                     <td style="font-family:monospace; color:#374151;">
                         {{ $row['nrp'] ?: '—' }}
                         @if(!empty($row['duplicate_nrp']))
-                        <span style="display:block; font-size:9px; background:#FED7AA; color:#9A3412; padding:1px 7px; border-radius:10px; font-weight:700; margin-top:2px; width:fit-content; font-family:sans-serif;">
-                            <i class="ri-alert-line"></i> NRP DUPLIKAT
+                        <span style="display:block; font-size:9px; background:#FECACA; color:#991B1B; padding:1px 7px; border-radius:10px; font-weight:700; margin-top:2px; width:fit-content; font-family:sans-serif;">
+                            DUPLIKAT
                         </span>
                         @endif
                     </td>
                     <td>
-                        <span style="font-size:11px; padding:2px 8px; border-radius:12px;
-                            background:{{ $row['gender'] === 'L' ? '#DBEAFE' : '#FCE7F3' }};
-                            color:{{ $row['gender'] === 'L' ? '#1D4ED8' : '#BE185D' }}; font-weight:600;">
-                            {{ $row['gender_raw'] }}
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                            <div>
+                                <div style="font-weight:600; color:#111827;">{{ $row['rank_name'] ?? '—' }}</div>
+                                @if(!empty($row['rank_corrected']))
+                                <div style="font-size:10px; color:#92400E;">
+                                    Input: {{ $row['rank_input'] ?: '—' }} -> {{ $row['rank_corrected'] }}
+                                </div>
+                                @elseif(!empty($row['rank_input']) && empty($row['rank_name']))
+                                <div style="font-size:10px; color:#B91C1C;">Input: {{ $row['rank_input'] }}</div>
+                                @endif
+                            </div>
+                            @if($row['status'] === 'error' || !empty($row['requires_manual_rank']))
+                            <select onchange="updateOverride('rank', {{ $i }}, this.value)"
+                                style="font-size:11px; padding:6px 8px; border:1px solid #D1D5DB; border-radius:6px; background:#fff;">
+                                <option value="">Pilih Pangkat...</option>
+                                @foreach($ranks as $rank)
+                                <option value="{{ $rank->id }}" {{ (string) ($row['rank_id'] ?? '') === (string) $rank->id ? 'selected' : '' }}>
+                                    {{ $rank->name }} ({{ $rank->category }})
+                                </option>
+                                @endforeach
+                            </select>
+                            @endif
+                        </div>
+                    </td>
+                    <td>{{ $row['golongan'] ?: '—' }}</td>
+                    <td style="color:#374151;">{{ $row['jabatan'] ?: '—' }}</td>
+                    <td>
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                            <div>
+                                <div style="font-weight:600; color:#111827;">{{ $row['satker_name'] ?? '—' }}</div>
+                                @if(!empty($row['satker_match']))
+                                <div style="font-size:10px; color:#6B7280;">Match: {{ $row['satker_match'] }}</div>
+                                @endif
+                            </div>
+                            @if($row['status'] === 'error' || !empty($row['requires_manual_satker']))
+                            <select onchange="updateOverride('satker', {{ $i }}, this.value)"
+                                style="font-size:11px; padding:6px 8px; border:1px solid #D1D5DB; border-radius:6px; background:#fff;">
+                                <option value="">Pilih Satker...</option>
+                                @foreach($satkers as $satker)
+                                <option value="{{ $satker->id }}" {{ (string) ($row['satker_id'] ?? '') === (string) $satker->id ? 'selected' : '' }}>
+                                    {{ $satker->name }}
+                                </option>
+                                @endforeach
+                            </select>
+                            @endif
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:{{ $row['gender'] === 'L' ? '#DBEAFE' : '#FCE7F3' }}; color:{{ $row['gender'] === 'L' ? '#1D4ED8' : '#BE185D' }}; font-weight:600;">
+                            {{ $row['gender_raw'] ?: '—' }}
                         </span>
                     </td>
-                    <td style="color:#6B7280; font-size:11px;">{{ $row['religion'] ?: '—' }}</td>
+                    <td>{{ $row['religion'] ?: '—' }}</td>
+                    <td>
+                        @if(!empty($row['status_notes']))
+                            @foreach($row['status_notes'] as $note)
+                            <div style="font-size:11px; color:{{ $row['status'] === 'error' ? '#B91C1C' : '#92400E' }}; margin-bottom:4px;">• {{ $note }}</div>
+                            @endforeach
+                        @else
+                            <span style="font-size:11px; color:#059669;">Siap import</span>
+                        @endif
+                    </td>
                 </tr>
                 @endforeach
                 <tr id="emptyRow" class="hidden-row">
-                    <td colspan="7" style="text-align:center; padding:48px; color:#9CA3AF;">
+                    <td colspan="11" style="text-align:center; padding:48px; color:#9CA3AF;">
                         <i class="ri-inbox-line" style="font-size:36px; display:block; margin-bottom:8px; opacity:.3;"></i>
                         Tidak ada data pada kategori ini.
                     </td>
@@ -259,34 +228,20 @@
             </table>
         </div>
     </div>
-
-    {{-- Footer (Tombol Konfirmasi Bawah) --}}
-    <div id="footer-confirm" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; padding:16px 20px; background:#F9FAFB; border-radius:12px; border:1px solid #E5E7EB; flex-wrap:wrap; gap:12px;">
-        <div style="font-size:12px; color:#6B7280;">
-            <i class="ri-information-line" style="color:#6366F1;"></i>
-            Baris <strong>kuning</strong> sudah otomatis diperbaiki. Periksa baris <strong style="color:#DC2626;">merah</strong> lalu konfirmasi di bawah ini.
-        </div>
-        <div style="display:flex; gap:12px; align-items:center;">
-            <button type="submit" form="cancelForm" class="btn btn-outline" style="padding: 10px 16px; border-radius: 8px; font-weight: 600;">
-                <i class="ri-close-line"></i> Batalkan
-            </button>
-            <button type="submit" class="btn btn-primary btn-submit-import" style="background:#059669; padding:10px 24px; border-radius:8px; font-weight:700; box-shadow:0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -1px rgba(5, 150, 105, 0.1);">
-                <i class="ri-check-double-line" style="margin-right:6px;"></i> Konfirmasi Import SDM 
-                <span style="background:rgba(255,255,255,0.25); margin-left:8px; padding:2px 8px; border-radius:12px; font-size:12px;">{{ $stats['total'] }}</span>
-            </button>
-        </div>
-    </div>
-
 </form>
 
 <script>
-// Index baris yang berstatus 'error'
 const errorIndexes = @json(collect($preview)->where('status', 'error')->keys()->values());
+const fatalErrorIndexes = @json(collect($preview)->filter(fn ($row) => !empty($row['fatal_error']))->keys()->values());
+const requiresManualRank = @json(collect($preview)->filter(fn ($row) => !empty($row['requires_manual_rank']))->keys()->values());
+const requiresManualSatker = @json(collect($preview)->filter(fn ($row) => !empty($row['requires_manual_satker']))->keys()->values());
 
 function setFilter(status) {
-    ['all','ok','corrected','error'].forEach(function(s) {
-        const p = document.getElementById('pill-' + s);
-        if (p) p.classList.toggle('active', s === status);
+    ['all', 'ok', 'corrected', 'error'].forEach(function(key) {
+        const pill = document.getElementById('pill-' + key);
+        if (pill) {
+            pill.classList.toggle('active', key === status);
+        }
     });
 
     let visible = 0;
@@ -296,59 +251,55 @@ function setFilter(status) {
         if (show) visible++;
     });
 
-    const empty = document.getElementById('emptyRow');
-    if (empty) empty.classList.toggle('hidden-row', visible > 0);
-
-    const headerConfirm = document.getElementById('header-confirm');
-    if (headerConfirm) {
-        headerConfirm.style.display = visible > 10 ? 'flex' : 'none';
-    }
-    
-    const footerConfirm = document.getElementById('footer-confirm');
-    if (footerConfirm) {
-        footerConfirm.style.display = visible > 0 ? 'flex' : 'none';
-    }
-
-    const first = document.querySelector('#previewTableBody tr[data-status]:not(.hidden-row)');
-    if (first) setTimeout(function(){ first.scrollIntoView({ behavior:'smooth', block:'center' }); }, 80);
-}
-
-// Update nilai hidden input rank_overrides[i]
-function updateOverride(i, sel) {
-    const hidden = document.getElementById('rank_id_' + i);
-    if (hidden) hidden.value = sel.value;
-
-    if (sel.value) {
-        const tr = document.getElementById('row-' + i);
-        if (tr && tr.dataset.status === 'error') {
-            tr.style.background = '#F0FDF4';
-            // Menemukan div info N/A pangkat dan menghapusnya dari DOM atau mengubah tampilan
-        }
+    const emptyRow = document.getElementById('emptyRow');
+    if (emptyRow) {
+        emptyRow.classList.toggle('hidden-row', visible > 0);
     }
 }
 
-function toggleEdit(i) {
-    const el = document.getElementById('rank-edit-' + i);
-    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+function updateOverride(type, index, value) {
+    const id = type + '_id_' + index;
+    const hidden = document.getElementById(id);
+    if (hidden) {
+        hidden.value = value;
+    }
 }
 
-function doConfirm(e) {
-    const missing = [];
-    errorIndexes.forEach(function(i) {
-        const el = document.getElementById('rank_id_' + i);
-        if (!el || !el.value) missing.push(i);
-    });
-
-    if (missing.length > 0) {
-        e.preventDefault();
+function doConfirm(event) {
+    if (fatalErrorIndexes.length > 0) {
+        event.preventDefault();
         setFilter('error');
-        alert('Masih ada ' + missing.length + ' baris yang belum dipilih pangkatnya.\nLihat baris merah di atas.');
+        alert('Masih ada error fatal pada file SDM. Perbaiki file sumber lalu upload ulang.');
         return false;
     }
+
+    const missingRank = requiresManualRank.filter(function(index) {
+        const el = document.getElementById('rank_id_' + index);
+        return !el || !el.value;
+    });
+
+    if (missingRank.length > 0) {
+        event.preventDefault();
+        setFilter('error');
+        alert('Masih ada baris yang belum dipilih pangkatnya.');
+        return false;
+    }
+
+    const missingSatker = requiresManualSatker.filter(function(index) {
+        const el = document.getElementById('satker_id_' + index);
+        return !el || !el.value;
+    });
+
+    if (missingSatker.length > 0) {
+        event.preventDefault();
+        setFilter('error');
+        alert('Masih ada baris yang belum dipilih satkernya.');
+        return false;
+    }
+
     return true;
 }
 
-// Initialize UI
 setFilter('all');
 </script>
 @endsection

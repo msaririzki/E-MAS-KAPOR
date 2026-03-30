@@ -30,7 +30,7 @@ class AdminSatkerSeeder extends Seeder
             ['name' => 'DIT INTELKAM', 'username' => 'ditintelkam', 'password' => 'ditintelkam13'],
             ['name' => 'DIT RESKRIMSUS', 'username' => 'ditreskrimsus', 'password' => 'ditreskrimsus14'],
             ['name' => 'DIT RESKRIMUM', 'username' => 'ditreskrimum', 'password' => 'ditreskrimum15'],
-            ['name' => 'DITRESPPAPPO', 'username' => 'ditresppappo', 'password' => 'ditresppappo16'],
+            ['name' => 'DIT RES PPA DAN PPO', 'username' => 'ditresppappo', 'password' => 'ditresppappo16'],
             ['name' => 'DIT RESNARKOBA', 'username' => 'ditresnarkoba', 'password' => 'ditresnarkoba17'],
             ['name' => 'BID PROPAM', 'username' => 'bidpropam', 'password' => 'bidpropam18'],
             ['name' => 'BID KUM', 'username' => 'bidkum', 'password' => 'bidkum19'],

@@ -4,8 +4,7 @@ set -e
 BOOTSTRAP_EMAIL="${BOOTSTRAP_SUPERADMIN_EMAIL:-}"
 BOOTSTRAP_NAME="${BOOTSTRAP_SUPERADMIN_NAME:-Bootstrap Super Administrator}"
 BOOTSTRAP_ON_UPDATE="${BOOTSTRAP_SUPERADMIN_ON_UPDATE:-false}"
-CURRENT_BRANCH="$(git branch --show-current 2>/dev/null || true)"
-TARGET_BRANCH="${TARGET_BRANCH:-${CURRENT_BRANCH:-main}}"
+TARGET_BRANCH="${TARGET_BRANCH:-fitur-import-sdm}"
 
 # Pastikan file .env ada sebagai file, bukan jadi folder gara-gara volume docker-compose
 if [ ! -f ".env" ]; then

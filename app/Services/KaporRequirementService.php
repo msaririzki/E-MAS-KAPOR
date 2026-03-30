@@ -311,6 +311,11 @@ class KaporRequirementService
 
     public function personnelHasHijabStatus(Personnel $personnel): bool
     {
+        $normalizedReligion = $this->normalizeToken($personnel->religion ?? null);
+        if ($personnel->gender === 'P' && $normalizedReligion === 'ISLAM') {
+            return true;
+        }
+
         foreach (['keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'] as $field) {
             $normalized = $this->normalizeToken($personnel->{$field} ?? null);
 
