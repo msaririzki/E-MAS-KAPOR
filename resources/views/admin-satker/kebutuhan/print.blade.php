@@ -195,8 +195,8 @@
                 $an = 'a.n. KEPALA KEPOLISIAN RESOR ' . str_replace('POLRES ', '', $satkerName);
                 $jabatan = 'KEPALA BAGIAN LOGISTIK';
             } else {
-                $an = 'a.n. KEPALA KEPOLISIAN ' . $satkerName;
-                $jabatan = 'KEPALA BAGIAN ' . $satkerName;
+                $an = 'a.n. KEPALA KEPOLISIAN POLDA NTB';
+                $jabatan = 'KEPALA ' . $satkerName;
             }
 
             // ── User pengaju ──
