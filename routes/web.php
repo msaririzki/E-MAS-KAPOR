@@ -168,8 +168,24 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     Route::get('/warehouse-items/export-excel', [WarehouseController::class, 'exportExcel'])->name('warehouse-items.export-excel');
     Route::get('/warehouse-items/export-pdf', [\App\Http\Controllers\Admin\WarehouseController::class, 'exportPdf'])->name('warehouse-items.export-pdf');
     Route::get('/warehouse-items/reports/export-pdf', [\App\Http\Controllers\Admin\WarehouseController::class, 'exportReportsPdf'])->name('warehouse-items.reports.export-pdf');
+
+    // Pengeluaran Barang (Halaman Terpisah)
+    Route::get('/warehouse-items/dispense', [\App\Http\Controllers\Admin\WarehouseController::class, 'dispenseForm'])->name('warehouse-items.dispense-form');
     Route::post('/warehouse-items/dispense', [\App\Http\Controllers\Admin\WarehouseController::class, 'dispense'])->name('warehouse-items.dispense');
+    Route::get('/warehouse-items/api/item-sizes/{id}', [\App\Http\Controllers\Admin\WarehouseController::class, 'getItemSizes'])->name('warehouse-items.api.item-sizes');
+
+    // Penanda Tangan
+    Route::get('/warehouse-items/signatories', [\App\Http\Controllers\Admin\WarehouseController::class, 'signatories'])->name('warehouse-items.signatories');
+    Route::post('/warehouse-items/signatories', [\App\Http\Controllers\Admin\WarehouseController::class, 'storeSignatory'])->name('warehouse-items.signatories.store');
+    Route::put('/warehouse-items/signatories/{signatory}', [\App\Http\Controllers\Admin\WarehouseController::class, 'updateSignatory'])->name('warehouse-items.signatories.update');
+    Route::delete('/warehouse-items/signatories/{signatory}', [\App\Http\Controllers\Admin\WarehouseController::class, 'deleteSignatory'])->name('warehouse-items.signatories.destroy');
+    Route::post('/warehouse-items/signatories/{signatory}/toggle', [\App\Http\Controllers\Admin\WarehouseController::class, 'toggleSignatoryActive'])->name('warehouse-items.signatories.toggle');
+
+    Route::get('/warehouse-items/reports/{outflow}/download-sppm', [\App\Http\Controllers\Admin\WarehouseController::class, 'downloadSppm'])->name('warehouse-items.reports.download-sppm');
     Route::get('/warehouse-items/reports', [\App\Http\Controllers\Admin\WarehouseController::class, 'reports'])->name('warehouse-items.reports');
+    Route::get('/warehouse-items/sppm', [\App\Http\Controllers\Admin\WarehouseController::class, 'sppm'])->name('warehouse-items.sppm');
+    Route::post('/warehouse-items/download-sppm-grouped', [\App\Http\Controllers\Admin\WarehouseController::class, 'downloadSppmGrouped'])->name('warehouse-items.download-sppm-grouped');
+    Route::post('/warehouse-items/save-sppm-grouped', [\App\Http\Controllers\Admin\WarehouseController::class, 'saveSppmGrouped'])->name('warehouse-items.save-sppm-grouped');
     Route::get('/warehouse-items/deletion-history', [\App\Http\Controllers\Admin\WarehouseController::class, 'deletionHistory'])->name('warehouse-items.deletion-history');
     Route::delete('/warehouse-items/reports/{outflow}', [\App\Http\Controllers\Admin\WarehouseController::class, 'destroyOutflow'])->name('warehouse-items.reports.destroy');
     Route::delete('/warehouse-items/reports/{outflow}/cancel', [\App\Http\Controllers\Admin\WarehouseController::class, 'cancelOutflow'])->name('warehouse-items.reports.cancel');

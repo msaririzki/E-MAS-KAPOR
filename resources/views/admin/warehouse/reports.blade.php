@@ -107,68 +107,80 @@
     <table class="user-table">
         <thead>
             <tr>
-                <th>NO</th>
+                <th style="width: 50px; text-align: center;">NO</th>
                 <th>SATKER</th>
                 <th>TGL KELUAR</th>
-                <th>BARANG</th>
-                <th>UKURAN</th>
-                <th>SATUAN</th>
-                <th>JUMLAH</th>
                 <th>PENERIMA</th>
-                <th>STATUS SPPM</th>
-                <th>AKSI</th>
+                <th style="width: 100px; text-align: center;">JUMLAH BARANG</th>
+                <th style="width: 80px; text-align: center;">TOTAL QTY</th>
+                <th style="width: 80px; text-align: center;">DETAIL</th>
+                <th style="width: 110px; text-align: center;">STATUS SPPM</th>
+                <th style="width: 100px; text-align: center;">AKSI</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($outflows as $index => $row)
+            @forelse($outflows as $index => $group)
                 <tr>
                     <td>{{ $outflows->firstItem() + $index }}</td>
                     <td>
-                        @if($row->satker)
-                            <span style="font-size: 13px; color: #374151;">{{ $row->satker->name }}</span>
+                        @if($group->satker)
+                            <span style="font-size: 13px; color: #374151; font-weight: 600;">{{ $group->satker->name }}</span>
                         @else
                             <span style="font-size: 13px; color: #6B7280;">-</span>
                         @endif
                     </td>
-                    <td>{{ $row->outflow_date->format('d/m/Y') }}</td>
-                    <td style="font-size: 13px; color: #374151;">
-                        {{ $row->itemSize->item->name ?? '-' }}
-                    </td>
-                    <td>
-                        <span style="background: #F3F4F6; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color:#374151;">
-                            {{ $row->itemSize->size_label ?? '-' }}
+                    <td>{{ \Carbon\Carbon::parse($group->outflow_date)->format('d/m/Y') }}</td>
+                    <td>{{ $group->recipient_name ?: '-' }}</td>
+                    <td style="text-align: center;">
+                        <span style="background: #EFF6FF; color: #3B82F6; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                            {{ $group->item_count }} Item
                         </span>
                     </td>
-                    <td>
-                        {{ $row->itemSize->item->unit ?? '-' }}
+                    <td style="text-align: center;">
+                        <strong style="color: #D97706;">{{ number_format($group->total_quantity, 0, ',', '.') }}</strong>
                     </td>
-                    <td>
-                        <strong style="color: #D97706;">{{ number_format($row->quantity, 0, ',', '.') }}</strong>
+                    <td style="text-align: center;">
+                        <button type="button" class="btn btn-outline btn-detail-items" 
+                            data-items="{{ $group->items_json }}"
+                            style="padding: 6px 12px; font-size: 13px; height: auto; border-color: #E5E7EB; color: #4B5563; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="ri-list-check-3"></i> Detail
+                        </button>
                     </td>
-                    <td>{{ $row->recipient_name ?: '-' }}</td>
-                    <td>
-                        <select onchange="updateSppm({{ $row->id }}, this.value)" class="form-input" style="width: 110px; padding: 4px 8px; font-size: 13px; font-weight: 600; {{ $row->reference_note == 'Sudah Ada' ? 'color: #059669; border-color: #059669; background: #ECFDF5;' : 'color: #DC2626; border-color: #DC2626; background: #FEF2F2;' }}">
-                            <option value="Belum Ada" {{ $row->reference_note == 'Belum Ada' || empty($row->reference_note) || $row->reference_note == 'Tidak' ? 'selected' : '' }}>Belum Ada</option>
-                            <option value="Sudah Ada" {{ $row->reference_note == 'Sudah Ada' || $row->reference_note == 'Ada' ? 'selected' : '' }}>Sudah Ada</option>
-                        </select>
+                    <td style="text-align: center;">
+                        @php
+                            $groupStatus = $group->group_status;
+                            $isSppmAda = ($groupStatus === 'Sudah Ada' || $groupStatus === 'Ada');
+                        @endphp
+                        <div style="display: flex; align-items: center; justify-content: center;">
+                            <select onchange="updateSppm('{{ $group->group_ids }}', this.value)" class="form-input" style="width: 105px; padding: 2px 4px; font-size: 12px; font-weight: 700; border-radius: 6px; {{ $isSppmAda ? 'color: #059669; border-color: #059669; background: #ECFDF5;' : 'color: #DC2626; border-color: #DC2626; background: #FEF2F2;' }}" {{ auth()->user()->hasRole('admin_gudang') ? 'disabled' : '' }}>
+                                <option value="Belum Ada" {{ ! $isSppmAda ? 'selected' : '' }}>Belum</option>
+                                <option value="Sudah Ada" {{ $isSppmAda ? 'selected' : '' }}>Sudah</option>
+                            </select>
+                        </div>
                     </td>
-                    <td style="display:flex; gap:8px; align-items:center;">
-                        <form action="{{ route('admin.warehouse-items.reports.cancel', $row->id) }}" method="POST" class="cancel-form" id="cancel-form-{{ $row->id }}">
+                    <td style="display:flex; gap:6px; align-items:center; justify-content: center;">
+                        @if(! $isSppmAda && auth()->user()->hasRole('superadmin'))
+                        <button type="button" class="btn btn-outline" onclick="openSppmModal('{{ $group->group_ids }}')"
+                            style="border-color: #3B82F6; color: #3B82F6; padding: 6px; font-size: 16px; height: auto;"
+                            title="Buat SPPM (Word)">
+                            <i class="ri-file-add-line"></i>
+                        </button>
+                        @endif
+                        <form action="{{ route('admin.warehouse-items.reports.cancel', $group->group_ids) }}" method="POST" class="cancel-form" id="cancel-form-{{ str_replace(',', '-', $group->group_ids) }}">
                             @csrf
                             @method('DELETE')
-                            @php
-                                $isSppmAda = ($row->reference_note === 'Sudah Ada' || $row->reference_note === 'Ada');
-                            @endphp
-                            <button type="button" class="btn btn-outline btn-cancel" id="cancel-btn-{{ $row->id }}"
-                                style="border-color: #DC2626; color: #DC2626; padding: 4px 10px; font-size: 12px; height: auto; {{ $isSppmAda ? 'opacity: 0.5; cursor: not-allowed; pointer-events: none;' : '' }}"
+                            <button type="button" class="btn btn-outline btn-cancel" id="cancel-btn-{{ str_replace(',', '-', $group->group_ids) }}"
+                                data-ids="{{ $group->group_ids }}"
+                                style="border-color: #DC2626; color: #DC2626; padding: 6px; font-size: 16px; height: auto; {{ $isSppmAda ? 'opacity: 0.5; cursor: not-allowed; pointer-events: none;' : '' }}"
                                 {{ $isSppmAda ? 'disabled title="Tidak dapat dibatalkan karena SPPM sudah ada"' : '' }}>
-                                <i class="ri-arrow-go-back-line"></i> Batal
+                                <i class="ri-arrow-go-back-line"></i>
                             </button>
                         </form>
-                        <form action="{{ route('admin.warehouse-items.reports.destroy', $row->id) }}" method="POST" class="delete-form" id="delete-form-{{ $row->id }}">
+                        <form action="{{ route('admin.warehouse-items.reports.destroy', $group->group_ids) }}" method="POST" class="delete-form" id="delete-form-{{ str_replace(',', '-', $group->group_ids) }}">
                             @csrf
                             @method('DELETE')
                             <button type="button" class="btn btn-outline btn-delete" 
+                                data-ids="{{ $group->group_ids }}"
                                 style="border-color: #9CA3AF; color: #4B5563; padding: 4px; font-size: 14px; height: auto;" title="Hapus Riwayat Permanen">
                                 <i class="ri-delete-bin-line"></i>
                             </button>
@@ -177,7 +189,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10" style="text-align: center; color: #9CA3AF; padding: 32px;">Belum ada riwayat pengeluaran barang.</td>
+                    <td colspan="9" style="text-align: center; color: #9CA3AF; padding: 32px;">Belum ada riwayat pengeluaran barang.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -270,6 +282,47 @@
                 });
             });
         });
+
+        const detailButtons = document.querySelectorAll('.btn-detail-items');
+        detailButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const items = JSON.parse(this.dataset.items);
+                let html = '<div style="text-align: left; font-size: 14px; max-height: 400px; overflow-y: auto; padding: 8px;">';
+                items.forEach(item => {
+                    html += `<div style="padding: 12px; border-bottom: 1px solid #F3F4F6; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <div style="width:10px; height:10px; border-radius:50%; background:#3B82F6;"></div>
+                                    <div style="display:flex; flex-direction:column;">
+                                        <span style="font-weight: 700; color: #111827; font-size: 15px;">${item.name}</span>
+                                        <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                                            <span style="background: #EFF6FF; color:#3B82F6; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">Ukuran: ${item.size}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                                    <span style="color: #059669; font-weight: 800; font-size: 16px;">${item.qty}</span>
+                                    <span style="color: #6B7280; font-size: 11px; font-weight: 600; text-transform: uppercase;">${item.unit}</span>
+                                </div>
+                            </div>`;
+                });
+                html += '</div>';
+
+                Swal.fire({
+                    title: 'Detail Barang dan Ukuran',
+                    html: html,
+                    showCloseButton: true,
+                    showConfirmButton: true,
+                    confirmButtonText: 'Tutup',
+                    confirmButtonColor: '#3B82F6',
+                    width: '500px',
+                    customClass: {
+                        popup: 'modern-swal-popup',
+                        title: 'modern-swal-title',
+                        confirmButton: 'modern-swal-btn btn-secondary',
+                    }
+                });
+            });
+        });
     });
 
     // Custom Select Filtering UI
@@ -317,13 +370,67 @@
         });
     }
 
-    function updateSppm(id, value) {
-        const selectElement = document.querySelector(`select[onchange="updateSppm(${id}, this.value)"]`);
+    function openSppmModal(groupIds) {
+        Swal.fire({
+            title: 'Buat SPPM Baru',
+            html: `
+                <div style="text-align: left; margin-bottom: 12px;">
+                    <label style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block;">Nomor Surat <span style="color:#EF4444">*</span></label>
+                    <input type="text" id="sppm_letter_number" class="swal2-input" style="width: 100%; margin: 0; box-sizing: border-box; height: 42px; font-size: 14px; border-radius: 8px;" placeholder="Contoh: B/123/III/2026">
+                </div>
+                <div style="text-align: left;">
+                    <label style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block;">Tanggal Surat <span style="color:#EF4444">*</span></label>
+                    <input type="date" id="sppm_letter_date" class="swal2-input" style="width: 100%; margin: 0; box-sizing: border-box; height: 42px; font-size: 14px; border-radius: 8px;" value="{{ date('Y-m-d') }}">
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="ri-save-line" style="margin-right:4px;"></i> Simpan SPPM',
+            cancelButtonText: 'Batal',
+            customClass: {
+                popup: 'modern-swal-popup',
+                title: 'modern-swal-title',
+                confirmButton: 'modern-swal-btn',
+                cancelButton: 'modern-swal-btn btn-secondary',
+                actions: 'modern-swal-actions'
+            },
+            preConfirm: () => {
+                const number = document.getElementById('sppm_letter_number').value;
+                const date = document.getElementById('sppm_letter_date').value;
+                if (!number || !date) {
+                    Swal.showValidationMessage('Nomor surat dan tanggal surat harus diisi');
+                    return false;
+                }
+                return { number, date };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Submit hidden form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ route("admin.warehouse-items.save-sppm-grouped") }}';
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+                
+                form.innerHTML = `
+                    <input type="hidden" name="_token" value="${csrfToken}">
+                    <input type="hidden" name="group_ids" value="${groupIds}">
+                    <input type="hidden" name="letter_number" value="${result.value.number}">
+                    <input type="hidden" name="letter_date" value="${result.value.date}">
+                `;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+    function updateSppm(ids, value) {
+        const safeId = ids.replace(/,/g, '-');
+        const selectElement = document.querySelector(`select[onchange="updateSppm('${ids}', this.value)"]`);
 
         if (value === 'Sudah Ada') {
             Swal.fire({
                 title: 'Ubah Status SPPM?',
-                text: 'Apakah Anda yakin ingin mengubah status SPPM menjadi "Sudah Ada"?',
+                text: 'Apakah Anda yakin ingin mengubah status SPPM menjadi "Sudah Ada" untuk seluruh item dlm transaksi ini?',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#059669',
@@ -340,19 +447,20 @@
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    executeSppmUpdate(id, value, selectElement);
+                    executeSppmUpdate(ids, value, selectElement);
                 } else {
                     // Revert to previous value
                     selectElement.value = 'Belum Ada';
                 }
             });
         } else {
-            executeSppmUpdate(id, value, selectElement);
+            executeSppmUpdate(ids, value, selectElement);
         }
     }
 
-    function executeSppmUpdate(id, value, selectElement) {
-        fetch(`/admin/warehouse-items/reports/${id}/sppm`, {
+    function executeSppmUpdate(ids, value, selectElement) {
+        const safeId = ids.replace(/,/g, '-');
+        fetch(`/admin/warehouse-items/reports/${ids}/sppm`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -374,8 +482,8 @@
                     timerProgressBar: true,
                     customClass: { popup: 'colored-toast swal2-icon-success' }
                 });
-                // Update select color
-                const cancelBtn = document.getElementById(`cancel-btn-${id}`);
+                // Update select color and action availability
+                const cancelBtn = document.getElementById(`cancel-btn-${safeId}`);
 
                 if (value === 'Sudah Ada') {
                     selectElement.style.color = '#059669';
@@ -436,7 +544,7 @@
     
     .icon-blue { background: #EFF6FF; color: #3B82F6; }
 
-    .table-container { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02);}
+    .table-container { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; overflow-x: auto; box-shadow: 0 1px 2px rgba(0,0,0,0.02);}
     .user-table { width: 100%; border-collapse: collapse; }
     .user-table th { background: #F9FAFB; padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 600; color: #6B7280; border-bottom: 1px solid #E5E7EB; }
     .user-table td { padding: 16px 24px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; color: #374151; font-size: 14px; }
