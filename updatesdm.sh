@@ -6,6 +6,34 @@ BOOTSTRAP_NAME="${BOOTSTRAP_SUPERADMIN_NAME:-Bootstrap Super Administrator}"
 BOOTSTRAP_ON_UPDATE="${BOOTSTRAP_SUPERADMIN_ON_UPDATE:-false}"
 TARGET_BRANCH="${TARGET_BRANCH:-fitur-import-sdm}"
 
+wait_for_app() {
+    echo "==> Menunggu container app siap menerima perintah..."
+    for i in $(seq 1 60); do
+        if docker compose exec -T app php -v >/dev/null 2>&1; then
+            echo "==> Container app siap."
+            return 0
+        fi
+        sleep 2
+    done
+
+    echo "==> Gagal: container app tidak siap dalam batas waktu."
+    return 1
+}
+
+wait_for_database() {
+    echo "==> Menunggu database benar-benar siap..."
+    for i in $(seq 1 60); do
+        if docker compose exec -T app php -r '$host=getenv("DB_HOST") ?: "db"; $db=getenv("DB_DATABASE") ?: "kapor"; $user=getenv("DB_USERNAME") ?: "root"; $pass=getenv("DB_PASSWORD") ?: ""; $port=getenv("DB_PORT") ?: "3306"; try { new PDO("mysql:host={$host};port={$port};dbname={$db}", $user, $pass); exit(0); } catch (Throwable $e) { exit(1); }' >/dev/null 2>&1; then
+            echo "==> Database siap."
+            return 0
+        fi
+        sleep 2
+    done
+
+    echo "==> Gagal: database tidak siap dalam batas waktu."
+    return 1
+}
+
 # Pastikan file .env ada sebagai file, bukan jadi folder gara-gara volume docker-compose
 if [ ! -f ".env" ]; then
     if [ -d ".env" ]; then
@@ -29,15 +57,15 @@ docker compose build
 echo "==> Menerapkan container (recreate jika image berubah)..."
 docker compose up -d
 
-echo "==> Menunggu container siap..."
-sleep 2
+wait_for_app
+wait_for_database
+
+echo "==> Menjalankan migrasi database..."
+docker compose exec -T app php artisan migrate --force
 
 echo "==> Menjalankan optimasi Laravel dan cache config..."
 docker compose exec -T app php artisan optimize:clear
 docker compose exec -T app php artisan optimize
-
-echo "==> Menjalankan migrasi database..."
-docker compose exec -T app php artisan migrate --force
 
 if [ "$BOOTSTRAP_ON_UPDATE" = "true" ] && [ -n "$BOOTSTRAP_EMAIL" ]; then
     echo "==> Memastikan akun bootstrap superadmin tersedia..."
