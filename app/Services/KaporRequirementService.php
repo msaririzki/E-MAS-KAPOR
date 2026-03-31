@@ -575,6 +575,30 @@ class KaporRequirementService
     {
         $candidate = strtoupper(str_replace(' ', '', $value));
 
+        $candidateLetters = preg_replace('/[^A-Z]/', '', $candidate);
+        
+        $mapping = [
+            'S' => 'K',
+            'M' => 'SD',
+            'L' => 'B',
+            'XL' => 'EB',
+            'XXL' => 'EEB',
+            '2XL' => 'EEB',
+            'XXXL' => 'EEEB',
+            '3XL' => 'EEEB',
+            'XXXXL' => 'EEEEB',
+            '4XL' => 'EEEEB',
+        ];
+
+        // Coba translate nilai aslinya terlebih dahulu
+        if (isset($mapping[$candidate])) {
+            $candidate = $mapping[$candidate];
+        } 
+        // Jika aslinya bukan S/M/L valid, mungkin karena typo angka seperti '=L660'
+        elseif (isset($mapping[$candidateLetters])) {
+            $candidate = $mapping[$candidateLetters];
+        }
+
         return in_array($candidate, $allowed, true) ? $candidate : null;
     }
 
