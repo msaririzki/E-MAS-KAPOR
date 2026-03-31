@@ -40,9 +40,12 @@ Sistem Informasi Manajemen Kapor berbasis Laravel untuk pendataan personel, peng
 - Manajemen akun admin dan personel
 - Import data personel dari file Excel/CSV
 - Input ukuran kapor oleh personel
+- Identifikasi kebutuhan kapor oleh admin satker
+- Perencanaan paket anggaran dan rekap penerima
 - Rekap kebutuhan dan laporan per satker
 - Pengelolaan gudang dan distribusi item
 - Audit log untuk aktivitas penting
+- Kontrol lock sistem, tahun anggaran, dan statistik testimonial
 
 ---
 
@@ -262,7 +265,91 @@ Bagian yang paling sering disentuh:
   Role, satker, data referensi, akun demo
 
 - `tests/`  
-  Feature test dan unit test
+   Feature test dan unit test
+
+---
+
+## Peta Modul dan Alur
+
+Bagian ini adalah ringkasan tercepat untuk memahami arah aplikasi saat ini.
+
+### Modul inti
+
+1. Master data
+   - Satker
+   - Rank/Pangkat
+   - Item kapor dan ukuran valid
+   - Setting sistem dan tahun anggaran
+
+2. User dan personel
+   - CRUD user
+   - CRUD personel
+   - Sinkronisasi data `users` dan `personnels`
+   - Import personel biasa, update import, dan import SDM
+
+3. Pengumpulan ukuran kapor
+   - Personel login dengan `NRP/NIP`
+   - Admin login dengan Gmail
+   - Ukuran aktif saat ini tersimpan pada `personnels.kapor_sizes`
+   - Validasi ukuran dipusatkan di `app/Services/KaporRequirementService.php`
+
+4. Identifikasi kebutuhan
+   - `admin_satker` mengajukan item kebutuhan per satker
+   - Admin pusat meninjau pengajuan, statistik item populer, dan status pengajuan
+
+5. Budget planning
+   - Tahun anggaran
+   - Paket anggaran
+   - Filter penerima per satker
+   - Perhitungan `matched_count`, quantity, total anggaran, dan warning ukuran
+
+6. Gudang dan distribusi
+   - Stok gudang per item dan ukuran
+   - Pengeluaran barang
+   - Riwayat pengeluaran
+   - Dokumen SPPM dan penanda tangan
+
+7. Laporan, audit, dan insight
+   - Dashboard per role
+   - Export Excel/PDF/Word
+   - Audit log
+   - Statistik testimonial
+
+### Role utama
+
+- `superadmin`
+  - akses penuh
+  - kelola setting sistem dan statistik
+
+- `admin`
+  - kelola data global, personel, laporan, budget, dan review kebutuhan
+
+- `admin_gudang`
+  - fokus pada modul gudang dan distribusi
+
+- `admin_satker`
+  - akses terbatas ke satker sendiri
+  - monitor personel dan ajukan kebutuhan
+
+- `personil`
+  - login dengan `NRP/NIP`
+  - isi dan lihat data ukuran pribadi
+
+### Alur operasional singkat
+
+1. Master data dan setting sistem disiapkan.
+2. User dan personel diinput atau diimpor.
+3. Personel mengisi ukuran kapor.
+4. Admin satker memonitor kelengkapan data dan mengajukan kebutuhan.
+5. Admin pusat meninjau kebutuhan dan menyusun paket anggaran.
+6. Admin gudang mengelola stok dan distribusi barang.
+7. Laporan, rekap, dan audit dipakai untuk monitoring.
+
+### Catatan arsitektur saat ini
+
+- Source of truth ukuran kapor yang aktif adalah `personnels.kapor_sizes`.
+- Jejak model/tabel lama `kapor_submissions` masih ada di sebagian code path dan laporan.
+- Masih ada beberapa penyebutan nama lama `SI-KAPOR` di codebase, walau nama repo/aplikasi saat ini adalah `E-MAS-KAPOR`.
 
 ---
 
@@ -477,4 +564,3 @@ Cek:
 Untuk aturan kerja agen/koding yang lebih detail, lihat:
 
 - [AGENTS.md](./AGENTS.md)
-

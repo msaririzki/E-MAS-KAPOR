@@ -7,9 +7,9 @@ It prioritizes fast orientation, safe edits, and consistent Laravel conventions.
 
 - App: **E-MAS-KAPOR** (Sistem Informasi Manajemen Kapor)
 - Stack: Laravel 12, PHP 8.2+, Blade, Vite, Tailwind CSS v4, MySQL/SQLite
-- Auth: Custom login via `nrp_nip` + password (`AuthController`)
-- RBAC: `spatie/laravel-permission` with roles `superadmin`, `admin`, `admin_satker`, `personil`
-- Data flow: master data (satker, rank, kapor items) -> personnel records -> kapor size submissions/rekap
+- Auth: Dual login via Gmail for admin roles and `nrp_nip` for `personil` (`AuthController`)
+- RBAC: `spatie/laravel-permission` with roles `superadmin`, `admin`, `admin_gudang`, `admin_satker`, `personil`
+- Data flow: master data -> user/personnel records -> kapor size collection -> kebutuhan satker -> budget planning -> warehouse/distribution/reporting
 
 ## 2) Repo Map (High Signal)
 
@@ -69,9 +69,11 @@ It prioritizes fast orientation, safe edits, and consistent Laravel conventions.
 ## 4) Architecture & Domain Rules
 
 - Roles gate most behavior; verify route middleware and role checks before changing access behavior.
+- `admin_gudang` should remain constrained to warehouse/distribution flows even though some routes sit under the broader `/admin` prefix.
 - `admin_satker` must remain satker-scoped (`satker.scope` middleware + model scopes).
 - Superadmin settings control fiscal year and system lock state.
 - Personnel size input currently centers on JSON `personnels.kapor_sizes` with supporting export/report logic.
+- Legacy `KaporSubmission` references still exist in parts of the codebase; be careful to confirm which path is the active source of truth before editing reports/settings.
 - Audit logs are first-class; destructive/admin actions should continue logging via `AuditLogger::log(...)`.
 
 ## 5) Code Style Guidelines (Observed + Expected)
