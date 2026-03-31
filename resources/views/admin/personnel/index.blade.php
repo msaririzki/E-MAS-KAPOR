@@ -669,6 +669,94 @@
 
 {{-- Import SDM Modal (Superadmin) --}}
 @if(auth()->user()->hasRole('superadmin'))
+<style>
+    .sdm-progress-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2500;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(6px);
+    }
+    .sdm-progress-card {
+        width: min(100%, 460px);
+        border-radius: 24px;
+        padding: 28px;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+    }
+    .sdm-progress-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: #EDE9FE;
+        color: #6D28D9;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .sdm-progress-track {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 14px;
+        margin-top: 18px;
+        border-radius: 999px;
+        background: #E5E7EB;
+    }
+    .sdm-progress-fill {
+        position: relative;
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #8B5CF6 0%, #06B6D4 100%);
+        transition: width 0.24s ease;
+    }
+    .sdm-progress-fill::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+        animation: sdmProgressShimmer 1.3s linear infinite;
+    }
+    .sdm-progress-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+    }
+    .sdm-progress-dots {
+        display: inline-flex;
+        gap: 6px;
+        margin-top: 18px;
+    }
+    .sdm-progress-dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #8B5CF6;
+        opacity: 0.25;
+        animation: sdmProgressPulse 1s infinite ease-in-out;
+    }
+    .sdm-progress-dots span:nth-child(2) { animation-delay: 0.18s; }
+    .sdm-progress-dots span:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes sdmProgressShimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    @keyframes sdmProgressPulse {
+        0%, 100% { opacity: 0.25; transform: translateY(0); }
+        50% { opacity: 1; transform: translateY(-2px); }
+    }
+</style>
 <div id="importSdmModal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">
@@ -677,12 +765,12 @@
                 <i class="ri-close-line"></i>
             </button>
         </div>
-        <form action="{{ route('admin.personnel.import-sdm') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.personnel.import-sdm') }}" method="POST" enctype="multipart/form-data" id="importSdmForm" onsubmit="return submitSdmImportPreview(event)">
             @csrf
             <div class="modal-body" style="padding: 24px;">
                 <div class="form-group" style="margin-bottom: 24px;">
                     <label style="font-weight: 700; color: #374151;">Pilih File Excel Data SDM <span style="color: #EF4444;">*</span></label>
-                    <input type="file" name="files[]" accept=".xlsx,.xls,.csv" multiple required class="form-input" style="padding: 12px; border: 2px dashed #E5E7EB; background: #F9FAFB;">
+                    <input type="file" name="files[]" id="sdmImportFiles" accept=".xlsx,.xls,.csv" multiple required class="form-input" style="padding: 12px; border: 2px dashed #E5E7EB; background: #F9FAFB;">
                     <p style="font-size: 12px; color: #6B7280; margin-top: 8px;">Bisa pilih beberapa file sekaligus, misalnya file AIPDA/AIPTU, Bintara, PAMA, PNS, dan seterusnya.</p>
                 </div>
 
@@ -698,11 +786,35 @@
             </div>
             <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">
                 <button type="button" class="btn btn-outline" onclick="closeModal('importSdmModal')">Batal</button>
-                <button type="submit" class="btn btn-primary" style="background:#8B5CF6; border-color:#8B5CF6;">
+                <button type="submit" class="btn btn-primary" id="sdmImportSubmitBtn" style="background:#8B5CF6; border-color:#8B5CF6;">
                     <i class="ri-upload-cloud-2-line"></i> Upload & Preview
                 </button>
             </div>
         </form>
+    </div>
+</div>
+<div id="sdmProgressOverlay" class="sdm-progress-overlay" aria-live="polite" aria-busy="true">
+    <div class="sdm-progress-card">
+        <div class="sdm-progress-chip">
+            <i class="ri-loader-4-line"></i>
+            <span id="sdmProgressBadge">Upload Preview SDM</span>
+        </div>
+        <div style="margin-top: 18px;">
+            <div id="sdmProgressTitle" style="font-size: 24px; font-weight: 800; color: #0F172A; line-height: 1.2;">Menyiapkan upload SDM</div>
+            <div id="sdmProgressMessage" style="margin-top: 10px; font-size: 14px; color: #475569; line-height: 1.6;">File sedang dipersiapkan untuk dikirim ke server.</div>
+        </div>
+        <div class="sdm-progress-track">
+            <div id="sdmProgressBar" class="sdm-progress-fill"></div>
+        </div>
+        <div class="sdm-progress-meta">
+            <strong id="sdmProgressPercent" style="font-size: 28px; color: #111827;">0%</strong>
+            <span id="sdmProgressStep" style="font-size: 13px; color: #64748B; text-align: right;">Menunggu file dipilih</span>
+        </div>
+        <div class="sdm-progress-dots" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
     </div>
 </div>
 @endif
@@ -3340,10 +3452,17 @@
 
     function showToast(message, type = 'success') {
         const container = document.getElementById('toastContainer');
+        const palette = {
+            success: { color: '#10B981', icon: 'checkbox-circle' },
+            error: { color: '#EF4444', icon: 'error-warning' },
+            warning: { color: '#F59E0B', icon: 'alert' },
+            info: { color: '#3B82F6', icon: 'information' },
+        };
+        const current = palette[type] || palette.success;
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.innerHTML = `
-            <div style="color: ${type === 'success' ? '#10B981' : '#EF4444'}; font-size: 20px;"><i class="ri-${type === 'success' ? 'checkbox-circle' : 'error-warning'}-fill"></i></div>
+            <div style="color: ${current.color}; font-size: 20px;"><i class="ri-${current.icon}-fill"></i></div>
             <div style="font-size: 14px; color: #374151; font-weight: 500;">${message}</div>
         `;
         container.appendChild(toast);
@@ -3352,11 +3471,260 @@
 
     @if(session('success')) showToast("{{ session('success') }}"); @endif
     @if(session('error')) showToast("{{ session('error') }}", 'error'); @endif
+    @if(session('warning')) showToast("{{ session('warning') }}", 'warning'); @endif
     @if($errors->has('nrp')) 
         showToast("NRP/NIP sudah terdaftar dalam sistem.", 'error'); 
     @elseif($errors->any()) 
         showToast("Terjadi kesalahan input data.", 'error'); 
     @endif
+
+    const sdmToastStorageKey = 'sdm-import-toast';
+    let sdmProgressTimer = null;
+
+    function setStoredSdmToast(message, type = 'success') {
+        sessionStorage.setItem(sdmToastStorageKey, JSON.stringify({ message, type }));
+    }
+
+    function consumeStoredSdmToast() {
+        const raw = sessionStorage.getItem(sdmToastStorageKey);
+        if (!raw) {
+            return;
+        }
+
+        sessionStorage.removeItem(sdmToastStorageKey);
+
+        try {
+            const payload = JSON.parse(raw);
+            if (payload && payload.message) {
+                showToast(payload.message, payload.type || 'success');
+            }
+        } catch (error) {
+            showToast(raw, 'success');
+        }
+    }
+
+    function parseAjaxResponse(xhr) {
+        if (xhr.response && typeof xhr.response === 'object') {
+            return xhr.response;
+        }
+
+        try {
+            return JSON.parse(xhr.responseText || '{}');
+        } catch (error) {
+            return {};
+        }
+    }
+
+    function extractAjaxError(xhr, fallbackMessage) {
+        const payload = parseAjaxResponse(xhr);
+        if (payload.message) {
+            return payload.message;
+        }
+
+        if (payload.errors) {
+            const firstError = Object.values(payload.errors).flat()[0];
+            if (firstError) {
+                return firstError;
+            }
+        }
+
+        return fallbackMessage;
+    }
+
+    function setSdmProgress(percent, title, message, step) {
+        const overlay = document.getElementById('sdmProgressOverlay');
+        if (!overlay) {
+            return;
+        }
+
+        const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+        document.getElementById('sdmProgressBar').style.width = safePercent + '%';
+        document.getElementById('sdmProgressPercent').innerText = safePercent + '%';
+
+        if (title) {
+            document.getElementById('sdmProgressTitle').innerText = title;
+        }
+        if (message) {
+            document.getElementById('sdmProgressMessage').innerText = message;
+        }
+        if (step) {
+            document.getElementById('sdmProgressStep').innerText = step;
+        }
+    }
+
+    function openSdmProgressOverlay(config = {}) {
+        const overlay = document.getElementById('sdmProgressOverlay');
+        if (!overlay) {
+            return;
+        }
+
+        document.getElementById('sdmProgressBadge').innerText = config.badge || 'Upload Preview SDM';
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+            setSdmProgress(config.percent || 0, config.title, config.message, config.step);
+        });
+    }
+
+    function closeSdmProgressOverlay() {
+        const overlay = document.getElementById('sdmProgressOverlay');
+        if (!overlay) {
+            return;
+        }
+
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+
+        if (sdmProgressTimer) {
+            clearInterval(sdmProgressTimer);
+            sdmProgressTimer = null;
+        }
+    }
+
+    function animateSdmProgress(maxPercent, stepMessage, options = {}) {
+        if (sdmProgressTimer) {
+            clearInterval(sdmProgressTimer);
+        }
+
+        const interval = options.interval || 280;
+        const fastUntil = options.fastUntil || 70;
+        const fastIncrement = options.fastIncrement || 3;
+        const slowIncrement = options.slowIncrement || 1;
+
+        sdmProgressTimer = setInterval(() => {
+            const current = parseInt(document.getElementById('sdmProgressPercent').innerText, 10) || 0;
+            if (current >= maxPercent) {
+                clearInterval(sdmProgressTimer);
+                sdmProgressTimer = null;
+                return;
+            }
+
+            const increment = current < fastUntil ? fastIncrement : slowIncrement;
+            setSdmProgress(current + increment, null, null, stepMessage);
+        }, interval);
+    }
+
+    function setImportSdmButtonState(isLoading) {
+        const button = document.getElementById('sdmImportSubmitBtn');
+        if (!button) {
+            return;
+        }
+
+        button.disabled = isLoading;
+        button.style.opacity = isLoading ? '0.7' : '1';
+        button.style.cursor = isLoading ? 'wait' : 'pointer';
+    }
+
+    function submitSdmImportPreview(event) {
+        const form = document.getElementById('importSdmForm');
+        const fileInput = document.getElementById('sdmImportFiles');
+        if (!form || !fileInput) {
+            return true;
+        }
+
+        event.preventDefault();
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            showToast('Pilih minimal satu file SDM terlebih dahulu.', 'warning');
+            return false;
+        }
+
+        const totalFiles = fileInput.files.length;
+        const formData = new FormData(form);
+        const xhr = new XMLHttpRequest();
+
+        openSdmProgressOverlay({
+            badge: 'Upload Preview SDM',
+            percent: 3,
+            title: 'Mengunggah file SDM',
+            message: `${totalFiles} file sedang disiapkan untuk preview.`,
+            step: 'Menyiapkan koneksi ke server',
+        });
+        setImportSdmButtonState(true);
+
+        xhr.open('POST', form.action, true);
+        xhr.responseType = 'json';
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        xhr.upload.onprogress = function(progressEvent) {
+            if (!progressEvent.lengthComputable) {
+                return;
+            }
+
+            const percent = Math.max(8, Math.round((progressEvent.loaded / progressEvent.total) * 68));
+            setSdmProgress(
+                percent,
+                'Mengunggah file SDM',
+                `${totalFiles} file sedang dikirim ke server untuk dibaca.`,
+                'Upload file berjalan',
+            );
+        };
+
+        xhr.onloadstart = function() {
+            animateSdmProgress(24, 'Memulai upload', {
+                interval: 240,
+                fastUntil: 24,
+                fastIncrement: 2,
+                slowIncrement: 1,
+            });
+        };
+
+        xhr.upload.onload = function() {
+            setSdmProgress(
+                72,
+                'Menyusun preview SDM',
+                'Upload selesai. Sistem sedang membaca sheet, memetakan pangkat, dan mendeteksi satker.',
+                'Parsing file dan membangun preview',
+            );
+            animateSdmProgress(94, 'Memproses isi file', {
+                interval: 260,
+                fastUntil: 84,
+                fastIncrement: 2,
+                slowIncrement: 1,
+            });
+        };
+
+        xhr.onerror = function() {
+            closeSdmProgressOverlay();
+            setImportSdmButtonState(false);
+            showToast('Koneksi ke server terputus saat upload SDM.', 'error');
+        };
+
+        xhr.onload = function() {
+            const payload = parseAjaxResponse(xhr);
+
+            if (xhr.status >= 200 && xhr.status < 300 && payload.redirect_url) {
+                setSdmProgress(
+                    100,
+                    'Preview siap dibuka',
+                    payload.message || 'Preview SDM berhasil dibuat.',
+                    'Mengalihkan ke halaman preview',
+                );
+
+                setTimeout(() => {
+                    window.location.href = payload.redirect_url;
+                }, 550);
+
+                return;
+            }
+
+            closeSdmProgressOverlay();
+            setImportSdmButtonState(false);
+            showToast(extractAjaxError(xhr, 'Upload SDM gagal diproses.'), 'error');
+        };
+
+        xhr.onloadend = function() {
+            if (window.location.href === xhr.responseURL) {
+                closeSdmProgressOverlay();
+                setImportSdmButtonState(false);
+            }
+        };
+
+        xhr.send(formData);
+
+        return false;
+    }
 
     document.addEventListener('click', () => {
         document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
@@ -3409,6 +3777,8 @@
     }
 
     window.onload = function() {
+        consumeStoredSdmToast();
+
         const searchInput = document.getElementById('searchInput');
         if (searchInput && "{{ request('search') }}") {
             const val = searchInput.value;

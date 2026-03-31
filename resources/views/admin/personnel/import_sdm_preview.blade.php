@@ -46,6 +46,92 @@
     .row-corrected { background: #FFFDF0 !important; }
     .row-error { background: #FFF5F5 !important; }
     .hidden-row { display: none !important; }
+    .sdm-progress-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2600;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(6px);
+    }
+    .sdm-progress-card {
+        width: min(100%, 460px);
+        border-radius: 24px;
+        padding: 28px;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+    }
+    .sdm-progress-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: #D1FAE5;
+        color: #047857;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .sdm-progress-track {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 14px;
+        margin-top: 18px;
+        border-radius: 999px;
+        background: #E5E7EB;
+    }
+    .sdm-progress-fill {
+        position: relative;
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #059669 0%, #14B8A6 100%);
+        transition: width 0.24s ease;
+    }
+    .sdm-progress-fill::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+        animation: sdmProgressShimmer 1.3s linear infinite;
+    }
+    .sdm-progress-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+    }
+    .sdm-progress-dots {
+        display: inline-flex;
+        gap: 6px;
+        margin-top: 18px;
+    }
+    .sdm-progress-dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #059669;
+        opacity: 0.25;
+        animation: sdmProgressPulse 1s infinite ease-in-out;
+    }
+    .sdm-progress-dots span:nth-child(2) { animation-delay: 0.18s; }
+    .sdm-progress-dots span:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes sdmProgressShimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    @keyframes sdmProgressPulse {
+        0%, 100% { opacity: 0.25; transform: translateY(0); }
+        50% { opacity: 1; transform: translateY(-2px); }
+    }
 </style>
 
 <form action="{{ route('admin.personnel.import-sdm-cancel') }}" method="POST" id="cancelForm">
@@ -95,7 +181,7 @@
             <button type="submit" form="cancelForm" class="btn btn-outline">
                 <i class="ri-close-line"></i> Batalkan
             </button>
-            <button type="submit" class="btn btn-primary btn-submit-import" style="background:#059669; border-color:#059669;">
+            <button type="submit" class="btn btn-primary btn-submit-import" id="sdmConfirmSubmitBtn" style="background:#059669; border-color:#059669;">
                 <i class="ri-check-double-line"></i> Konfirmasi Import SDM
             </button>
         </div>
@@ -230,11 +316,39 @@
     </div>
 </form>
 
+<div id="sdmConfirmProgressOverlay" class="sdm-progress-overlay" aria-live="polite" aria-busy="true">
+    <div class="sdm-progress-card">
+        <div class="sdm-progress-chip">
+            <i class="ri-loader-4-line"></i>
+            <span id="sdmConfirmProgressBadge">Konfirmasi Import SDM</span>
+        </div>
+        <div style="margin-top: 18px;">
+            <div id="sdmConfirmProgressTitle" style="font-size: 24px; font-weight: 800; color: #0F172A; line-height: 1.2;">Menyiapkan impor SDM</div>
+            <div id="sdmConfirmProgressMessage" style="margin-top: 10px; font-size: 14px; color: #475569; line-height: 1.6;">Data preview akan disimpan ke database setelah semua pengecekan lolos.</div>
+        </div>
+        <div class="sdm-progress-track">
+            <div id="sdmConfirmProgressBar" class="sdm-progress-fill"></div>
+        </div>
+        <div class="sdm-progress-meta">
+            <strong id="sdmConfirmProgressPercent" style="font-size: 28px; color: #111827;">0%</strong>
+            <span id="sdmConfirmProgressStep" style="font-size: 13px; color: #64748B; text-align: right;">Menunggu konfirmasi</span>
+        </div>
+        <div class="sdm-progress-dots" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+</div>
+
 <script>
 const errorIndexes = @json(collect($preview)->where('status', 'error')->keys()->values());
 const fatalErrorIndexes = @json(collect($preview)->filter(fn ($row) => !empty($row['fatal_error']))->keys()->values());
 const requiresManualRank = @json(collect($preview)->filter(fn ($row) => !empty($row['requires_manual_rank']))->keys()->values());
 const requiresManualSatker = @json(collect($preview)->filter(fn ($row) => !empty($row['requires_manual_satker']))->keys()->values());
+const previewTotalRows = @json($stats['total']);
+const sdmToastStorageKey = 'sdm-import-toast';
+let sdmConfirmProgressTimer = null;
 
 function setFilter(status) {
     ['all', 'ok', 'corrected', 'error'].forEach(function(key) {
@@ -263,6 +377,111 @@ function updateOverride(type, index, value) {
     if (hidden) {
         hidden.value = value;
     }
+}
+
+function parseAjaxResponse(xhr) {
+    if (xhr.response && typeof xhr.response === 'object') {
+        return xhr.response;
+    }
+
+    try {
+        return JSON.parse(xhr.responseText || '{}');
+    } catch (error) {
+        return {};
+    }
+}
+
+function extractAjaxError(xhr, fallbackMessage) {
+    const payload = parseAjaxResponse(xhr);
+    if (payload.message) {
+        return payload.message;
+    }
+
+    if (payload.errors) {
+        const firstError = Object.values(payload.errors).flat()[0];
+        if (firstError) {
+            return firstError;
+        }
+    }
+
+    return fallbackMessage;
+}
+
+function setStoredSdmToast(message, type = 'success') {
+    sessionStorage.setItem(sdmToastStorageKey, JSON.stringify({ message, type }));
+}
+
+function setConfirmButtonState(isLoading) {
+    const button = document.getElementById('sdmConfirmSubmitBtn');
+    if (!button) {
+        return;
+    }
+
+    button.disabled = isLoading;
+    button.style.opacity = isLoading ? '0.7' : '1';
+    button.style.cursor = isLoading ? 'wait' : 'pointer';
+}
+
+function setConfirmProgress(percent, title, message, step) {
+    const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+    document.getElementById('sdmConfirmProgressBar').style.width = safePercent + '%';
+    document.getElementById('sdmConfirmProgressPercent').innerText = safePercent + '%';
+
+    if (title) {
+        document.getElementById('sdmConfirmProgressTitle').innerText = title;
+    }
+    if (message) {
+        document.getElementById('sdmConfirmProgressMessage').innerText = message;
+    }
+    if (step) {
+        document.getElementById('sdmConfirmProgressStep').innerText = step;
+    }
+}
+
+function openConfirmProgressOverlay() {
+    document.getElementById('sdmConfirmProgressOverlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+        setConfirmProgress(
+            6,
+            'Mengirim konfirmasi import',
+            `Sistem sedang memproses ${previewTotalRows} baris preview SDM ke database.`,
+            'Validasi koreksi manual',
+        );
+    });
+}
+
+function closeConfirmProgressOverlay() {
+    document.getElementById('sdmConfirmProgressOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+
+    if (sdmConfirmProgressTimer) {
+        clearInterval(sdmConfirmProgressTimer);
+        sdmConfirmProgressTimer = null;
+    }
+}
+
+function animateConfirmProgress(maxPercent, stepMessage, options = {}) {
+    if (sdmConfirmProgressTimer) {
+        clearInterval(sdmConfirmProgressTimer);
+    }
+
+    const delay = options.interval || Math.max(180, Math.min(420, Math.round(previewTotalRows / 6)));
+    const fastUntil = options.fastUntil || 45;
+    const fastIncrement = options.fastIncrement || 4;
+    const slowIncrement = options.slowIncrement || 1;
+
+    sdmConfirmProgressTimer = setInterval(() => {
+        const current = parseInt(document.getElementById('sdmConfirmProgressPercent').innerText, 10) || 0;
+        if (current >= maxPercent) {
+            clearInterval(sdmConfirmProgressTimer);
+            sdmConfirmProgressTimer = null;
+            return;
+        }
+
+        const increment = current < fastUntil ? fastIncrement : slowIncrement;
+        setConfirmProgress(current + increment, null, null, stepMessage);
+    }, delay);
 }
 
 function doConfirm(event) {
@@ -297,7 +516,97 @@ function doConfirm(event) {
         return false;
     }
 
-    return true;
+    event.preventDefault();
+
+    const form = document.getElementById('importConfirmForm');
+    const formData = new FormData(form);
+    const xhr = new XMLHttpRequest();
+
+    openConfirmProgressOverlay();
+    setConfirmButtonState(true);
+    animateConfirmProgress(22, 'Menyiapkan data konfirmasi', {
+        interval: 180,
+        fastUntil: 22,
+        fastIncrement: 2,
+        slowIncrement: 1,
+    });
+
+    xhr.open('POST', form.action, true);
+    xhr.responseType = 'json';
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+    xhr.upload.onprogress = function(progressEvent) {
+        if (!progressEvent.lengthComputable) {
+            return;
+        }
+
+        const percent = Math.max(10, Math.round((progressEvent.loaded / progressEvent.total) * 28));
+        setConfirmProgress(
+            percent,
+            'Mengirim data konfirmasi',
+            'Koreksi manual dan data preview sedang dikirim ke server.',
+            'Upload data konfirmasi',
+        );
+    };
+
+    xhr.upload.onload = function() {
+        setConfirmProgress(
+            32,
+            'Menyimpan data personel SDM',
+            `Server sedang menyimpan ${previewTotalRows} baris, membuat akun terkait, dan merapikan relasi satker.`,
+            'Memproses penyimpanan ke database',
+        );
+        animateConfirmProgress(95, 'Menulis data ke database', {
+            interval: Math.max(160, Math.min(320, Math.round(previewTotalRows / 7))),
+            fastUntil: 74,
+            fastIncrement: 3,
+            slowIncrement: 1,
+        });
+    };
+
+    xhr.onerror = function() {
+        closeConfirmProgressOverlay();
+        setConfirmButtonState(false);
+        alert('Koneksi ke server terputus saat konfirmasi import SDM.');
+    };
+
+    xhr.onload = function() {
+        const payload = parseAjaxResponse(xhr);
+
+        if (xhr.status >= 200 && xhr.status < 300 && payload.redirect_url) {
+            if (payload.notification && payload.notification.message) {
+                setStoredSdmToast(payload.notification.message, payload.notification.type || 'success');
+            }
+
+            setConfirmProgress(
+                100,
+                'Import SDM selesai',
+                payload.message || 'Seluruh proses import SDM selesai diproses.',
+                'Mengalihkan ke halaman personel',
+            );
+
+            setTimeout(function() {
+                window.location.href = payload.redirect_url;
+            }, 550);
+
+            return;
+        }
+
+        if (payload.redirect_url) {
+            setStoredSdmToast(payload.message || 'Sesi preview SDM sudah tidak tersedia.', 'error');
+            window.location.href = payload.redirect_url;
+            return;
+        }
+
+        closeConfirmProgressOverlay();
+        setConfirmButtonState(false);
+        alert(extractAjaxError(xhr, 'Konfirmasi import SDM gagal diproses.'));
+    };
+
+    xhr.send(formData);
+
+    return false;
 }
 
 setFilter('all');

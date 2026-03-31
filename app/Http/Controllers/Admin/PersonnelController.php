@@ -808,7 +808,15 @@ class PersonnelController extends Controller
         $user = auth()->user();
 
         if (! $user->hasRole('superadmin')) {
-            return redirect()->back()->with('error', 'Hanya Super Admin yang bisa melakukan Impor Data SDM.');
+            $message = 'Hanya Super Admin yang bisa melakukan Impor Data SDM.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                ], 403);
+            }
+
+            return redirect()->back()->with('error', $message);
         }
 
         try {
@@ -848,9 +856,25 @@ class PersonnelController extends Controller
 
             AuditLogger::log('Preview Import Data SDM', 'Manajemen Personil', null, null, null, 'info', "Preview SDM: {$totalOk} siap, {$totalCorrected} dikoreksi, {$totalError} error");
 
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Preview import SDM berhasil disiapkan.',
+                    'redirect_url' => route('admin.personnel.import-sdm-preview'),
+                    'stats' => session('sdm_import_stats'),
+                ]);
+            }
+
             return redirect()->route('admin.personnel.import-sdm-preview');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memproses file SDM: '.$e->getMessage());
+            $message = 'Gagal memproses file SDM: '.$e->getMessage();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', $message);
         }
     }
 
@@ -882,7 +906,16 @@ class PersonnelController extends Controller
         $preview = session('sdm_import_preview');
 
         if (! $preview) {
-            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.');
+            $message = 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                    'redirect_url' => route('admin.personnel.index'),
+                ], 422);
+            }
+
+            return redirect()->route('admin.personnel.index')->with('error', $message);
         }
 
         $rankOverrides = $request->input('rank_overrides', []);
@@ -909,18 +942,43 @@ class PersonnelController extends Controller
 
             $successCount = $results['success_count'];
             $errorCount = $results['error_count'];
+            $notificationType = $errorCount > 0 ? 'warning' : 'success';
+            $notificationMessage = $errorCount > 0
+                ? "Berhasil mengimpor {$successCount} data SDM. Gagal: {$errorCount}."
+                : "Berhasil mengimpor {$successCount} data personil (SDM).";
 
             session()->forget(['sdm_import_preview', 'sdm_import_stats']);
 
             AuditLogger::log('Konfirmasi Import Data SDM', 'Manajemen Personil', null, null, null, 'success', "Berhasil: {$successCount}. Gagal: {$errorCount}");
 
-            if ($errorCount > 0) {
-                return redirect()->route('admin.personnel.index')->with('warning', "Berhasil mengimpor {$successCount} data SDM. Gagal: {$errorCount}.");
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $notificationMessage,
+                    'notification' => [
+                        'type' => $notificationType,
+                        'message' => $notificationMessage,
+                    ],
+                    'redirect_url' => route('admin.personnel.index'),
+                    'success_count' => $successCount,
+                    'error_count' => $errorCount,
+                ]);
             }
 
-            return redirect()->route('admin.personnel.index')->with('success', "Berhasil mengimpor {$successCount} data personil (SDM).");
+            if ($errorCount > 0) {
+                return redirect()->route('admin.personnel.index')->with('warning', $notificationMessage);
+            }
+
+            return redirect()->route('admin.personnel.index')->with('success', $notificationMessage);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyimpa data SDM: '.$e->getMessage());
+            $message = 'Gagal menyimpan data SDM: '.$e->getMessage();
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', $message);
         }
     }
 
