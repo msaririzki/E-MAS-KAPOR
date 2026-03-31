@@ -51,6 +51,16 @@
                     </button>
                     @endif
 
+                    @if(auth()->user()->hasRole('superadmin'))
+                    <a href="{{ route('admin.personnel.export-keterangan') }}" class="dropdown-item" style="display: flex; align-items: center; gap: 10px;">
+                        <i class="ri-file-list-3-line" style="color: #7C3AED; font-size: 16px;"></i>
+                        <div>
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Export Referensi Keterangan</div>
+                            <div style="font-size: 11px; color: #6B7280;">Download file acuan update keterangan</div>
+                        </div>
+                    </a>
+                    @endif
+
                     {{-- Dropdown Rekap Kapor --}}
                     @if(!auth()->user()->hasRole('admin_satker'))
                     <div style="position: relative;" id="rekapSubMenu">
@@ -97,6 +107,13 @@
                         <div style="text-align: left;">
                             <div style="font-weight: 600; color: #111827; font-size: 13px;">Import Data SDM</div>
                             <div style="font-size: 11px; color: #6B7280;">Upload data pokok awal (Sdm)</div>
+                        </div>
+                    </button>
+                    <button class="dropdown-item" onclick="openModal('importKeteranganModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                        <i class="ri-file-edit-line" style="color: #7C3AED; font-size: 16px;"></i>
+                        <div style="text-align: left;">
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Import Keterangan</div>
+                            <div style="font-size: 11px; color: #6B7280;">Update `keterangan_2/3/4` berbasis ID</div>
                         </div>
                     </button>
                     @endif
@@ -757,6 +774,44 @@
         50% { opacity: 1; transform: translateY(-2px); }
     }
 </style>
+<div id="importKeteranganModal" class="modal">
+    <div class="modal-content" style="max-width: 760px;">
+        <div class="modal-header">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">Import Keterangan Personel</h3>
+            <button class="modal-close" onclick="closeModal('importKeteranganModal')">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <form action="{{ route('admin.personnel.import-keterangan') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="modal-body" style="padding: 24px;">
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label style="font-weight: 700; color: #374151;">Pilih File Referensi Keterangan <span style="color: #EF4444;">*</span></label>
+                    <input type="file" name="file" accept=".xlsx,.xls,.csv" required class="form-input" style="padding: 12px; border: 2px dashed #E5E7EB; background: #F9FAFB;">
+                    <p style="font-size: 12px; color: #6B7280; margin-top: 8px;">Gunakan file hasil export referensi keterangan dari sistem agar kolom `id` tetap akurat.</p>
+                </div>
+
+                <div style="background: #F5F3FF; border: 1px solid #DDD6FE; border-radius: 12px; padding: 16px;">
+                    <div style="display: flex; gap: 12px;">
+                        <i class="ri-information-line" style="font-size: 24px; color: #7C3AED;"></i>
+                        <div>
+                            <h4 style="font-size: 14px; font-weight: 700; color: #5B21B6; margin-bottom: 4px;">Aturan Import Keterangan</h4>
+                            <p style="font-size: 13px; color: #6D28D9; line-height: 1.6; margin-bottom: 8px;">Matching utama menggunakan <strong>ID personel</strong>. Sistem hanya akan memperbarui <strong>`keterangan_2`</strong>, <strong>`keterangan_3`</strong>, dan <strong>`keterangan_4`</strong>.</p>
+                            <p style="font-size: 13px; color: #6D28D9; line-height: 1.6; margin: 0;">Kolom lain seperti nama, satker, pangkat, jabatan, dan `keterangan_1` dipakai sebagai referensi visual pada halaman preview dan tidak akan diubah oleh proses import ini.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('importKeteranganModal')">Batal</button>
+                <button type="submit" class="btn btn-primary" style="background:#7C3AED; border-color:#7C3AED;">
+                    <i class="ri-eye-line"></i> Upload & Preview
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div id="importSdmModal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">

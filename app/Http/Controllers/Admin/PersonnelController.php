@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Exports\PersonnelExport;
+use App\Exports\PersonnelKeteranganExport;
 use App\Exports\PersonnelTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\PersonnelImport;
+use App\Imports\PersonnelKeteranganImport;
 use App\Imports\PersonnelSdmImport;
 use App\Imports\PersonnelUpdateImport;
 use App\Models\KaporItem;
@@ -152,7 +154,7 @@ class PersonnelController extends Controller
                     ])
                     ->filter(function (Personnel $personnel) use ($incompleteScope) {
                         $isSizeIncomplete = ! $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel);
-                        
+
                         if ($incompleteScope === 'size_only') {
                             return $isSizeIncomplete;
                         }
@@ -398,6 +400,25 @@ class PersonnelController extends Controller
     public function downloadTemplate()
     {
         return Excel::download(new PersonnelTemplateExport, 'template_import_personil.xlsx');
+    }
+
+    public function exportKeterangan()
+    {
+        $this->ensureSuperadmin();
+
+        $fileName = 'template_import_keterangan_personel_'.date('Ymd').'.xlsx';
+
+        AuditLogger::log(
+            'Export Template Keterangan Personel',
+            'Manajemen Personil',
+            null,
+            null,
+            null,
+            'info',
+            'Mengunduh file referensi untuk import keterangan personel.'
+        );
+
+        return Excel::download(new PersonnelKeteranganExport, $fileName);
     }
 
     /**
@@ -763,6 +784,117 @@ class PersonnelController extends Controller
         session()->forget(['update_import_preview', 'update_import_satker_id', 'update_import_stats']);
 
         return redirect()->route('admin.personnel.index')->with('info', 'Proses import update dibatalkan.');
+    }
+
+    public function importKeterangan(Request $request)
+    {
+        $this->ensureSuperadmin();
+
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:51200',
+        ]);
+
+        try {
+            $import = new PersonnelKeteranganImport;
+            $collection = Excel::toCollection($import, $request->file('file'));
+            $rows = collect();
+
+            foreach ($collection as $sheetRows) {
+                $rows = $rows->concat($sheetRows);
+            }
+
+            $preview = $import->generatePreview($rows);
+            $previewCollection = collect($preview);
+
+            session([
+                'keterangan_import_preview' => $preview,
+                'keterangan_import_stats' => [
+                    'update' => $previewCollection->where('status', 'update')->count(),
+                    'no_change' => $previewCollection->where('status', 'no_change')->count(),
+                    'error' => $previewCollection->where('status', 'error')->count(),
+                    'total' => $previewCollection->count(),
+                ],
+            ]);
+
+            AuditLogger::log(
+                'Preview Import Keterangan Personel',
+                'Manajemen Personil',
+                null,
+                null,
+                null,
+                'info',
+                'Menyiapkan preview import keterangan personel.'
+            );
+
+            return redirect()->route('admin.personnel.import-keterangan-preview');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memproses file keterangan: '.$e->getMessage());
+        }
+    }
+
+    public function importKeteranganPreview()
+    {
+        $this->ensureSuperadmin();
+
+        $preview = session('keterangan_import_preview');
+        $stats = session('keterangan_import_stats');
+
+        if (! $preview) {
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview import keterangan sudah kadaluwarsa. Silakan upload ulang file.');
+        }
+
+        return view('admin.personnel.import_keterangan_preview', compact('preview', 'stats'));
+    }
+
+    public function importKeteranganConfirm(Request $request)
+    {
+        $this->ensureSuperadmin();
+
+        $preview = session('keterangan_import_preview');
+
+        if (! $preview) {
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview import keterangan sudah kadaluwarsa. Silakan upload ulang file.');
+        }
+
+        try {
+            $import = new PersonnelKeteranganImport;
+            $results = $import->saveFromPreviewData($preview);
+
+            session()->forget(['keterangan_import_preview', 'keterangan_import_stats']);
+
+            AuditLogger::log(
+                'Konfirmasi Import Keterangan Personel',
+                'Manajemen Personil',
+                null,
+                null,
+                null,
+                'success',
+                "Update: {$results['updated_count']}. Tidak berubah: {$results['no_change_count']}. Gagal: {$results['error_count']}"
+            );
+
+            $message = "Berhasil memperbarui {$results['updated_count']} data keterangan.";
+
+            if ($results['no_change_count'] > 0) {
+                $message .= " {$results['no_change_count']} baris tidak ada perubahan.";
+            }
+
+            if ($results['error_count'] > 0) {
+                return redirect()->route('admin.personnel.index')->with('warning', $message." {$results['error_count']} baris dilewati karena error.");
+            }
+
+            return redirect()->route('admin.personnel.index')->with('success', $message);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menyimpan import keterangan: '.$e->getMessage());
+        }
+    }
+
+    public function importKeteranganCancel()
+    {
+        $this->ensureSuperadmin();
+
+        session()->forget(['keterangan_import_preview', 'keterangan_import_stats']);
+
+        return redirect()->route('admin.personnel.index')->with('info', 'Proses import keterangan dibatalkan.');
     }
 
     /**
@@ -1143,5 +1275,10 @@ class PersonnelController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal mengosongkan database: '.$e->getMessage());
         }
+    }
+
+    private function ensureSuperadmin(): void
+    {
+        abort_unless(auth()->user()?->hasRole('superadmin'), 403, 'Hanya Superadmin yang dapat mengakses fitur ini.');
     }
 }

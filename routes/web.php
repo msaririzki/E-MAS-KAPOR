@@ -123,7 +123,7 @@ Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope
 // ── Admin Central Routes ──────────────────────────────────────────────
 
 Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
-    
+
     // User Management
     Route::get('/users/template', [\App\Http\Controllers\UserController::class, 'downloadTemplate'])->name('users.template');
     Route::post('/users/import', [\App\Http\Controllers\UserController::class, 'import'])->name('users.import');
@@ -148,11 +148,16 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
 
     Route::get('/personnel/export-rekap', [\App\Http\Controllers\Admin\PersonnelController::class, 'exportRekap'])->name('personnel.export-rekap');
     Route::get('/personnel/export-personnel', [\App\Http\Controllers\Admin\PersonnelController::class, 'exportPersonnel'])->name('personnel.export-personnel');
+    Route::get('/personnel/export-keterangan', [\App\Http\Controllers\Admin\PersonnelController::class, 'exportKeterangan'])->name('personnel.export-keterangan');
     Route::post('/personnel/import-update', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdate'])->name('personnel.import-update');
     Route::get('/personnel/import-update-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdatePreview'])->name('personnel.import-update-preview');
     Route::post('/personnel/import-update-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdateConfirm'])->name('personnel.import-update-confirm');
     Route::post('/personnel/import-update-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdateCancel'])->name('personnel.import-update-cancel');
-    
+    Route::post('/personnel/import-keterangan', [\App\Http\Controllers\Admin\PersonnelController::class, 'importKeterangan'])->name('personnel.import-keterangan');
+    Route::get('/personnel/import-keterangan-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importKeteranganPreview'])->name('personnel.import-keterangan-preview');
+    Route::post('/personnel/import-keterangan-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importKeteranganConfirm'])->name('personnel.import-keterangan-confirm');
+    Route::post('/personnel/import-keterangan-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importKeteranganCancel'])->name('personnel.import-keterangan-cancel');
+
     // Import Data SDM (Super Admin Only)
     Route::post('/personnel/import-sdm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdm'])->name('personnel.import-sdm');
     Route::get('/personnel/import-sdm-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdmPreview'])->name('personnel.import-sdm-preview');
