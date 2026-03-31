@@ -137,58 +137,31 @@ class PersonnelController extends Controller
                 }
 
             } else {
-                // Tidak ada filter spesifik — tampilkan semua yang incomplete
-                if ($incompleteScope === 'size_only') {
-                    $query->where(function ($q) {
-                        $q->whereNull('personnels.kapor_sizes')
-                            ->orWhere(function ($q2) {
-                                $q2->whereNotNull('personnels.kapor_sizes')
-                                    ->where(function ($q3) {
-                                        $q3->whereNull('kapor_sizes->topi')
-                                            ->orWhereNull('kapor_sizes->kemeja')
-                                            ->orWhereNull('kapor_sizes->celana')
-                                            ->orWhereNull('kapor_sizes->olahraga')
-                                            ->orWhereNull('kapor_sizes->sepatu_dinas')
-                                            ->orWhereNull('kapor_sizes->sepatu_olahraga')
-                                            ->orWhereNull('kapor_sizes->jaket')
-                                            ->orWhereNull('kapor_sizes->sabuk')
-                                            ->orWhere(function ($q4) {
-                                                $q4->where('gender', 'P')
-                                                    ->where(function ($hijabQuery) {
-                                                        $this->kaporRequirementService->applyHijabStatusConstraint($hijabQuery);
-                                                    })
-                                                    ->whereNull('kapor_sizes->jilbab');
-                                            });
-                                    });
-                            });
-                    });
-                } else {
-                    $query->where(function ($q) {
-                        $q->whereNull('personnels.rank_id')
-                            ->orWhereNull('personnels.nrp')
-                            ->orWhereNull('personnels.kapor_sizes')
-                            ->orWhere(function ($q2) {
-                                $q2->whereNotNull('personnels.kapor_sizes')
-                                    ->where(function ($q3) {
-                                        $q3->whereNull('kapor_sizes->topi')
-                                            ->orWhereNull('kapor_sizes->kemeja')
-                                            ->orWhereNull('kapor_sizes->celana')
-                                            ->orWhereNull('kapor_sizes->olahraga')
-                                            ->orWhereNull('kapor_sizes->sepatu_dinas')
-                                            ->orWhereNull('kapor_sizes->sepatu_olahraga')
-                                            ->orWhereNull('kapor_sizes->jaket')
-                                            ->orWhereNull('kapor_sizes->sabuk')
-                                            ->orWhere(function ($q4) {
-                                                $q4->where('gender', 'P')
-                                                    ->where(function ($hijabQuery) {
-                                                        $this->kaporRequirementService->applyHijabStatusConstraint($hijabQuery);
-                                                    })
-                                                    ->whereNull('kapor_sizes->jilbab');
-                                            });
-                                    });
-                            });
-                    });
-                }
+                // Tidak ada filter spesifik — filter dinamis menggunakan service untuk menjamin sinkronisasi dengan stats
+                $incompleteIds = Personnel::forCurrentSatker()
+                    ->get([
+                        'id',
+                        'rank_id',
+                        'nrp',
+                        'gender',
+                        'kapor_sizes',
+                        'keterangan',
+                        'keterangan_2',
+                        'keterangan_3',
+                        'keterangan_4',
+                    ])
+                    ->filter(function (Personnel $personnel) use ($incompleteScope) {
+                        $isSizeIncomplete = ! $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel);
+                        
+                        if ($incompleteScope === 'size_only') {
+                            return $isSizeIncomplete;
+                        }
+
+                        return $isSizeIncomplete || $personnel->rank_id === null || $personnel->nrp === null;
+                    })
+                    ->pluck('id');
+
+                $query->whereIn('personnels.id', $incompleteIds);
             }
 
             // Kelompokkan berdasarkan satker agar tidak tercampur
