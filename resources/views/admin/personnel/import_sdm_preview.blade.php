@@ -225,9 +225,6 @@
                     };
                 @endphp
                 <tr class="{{ $trClass }}" id="row-{{ $i }}" data-status="{{ $row['status'] }}">
-                    <input type="hidden" name="rank_overrides[{{ $i }}]" value="{{ $row['rank_id'] ?? '' }}" id="rank_id_{{ $i }}">
-                    <input type="hidden" name="satker_overrides[{{ $i }}]" value="{{ $row['satker_id'] ?? '' }}" id="satker_id_{{ $i }}">
-
                     <td style="color:#9CA3AF; font-size:10px;">{{ $row['row_num'] }}</td>
                     <td style="color:#6B7280;">{{ $row['sheet_name'] ?? '0' }}</td>
                     <td style="font-weight:600; color:#111827;">{{ $row['full_name'] }}</td>
@@ -253,6 +250,9 @@
                             </div>
                             @if($row['status'] === 'error' || !empty($row['requires_manual_rank']))
                             <select onchange="updateOverride('rank', {{ $i }}, this.value)"
+                                data-override-type="rank"
+                                data-row-index="{{ $i }}"
+                                data-current-value="{{ $row['rank_id'] ?? '' }}"
                                 style="font-size:11px; padding:6px 8px; border:1px solid #D1D5DB; border-radius:6px; background:#fff;">
                                 <option value="">Pilih Pangkat...</option>
                                 @foreach($ranks as $rank)
@@ -276,6 +276,9 @@
                             </div>
                             @if($row['status'] === 'error' || !empty($row['requires_manual_satker']))
                             <select onchange="updateOverride('satker', {{ $i }}, this.value)"
+                                data-override-type="satker"
+                                data-row-index="{{ $i }}"
+                                data-current-value="{{ $row['satker_id'] ?? '' }}"
                                 style="font-size:11px; padding:6px 8px; border:1px solid #D1D5DB; border-radius:6px; background:#fff;">
                                 <option value="">Pilih Satker...</option>
                                 @foreach($satkers as $satker)
@@ -348,6 +351,8 @@ const requiresManualRank = @json(collect($preview)->filter(fn ($row) => !empty($
 const requiresManualSatker = @json(collect($preview)->filter(fn ($row) => !empty($row['requires_manual_satker']))->keys()->values());
 const previewTotalRows = @json($stats['total']);
 const sdmToastStorageKey = 'sdm-import-toast';
+const rankOverridesState = {};
+const satkerOverridesState = {};
 let sdmConfirmProgressTimer = null;
 
 function setFilter(status) {
@@ -372,10 +377,23 @@ function setFilter(status) {
 }
 
 function updateOverride(type, index, value) {
-    const id = type + '_id_' + index;
-    const hidden = document.getElementById(id);
-    if (hidden) {
-        hidden.value = value;
+    const normalizedValue = value === null || value === undefined ? '' : String(value);
+
+    if (type === 'rank') {
+        if (normalizedValue === '') {
+            delete rankOverridesState[index];
+        } else {
+            rankOverridesState[index] = normalizedValue;
+        }
+        return;
+    }
+
+    if (type === 'satker') {
+        if (normalizedValue === '') {
+            delete satkerOverridesState[index];
+        } else {
+            satkerOverridesState[index] = normalizedValue;
+        }
     }
 }
 
@@ -493,8 +511,7 @@ function doConfirm(event) {
     }
 
     const missingRank = requiresManualRank.filter(function(index) {
-        const el = document.getElementById('rank_id_' + index);
-        return !el || !el.value;
+        return !rankOverridesState[index];
     });
 
     if (missingRank.length > 0) {
@@ -505,8 +522,7 @@ function doConfirm(event) {
     }
 
     const missingSatker = requiresManualSatker.filter(function(index) {
-        const el = document.getElementById('satker_id_' + index);
-        return !el || !el.value;
+        return !satkerOverridesState[index];
     });
 
     if (missingSatker.length > 0) {
@@ -520,6 +536,12 @@ function doConfirm(event) {
 
     const form = document.getElementById('importConfirmForm');
     const formData = new FormData(form);
+    Object.entries(rankOverridesState).forEach(function([index, value]) {
+        formData.append(`rank_overrides[${index}]`, value);
+    });
+    Object.entries(satkerOverridesState).forEach(function([index, value]) {
+        formData.append(`satker_overrides[${index}]`, value);
+    });
     const xhr = new XMLHttpRequest();
 
     openConfirmProgressOverlay();
@@ -610,5 +632,13 @@ function doConfirm(event) {
 }
 
 setFilter('all');
+
+document.querySelectorAll('select[data-override-type="rank"]').forEach(function(select) {
+    updateOverride('rank', select.dataset.rowIndex, select.value || select.dataset.currentValue || '');
+});
+
+document.querySelectorAll('select[data-override-type="satker"]').forEach(function(select) {
+    updateOverride('satker', select.dataset.rowIndex, select.value || select.dataset.currentValue || '');
+});
 </script>
 @endsection
