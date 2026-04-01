@@ -61,8 +61,7 @@ class KebutuhanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'notes' => 'nullable|string|max:2000',
+            'fiscal_year' => 'required|integer|min:2020',
             'items' => 'required|array|min:1',
             'items.*' => 'exists:identifikasi_items,id',
         ], [
@@ -70,16 +69,16 @@ class KebutuhanController extends Controller
             'items.min' => 'Minimal pilih 1 item kebutuhan.',
         ]);
 
-        $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
+        $fiscalYear = $request->fiscal_year;
 
         $kebutuhan = DB::transaction(function () use ($request, $fiscalYear) {
             $kebutuhan = Kebutuhan::create([
                 'satker_id' => $request->user()->satker_id,
                 'user_id' => $request->user()->id,
-                'title' => $request->title,
+                'title' => 'Pengajuan Kebutuhan TA ' . $fiscalYear,
                 'fiscal_year' => $fiscalYear,
                 'status' => 'diajukan',
-                'notes' => $request->notes,
+                'notes' => null,
                 'submitted_at' => now(),
             ]);
 
@@ -116,8 +115,8 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        if (! $kebutuhan->isDraft()) {
-            return back()->with('error', 'Hanya pengajuan berstatus draft yang dapat diedit.');
+        if (in_array($kebutuhan->status, ['disetujui', 'ditolak'])) {
+            return back()->with('error', 'Pengajuan yang sudah diproses tidak dapat diedit.');
         }
 
         $kebutuhan->load('items');
@@ -140,21 +139,21 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        if (! $kebutuhan->isDraft()) {
-            return back()->with('error', 'Hanya pengajuan berstatus draft yang dapat diedit.');
+        if (in_array($kebutuhan->status, ['disetujui', 'ditolak'])) {
+            return back()->with('error', 'Pengajuan yang sudah diproses tidak dapat diedit.');
         }
 
         $request->validate([
-            'title' => 'required|string|max:255',
-            'notes' => 'nullable|string|max:2000',
+            'fiscal_year' => 'required|integer|min:2020',
             'items' => 'required|array|min:1',
             'items.*' => 'exists:identifikasi_items,id',
         ]);
 
         DB::transaction(function () use ($request, $kebutuhan) {
             $kebutuhan->update([
-                'title' => $request->title,
-                'notes' => $request->notes,
+                'title' => 'Pengajuan Kebutuhan TA ' . $request->fiscal_year,
+                'fiscal_year' => $request->fiscal_year,
+                'notes' => null,
             ]);
 
             // Replace items
@@ -178,8 +177,8 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        if (! $kebutuhan->isDraft()) {
-            return back()->with('error', 'Hanya pengajuan berstatus draft yang dapat dihapus.');
+        if (in_array($kebutuhan->status, ['disetujui', 'ditolak'])) {
+            return back()->with('error', 'Pengajuan yang sudah diproses tidak dapat dihapus.');
         }
 
         $kebutuhan->delete();
@@ -195,8 +194,8 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        if (! $kebutuhan->isDraft()) {
-            return back()->with('error', 'Hanya pengajuan berstatus draft yang dapat dikirim.');
+        if (in_array($kebutuhan->status, ['disetujui', 'ditolak'])) {
+            return back()->with('error', 'Pengajuan sudah diproses sehingga tidak bisa dikirim ulang.');
         }
 
         if ($kebutuhan->items()->count() === 0) {

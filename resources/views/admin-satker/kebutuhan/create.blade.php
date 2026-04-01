@@ -107,16 +107,14 @@
         <div class="card-head"><h3>Informasi Pengajuan</h3></div>
         <div class="card-body">
             <div class="form-group">
-                <label class="form-label">Judul Pengajuan <span style="color: var(--danger);">*</span></label>
-                <input type="text" name="title" class="form-input" value="{{ old('title') }}" placeholder="Contoh: Kebutuhan Seragam Dinas Q1 2026" required>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Tahun Anggaran</label>
-                <input type="text" class="form-input" value="{{ $fiscalYear }}" disabled style="background: var(--slate-100);">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Catatan (opsional)</label>
-                <textarea name="notes" class="form-textarea" placeholder="Keterangan tambahan...">{{ old('notes') }}</textarea>
+                <label class="form-label">Tahun Anggaran <span style="color: var(--danger);">*</span></label>
+                <select name="fiscal_year" class="form-input" required>
+                    @php $currentYear = date('Y') + 1; @endphp
+                    @for($y = $currentYear - 1; $y <= $currentYear + 2; $y++)
+                        <option value="{{ $y }}" {{ old('fiscal_year', $fiscalYear) == $y ? 'selected' : '' }}>{{ $y }}</option>
+                    @endfor
+                </select>
+                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">*) Judul pengajuan akan di-generate otomatis berdasarkan Tahun Anggaran terpilih.</small>
             </div>
         </div>
     </div>
@@ -174,7 +172,7 @@
 
     <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;">
         <a href="{{ route('admin-satker.kebutuhan.index') }}" class="btn btn-ghost">Batal</a>
-        <button type="submit" class="btn btn-primary"><i class="ri-save-line"></i> Simpan sebagai Draft</button>
+        <button type="submit" class="btn btn-primary"><i class="ri-send-plane-fill"></i> Kirim Pengajuan</button>
     </div>
 </form>
 @endsection

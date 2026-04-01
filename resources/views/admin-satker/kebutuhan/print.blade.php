@@ -177,8 +177,6 @@
 
         {{-- ── FOOTER TANDA TANGAN ── --}}
         @php
-            $satkerName = strtoupper($kebutuhan->satker->name ?? '');
-            
             // ── Bulan Indonesia ──
             $bulanIndo = [
                 1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
@@ -188,16 +186,7 @@
             $tahun = date('Y');
 
             // ── Tentukan nama kepala dan Jabatan ──
-            if (str_starts_with($satkerName, 'POLRESTA ')) {
-                $an = 'a.n. KEPALA KEPOLISIAN RESOR KOTA ' . str_replace('POLRESTA ', '', $satkerName);
-                $jabatan = 'KEPALA BAGIAN LOGISTIK';
-            } elseif (str_starts_with($satkerName, 'POLRES ')) {
-                $an = 'a.n. KEPALA KEPOLISIAN RESOR ' . str_replace('POLRES ', '', $satkerName);
-                $jabatan = 'KEPALA BAGIAN LOGISTIK';
-            } else {
-                $an = 'a.n. KEPALA KEPOLISIAN POLDA NTB';
-                $jabatan = 'KEPALA ' . $satkerName;
-            }
+            $jabatan = 'KEPALA..........................';
 
             // ── User pengaju ──
             $userName = '..........................................';
@@ -206,7 +195,6 @@
 
         <div class="print-footer">
             <div class="ttd-location">................................., ................. {{ $bulan }} {{ $tahun }}</div>
-            <div class="ttd-an">{{ $an }}</div>
             <div class="ttd-jabatan">{{ $jabatan }}</div>
             <div class="ttd-nama">{{ $userName }}</div>
             <div class="ttd-nrp">NRP/NIP. {{ $userNrpNip }}</div>

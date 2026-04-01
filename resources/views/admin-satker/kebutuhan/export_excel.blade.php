@@ -66,8 +66,6 @@
             <td colspan="3"></td>
         </tr>
         @php
-            $satkerName = strtoupper($kebutuhan->satker->name ?? '');
-
             $bulanIndo = [
                 1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
                 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
@@ -75,17 +73,7 @@
             $bulan = $bulanIndo[date('n')];
             $tahun = date('Y');
 
-            if (str_starts_with($satkerName, 'POLRESTA ')) {
-                $an = 'a.n. KEPALA KEPOLISIAN RESOR KOTA ' . str_replace('POLRESTA ', '', $satkerName);
-                $jabatan = 'KEPALA BAGIAN LOGISTIK';
-            } elseif (str_starts_with($satkerName, 'POLRES ')) {
-                $an = 'a.n. KEPALA KEPOLISIAN RESOR ' . str_replace('POLRES ', '', $satkerName);
-                $jabatan = 'KEPALA BAGIAN LOGISTIK';
-            } else {
-                $an = 'a.n. KEPALA KEPOLISIAN POLDA NTB';
-                $jabatan = 'KEPALA ' . $satkerName;
-            }
-
+            $jabatan = 'KEPALA..........................';
             $userName = '..........................................';
             $userNrpNip = '.............................';
         @endphp
@@ -93,11 +81,6 @@
             <td></td>
             <td></td>
             <td style="text-align: center; font-family: Arial;">................................., ................. {{ $bulan }} {{ $tahun }}</td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td style="text-align: center; font-family: Arial;">{{ $an }}</td>
         </tr>
         <tr>
             <td></td>
