@@ -41,7 +41,7 @@
         </thead>
         <tbody>
             @php
-                $grouped = $kebutuhan->items->groupBy(fn($item) => $item->kaporItem->category ?? 'Lainnya');
+                $grouped = $kebutuhan->items->groupBy(fn($item) => $item->identifikasiItem->category ?? 'Lainnya');
                 $noCategory = 1;
             @endphp
             @foreach($grouped as $category => $items)
@@ -53,8 +53,8 @@
                 @foreach($items as $item)
                 <tr>
                     <td style="border: 1px solid #000000;"></td>
-                    <td style="border: 1px solid #000000;">{{ $alphaNum++ }}. {{ strtoupper($item->kaporItem->item_name ?? '-') }}</td>
-                    <td style="border: 1px solid #000000;">{{ strtoupper(str_replace('_', ' ', $item->kaporItem->category ?? '-')) }}</td>
+                    <td style="border: 1px solid #000000;">{{ $alphaNum++ }}. {{ strtoupper($item->identifikasiItem->item_name ?? '-') }}</td>
+                    <td style="border: 1px solid #000000;">{{ strtoupper(str_replace('_', ' ', $item->identifikasiItem->category ?? '-')) }}</td>
                 </tr>
                 @endforeach
             @endforeach

@@ -81,7 +81,7 @@
                 </tr>
             </thead>
             <tbody>
-                @php $grouped = $kebutuhan->items->groupBy(fn($item) => $item->kaporItem->category ?? 'Lainnya'); $no = 1; @endphp
+                @php $grouped = $kebutuhan->items->groupBy(fn($item) => $item->identifikasiItem->category ?? 'Lainnya'); $no = 1; @endphp
                 @foreach($grouped as $category => $items)
                     <tr style="background: var(--slate-50);">
                         <td colspan="3" style="font-weight: 700; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; padding: 8px 16px; border-bottom: 2px solid var(--border-color);">
@@ -91,8 +91,8 @@
                     @foreach($items as $item)
                     <tr>
                         <td style="text-align: center;">{{ $no++ }}</td>
-                        <td><div class="cell-name">{{ $item->kaporItem->item_name ?? '-' }}</div></td>
-                        <td><span class="badge badge-neutral">{{ str_replace('_', ' ', $item->kaporItem->category ?? '-') }}</span></td>
+                        <td><div class="cell-name">{{ $item->identifikasiItem->item_name ?? '-' }}</div></td>
+                        <td><span class="badge badge-neutral">{{ str_replace('_', ' ', $item->identifikasiItem->category ?? '-') }}</span></td>
                     </tr>
                     @endforeach
                 @endforeach

@@ -123,7 +123,7 @@ Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope
 // ── Admin Central Routes ──────────────────────────────────────────────
 
 Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
-    
+
     // User Management
     Route::get('/users/template', [\App\Http\Controllers\UserController::class, 'downloadTemplate'])->name('users.template');
     Route::post('/users/import', [\App\Http\Controllers\UserController::class, 'import'])->name('users.import');
@@ -152,7 +152,7 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     Route::get('/personnel/import-update-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdatePreview'])->name('personnel.import-update-preview');
     Route::post('/personnel/import-update-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdateConfirm'])->name('personnel.import-update-confirm');
     Route::post('/personnel/import-update-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdateCancel'])->name('personnel.import-update-cancel');
-    
+
     // Kapor Item & Sizes
     Route::resource('kapor-items', \App\Http\Controllers\Admin\KaporItemController::class)->except(['create', 'edit', 'show']);
     Route::get('/kapor-items/{kaporItem}/sizes', [\App\Http\Controllers\Admin\KaporItemController::class, 'getSizes'])->name('kapor-items.sizes.index');
@@ -264,7 +264,8 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
 
     Route::get('/statistik', [StatisticsController::class, 'index'])->name('statistics');
 
-    Route::get('/kapor-items', function () {
-        return view('superadmin.kapor-items.index');
-    })->name('kapor-items.index');
+    // Item Identifikasi Kebutuhan — dikelola superadmin
+    Route::resource('identifikasi-items', \App\Http\Controllers\Superadmin\IdentifikasiItemController::class)
+        ->except(['create', 'edit', 'show']);
+    Route::patch('/identifikasi-items/{identifikasi_item}/toggle', [\App\Http\Controllers\Superadmin\IdentifikasiItemController::class, 'toggleActive'])->name('identifikasi-items.toggle');
 });

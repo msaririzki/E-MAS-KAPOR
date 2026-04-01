@@ -14,7 +14,7 @@ class KebutuhanItem extends Model
 
     protected $fillable = [
         'kebutuhan_id',
-        'kapor_item_id',
+        'identifikasi_item_id',
         'quantity',
         'notes',
     ];
@@ -26,8 +26,8 @@ class KebutuhanItem extends Model
         return $this->belongsTo(Kebutuhan::class);
     }
 
-    public function kaporItem(): BelongsTo
+    public function identifikasiItem(): BelongsTo
     {
-        return $this->belongsTo(KaporItem::class);
+        return $this->belongsTo(IdentifikasiItem::class);
     }
 }

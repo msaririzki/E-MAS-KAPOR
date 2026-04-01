@@ -16,7 +16,7 @@ class WarehouseImport implements ToCollection, WithHeadingRow
             foreach ($rows as $row) {
                 // Ensure row is treated as array if it's not already
                 $rowArray = is_array($row) ? $row : $row->toArray();
-                
+
                 // Pastikan nama barang ada
                 if (empty($rowArray['nama_barang'])) {
                     continue;
@@ -25,7 +25,7 @@ class WarehouseImport implements ToCollection, WithHeadingRow
                 $itemName = trim($rowArray['nama_barang']);
                 $unit = 'PCS';
                 $price = isset($rowArray['harga_satuan']) ? floatval($rowArray['harga_satuan']) : 0;
-                
+
                 // Set ukuran default ke "-" dan ambil kuantitas
                 $sizeLabel = '-';
                 $stock = isset($rowArray['kuantitas']) ? intval($rowArray['kuantitas']) : (isset($rowArray['stok']) ? intval($rowArray['stok']) : 0);

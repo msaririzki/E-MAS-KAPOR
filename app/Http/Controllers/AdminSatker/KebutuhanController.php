@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\AdminSatker;
 
 use App\Http\Controllers\Controller;
-use App\Models\KaporItem;
+use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -44,7 +44,7 @@ class KebutuhanController extends Controller
      */
     public function create()
     {
-        $kaporItems = KaporItem::where('is_active', true)
+        $kaporItems = IdentifikasiItem::where('is_active', true)
             ->orderBy('category')
             ->orderBy('item_name')
             ->get()
@@ -64,7 +64,7 @@ class KebutuhanController extends Controller
             'title' => 'required|string|max:255',
             'notes' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
-            'items.*' => 'exists:kapor_items,id',
+            'items.*' => 'exists:identifikasi_items,id',
         ], [
             'items.required' => 'Minimal pilih 1 item kebutuhan.',
             'items.min' => 'Minimal pilih 1 item kebutuhan.',
@@ -85,7 +85,7 @@ class KebutuhanController extends Controller
 
             foreach ($request->items as $kaporItemId) {
                 $kebutuhan->items()->create([
-                    'kapor_item_id' => $kaporItemId,
+                    'identifikasi_item_id' => $kaporItemId,
                     'quantity' => 1,
                 ]);
             }
@@ -104,7 +104,7 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
 
         return view('admin-satker.kebutuhan.show', compact('kebutuhan'));
     }
@@ -122,13 +122,13 @@ class KebutuhanController extends Controller
 
         $kebutuhan->load('items');
 
-        $kaporItems = KaporItem::where('is_active', true)
+        $kaporItems = IdentifikasiItem::where('is_active', true)
             ->orderBy('category')
             ->orderBy('item_name')
             ->get()
             ->groupBy('category');
 
-        $selectedIds = $kebutuhan->items->pluck('kapor_item_id')->toArray();
+        $selectedIds = $kebutuhan->items->pluck('identifikasi_item_id')->toArray();
 
         return view('admin-satker.kebutuhan.edit', compact('kebutuhan', 'kaporItems', 'selectedIds'));
     }
@@ -148,7 +148,7 @@ class KebutuhanController extends Controller
             'title' => 'required|string|max:255',
             'notes' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
-            'items.*' => 'exists:kapor_items,id',
+            'items.*' => 'exists:identifikasi_items,id',
         ]);
 
         DB::transaction(function () use ($request, $kebutuhan) {
@@ -161,7 +161,7 @@ class KebutuhanController extends Controller
             $kebutuhan->items()->delete();
             foreach ($request->items as $kaporItemId) {
                 $kebutuhan->items()->create([
-                    'kapor_item_id' => $kaporItemId,
+                    'identifikasi_item_id' => $kaporItemId,
                     'quantity' => 1,
                 ]);
             }
@@ -218,7 +218,7 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
 
         return view('admin-satker.kebutuhan.print', compact('kebutuhan'));
     }
@@ -229,9 +229,10 @@ class KebutuhanController extends Controller
     public function exportExcel(Kebutuhan $kebutuhan)
     {
         $this->authorizeSatker($kebutuhan);
-        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
 
-        $filename = 'Usulan_Kaporlap_' . ($kebutuhan->satker->name ?? 'Satker') . '_' . $kebutuhan->fiscal_year . '.xlsx';
+        $filename = 'Usulan_Kaporlap_'.($kebutuhan->satker->name ?? 'Satker').'_'.$kebutuhan->fiscal_year.'.xlsx';
+
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\KebutuhanExport($kebutuhan), $filename);
     }
 
@@ -241,10 +242,10 @@ class KebutuhanController extends Controller
     public function exportPdf(Kebutuhan $kebutuhan)
     {
         $this->authorizeSatker($kebutuhan);
-        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
 
-        $filename = 'Usulan_Kaporlap_' . ($kebutuhan->satker->name ?? 'Satker') . '_' . $kebutuhan->fiscal_year . '.pdf';
-        
+        $filename = 'Usulan_Kaporlap_'.($kebutuhan->satker->name ?? 'Satker').'_'.$kebutuhan->fiscal_year.'.pdf';
+
         // We will reuse the 'print' view or a new 'pdf' view for actual PDF download
         $pdf = \PDF::loadView('admin-satker.kebutuhan.print', compact('kebutuhan'));
         $pdf->setPaper('a4', 'portrait');

@@ -1816,7 +1816,7 @@
 
             {{-- ══ Admin / Superadmin Roles ══ --}}
             @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
-                <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') || request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'open' : '' }}">
+                <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') || request()->routeIs('superadmin.kapor-items.*') || request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-t-shirt-2-line group-icon"></i> Data Personel
                         <i class="ri-arrow-down-s-line group-chevron"></i>
@@ -1830,6 +1830,12 @@
                             class="nav-link {{ request()->routeIs('admin.kapor-items.*') ? 'active' : '' }}">
                             Item Kapor
                         </a>
+                        @if(auth()->user()->hasRole('superadmin'))
+                            <a href="{{ route('superadmin.identifikasi-items.index') }}"
+                                class="nav-link {{ request()->routeIs('superadmin.identifikasi-items.*') ? 'active' : '' }}">
+                                Item Identifikasi
+                            </a>
+                        @endif
                         <a href="{{ route('admin.identifikasi-kebutuhan.index') }}"
                             class="nav-link {{ request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'active' : '' }}">
                             Identifikasi Kebutuhan
