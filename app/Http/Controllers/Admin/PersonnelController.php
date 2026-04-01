@@ -23,6 +23,8 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class PersonnelController extends Controller
@@ -947,17 +949,16 @@ class PersonnelController extends Controller
             $totalSatker = collect($preview)->pluck('satker_id')->filter()->unique()->count();
             $totalFiles = count($uploadedFiles);
 
-            session([
-                'sdm_import_preview' => $preview,
-                'sdm_import_stats' => [
-                    'ok' => $totalOk,
-                    'corrected' => $totalCorrected,
-                    'error' => $totalError,
-                    'total' => count($preview),
-                    'satker_count' => $totalSatker,
-                    'file_count' => $totalFiles,
-                ],
-            ]);
+            $stats = [
+                'ok' => $totalOk,
+                'corrected' => $totalCorrected,
+                'error' => $totalError,
+                'total' => count($preview),
+                'satker_count' => $totalSatker,
+                'file_count' => $totalFiles,
+            ];
+
+            $this->storeSdmPreviewPayload($preview, $stats);
 
             AuditLogger::log('Preview Import Data SDM', 'Manajemen Personil', null, null, null, 'info', "Preview SDM: {$totalOk} siap, {$totalCorrected} dikoreksi, {$totalError} error");
 
@@ -965,7 +966,7 @@ class PersonnelController extends Controller
                 return response()->json([
                     'message' => 'Preview import SDM berhasil disiapkan.',
                     'redirect_url' => route('admin.personnel.import-sdm-preview'),
-                    'stats' => session('sdm_import_stats'),
+                    'stats' => $stats,
                 ]);
             }
 
@@ -988,8 +989,9 @@ class PersonnelController extends Controller
      */
     public function importSdmPreview()
     {
-        $preview = session('sdm_import_preview');
-        $stats = session('sdm_import_stats');
+        $payload = $this->getSdmPreviewPayload();
+        $preview = $payload['preview'] ?? null;
+        $stats = $payload['stats'] ?? session('sdm_import_stats');
 
         if (! $preview) {
             return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.');
@@ -1008,7 +1010,8 @@ class PersonnelController extends Controller
     {
         set_time_limit(0);
 
-        $preview = session('sdm_import_preview');
+        $payload = $this->getSdmPreviewPayload();
+        $preview = $payload['preview'] ?? null;
 
         if (! $preview) {
             $message = 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.';
@@ -1052,7 +1055,7 @@ class PersonnelController extends Controller
                 ? "Berhasil mengimpor {$successCount} data SDM. Gagal: {$errorCount}."
                 : "Berhasil mengimpor {$successCount} data personil (SDM).";
 
-            session()->forget(['sdm_import_preview', 'sdm_import_stats']);
+            $this->clearSdmPreviewPayload();
 
             AuditLogger::log('Konfirmasi Import Data SDM', 'Manajemen Personil', null, null, null, 'success', "Berhasil: {$successCount}. Gagal: {$errorCount}");
 
@@ -1092,9 +1095,76 @@ class PersonnelController extends Controller
      */
     public function importSdmCancel()
     {
-        session()->forget(['sdm_import_preview', 'sdm_import_stats']);
+        $this->clearSdmPreviewPayload();
 
         return redirect()->route('admin.personnel.index')->with('info', 'Proses import Data SDM dibatalkan.');
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $preview
+     * @param  array<string, mixed>  $stats
+     */
+    private function storeSdmPreviewPayload(array $preview, array $stats): void
+    {
+        $this->clearSdmPreviewPayload();
+
+        $path = 'import-previews/sdm/'.Str::uuid().'.json';
+        $payload = json_encode([
+            'preview' => $preview,
+            'stats' => $stats,
+        ], JSON_UNESCAPED_UNICODE);
+
+        if ($payload === false) {
+            throw new \RuntimeException('Gagal menyusun payload preview SDM.');
+        }
+
+        Storage::disk('local')->put($path, $payload);
+
+        session([
+            'sdm_import_preview_key' => $path,
+            'sdm_import_stats' => $stats,
+        ]);
+    }
+
+    /**
+     * @return array{preview: array<int, array<string, mixed>>, stats: array<string, mixed>}|null
+     */
+    private function getSdmPreviewPayload(): ?array
+    {
+        $path = session('sdm_import_preview_key');
+        if (! is_string($path) || $path === '') {
+            return null;
+        }
+
+        if (! Storage::disk('local')->exists($path)) {
+            return null;
+        }
+
+        $raw = Storage::disk('local')->get($path);
+        $payload = json_decode($raw, true);
+
+        if (! is_array($payload) || ! isset($payload['preview']) || ! is_array($payload['preview'])) {
+            return null;
+        }
+
+        return [
+            'preview' => $payload['preview'],
+            'stats' => is_array($payload['stats'] ?? null) ? $payload['stats'] : (session('sdm_import_stats', [])),
+        ];
+    }
+
+    private function clearSdmPreviewPayload(): void
+    {
+        $path = session('sdm_import_preview_key');
+        if (is_string($path) && $path !== '') {
+            Storage::disk('local')->delete($path);
+        }
+
+        session()->forget([
+            'sdm_import_preview_key',
+            'sdm_import_preview',
+            'sdm_import_stats',
+        ]);
     }
 
     /**
