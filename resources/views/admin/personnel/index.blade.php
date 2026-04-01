@@ -201,6 +201,27 @@
         <div class="stat-content">
             <span class="stat-label">TOTAL RILL PERSONEL</span>
             <span class="stat-number">{{ number_format($stats['total_real']) }}</span>
+            <span class="stat-helper">{{ $stats['scope_label'] }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.12); color: #2563EB;">
+            <i class="ri-shield-user-line"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">PERSONEL POLRI</span>
+            <span class="stat-number">{{ number_format($stats['polri']) }}</span>
+            <span class="stat-helper">Dalam hasil filter aktif</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.12); color: #7C3AED;">
+            <i class="ri-user-star-line"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">PERSONEL PNS / PPPK</span>
+            <span class="stat-number">{{ number_format($stats['pns']) }}</span>
+            <span class="stat-helper">Dalam hasil filter aktif</span>
         </div>
     </div>
     <div class="stat-card">
@@ -210,6 +231,7 @@
         <div class="stat-content">
             <span class="stat-label">SUDAH ISI UKURAN</span>
             <span class="stat-number">{{ number_format($stats['submitted']) }}</span>
+            <span class="stat-helper">Ukuran wajib lengkap</span>
         </div>
     </div>
     <style>
@@ -282,13 +304,14 @@
             }
         }
     </style>
-    <a href="{{ route('admin.personnel.index', ['status' => 'incomplete', 'incomplete_scope' => 'size_only']) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center;">
+    <a href="{{ route('admin.personnel.index', array_merge(request()->except(['page']), ['status' => 'incomplete', 'incomplete_scope' => 'size_only'])) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center;">
         <div class="stat-icon icon-red">
             <i class="ri-close-circle-line"></i>
         </div>
         <div class="stat-content" style="flex: 1;">
             <span class="stat-label">BELUM ISI UKURAN</span>
             <span class="stat-number">{{ number_format($stats['pending']) }}</span>
+            <span class="stat-helper">Klik untuk lihat daftar filter aktif</span>
         </div>
         <div style="padding-left: 16px; margin-right: 8px;">
             <div class="action-btn">
@@ -2269,7 +2292,7 @@
     /* ── Stats ──────────────────────────────────────────── */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 16px;
         margin-bottom: 24px;
     }
@@ -2303,6 +2326,7 @@
     .stat-content { display: flex; flex-direction: column; }
     .stat-label { font-size: 13px; color: #6B7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.025em; }
     .stat-number { font-size: 22px; font-weight: 700; color: #111827; }
+    .stat-helper { margin-top: 4px; font-size: 12px; color: #94A3B8; line-height: 1.35; }
 
     /* ── Filters ────────────────────────────────────────── */
     .filter-bar {
@@ -2663,7 +2687,7 @@
     /* ── Responsive Design ─────────────────────────────── */
     @media (max-width: 1024px) {
         .stats-grid {
-            grid-template-columns: repeat(2, 1fr); /* 2 columns on tablet */
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
     }
 
@@ -2693,6 +2717,10 @@
         .btn-maroon, .btn-outline {
             /* flex: 1; removed to avoid conflict with above specific selector */
             justify-content: center;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
         
         .filter-form {
@@ -2737,7 +2765,7 @@
 
     @media (max-width: 640px) {
         .stats-grid {
-            grid-template-columns: 1fr; /* Stack on mobile */
+            grid-template-columns: 1fr;
         }
         
         .modal-content {

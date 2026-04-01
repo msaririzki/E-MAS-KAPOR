@@ -39,47 +39,6 @@ class PersonnelController extends Controller
         $direction = $request->get('direction', 'desc');
         $query = Personnel::with(['rank', 'satker'])->forCurrentSatker();
 
-        if ($sort === 'recent_edit') {
-            $query->latest('updated_at');
-        } elseif ($sort === 'full_name') {
-            $query->orderBy('full_name', $direction);
-        } elseif ($sort === 'rank') {
-            $query->leftJoin('ranks', 'personnels.rank_id', '=', 'ranks.id')
-                ->select('personnels.*')
-                ->orderBy('ranks.sort_order', $direction === 'asc' ? 'asc' : 'desc')
-                ->orderBy('personnels.full_name', 'asc');
-        } elseif ($sort === 'satker') {
-            $query->leftJoin('satkers', 'personnels.satker_id', '=', 'satkers.id')
-                ->select('personnels.*')
-                ->orderBy('satkers.name', $direction);
-        } elseif ($sort === 'jabatan') {
-            $query->orderBy('jabatan', $direction);
-        } else {
-            $query->latest('created_at');
-        }
-
-        // Stats Calculation
-        $totalReal = Personnel::forCurrentSatker()->count();
-
-        $submittedCount = Personnel::forCurrentSatker()
-            ->get([
-                'gender',
-                'kapor_sizes',
-                'keterangan',
-                'keterangan_2',
-                'keterangan_3',
-                'keterangan_4',
-            ])
-            ->filter(fn (Personnel $personnel) => $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
-            ->count();
-
-        $stats = [
-            'total_real' => $totalReal,
-            'submitted' => $submittedCount,
-            'pending' => $totalReal - $submittedCount,
-            'active' => Personnel::forCurrentSatker()->where('is_active', true)->count(),
-        ];
-
         // Filters
         if ($request->filled('search')) {
             $search = $request->search;
@@ -178,6 +137,7 @@ class PersonnelController extends Controller
 
         // Pagination
         $perPage = $request->get('per_page', $isIncompleteFilter ? 100 : 10);
+        $filteredStatsCollection = collect();
         if ($isIncompleteFilter && ! empty($missingSizeFilter) && $kaporItemId > 0) {
             $kaporItem = KaporItem::with('sizes')->find($kaporItemId);
 
@@ -186,6 +146,7 @@ class PersonnelController extends Controller
                     return $this->kaporRequirementService->resolveSizeKey($kaporItem->item_name) === $missingSizeFilter
                         && $this->kaporRequirementService->personnelMissingSizeForItem($personnel, $kaporItem, $missingSizeFilter);
                 })->values();
+                $filteredStatsCollection = $filtered;
 
                 $currentPage = LengthAwarePaginator::resolveCurrentPage();
                 $items = $filtered->slice(($currentPage - 1) * $perPage, $perPage)->values();
@@ -201,11 +162,28 @@ class PersonnelController extends Controller
                     ]
                 );
             } else {
+                $filteredStatsCollection = (clone $query)->get();
                 $personnels = $query->paginate($perPage)->withQueryString();
             }
         } else {
+            $filteredStatsCollection = (clone $query)->get();
             $personnels = $query->paginate($perPage)->withQueryString();
         }
+
+        $totalReal = $filteredStatsCollection->count();
+        $submittedCount = $filteredStatsCollection
+            ->filter(fn (Personnel $personnel) => $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
+            ->count();
+        $stats = [
+            'total_real' => $totalReal,
+            'polri' => $filteredStatsCollection->where('personnel_type', 'Polri')->count(),
+            'pns' => $filteredStatsCollection->where('personnel_type', 'PNS')->count(),
+            'submitted' => $submittedCount,
+            'pending' => $totalReal - $submittedCount,
+            'active' => $filteredStatsCollection->where('is_active', true)->count(),
+            'is_filtered' => $this->hasActivePersonnelFilters($request),
+            'scope_label' => $this->buildPersonnelStatsScopeLabel($request),
+        ];
 
         $ranks = Rank::orderBy('sort_order')->get();
         $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
@@ -215,6 +193,50 @@ class PersonnelController extends Controller
 
         return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId'));
 
+    }
+
+    private function hasActivePersonnelFilters(Request $request): bool
+    {
+        return $request->filled('search')
+            || $request->filled('rank_id')
+            || $request->filled('satker_id')
+            || $request->filled('keterangan')
+            || $request->get('status') === 'incomplete'
+            || $request->filled('missing_size')
+            || $request->filled('kapor_item_id');
+    }
+
+    private function buildPersonnelStatsScopeLabel(Request $request): string
+    {
+        if (! $this->hasActivePersonnelFilters($request)) {
+            return 'Semua data personel';
+        }
+
+        $labels = [];
+
+        if ($request->filled('satker_id')) {
+            $satker = Satker::find($request->input('satker_id'));
+            if ($satker) {
+                $labels[] = 'Satker: '.$satker->name;
+            }
+        }
+
+        if ($request->filled('rank_id')) {
+            $rank = Rank::find($request->input('rank_id'));
+            if ($rank) {
+                $labels[] = 'Pangkat: '.$rank->name;
+            }
+        }
+
+        if ($request->filled('search')) {
+            $labels[] = 'Pencarian aktif';
+        }
+
+        if ($request->get('status') === 'incomplete') {
+            $labels[] = 'Filter ukuran belum lengkap';
+        }
+
+        return $labels !== [] ? implode(' • ', $labels) : 'Berdasarkan filter aktif';
     }
 
     public function store(Request $request)
