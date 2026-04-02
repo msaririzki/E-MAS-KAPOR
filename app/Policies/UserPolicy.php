@@ -11,7 +11,7 @@ class UserPolicy
      */
     public function viewAny(User $auth): bool
     {
-        return $auth->hasAnyRole(['superadmin', 'admin', 'admin_satker']);
+        return $auth->hasRole('superadmin');
     }
 
     /**
@@ -19,18 +19,7 @@ class UserPolicy
      */
     public function view(User $auth, User $target): bool
     {
-        // Superadmin & Admin can view any user
-        if ($auth->hasAnyRole(['superadmin', 'admin'])) {
-            return true;
-        }
-
-        // Admin Satker can only view users in same satker
-        if ($auth->hasRole('admin_satker')) {
-            return $target->satker_id === $auth->satker_id;
-        }
-
-        // User can view own profile
-        return $auth->id === $target->id;
+        return $auth->hasRole('superadmin');
     }
 
     /**
@@ -38,7 +27,7 @@ class UserPolicy
      */
     public function create(User $auth): bool
     {
-        return $auth->hasAnyRole(['superadmin', 'admin']);
+        return $auth->hasRole('superadmin');
     }
 
     /**
@@ -46,24 +35,7 @@ class UserPolicy
      */
     public function update(User $auth, User $target): bool
     {
-        // Superadmin can edit anyone
-        if ($auth->hasRole('superadmin')) {
-            return true;
-        }
-
-        // Admin can edit non-superadmin users
-        if ($auth->hasRole('admin')) {
-            return ! $target->hasRole('superadmin');
-        }
-
-        // Admin Satker can edit users in same satker (non-admin/superadmin)
-        if ($auth->hasRole('admin_satker')) {
-            return $target->satker_id === $auth->satker_id
-                && ! $target->hasAnyRole(['superadmin', 'admin']);
-        }
-
-        // User can edit own profile only
-        return $auth->id === $target->id;
+        return $auth->hasRole('superadmin');
     }
 
     /**
@@ -76,16 +48,6 @@ class UserPolicy
             return false;
         }
 
-        // Superadmin can delete anyone else
-        if ($auth->hasRole('superadmin')) {
-            return true;
-        }
-
-        // Admin can delete non-superadmin users
-        if ($auth->hasRole('admin')) {
-            return ! $target->hasRole('superadmin');
-        }
-
-        return false;
+        return $auth->hasRole('superadmin');
     }
 }

@@ -15,74 +15,76 @@ class AdminSatkerSeeder extends Seeder
     public function run(): void
     {
         $users = [
-            ['name' => 'ITWASDA', 'username' => 'itwasda', 'password' => 'itwasda1'],
-            ['name' => 'BIRO OPS', 'username' => 'biroops', 'password' => 'biroops2'],
-            ['name' => 'BIRO RENA', 'username' => 'birorena', 'password' => 'birorena3'],
-            ['name' => 'BIRO SDM', 'username' => 'birosdm', 'password' => 'birosdm4'],
-            ['name' => 'BIRO LOGISTIK', 'username' => 'birologistik', 'password' => 'birologistik5'],
-            ['name' => 'DIT SAMAPTA', 'username' => 'ditsamapta', 'password' => 'ditsamapta6'],
-            ['name' => 'DIT LANTAS', 'username' => 'ditlantas', 'password' => 'ditlantas7'],
-            ['name' => 'DIT BINMAS', 'username' => 'ditbinmas', 'password' => 'ditbinmas8'],
-            ['name' => 'DIT PAMOBVIT', 'username' => 'ditpamobvit', 'password' => 'ditpamobvit9'],
-            ['name' => 'DIT TAHTI', 'username' => 'dittahti', 'password' => 'dittahti10'],
-            ['name' => 'DIT POLAIRUD', 'username' => 'ditpolairud', 'password' => 'ditpolairud11'],
-            ['name' => 'SAT BRIMOB', 'username' => 'satbrimob', 'password' => 'satbrimob12'],
-            ['name' => 'DIT INTELKAM', 'username' => 'ditintelkam', 'password' => 'ditintelkam13'],
-            ['name' => 'DIT RESKRIMSUS', 'username' => 'ditreskrimsus', 'password' => 'ditreskrimsus14'],
-            ['name' => 'DIT RESKRIMUM', 'username' => 'ditreskrimum', 'password' => 'ditreskrimum15'],
-            ['name' => 'DITRESPPAPPO', 'username' => 'ditresppappo', 'password' => 'ditresppappo16'],
-            ['name' => 'DIT RESNARKOBA', 'username' => 'ditresnarkoba', 'password' => 'ditresnarkoba17'],
-            ['name' => 'BID PROPAM', 'username' => 'bidpropam', 'password' => 'bidpropam18'],
-            ['name' => 'BID KUM', 'username' => 'bidkum', 'password' => 'bidkum19'],
-            ['name' => 'BID HUMAS', 'username' => 'bidhumas', 'password' => 'bidhumas20'],
-            ['name' => 'BID DOKKES', 'username' => 'biddokkes', 'password' => 'biddokkes21'],
-            ['name' => 'BID TIK', 'username' => 'bidtik', 'password' => 'bidtik22'],
-            ['name' => 'BID KEU', 'username' => 'bidkeu', 'password' => 'bidkeu23'],
-            ['name' => 'YANMA', 'username' => 'yanma', 'password' => 'yanma24'],
-            ['name' => 'SPRIPIM', 'username' => 'spripim', 'password' => 'spripim25'],
-            ['name' => 'SPN', 'username' => 'spn', 'password' => 'spn26'],
-            ['name' => 'SETUM', 'username' => 'setum', 'password' => 'setum27'],
-            ['name' => 'RUMKIT', 'username' => 'rumkit', 'password' => 'rumkit28'],
-            ['name' => 'SPKT', 'username' => 'spkt', 'password' => 'spkt29'],
-            ['name' => 'POLRESTA MATARAM', 'username' => 'polrestamataram', 'password' => 'polrestamataram30'],
-            ['name' => 'POLRES LOMBOK BARAT', 'username' => 'polreslombokbarat', 'password' => 'polreslombokbarat31'],
-            ['name' => 'POLRES LOMBOK UTARA', 'username' => 'polres_lombok_utara', 'password' => 'polres_lombok_utara32'],
-            ['name' => 'POLRES LOMBOK UTARA', 'username' => 'polreslombokutara', 'password' => 'polreslombokutara32'],
-            ['name' => 'POLRES LOMBOK TENGAH', 'username' => 'polreslomboktengah', 'password' => 'polreslomboktengah33'],
-            ['name' => 'POLRES LOMBOK TIMUR', 'username' => 'polreslomboktimur', 'password' => 'polreslomboktimur34'],
-            ['name' => 'POLRES SUMBAWA BARAT', 'username' => 'polressumbawabarat', 'password' => 'polressumbawabarat35'],
-            ['name' => 'POLRES SUMBAWA', 'username' => 'polressumbawa', 'password' => 'polressumbawa36'],
-            ['name' => 'POLRES DOMPU', 'username' => 'polresdompu', 'password' => 'polresdompu37'],
-            ['name' => 'POLRES BIMA', 'username' => 'polresbima', 'password' => 'polresbima38'],
-            ['name' => 'POLRES BIMA KOTA', 'username' => 'polresbimakota', 'password' => 'polresbimakota39'],
+            ['name' => 'ITWASDA', 'email_prefix' => 'itwasda', 'password' => 'itwasda1'],
+            ['name' => 'BIRO OPS', 'email_prefix' => 'biroops', 'password' => 'biroops2'],
+            ['name' => 'BIRO RENA', 'email_prefix' => 'birorena', 'password' => 'birorena3'],
+            ['name' => 'BIRO SDM', 'email_prefix' => 'birosdm', 'password' => 'birosdm4'],
+            ['name' => 'BIRO LOGISTIK', 'email_prefix' => 'birologistik', 'password' => 'birologistik5'],
+            ['name' => 'DIT SAMAPTA', 'email_prefix' => 'ditsamapta', 'password' => 'ditsamapta6'],
+            ['name' => 'DIT LANTAS', 'email_prefix' => 'ditlantas', 'password' => 'ditlantas7'],
+            ['name' => 'DIT BINMAS', 'email_prefix' => 'ditbinmas', 'password' => 'ditbinmas8'],
+            ['name' => 'DIT PAMOBVIT', 'email_prefix' => 'ditpamobvit', 'password' => 'ditpamobvit9'],
+            ['name' => 'DIT TAHTI', 'email_prefix' => 'dittahti', 'password' => 'dittahti10'],
+            ['name' => 'DIT POLAIRUD', 'email_prefix' => 'ditpolairud', 'password' => 'ditpolairud11'],
+            ['name' => 'SAT BRIMOB', 'email_prefix' => 'satbrimob', 'password' => 'satbrimob12'],
+            ['name' => 'DIT INTELKAM', 'email_prefix' => 'ditintelkam', 'password' => 'ditintelkam13'],
+            ['name' => 'DIT RESKRIMSUS', 'email_prefix' => 'ditreskrimsus', 'password' => 'ditreskrimsus14'],
+            ['name' => 'DIT RESKRIMUM', 'email_prefix' => 'ditreskrimum', 'password' => 'ditreskrimum15'],
+            ['name' => 'DITRESPPAPPO', 'email_prefix' => 'ditresppappo', 'password' => 'ditresppappo16'],
+            ['name' => 'DIT RESNARKOBA', 'email_prefix' => 'ditresnarkoba', 'password' => 'ditresnarkoba17'],
+            ['name' => 'BID PROPAM', 'email_prefix' => 'bidpropam', 'password' => 'bidpropam18'],
+            ['name' => 'BID KUM', 'email_prefix' => 'bidkum', 'password' => 'bidkum19'],
+            ['name' => 'BID HUMAS', 'email_prefix' => 'bidhumas', 'password' => 'bidhumas20'],
+            ['name' => 'BID DOKKES', 'email_prefix' => 'biddokkes', 'password' => 'biddokkes21'],
+            ['name' => 'BID TIK', 'email_prefix' => 'bidtik', 'password' => 'bidtik22'],
+            ['name' => 'BID KEU', 'email_prefix' => 'bidkeu', 'password' => 'bidkeu23'],
+            ['name' => 'YANMA', 'email_prefix' => 'yanma', 'password' => 'yanma24'],
+            ['name' => 'SPRIPIM', 'email_prefix' => 'spripim', 'password' => 'spripim25'],
+            ['name' => 'SPN', 'email_prefix' => 'spn', 'password' => 'spn26'],
+            ['name' => 'SETUM', 'email_prefix' => 'setum', 'password' => 'setum27'],
+            ['name' => 'RUMKIT', 'email_prefix' => 'rumkit', 'password' => 'rumkit28'],
+            ['name' => 'SPKT', 'email_prefix' => 'spkt', 'password' => 'spkt29'],
+            ['name' => 'POLRESTA MATARAM', 'email_prefix' => 'polrestamataram', 'password' => 'polrestamataram30'],
+            ['name' => 'POLRES LOMBOK BARAT', 'email_prefix' => 'polreslombokbarat', 'password' => 'polreslombokbarat31'],
+            ['name' => 'POLRES LOMBOK UTARA', 'email_prefix' => 'polres_lombok_utara', 'password' => 'polres_lombok_utara32'],
+            ['name' => 'POLRES LOMBOK UTARA', 'email_prefix' => 'polreslombokutara', 'password' => 'polreslombokutara32'],
+            ['name' => 'POLRES LOMBOK TENGAH', 'email_prefix' => 'polreslomboktengah', 'password' => 'polreslomboktengah33'],
+            ['name' => 'POLRES LOMBOK TIMUR', 'email_prefix' => 'polreslomboktimur', 'password' => 'polreslomboktimur34'],
+            ['name' => 'POLRES SUMBAWA BARAT', 'email_prefix' => 'polressumbawabarat', 'password' => 'polressumbawabarat35'],
+            ['name' => 'POLRES SUMBAWA', 'email_prefix' => 'polressumbawa', 'password' => 'polressumbawa36'],
+            ['name' => 'POLRES DOMPU', 'email_prefix' => 'polresdompu', 'password' => 'polresdompu37'],
+            ['name' => 'POLRES BIMA', 'email_prefix' => 'polresbima', 'password' => 'polresbima38'],
+            ['name' => 'POLRES BIMA KOTA', 'email_prefix' => 'polresbimakota', 'password' => 'polresbimakota39'],
         ];
 
-        // Unique by name to avoid duplicates if I typed twice
         $uniqueUsers = [];
-        foreach ($users as $u) {
-            $uniqueUsers[$u['username']] = $u;
+        foreach ($users as $userData) {
+            $uniqueUsers[$userData['email_prefix']] = $userData;
         }
 
-        foreach ($uniqueUsers as $u) {
-            $satker = Satker::where('name', $u['name'])->first();
+        foreach ($uniqueUsers as $userData) {
+            $satker = Satker::where('name', $userData['name'])->first();
 
-            if ($satker) {
-                $email = strtolower($u['username'].'@gmail.com');
-
-                // Check if user already exists
-                $user = User::where('email', $email)->first();
-
-                if (! $user) {
-                    $user = User::create([
-                        'name' => 'Admin '.$u['name'],
-                        'email' => $email,
-                        'password' => Hash::make($u['password']),
-                        'satker_id' => $satker->id,
-                        'is_active' => true,
-                    ]);
-                    $user->assignRole('admin_satker');
-                }
+            if (! $satker) {
+                continue;
             }
+
+            $email = strtolower($userData['email_prefix'].'@gmail.com');
+            $user = User::where('email', $email)->first();
+
+            if ($user) {
+                continue;
+            }
+
+            $user = User::create([
+                'name' => 'Admin '.$userData['name'],
+                'email' => $email,
+                'password' => Hash::make($userData['password']),
+                'satker_id' => $satker->id,
+                'is_active' => true,
+            ]);
+
+            $user->assignRole('admin_satker');
         }
     }
 }

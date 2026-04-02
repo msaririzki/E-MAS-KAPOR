@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 class IdentifikasiKebutuhanController extends Controller
 {
     /**
-     * Semua pengajuan kebutuhan (Admin/Superadmin melihat semua satker).
+     * Semua pengajuan kebutuhan untuk Superadmin.
      */
     public function index(Request $request)
     {
@@ -119,8 +119,8 @@ class IdentifikasiKebutuhanController extends Controller
      */
     public function approve(Request $request, Kebutuhan $kebutuhan)
     {
-        if (! $request->user()->hasAnyRole(['admin', 'superadmin'])) {
-            abort(403, 'Hanya Admin/Superadmin yang dapat menyetujui pengajuan.');
+        if (! $request->user()->hasRole('superadmin')) {
+            abort(403, 'Hanya Superadmin yang dapat menyetujui pengajuan.');
         }
 
         if (! $kebutuhan->isDiajukan()) {
@@ -142,8 +142,8 @@ class IdentifikasiKebutuhanController extends Controller
      */
     public function reject(Request $request, Kebutuhan $kebutuhan)
     {
-        if (! $request->user()->hasAnyRole(['admin', 'superadmin'])) {
-            abort(403, 'Hanya Admin/Superadmin yang dapat menolak pengajuan.');
+        if (! $request->user()->hasRole('superadmin')) {
+            abort(403, 'Hanya Superadmin yang dapat menolak pengajuan.');
         }
 
         if (! $kebutuhan->isDiajukan()) {

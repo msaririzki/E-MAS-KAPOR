@@ -18,9 +18,8 @@ class UserController extends Controller
 {
     private const ROLE_SORT_ORDER = [
         'superadmin' => 1,
-        'admin' => 2,
-        'admin_gudang' => 3,
-        'admin_satker' => 4,
+        'admin_gudang' => 2,
+        'admin_satker' => 3,
     ];
 
     /**
@@ -28,7 +27,10 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::with(['satker', 'roles']);
+        $this->authorize('viewAny', User::class);
+
+        $query = $this->administrativeUsersQuery();
+
         $this->applyFilters($query, $request);
 
         // Pagination
@@ -37,18 +39,18 @@ class UserController extends Controller
 
         // Order by ID, but put 'SISWA' (id 40) just before 'POLRESTA MATARAM' (id 30)
         $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
-        $roles = Role::where('name', '!=', 'personil')
+        $roles = Role::whereIn('name', User::ADMINISTRATIVE_ROLES)
             ->orderByRaw($this->buildRoleOrderCaseSql())
             ->get();
 
         // Calculate Stats
         $stats = [
             'total_admin_satker' => $this->countUsersByExistingRoles(['admin_satker']),
-            'total_admin_polda' => $this->countUsersByExistingRoles(['admin', 'superadmin']),
+            'total_superadmin' => $this->countUsersByExistingRoles(['superadmin']),
             'total_admin_gudang' => $this->countUsersByExistingRoles(['admin_gudang']),
             'total_personil' => $this->countUsersByExistingRoles(['personil']),
-            'active_users' => User::where('is_active', true)->count(),
-            'inactive_users' => User::where('is_active', false)->count(),
+            'active_users' => $this->administrativeUsersQuery()->where('is_active', true)->count(),
+            'inactive_users' => $this->administrativeUsersQuery()->where('is_active', false)->count(),
         ];
 
         return view('admin.users.index', compact('users', 'satkers', 'roles', 'stats', 'perPage'));
@@ -79,11 +81,32 @@ class UserController extends Controller
         return Role::whereIn('name', $roleNames)->count() === count($roleNames);
     }
 
+    private function administrativeUsersQuery()
+    {
+        return User::with(['satker', 'roles'])
+            ->whereHas('roles', function ($query) {
+                $query->whereIn('name', User::ADMINISTRATIVE_ROLES);
+            });
+    }
+
+    private function rejectPersonnelManagement(User $user)
+    {
+        if (! $user->hasRole('personil')) {
+            return null;
+        }
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('error', 'Akun personil dikelola melalui menu Data Personel.');
+    }
+
     /**
      * Store a newly created resource in storage.
      */
     public function store(StoreUserRequest $request)
     {
+        $this->authorize('create', User::class);
+
         $validated = $request->validated();
 
         $user = User::create($this->buildUserPayload($validated, true));
@@ -100,6 +123,12 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user)
     {
+        $this->authorize('update', $user);
+
+        if ($response = $this->rejectPersonnelManagement($user)) {
+            return $response;
+        }
+
         $validated = $request->validated();
         $user->update($this->buildUserPayload($validated, $request->has('is_active')));
 
@@ -116,6 +145,12 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        $this->authorize('delete', $user);
+
+        if ($response = $this->rejectPersonnelManagement($user)) {
+            return $response;
+        }
+
         // Prevent deleting self
         if (auth()->id() === $user->id) {
             return redirect()->route('admin.users.index')->with('error', 'Tidak dapat menghapus akun sendiri.');
@@ -148,7 +183,7 @@ class UserController extends Controller
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
             // Example row
-            fputcsv($file, ['admin.kapor@gmail.com', 'Nama Admin', '08123456789', 'admin', 'password']);
+            fputcsv($file, ['admin.gudang.kapor@gmail.com', 'Admin Gudang', '08123456789', 'admin_gudang', 'Q7@vLp2#']);
             fclose($file);
         };
 
@@ -298,7 +333,7 @@ class UserController extends Controller
             return false;
         }
 
-        if (! Role::where('name', $row['role'])->exists()) {
+        if (! in_array($row['role'], User::ADMINISTRATIVE_ROLES, true)) {
             $errors[] = "Role '{$row['role']}' tidak valid.";
 
             return false;
@@ -308,12 +343,7 @@ class UserController extends Controller
             'password' => [
                 'required',
                 'string',
-                Password::min(12)
-                    ->letters()
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols()
-                    ->uncompromised(),
+                Password::defaults(),
             ],
         ], [
             'password.required' => 'Password wajib diisi.',

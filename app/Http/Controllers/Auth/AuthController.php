@@ -28,7 +28,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Handle authentication using Gmail for admins and NRP/NIP for personil.
+     * Handle authentication using Gmail for administrative users and NRP/NIP for personil.
      */
     public function login(Request $request): RedirectResponse
     {
@@ -110,7 +110,7 @@ class AuthController extends Controller
             ->first();
 
         if ($user && $user->usesEmailLogin() && filled($user->email)) {
-            return $this->loginErrorResponse('Akun admin harus login menggunakan Gmail yang terdaftar.');
+            return $this->loginErrorResponse('Akun administratif harus login menggunakan Gmail yang terdaftar.');
         }
 
         if (! $user) {

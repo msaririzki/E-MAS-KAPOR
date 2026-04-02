@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\HandlesUserAccountFields;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends FormRequest
 {
@@ -30,7 +32,7 @@ class StoreUserRequest extends FormRequest
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'password' => $this->adminPasswordRules(),
-            'role' => 'required|exists:roles,name',
+            'role' => ['required', Rule::in(User::ADMINISTRATIVE_ROLES)],
             'satker_id' => 'nullable|exists:satkers,id',
         ], $this->userAccountFieldRules($isPersonnel));
     }

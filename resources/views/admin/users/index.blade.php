@@ -44,7 +44,7 @@
                     <label>Gmail</label>
                     <input type="email" name="email" value="{{ old('email') }}"
                         class="form-input-simple @error('email') is-invalid @enderror"
-                        placeholder="Contoh: admin.kapor@gmail.com" required>
+                        placeholder="Contoh: superadmin.kapor@gmail.com" required>
                     @error('email') <span class="error-msg">{{ $message }}</span> @enderror
                 </div>
                 <div class="form-group-simple">
@@ -63,6 +63,9 @@
                          <button type="button" class="password-toggle-simple" onclick="togglePassword('inline_password', this)">
                              <i class="ri-eye-line"></i>
                          </button>
+                     </div>
+                     <div style="margin-top: 8px; font-size: 12px; color: #6B7280;">
+                         Minimal 8 karakter, gunakan huruf besar, huruf kecil, angka, dan simbol.
                      </div>
                      @error('password') <span class="error-msg">{{ $message }}</span> @enderror
                  </div>
@@ -94,7 +97,7 @@
                          <input type="hidden" name="role" id="role_input" value="{{ old('role') }}" required>
                      </div>
                      <div style="margin-top: 8px; font-size: 12px; color: #6B7280;">
-                         Superadmin dan seluruh admin login memakai Gmail. Personil tetap dikelola dari Data Personel dengan NRP/NIP.
+                         Superadmin, Admin Satker, dan Admin Gudang login memakai Gmail. Akun personil dibuat dari Data Personel dan login dengan NRP/NIP.
                      </div>
                      @error('role') <span class="error-msg">{{ $message }}</span> @enderror
                  </div>
@@ -110,7 +113,7 @@
                      @error('phone') <span class="error-msg">{{ $message }}</span> @enderror
                  </div>
                  <div class="form-group-simple">
-                     <label>Satker (Untuk Admin Satker / Personil)</label>
+                     <label>Satker (Untuk Akun Administratif)</label>
                      <div class="custom-select form-input-simple @error('satker_id') is-invalid @enderror" 
                           onclick="toggleDropdown(this)" id="satkerSelect">
                          <div class="select-trigger">
@@ -186,8 +189,8 @@
             <i class="ri-admin-line"></i>
         </div>
         <div class="stat-content">
-            <span class="stat-label">Admin Polda</span>
-            <span class="stat-number">{{ $stats['total_admin_polda'] }}</span>
+            <span class="stat-label">Superadmin</span>
+            <span class="stat-number">{{ $stats['total_superadmin'] }}</span>
         </div>
     </div>
     <div class="stat-card">

@@ -108,8 +108,8 @@
                 </div>
             </div>
 
-            {{-- [3] DROPDOWN: LAINNYA (admin only) --}}
-            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superadmin'))
+            {{-- [3] DROPDOWN: LAINNYA (superadmin only) --}}
+            @if(auth()->user()->hasRole('superadmin'))
             <div class="dropdown-container" id="moreActionsDropdown" style="position: relative;">
                 <button type="button" class="btn btn-success" onclick="this.parentElement.classList.toggle('open')">
                     <span style="display: flex; align-items: center; gap: 6px;">
@@ -798,9 +798,9 @@
 </div>
 
 {{-- ============================================================ --}}
-{{-- Modal Export Personel (Admin: pilih satker, Admin Satker: skip) --}}
+{{-- Modal Export Personel (Superadmin: pilih satker, Admin Satker: skip) --}}
 {{-- ============================================================ --}}
-@if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superadmin'))
+@if(auth()->user()->hasRole('superadmin'))
 <div id="exportPersonnelModal" class="modal">
     <div class="modal-content" style="max-width: 480px;">
         <div class="modal-header">
@@ -900,7 +900,7 @@
                     </div>
                 </div>
 
-                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superadmin'))
+                @if(auth()->user()->hasRole('superadmin'))
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label style="font-weight: 700; color: #374151;">PILIH SATKER TUJUAN <span style="color: #EF4444;">*</span></label>
                     <div class="custom-search-select" style="position: relative; margin-top: 8px;">

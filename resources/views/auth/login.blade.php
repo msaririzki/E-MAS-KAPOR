@@ -440,7 +440,7 @@
             <div class="card-form">
                 <div class="form-header">
                     <h2>Selamat Datang</h2>
-                    <p>Superadmin dan admin login dengan Gmail, personil tetap menggunakan NRP/NIP.</p>
+                    <p>Superadmin, Admin Satker, dan Admin Gudang login dengan Gmail. Personil login memakai NRP/NIP.</p>
                 </div>
 
                 @if($errors->any())

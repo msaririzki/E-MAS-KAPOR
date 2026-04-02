@@ -16,7 +16,7 @@ class AdminUserManagementGmailTest extends TestCase
     {
         parent::setUp();
 
-        foreach (['superadmin', 'admin', 'admin_gudang', 'admin_satker', 'personil'] as $roleName) {
+        foreach (['superadmin', 'admin_gudang', 'admin_satker', 'personil'] as $roleName) {
             Role::findOrCreate($roleName);
         }
     }
@@ -37,24 +37,24 @@ class AdminUserManagementGmailTest extends TestCase
         $superadmin->assignRole('superadmin');
 
         $response = $this->actingAs($superadmin)->post(route('admin.users.store'), [
-            'email' => 'admin.baru@gmail.com',
-            'name' => 'Admin Baru',
+            'email' => 'admin.gudang.baru@gmail.com',
+            'name' => 'Admin Gudang Baru',
             'phone' => '081234567890',
-            'password' => 'T9!qR2#vLm8@Xp',
-            'role' => 'admin',
+            'password' => 'Q7@vLp2#',
+            'role' => 'admin_gudang',
             'satker_id' => $satker->id,
         ]);
 
         $response->assertRedirect(route('admin.users.index'));
         $this->assertDatabaseHas('users', [
-            'email' => 'admin.baru@gmail.com',
-            'name' => 'Admin Baru',
+            'email' => 'admin.gudang.baru@gmail.com',
+            'name' => 'Admin Gudang Baru',
             'nrp_nip' => null,
         ]);
 
-        $createdUser = User::where('email', 'admin.baru@gmail.com')->firstOrFail();
+        $createdUser = User::where('email', 'admin.gudang.baru@gmail.com')->firstOrFail();
 
-        $this->assertTrue($createdUser->hasRole('admin'));
+        $this->assertTrue($createdUser->hasRole('admin_gudang'));
         $this->assertTrue($createdUser->usesEmailLogin());
     }
 }

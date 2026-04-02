@@ -9,7 +9,6 @@ use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
@@ -991,7 +990,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $ranksById = Rank::all()->keyBy('id');
         $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
         $existingPersonnel = Personnel::whereIn('nrp', $allNrp)->get()->keyBy('nrp');
-        $existingUsers = User::whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
+        $existingUsers = User::with('personnel')->whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
 
         // ── Satu transaksi besar untuk semua insert/update ───────────────────
         DB::transaction(function () use (
@@ -1030,30 +1029,27 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 try {
                     // Jika NRP kosong, generate ID sementara untuk akun user (login)
                     // tapi simpan personnels.nrp sebagai NULL agar tampil "—" di UI
-                    $effectiveNrp = $nrp;
                     $isEmptyNrp = empty($nrp);
                     $isDuplicateNrp = ! empty($data['duplicate_nrp']);
 
-                    if ($isEmptyNrp || $isDuplicateNrp) {
-                        $effectiveNrp = 'TEMP-'.strtoupper(substr(md5($fullName.$idx.time()), 0, 8));
-                    }
+                    $hasNrpConflict = $isDuplicateNrp || ! empty($data['db_duplicate']);
+                    $canCreateLoginAccount = ! $isEmptyNrp && ! $hasNrpConflict;
 
                     // Jika NRP duplikat dalam batch, jangan lookup existing — buat record baru
-                    $personnel = ($isEmptyNrp || $isDuplicateNrp) ? null : $existingPersonnel->get($effectiveNrp);
+                    $personnel = ($isEmptyNrp || $isDuplicateNrp) ? null : $existingPersonnel->get($nrp);
 
                     if (! $personnel) {
                         // ── User baru: bcrypt cost=4 (10× lebih cepat, password bisa diubah nanti) ──
-                        $user = $existingUsers->get($effectiveNrp);
-                        if (! $user) {
-                            $user = User::create([
-                                'name' => $fullName,
-                                'nrp_nip' => $effectiveNrp,
-                                'password' => password_hash($effectiveNrp, PASSWORD_BCRYPT, ['cost' => 4]),
-                                'satker_id' => $satker->id,
-                                'is_active' => true,
-                            ]);
-                            $user->assignRole('personil');
-                            $existingUsers->put($effectiveNrp, $user);
+                        $user = null;
+                        if ($canCreateLoginAccount) {
+                            $user = User::createOrUpdatePersonnelAccount(
+                                $existingUsers->get($nrp),
+                                $nrp,
+                                $fullName,
+                                $satker->id,
+                                true,
+                            );
+                            $existingUsers->put($nrp, $user);
                         }
 
                         // Tentukan personnel_type berdasarkan rank atau default
@@ -1065,12 +1061,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             $personnelType = 'PNS';
                         }
 
-                        // Simpan NRP asli untuk personil, tapi NRP duplikat disimpan NULL
-                        // agar tidak bentrok di database
-                        $saveNrp = $isEmptyNrp ? null : ($isDuplicateNrp ? $nrp : $effectiveNrp);
+                        $saveNrp = $isEmptyNrp ? null : $nrp;
 
                         $personnel = Personnel::create([
-                            'user_id' => $user->id,
+                            'user_id' => $user?->id,
                             'nrp' => $saveNrp,
                             'full_name' => $fullName,
                             'rank_id' => $rank ? $rank->id : null,
@@ -1089,7 +1083,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ]);
                         if (! $isDuplicateNrp) {
-                            $existingPersonnel->put($effectiveNrp, $personnel);
+                            $existingPersonnel->put($nrp, $personnel);
                         }
                     } else {
                         // ── Update personel yang sudah ada ──
@@ -1112,6 +1106,26 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             $updateData['rank_id'] = $rank->id;
                         }
                         $personnel->update($updateData);
+
+                        if ($canCreateLoginAccount) {
+                            $user = User::createOrUpdatePersonnelAccount(
+                                $personnel->user ?? $existingUsers->get($nrp),
+                                $nrp,
+                                $fullName,
+                                $satker->id,
+                                (bool) $personnel->is_active,
+                            );
+                            $personnel->forceFill([
+                                'user_id' => $user->id,
+                            ])->save();
+                            $existingUsers->put($nrp, $user);
+                        } elseif ($personnel->user) {
+                            $personnel->user->update([
+                                'name' => $fullName,
+                                'satker_id' => $satker->id,
+                                'is_active' => (bool) $personnel->is_active,
+                            ]);
+                        }
                     }
 
                     // Simpan ukuran kapor
@@ -1264,14 +1278,13 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     $personnel = Personnel::where('nrp', $nrp)->first();
 
                     if (! $personnel) {
-                        $user = User::create([
-                            'name' => $fullName,
-                            'nrp_nip' => $nrp,
-                            'password' => Hash::make($nrp),
-                            'satker_id' => $satker->id,
-                            'is_active' => true,
-                        ]);
-                        $user->assignRole('personil');
+                        $user = User::createOrUpdatePersonnelAccount(
+                            null,
+                            $nrp,
+                            $fullName,
+                            $satker->id,
+                            true,
+                        );
 
                         $personnel = Personnel::create([
                             'user_id' => $user->id,
@@ -1298,6 +1311,17 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'keterangan' => $keterangan,
                             'gender' => $gender,
                         ]);
+
+                        $user = User::createOrUpdatePersonnelAccount(
+                            $personnel->user,
+                            $nrp,
+                            $fullName,
+                            $satker->id,
+                            (bool) $personnel->is_active,
+                        );
+                        $personnel->forceFill([
+                            'user_id' => $user->id,
+                        ])->save();
                     }
 
                     $kaporSizes = $personnel->kapor_sizes ?? [];

@@ -27,7 +27,7 @@ class WarehouseController extends Controller
                 ->orWhere('unit', 'like', "%{$request->search}%");
         }
 
-        $perPage = $request->input('per_page', 15);
+        $perPage = $request->input('per_page', 10);
         $items = $viewQuery->orderBy('name', 'asc')->paginate($perPage)->appends($request->query());
 
         // Basic stats for view

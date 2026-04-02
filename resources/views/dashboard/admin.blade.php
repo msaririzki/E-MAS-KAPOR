@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Admin')
-@section('page-title', 'Dashboard Admin')
+@section('title', 'Dashboard Admin Gudang')
+@section('page-title', 'Dashboard Admin Gudang')
 @section('page-subtitle', 'Tahun Anggaran ' . $stats['fiscal_year'])
 
 @section('content')
@@ -94,11 +94,9 @@
             <h3><i class="ri-flashlight-line" style="margin-right:8px; color:var(--accent);"></i> Aksi Cepat</h3>
         </div>
         <div class="card-body" style="display:flex; gap:12px; flex-wrap:wrap;">
-            <a href="{{ route('admin.users.index') }}" class="btn btn-primary"><i class="ri-group-line"></i> Kelola User</a>
-            <a href="{{ route('admin.satkers.index') }}" class="btn btn-outline"><i class="ri-building-2-line"></i> Lihat
-                Satker</a>
-            <a href="{{ route('admin.reports') }}" class="btn btn-outline"><i class="ri-file-chart-line"></i> Lihat
-                Laporan</a>
+            <a href="{{ route('admin.warehouse-items.index') }}" class="btn btn-primary"><i class="ri-archive-line"></i> Data Gudang</a>
+            <a href="{{ route('admin.warehouse-items.dispense-form') }}" class="btn btn-outline"><i class="ri-inbox-unarchive-line"></i> Pengeluaran Barang</a>
+            <a href="{{ route('admin.warehouse-items.reports') }}" class="btn btn-outline"><i class="ri-file-chart-line"></i> Laporan Gudang</a>
         </div>
     </div>
 @endsection

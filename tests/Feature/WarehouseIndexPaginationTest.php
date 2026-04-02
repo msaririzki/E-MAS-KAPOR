@@ -17,12 +17,12 @@ class WarehouseIndexPaginationTest extends TestCase
     {
         parent::setUp();
 
-        if (! Role::where('name', 'admin')->exists()) {
-            Role::create(['name' => 'admin']);
+        if (! Role::where('name', 'admin_gudang')->exists()) {
+            Role::create(['name' => 'admin_gudang']);
         }
     }
 
-    public function test_admin_can_render_warehouse_index_with_paginated_items(): void
+    public function test_admin_gudang_can_render_warehouse_index_with_paginated_items(): void
     {
         $satker = Satker::create([
             'name' => 'Polda NTB',
@@ -30,10 +30,10 @@ class WarehouseIndexPaginationTest extends TestCase
             'sort_order' => 1,
         ]);
 
-        $admin = User::factory()->create([
+        $adminGudang = User::factory()->create([
             'satker_id' => $satker->id,
         ]);
-        $admin->assignRole('admin');
+        $adminGudang->assignRole('admin_gudang');
 
         foreach (range(1, 11) as $number) {
             $item = WarehouseItem::create([
@@ -48,7 +48,7 @@ class WarehouseIndexPaginationTest extends TestCase
             ]);
         }
 
-        $response = $this->actingAs($admin)->get(route('admin.warehouse-items.index'));
+        $response = $this->actingAs($adminGudang)->get(route('admin.warehouse-items.index'));
 
         $response->assertOk();
         $response->assertSeeText('Data Gudang');

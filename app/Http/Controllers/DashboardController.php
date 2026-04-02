@@ -31,7 +31,7 @@ class DashboardController extends Controller
             return $this->superadminDashboard($request);
         }
 
-        if ($user->hasAnyRole(['admin', 'admin_gudang'])) {
+        if ($user->hasRole('admin_gudang')) {
             return $this->adminDashboard();
         }
 

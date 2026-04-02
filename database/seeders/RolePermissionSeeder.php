@@ -53,17 +53,6 @@ class RolePermissionSeeder extends Seeder
         $superadmin = Role::findOrCreate('superadmin', 'web');
         $superadmin->syncPermissions(Permission::all());
 
-        // Admin: Global tapi tidak bisa kelola superadmin & system settings
-        $admin = Role::findOrCreate('admin', 'web');
-        $admin->syncPermissions([
-            'manage-non-super-users',
-            'manage-satker-personnel',
-            'view-satker-data',
-            'view-global-reports',
-            'manage-warehouse',
-            'view-own-profile',
-        ]);
-
         // Admin Gudang: fokus pada pengelolaan gudang
         $adminGudang = Role::findOrCreate('admin_gudang', 'web');
         $adminGudang->syncPermissions([
@@ -85,5 +74,13 @@ class RolePermissionSeeder extends Seeder
             'submit-kapor-sizes',
             'view-own-profile',
         ]);
+
+        $legacyAdminRole = Role::where('name', 'admin')->first();
+        if ($legacyAdminRole) {
+            $legacyAdminRole->syncPermissions([]);
+            $legacyAdminRole->delete();
+        }
+
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

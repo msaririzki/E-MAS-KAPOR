@@ -19,7 +19,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Facades\Excel;
 
 class PersonnelController extends Controller
@@ -151,7 +150,7 @@ class PersonnelController extends Controller
                     ])
                     ->filter(function (Personnel $personnel) use ($incompleteScope) {
                         $isSizeIncomplete = ! $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel);
-                        
+
                         if ($incompleteScope === 'size_only') {
                             return $isSizeIncomplete;
                         }
@@ -243,14 +242,13 @@ class PersonnelController extends Controller
             }
 
             // 1. Create User Account
-            $user = User::create([
-                'name' => $validated['full_name'],
-                'nrp_nip' => $validated['nrp'],
-                'password' => Hash::make($validated['nrp']), // NRP as default password
-                'satker_id' => $validated['satker_id'],
-                'is_active' => true,
-            ]);
-            $user->assignRole('personil');
+            $user = User::createOrUpdatePersonnelAccount(
+                null,
+                $validated['nrp'],
+                $validated['full_name'],
+                $validated['satker_id'],
+                true,
+            );
 
             // 2. Create Personnel Record
             $personnelData = $validated;
@@ -327,15 +325,17 @@ class PersonnelController extends Controller
             // Update Personnel
             $personnel->update($validated);
 
-            // Sync User Account if exists
-            if ($personnel->user) {
-                $personnel->user->update([
-                    'name' => $validated['full_name'],
-                    'nrp_nip' => $validated['nrp'],
-                    'satker_id' => $validated['satker_id'],
-                    'is_active' => $request->has('is_active') ? $request->is_active : $personnel->is_active,
-                ]);
-            }
+            $user = User::createOrUpdatePersonnelAccount(
+                $personnel->user,
+                $validated['nrp'],
+                $validated['full_name'],
+                $validated['satker_id'],
+                (bool) ($validated['is_active'] ?? $personnel->is_active),
+            );
+
+            $personnel->forceFill([
+                'user_id' => $user->id,
+            ])->save();
 
             DB::commit();
 

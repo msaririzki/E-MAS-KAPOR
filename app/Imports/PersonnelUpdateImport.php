@@ -8,7 +8,6 @@ use App\Models\Satker;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
@@ -492,23 +491,12 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         }
 
                         // ─ Jika cocok via nama + NRP baru diisi → simpan NRP ─
-                        if (($data['match_by'] ?? '') === 'name_add_nrp' && ! empty($data['nrp'])) {
+                        $hasNrpIssue = ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']);
+                        $canCreateLoginAccount = ! empty($data['nrp']) && ! $hasNrpIssue;
+
+                        if (($data['match_by'] ?? '') === 'name_add_nrp' && $canCreateLoginAccount) {
                             $updateData['nrp'] = $data['nrp'];
 
-                            // Buat/update user account dengan NRP sebagai username
-                            if (! $personnel->user) {
-                                $user = User::create([
-                                    'name' => $data['full_name'] ?: $personnel->full_name,
-                                    'username' => $data['nrp'],
-                                    'email' => $data['nrp'].'@polda-ntb.local',
-                                    'password' => Hash::make($data['nrp']),
-                                    'role' => 'personil',
-                                    'satker_id' => $personnel->satker_id,
-                                ]);
-                                $updateData['user_id'] = $user->id;
-                            } else {
-                                $personnel->user->update(['name' => $data['full_name'] ?: $personnel->full_name]);
-                            }
                         }
 
                         // Merge ukuran kapor
@@ -519,8 +507,6 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                             $updateData['kapor_sizes'] = $merged;
                         }
 
-                        $hasNrpIssue = ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']);
-
                         if ($hasNrpIssue) {
                             $updateData['nrp_issue_note'] = $this->buildNrpIssueNote($data);
                         } else {
@@ -530,27 +516,38 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
 
                         $personnel->update($updateData);
 
-                        if ($personnel->user && ! empty($data['full_name'])) {
-                            $personnel->user->update(['name' => $data['full_name']]);
+                        if ($canCreateLoginAccount) {
+                            $user = User::createOrUpdatePersonnelAccount(
+                                $personnel->user,
+                                $data['nrp'],
+                                $data['full_name'] ?: $personnel->full_name,
+                                $personnel->satker_id,
+                                (bool) $personnel->is_active,
+                            );
+                            $personnel->forceFill([
+                                'user_id' => $user->id,
+                            ])->save();
+                        } elseif ($personnel->user && ! empty($data['full_name'])) {
+                            $personnel->user->update([
+                                'name' => $data['full_name'],
+                                'satker_id' => $personnel->satker_id,
+                                'is_active' => (bool) $personnel->is_active,
+                            ]);
                         }
 
                         $successCount++;
                     } else {
                         // ── INSERT BARU ─────────────────────────────────────
                         $nrp = $data['nrp'] ?: null;
-                        $password = $nrp ?? ('kapor'.date('Y'));
-
+                        $hasNrpIssue = ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']);
                         $user = null;
-                        if ($nrp) {
-                            $user = User::firstOrCreate(
-                                ['username' => $nrp],
-                                [
-                                    'name' => $data['full_name'],
-                                    'email' => $nrp.'@polda-ntb.local',
-                                    'password' => Hash::make($password),
-                                    'role' => 'personil',
-                                    'satker_id' => $this->satkerId,
-                                ]
+                        if ($nrp && ! $hasNrpIssue) {
+                            $user = User::createOrUpdatePersonnelAccount(
+                                null,
+                                $nrp,
+                                $data['full_name'],
+                                $this->satkerId,
+                                true,
                             );
                         }
 
