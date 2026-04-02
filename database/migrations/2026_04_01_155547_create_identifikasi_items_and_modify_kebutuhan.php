@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('identifikasi_items');
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        Schema::enableForeignKeyConstraints();
 
         // 1. Create the new independent table
         Schema::create('identifikasi_items', function (Blueprint $table) {
@@ -30,11 +30,11 @@ return new class extends Migration
             // Add new column
             $table->foreignId('identifikasi_item_id')->nullable()->constrained('identifikasi_items')->onDelete('cascade');
         });
-        
-        // Note: For existing local test DB, we will just wipe the existing rows in kebutuhan_items 
+
+        // Note: For existing local test DB, we will just wipe the existing rows in kebutuhan_items
         // to avoid foreign key violations when dropping the old column.
         \DB::table('kebutuhan_items')->truncate();
-        
+
         Schema::table('kebutuhan_items', function (Blueprint $table) {
             // Drop foreign keys first to release MySQL index locks
             $table->dropForeign(['kebutuhan_id']);
@@ -42,13 +42,13 @@ return new class extends Migration
 
             // Now safe to drop the old unique constraint
             $table->dropUnique(['kebutuhan_id', 'kapor_item_id']);
-            
+
             // Drop the old column
             $table->dropColumn('kapor_item_id');
 
             // Re-add the foreign key for kebutuhan_id
             $table->foreign('kebutuhan_id')->references('id')->on('kebutuhans')->cascadeOnDelete();
-            
+
             // Add new unique constraint for the new column
             $table->unique(['kebutuhan_id', 'identifikasi_item_id'], 'kebutuhan_identifikasi_unique');
         });
