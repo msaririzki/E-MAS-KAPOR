@@ -1239,13 +1239,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                         }
 
                         // Tentukan personnel_type berdasarkan rank atau default
-                        $personnelType = 'Polri';
-                        if ($rank && $rank->category === 'PNS') {
-                            $personnelType = 'PNS';
-                        } elseif (! $rank && ! empty($golongan)) {
-                            // Jika tidak ada pangkat tapi ada golongan, kemungkinan PNS
-                            $personnelType = 'PNS';
-                        }
+                        $personnelType = self::resolvePersonnelType($rank, $golongan);
 
                         $saveNrp = $isEmptyNrp ? null : $nrp;
 
@@ -1278,6 +1272,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'satker_id' => $satker->id,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
+                            'personnel_type' => self::resolvePersonnelType($rank, $golongan),
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
                             'keterangan_2' => $keterangan2 ?: null,
@@ -1405,6 +1400,19 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         ]);
     }
 
+    public static function resolvePersonnelType(?Rank $rank, string $golongan = ''): string
+    {
+        if ($rank && $rank->category === 'PNS') {
+            return 'PNS';
+        }
+
+        if (! $rank && ! empty(trim($golongan))) {
+            return 'PNS';
+        }
+
+        return 'Polri';
+    }
+
     /**
      * ToCollection — dipanggil oleh Maatwebsite Excel saat import langsung.
      * (Dipertahankan untuk kompatibilitas, tapi alur utama kini via preview)
@@ -1480,7 +1488,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'satker_id' => $satker->id,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
-                            'personnel_type' => $rank->category === 'PNS' ? 'PNS' : 'Polri',
+                            'personnel_type' => self::resolvePersonnelType($rank, $golongan),
                             'gender' => $gender,
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
@@ -1493,6 +1501,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'satker_id' => $satker->id,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
+                            'personnel_type' => self::resolvePersonnelType($rank, $golongan),
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
                             'gender' => $gender,

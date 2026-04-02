@@ -469,6 +469,10 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         if (! empty($data['bagian'])) {
                             $updateData['bagian'] = $data['bagian'];
                         }
+                        $updateData['personnel_type'] = PersonnelImport::resolvePersonnelType(
+                            ! empty($data['rank_id']) ? Rank::find($data['rank_id']) : null,
+                            (string) ($data['golongan'] ?? ''),
+                        );
                         if (! empty($data['golongan'])) {
                             $updateData['golongan'] = $data['golongan'];
                         }
@@ -560,6 +564,10 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                             'nrp' => $nrp,
                             'jabatan' => $data['jabatan'] ?: null,
                             'bagian' => $data['bagian'] ?: null,
+                            'personnel_type' => PersonnelImport::resolvePersonnelType(
+                                ! empty($data['rank_id']) ? Rank::find($data['rank_id']) : null,
+                                (string) ($data['golongan'] ?? ''),
+                            ),
                             'golongan' => $data['golongan'] ?: null,
                             'gender' => $data['gender'] ?: 'L',
                             'keterangan' => $data['keterangan'] ?: null,
