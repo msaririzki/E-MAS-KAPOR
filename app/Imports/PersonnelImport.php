@@ -11,10 +11,11 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 
-class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleSheets, WithStartRow
+class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithCalculatedFormulas, WithMultipleSheets, WithStartRow
 {
     protected $successCount = 0;
 
@@ -415,7 +416,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         return false;
     }
 
-    public static function findRankWithCorrection(string $rankName, Collection &$ranks, string $golongan = '', bool $isSiswaSatker = false): array
+    public static function findRankWithCorrection(string $rankName, Collection &$ranks, string $golongan = '', ?string $satkerCode = null): array
     {
         $upperInput = strtoupper(trim($rankName));
 
@@ -473,15 +474,8 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             return ['rank' => $rank, 'corrected' => false, 'original' => $rankName, 'corrected_to' => null];
         }
 
-        // --- AUTO-CREATE UNTUK SATKER SISWA ---
-        // Jika satker adalah SISWA, KITA LEWATI SEMUA KOREKSI (Correction Map & Levenshtein)
-        // dan langsung buat rank baru sesuai input asli dari Excel (AKPOL tetap AKPOL, dll)
-        if ($isSiswaSatker && ! empty($upperInput)) {
-            $newRank = \App\Models\Rank::create([
-                'name' => $upperInput,
-                'category' => 'SISWA',
-                'sort_order' => 50,
-            ]);
+        if (self::shouldPreserveSatkerSpecificRank($satkerCode, $upperInput)) {
+            $newRank = self::createSatkerSpecificRank($upperInput, $normalizedGolongan, $satkerCode);
             $ranks->put(strtoupper($upperInput), $newRank);
 
             return ['rank' => $newRank, 'corrected' => false, 'original' => $rankName, 'corrected_to' => null];
@@ -580,6 +574,84 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         return null;
     }
 
+    private static function shouldPreserveSatkerSpecificRank(?string $satkerCode, string $upperInput): bool
+    {
+        if (empty($satkerCode) || empty($upperInput)) {
+            return false;
+        }
+
+        $normalizedSatkerCode = strtoupper(trim($satkerCode));
+
+        if ($normalizedSatkerCode === 'SISWA') {
+            return true;
+        }
+
+        return in_array($upperInput, self::getSatkerSpecificRankNames($normalizedSatkerCode), true);
+    }
+
+    private static function getSatkerSpecificRankNames(string $satkerCode): array
+    {
+        return match ($satkerCode) {
+            'POLDA-NTB' => [
+                'BA BRIMOB',
+                'BA PTU',
+                'BA REKPRO',
+                'BAKOMSUS AKUTANSI',
+                'BA POLAIR',
+                'BAKOMSUS GIZI',
+                'BAKOMSUS HUKUM',
+                'BAKOMSUS NAKES',
+                'BAKOMSUS TATA BOGA',
+                'TAMTAMA POLRI',
+            ],
+            default => [],
+        };
+    }
+
+    private static function createSatkerSpecificRank(string $rankName, string $normalizedGolongan, ?string $satkerCode): Rank
+    {
+        $category = self::resolveSatkerSpecificRankCategory($rankName, $normalizedGolongan, $satkerCode);
+
+        return Rank::firstOrCreate(
+            ['name' => $rankName],
+            [
+                'category' => $category,
+                'sort_order' => 50,
+            ],
+        );
+    }
+
+    private static function resolveSatkerSpecificRankCategory(string $rankName, string $normalizedGolongan, ?string $satkerCode): string
+    {
+        if (strtoupper((string) $satkerCode) === 'SISWA') {
+            return 'SISWA';
+        }
+
+        if ($normalizedGolongan === 'PATI') {
+            return 'PATI';
+        }
+
+        if ($normalizedGolongan === 'PAMEN') {
+            return 'PAMEN';
+        }
+
+        if ($normalizedGolongan === 'PAMA') {
+            return 'PAMA';
+        }
+
+        if ($normalizedGolongan === 'PNS') {
+            return 'PNS';
+        }
+
+        // Skema rank saat ini belum memiliki kategori TAMTAMA.
+        // Untuk import satker khusus, fallback aman adalah BINTARA agar data tetap lolos import.
+        if ($normalizedGolongan === 'TAMTAMA' || $rankName === 'TAMTAMA POLRI') {
+            return 'BINTARA';
+        }
+
+        return 'BINTARA';
+    }
+
     public function __construct($satkerId = null)
     {
         $this->satkerId = $satkerId;
@@ -655,11 +727,11 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             ->get(['id', 'nrp', 'full_name', 'satker_id'])
             ->keyBy('nrp');
 
-        $isSiswaSatker = false;
+        $satkerCode = null;
         if ($this->satkerId) {
             $satker = \App\Models\Satker::find($this->satkerId);
-            if ($satker && strtoupper($satker->code) === 'SISWA') {
-                $isSiswaSatker = true;
+            if ($satker) {
+                $satkerCode = strtoupper($satker->code);
             }
         }
 
@@ -842,7 +914,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $gender = ($genderRaw === 'W') ? 'P' : 'L';
 
             // Koreksi pangkat (sekarang menyertakan golongan untuk PPPK)
-            $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan, $isSiswaSatker);
+            $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan, $satkerCode);
 
             // Ukuran kapor (kolom I-Q, index 8-16, ditambah offset jika double-NO)
             $sizes = [
@@ -1263,7 +1335,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             // Gender: P di Excel → L (Laki-laki), W di Excel → P (Perempuan)
             $gender = ($genderRaw === 'W') ? 'P' : 'L';
 
-            $rankResult = self::findRankWithCorrection($rankInput, $ranks);
+            $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan, $satker?->code);
             $rank = $rankResult['rank'];
 
             if (! $rank) {

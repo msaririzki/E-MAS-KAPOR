@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 
@@ -27,7 +28,7 @@ use Maatwebsite\Excel\Concerns\WithStartRow;
  *  re-upload, NRP itu belum ada di DB sehingga jika hanya cek NRP, sistem akan menganggap
  *  orang tersebut baru dan membuat duplikat. Matching nama mencegah hal ini.
  */
-class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMultipleSheets, WithStartRow
+class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithCalculatedFormulas, WithMultipleSheets, WithStartRow
 {
     protected int $satkerId;
 
@@ -120,6 +121,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
     public function generatePreview(Collection $rows): array
     {
         $ranks = Rank::all()->keyBy(fn ($r) => strtoupper($r->name));
+        $satker = Satker::find($this->satkerId);
 
         // Data seluruh personel dari semua satker untuk deteksi cross-database NRP duplikat
         $allNrpData = Personnel::whereNotNull('nrp')
@@ -197,7 +199,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
 
             $gender = ($genderRaw === 'W') ? 'P' : 'L';
 
-            $rankResult = PersonnelImport::findRankWithCorrection($rankInput, $ranks, $golongan);
+            $rankResult = PersonnelImport::findRankWithCorrection($rankInput, $ranks, $golongan, $satker->code ?? null);
 
             $sizes = [
                 'topi' => trim($row[8] ?? ''),
