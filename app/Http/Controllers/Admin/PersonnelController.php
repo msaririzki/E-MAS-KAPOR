@@ -421,7 +421,7 @@ class PersonnelController extends Controller
 
         try {
             $import = new PersonnelImport($request->satker_id);
-            $collection = Excel::toCollection($import, $request->file('file'));
+            $collection = PersonnelImport::loadPreviewSheets($request->file('file')->getRealPath());
 
             // Proses setiap sheet terpisah agar deteksi kolom (double-NO) per-sheet
             // Sheet POLRI dan PNS bisa punya layout berbeda
@@ -625,7 +625,7 @@ class PersonnelController extends Controller
 
         try {
             $import = new PersonnelUpdateImport((int) $request->satker_id);
-            $collection = Excel::toCollection($import, $request->file('file'));
+            $collection = PersonnelImport::loadPreviewSheets($request->file('file')->getRealPath());
 
             $dataRows = collect();
             foreach ($collection as $sheetRows) {

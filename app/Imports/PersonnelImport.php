@@ -11,11 +11,14 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStartRow;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithCalculatedFormulas, WithMultipleSheets, WithStartRow
+class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleSheets, WithStartRow
 {
     protected $successCount = 0;
 
@@ -655,6 +658,114 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithCalculate
     public function __construct($satkerId = null)
     {
         $this->satkerId = $satkerId;
+    }
+
+    public static function loadPreviewSheets(string $filePath, int $startRow = 11): Collection
+    {
+        $dataReader = IOFactory::createReaderForFile($filePath);
+        if (method_exists($dataReader, 'setReadDataOnly')) {
+            $dataReader->setReadDataOnly(true);
+        }
+
+        $rawReader = IOFactory::createReaderForFile($filePath);
+
+        $spreadsheet = $dataReader->load($filePath);
+        $rawSpreadsheet = $rawReader->load($filePath);
+        $sheets = collect();
+
+        $sheetCount = $spreadsheet->getSheetCount();
+
+        foreach ([0, 1, 2] as $sheetIndex) {
+            if ($sheetIndex >= $sheetCount) {
+                continue;
+            }
+
+            $worksheet = $spreadsheet->getSheet($sheetIndex);
+            $rawWorksheet = $rawSpreadsheet->getSheet($sheetIndex);
+
+            $highestRow = $worksheet->getHighestRow();
+            $highestColumn = $worksheet->getHighestColumn();
+
+            if ($highestRow < $startRow) {
+                $sheets->push(collect());
+
+                continue;
+            }
+
+            $rows = [];
+            $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
+
+            for ($row = $startRow; $row <= $highestRow; $row++) {
+                $rowValues = [];
+
+                for ($column = 1; $column <= $highestColumnIndex; $column++) {
+                    $coordinate = Coordinate::stringFromColumnIndex($column).$row;
+                    $value = $worksheet->getCell($coordinate)->getValue();
+                    $rowValues[] = self::resolvePreviewCellValue(
+                        $value,
+                        $rawWorksheet,
+                        $rawSpreadsheet,
+                        $coordinate,
+                    );
+                }
+
+                $rows[] = collect($rowValues);
+            }
+
+            $sheets->push(collect($rows));
+        }
+
+        $spreadsheet->disconnectWorksheets();
+        $rawSpreadsheet->disconnectWorksheets();
+        unset($spreadsheet);
+        unset($rawSpreadsheet);
+
+        return $sheets;
+    }
+
+    private static function resolvePreviewCellValue(
+        mixed $value,
+        Worksheet $rawWorksheet,
+        Spreadsheet $rawSpreadsheet,
+        string $coordinate,
+        array $visited = [],
+    ): mixed {
+        if (! is_string($value) || ! str_starts_with(trim($value), '=')) {
+            return $value;
+        }
+
+        $visitedKey = $rawWorksheet->getTitle().'!'.$coordinate;
+        if (isset($visited[$visitedKey])) {
+            return $value;
+        }
+        $visited[$visitedKey] = true;
+
+        $formula = trim($value);
+        if (! preg_match('/^=\s*(?:(?:\'([^\']+)\'|([A-Za-z0-9_ ]+))!)?\$?([A-Z]+)\$?(\d+)$/i', $formula, $matches)) {
+            return $value;
+        }
+
+        $targetSheetName = $matches[1] ?: $matches[2] ?: $rawWorksheet->getTitle();
+        $targetWorksheet = $rawSpreadsheet->getSheetByName($targetSheetName);
+
+        if (! $targetWorksheet instanceof Worksheet) {
+            return $value;
+        }
+
+        $targetCoordinate = strtoupper($matches[3]).$matches[4];
+        $targetValue = $targetWorksheet->getCell($targetCoordinate)->getValue();
+
+        if (is_string($targetValue) && str_starts_with(trim($targetValue), '=')) {
+            return self::resolvePreviewCellValue(
+                $targetValue,
+                $targetWorksheet,
+                $rawSpreadsheet,
+                $targetCoordinate,
+                $visited,
+            );
+        }
+
+        return $targetValue;
     }
 
     /**

@@ -6,7 +6,6 @@ use App\Imports\PersonnelImport;
 use App\Imports\PersonnelUpdateImport;
 use App\Models\Satker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
@@ -22,7 +21,7 @@ class PersonnelImportSatkerSpecificRankTest extends TestCase
 
         try {
             $import = new PersonnelImport($satker->id);
-            $collection = Excel::toCollection($import, $path);
+            $collection = PersonnelImport::loadPreviewSheets($path);
             $preview = $import->generatePreview($collection[0]);
 
             $this->assertCount(2, $preview);
@@ -51,7 +50,7 @@ class PersonnelImportSatkerSpecificRankTest extends TestCase
 
         try {
             $import = new PersonnelUpdateImport($satker->id);
-            $collection = Excel::toCollection($import, $path);
+            $collection = PersonnelImport::loadPreviewSheets($path);
             $preview = $import->generatePreview($collection[0]);
 
             $this->assertCount(2, $preview);

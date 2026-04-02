@@ -10,7 +10,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 
@@ -28,7 +27,7 @@ use Maatwebsite\Excel\Concerns\WithStartRow;
  *  re-upload, NRP itu belum ada di DB sehingga jika hanya cek NRP, sistem akan menganggap
  *  orang tersebut baru dan membuat duplikat. Matching nama mencegah hal ini.
  */
-class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithCalculatedFormulas, WithMultipleSheets, WithStartRow
+class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMultipleSheets, WithStartRow
 {
     protected int $satkerId;
 
