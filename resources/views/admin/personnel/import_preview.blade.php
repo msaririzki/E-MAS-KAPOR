@@ -151,15 +151,14 @@
                 @foreach($preview as $i => $row)
                 @php
                     $hasDupe = !empty($row['db_duplicate']) || !empty($row['duplicate_nrp']);
-                    $trClass = match(true) {
-                        $hasDupe => 'row-duplicate',
-                        $row['status'] === 'corrected' => 'row-corrected',
-                        $row['status'] === 'error' => 'row-error',
-                        default => 'row-ok',
-                    };
-                    $dataStatus = $hasDupe ? 'duplicate' : $row['status'];
+                    $trClasses = collect([
+                        $row['status'] === 'corrected' ? 'row-corrected' : null,
+                        $row['status'] === 'error' ? 'row-error' : null,
+                        $row['status'] === 'ok' ? 'row-ok' : null,
+                        $hasDupe ? 'row-duplicate' : null,
+                    ])->filter()->implode(' ');
                 @endphp
-                <tr class="{{ $trClass }}" id="row-{{ $i }}" data-status="{{ $dataStatus }}">
+                <tr class="{{ $trClasses }}" id="row-{{ $i }}" data-status="{{ $row['status'] }}" data-duplicate="{{ $hasDupe ? '1' : '0' }}">
 
                     {{-- HANYA kirim override rank_id untuk baris yang diubah manual.
                          Data lain (nama, nrp, dll) dibaca dari session di server.
@@ -331,7 +330,9 @@ function setFilter(status) {
 
     let visible = 0;
     document.querySelectorAll('#previewTableBody tr[data-status]').forEach(function(tr) {
-        const show = status === 'all' || tr.dataset.status === status;
+        const show = status === 'all'
+            || tr.dataset.status === status
+            || (status === 'duplicate' && tr.dataset.duplicate === '1');
         tr.classList.toggle('hidden-row', !show);
         if (show) visible++;
     });
