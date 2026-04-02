@@ -1181,6 +1181,8 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $rows, $satker, $ranksById, $existingPersonnel, $existingUsers,
             $sizeMapping, &$successCount, &$errorCount, &$errors
         ) {
+            $processedBatchNrps = [];
+
             foreach ($rows as $idx => $data) {
                 $nrp = trim($data['nrp'] ?? '');
                 $fullName = trim($data['full_name'] ?? '');
@@ -1215,8 +1217,9 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     // tapi simpan personnels.nrp sebagai NULL agar tampil "—" di UI
                     $isEmptyNrp = empty($nrp);
                     $isDuplicateNrp = ! empty($data['duplicate_nrp']);
+                    $isBatchDuplicate = ! empty($nrp) && isset($processedBatchNrps[$nrp]);
 
-                    $hasNrpConflict = $isDuplicateNrp || ! empty($data['db_duplicate']);
+                    $hasNrpConflict = $isDuplicateNrp || $isBatchDuplicate || ! empty($data['db_duplicate']);
                     $canCreateLoginAccount = ! $isEmptyNrp && ! $hasNrpConflict;
 
                     // Jika NRP konflik (duplikat di file atau sudah dipakai record lain di DB),
@@ -1262,7 +1265,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
 
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ]);
-                        if (! $isDuplicateNrp) {
+                        if (! $hasNrpConflict) {
                             $existingPersonnel->put($nrp, $personnel);
                         }
                     } else {
@@ -1325,6 +1328,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
 
                     $personnel->kapor_sizes = $kaporSizes;
                     $personnel->save();
+
+                    if (! empty($nrp)) {
+                        $processedBatchNrps[$nrp] = true;
+                    }
 
                     $successCount++;
                 } catch (\Exception $e) {
@@ -1411,6 +1418,39 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         }
 
         return 'Polri';
+    }
+
+    public static function markCrossSheetDuplicateNrps(array $preview): array
+    {
+        $seenNrps = [];
+
+        foreach ($preview as $index => $row) {
+            $nrp = trim((string) ($row['nrp'] ?? ''));
+
+            if ($nrp === '') {
+                continue;
+            }
+
+            if (! isset($seenNrps[$nrp])) {
+                $seenNrps[$nrp] = $index;
+
+                continue;
+            }
+
+            $firstIndex = $seenNrps[$nrp];
+
+            $preview[$index]['duplicate_nrp'] = true;
+            if (($preview[$index]['status'] ?? null) !== 'error') {
+                $preview[$index]['status'] = 'corrected';
+            }
+
+            $preview[$firstIndex]['duplicate_nrp'] = true;
+            if (($preview[$firstIndex]['status'] ?? null) !== 'error') {
+                $preview[$firstIndex]['status'] = 'corrected';
+            }
+        }
+
+        return $preview;
     }
 
     /**

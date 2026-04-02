@@ -433,6 +433,8 @@ class PersonnelController extends Controller
                 $preview = array_merge($preview, $sheetPreview);
             }
 
+            $preview = PersonnelImport::markCrossSheetDuplicateNrps($preview);
+
             // Hitung total status
             $totalOk = collect($preview)->where('status', 'ok')->count();
             $totalCorrected = collect($preview)->where('status', 'corrected')->count();
@@ -633,6 +635,7 @@ class PersonnelController extends Controller
             }
 
             $preview = $import->generatePreview($dataRows);
+            $preview = PersonnelImport::markCrossSheetDuplicateNrps($preview);
 
             $coll = collect($preview);
             // Hanya hitung baris yang benar-benar BERUBAH (bukan no_change) untuk angka "update"
