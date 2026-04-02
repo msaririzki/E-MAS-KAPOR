@@ -24,11 +24,13 @@ class PersonnelImportSatkerSpecificRankTest extends TestCase
             $collection = PersonnelImport::loadPreviewSheets($path);
             $preview = $import->generatePreview($collection[0]);
 
-            $this->assertCount(2, $preview);
+            $this->assertCount(3, $preview);
             $this->assertSame('BA BRIMOB', $preview[0]['rank_name']);
             $this->assertSame('ok', $preview[0]['status']);
             $this->assertSame('TAMTAMA POLRI', $preview[1]['rank_name']);
             $this->assertSame('ok', $preview[1]['status']);
+            $this->assertSame('SIPSS', $preview[2]['rank_name']);
+            $this->assertSame('ok', $preview[2]['status']);
 
             $this->assertDatabaseHas('ranks', [
                 'name' => 'BA BRIMOB',
@@ -37,6 +39,10 @@ class PersonnelImportSatkerSpecificRankTest extends TestCase
             $this->assertDatabaseHas('ranks', [
                 'name' => 'TAMTAMA POLRI',
                 'category' => 'BINTARA',
+            ]);
+            $this->assertDatabaseHas('ranks', [
+                'name' => 'SIPSS',
+                'category' => 'PAMA',
             ]);
         } finally {
             @unlink($path);
@@ -53,11 +59,13 @@ class PersonnelImportSatkerSpecificRankTest extends TestCase
             $collection = PersonnelImport::loadPreviewSheets($path);
             $preview = $import->generatePreview($collection[0]);
 
-            $this->assertCount(2, $preview);
+            $this->assertCount(3, $preview);
             $this->assertSame('BA BRIMOB', $preview[0]['rank_name']);
             $this->assertNotSame('error', $preview[0]['status']);
             $this->assertSame('TAMTAMA POLRI', $preview[1]['rank_name']);
             $this->assertNotSame('error', $preview[1]['status']);
+            $this->assertSame('SIPSS', $preview[2]['rank_name']);
+            $this->assertNotSame('error', $preview[2]['status']);
         } finally {
             @unlink($path);
         }
@@ -110,6 +118,23 @@ class PersonnelImportSatkerSpecificRankTest extends TestCase
         $sheet->setCellValue('O12', 'B');
         $sheet->setCellValue('P12', '46');
         $sheet->setCellValue('R12', 'STAF');
+
+        $sheet->setCellValue('A13', 3);
+        $sheet->setCellValue('B13', 'ANDIKA SYAHPUTRA');
+        $sheet->setCellValue('C13', 'SIPSS');
+        $sheet->setCellValue('D13', 'PAMA');
+        $sheet->setCellValue('E13', '80060044');
+        $sheet->setCellValue('F13', 'POLDA NTB');
+        $sheet->setCellValue('H13', 'P');
+        $sheet->setCellValue('I13', '58');
+        $sheet->setCellValue('J13', '15');
+        $sheet->setCellValue('K13', '32');
+        $sheet->setCellValue('L13', 'SD');
+        $sheet->setCellValue('M13', '42');
+        $sheet->setCellValue('N13', '41');
+        $sheet->setCellValue('O13', 'SD');
+        $sheet->setCellValue('P13', '44');
+        $sheet->setCellValue('R13', 'STAF');
 
         $tempPath = tempnam(sys_get_temp_dir(), 'kapor-rank-');
         $path = $tempPath.'.xlsx';

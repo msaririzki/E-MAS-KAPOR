@@ -605,6 +605,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 'BAKOMSUS HUKUM',
                 'BAKOMSUS NAKES',
                 'BAKOMSUS TATA BOGA',
+                'SIPSS',
                 'TAMTAMA POLRI',
             ],
             default => [],
