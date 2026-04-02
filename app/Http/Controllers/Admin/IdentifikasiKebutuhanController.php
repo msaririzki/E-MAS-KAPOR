@@ -45,64 +45,61 @@ class IdentifikasiKebutuhanController extends Controller
 
         // Stats
         $stats = [
-            'total' => Kebutuhan::count(),
-            'diajukan' => Kebutuhan::where('status', 'diajukan')->count(),
-            'disetujui' => Kebutuhan::where('status', 'disetujui')->count(),
-            'ditolak' => Kebutuhan::where('status', 'ditolak')->count(),
+            'totalPengajuan' => Kebutuhan::count(),
+            'totalSatker' => Kebutuhan::distinct('satker_id')->count('satker_id'),
+            'totalItem' => \App\Models\KebutuhanItem::count(),
         ];
 
         // ── Item Popularity Statistics ─────────────────────────────
-        $totalKebutuhans = Kebutuhan::whereIn('status', ['diajukan', 'disetujui'])->count();
+        $totalKebutuhans = $stats['totalPengajuan'];
 
-        $itemStats = collect();
-        $categoryStats = collect();
+        // Top 10 items per category
+        $itemStatsByCategory = collect();
         if ($totalKebutuhans > 0) {
-            // Top 10 most requested items
-            $itemStats = KebutuhanItem::query()
-                ->select('identifikasi_item_id', DB::raw('COUNT(DISTINCT kebutuhan_id) as submission_count'))
-                ->whereHas('kebutuhan', fn ($q) => $q->whereIn('status', ['diajukan', 'disetujui']))
-                ->groupBy('identifikasi_item_id')
-                ->orderByDesc('submission_count')
-                ->limit(10)
-                ->get()
-                ->map(function ($row) use ($totalKebutuhans) {
-                    $identifikasiItem = IdentifikasiItem::find($row->identifikasi_item_id);
+            $categories = IdentifikasiItem::where('is_active', true)
+                ->select('category')
+                ->distinct()
+                ->orderByRaw("CASE
+                    WHEN category = 'Tutup_Kepala' THEN 1
+                    WHEN category = 'Tutup_Badan' THEN 2
+                    WHEN category = 'Tutup_Kaki' THEN 3
+                    ELSE 999 END")
+                ->pluck('category');
 
-                    return [
-                        'item_name' => $identifikasiItem->item_name ?? '-',
-                        'category' => $identifikasiItem->category ?? '-',
-                        'submission_count' => $row->submission_count,
-                        'percentage' => round(($row->submission_count / $totalKebutuhans) * 100, 1),
-                    ];
-                });
+            foreach ($categories as $category) {
+                $categoryItemIds = IdentifikasiItem::where('is_active', true)
+                    ->where('category', $category)
+                    ->pluck('id');
 
-            // Category summary: how many unique items per category were requested
-            $categoryStats = KebutuhanItem::query()
-                ->join('identifikasi_items', 'kebutuhan_items.identifikasi_item_id', '=', 'identifikasi_items.id')
-                ->join('kebutuhans', 'kebutuhan_items.kebutuhan_id', '=', 'kebutuhans.id')
-                ->whereIn('kebutuhans.status', ['diajukan', 'disetujui'])
-                ->select('identifikasi_items.category', DB::raw('COUNT(DISTINCT kebutuhan_items.identifikasi_item_id) as unique_items'), DB::raw('COUNT(kebutuhan_items.id) as total_requests'))
-                ->groupBy('identifikasi_items.category')
-                ->get()
-                ->map(function ($row) {
-                    $totalInCategory = IdentifikasiItem::where('category', $row->category)->count();
+                $topItems = KebutuhanItem::query()
+                    ->select('identifikasi_item_id', DB::raw('COUNT(DISTINCT kebutuhan_id) as submission_count'))
+                    ->whereIn('identifikasi_item_id', $categoryItemIds)
+                    ->whereHas('kebutuhan', fn ($q) => $q->whereIn('status', ['diajukan', 'disetujui']))
+                    ->groupBy('identifikasi_item_id')
+                    ->orderByDesc('submission_count')
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($row) use ($totalKebutuhans) {
+                        $item = IdentifikasiItem::find($row->identifikasi_item_id);
 
-                    return [
-                        'category' => $row->category,
-                        'unique_items' => $row->unique_items,
-                        'total_in_category' => $totalInCategory,
-                        'total_requests' => $row->total_requests,
-                        'coverage' => $totalInCategory > 0 ? round(($row->unique_items / $totalInCategory) * 100) : 0,
-                    ];
-                });
+                        return [
+                            'item_name' => $item->item_name ?? '-',
+                            'submission_count' => $row->submission_count,
+                            'percentage' => round(($row->submission_count / $totalKebutuhans) * 100, 1),
+                        ];
+                    });
+
+                if ($topItems->isNotEmpty()) {
+                    $itemStatsByCategory[$category] = $topItems;
+                }
+            }
         }
 
         return view('admin.identifikasi-kebutuhan.index', compact(
             'kebutuhans',
             'satkers',
             'stats',
-            'itemStats',
-            'categoryStats',
+            'itemStatsByCategory',
             'totalKebutuhans',
         ));
     }
