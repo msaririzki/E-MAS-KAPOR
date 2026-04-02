@@ -35,15 +35,23 @@ return new class extends Migration
         // to avoid foreign key violations when dropping the old column.
         \DB::table('kebutuhan_items')->truncate();
         
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        try {
-            \DB::statement('ALTER TABLE kebutuhan_items DROP FOREIGN KEY kebutuhan_items_kapor_item_id_foreign');
-        } catch (\Exception $e) {}
-        
-        try {
-            \DB::statement('ALTER TABLE kebutuhan_items DROP COLUMN kapor_item_id');
-        } catch (\Exception $e) {}
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        Schema::table('kebutuhan_items', function (Blueprint $table) {
+            // Drop foreign keys first to release MySQL index locks
+            $table->dropForeign(['kebutuhan_id']);
+            $table->dropForeign(['kapor_item_id']);
+
+            // Now safe to drop the old unique constraint
+            $table->dropUnique(['kebutuhan_id', 'kapor_item_id']);
+            
+            // Drop the old column
+            $table->dropColumn('kapor_item_id');
+
+            // Re-add the foreign key for kebutuhan_id
+            $table->foreign('kebutuhan_id')->references('id')->on('kebutuhans')->cascadeOnDelete();
+            
+            // Add new unique constraint for the new column
+            $table->unique(['kebutuhan_id', 'identifikasi_item_id'], 'kebutuhan_identifikasi_unique');
+        });
     }
 
     /**
