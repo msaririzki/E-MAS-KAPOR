@@ -172,7 +172,12 @@
                     </td>
                     <td style="display:flex; gap:6px; align-items:center; justify-content: center;">
                         @if(! $isSppmAda && auth()->user()->hasRole('superadmin'))
-                        <button type="button" class="btn btn-outline" onclick="openSppmModal('{{ $group->group_ids }}')"
+                        @php
+                            $sppmLetterDate = $group->letter_date 
+                                ? \Carbon\Carbon::parse($group->letter_date)->format('Y-m-d') 
+                                : \Carbon\Carbon::parse($group->outflow_date)->format('Y-m-d');
+                        @endphp
+                        <button type="button" class="btn btn-outline" onclick="openSppmModal('{{ $group->group_ids }}', '{{ $group->letter_number ?? '-' }}', '{{ $sppmLetterDate }}')"
                             style="border-color: #3B82F6; color: #3B82F6; padding: 6px; font-size: 16px; height: auto;"
                             title="Buat SPPM (Word)">
                             <i class="ri-file-add-line"></i>
@@ -388,17 +393,19 @@
         });
     }
 
-    function openSppmModal(groupIds) {
+    function openSppmModal(groupIds, letterNumber = '', letterDate = '') {
+        const defaultDate = letterDate ? letterDate : '{{ date('Y-m-d') }}';
+        
         Swal.fire({
             title: 'Buat SPPM Baru',
             html: `
                 <div style="text-align: left; margin-bottom: 12px;">
                     <label style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block;">Nomor Surat <span style="color:#EF4444">*</span></label>
-                    <input type="text" id="sppm_letter_number" class="swal2-input" style="width: 100%; margin: 0; box-sizing: border-box; height: 42px; font-size: 14px; border-radius: 8px;" placeholder="Contoh: B/123/III/2026">
+                    <input type="text" id="sppm_letter_number" class="swal2-input" style="width: 100%; margin: 0; box-sizing: border-box; height: 42px; font-size: 14px; border-radius: 8px;" placeholder="Contoh: B/123/III/2026" value="${letterNumber}">
                 </div>
                 <div style="text-align: left;">
                     <label style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block;">Tanggal Surat <span style="color:#EF4444">*</span></label>
-                    <input type="date" id="sppm_letter_date" class="swal2-input" style="width: 100%; margin: 0; box-sizing: border-box; height: 42px; font-size: 14px; border-radius: 8px;" value="{{ date('Y-m-d') }}">
+                    <input type="date" id="sppm_letter_date" class="swal2-input" style="width: 100%; margin: 0; box-sizing: border-box; height: 42px; font-size: 14px; border-radius: 8px;" value="${defaultDate}">
                 </div>
             `,
             showCancelButton: true,

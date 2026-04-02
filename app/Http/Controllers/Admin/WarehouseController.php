@@ -198,47 +198,133 @@ class WarehouseController extends Controller
 
     public function dispense(Request $request)
     {
-        $request->validate([
-            'outflow_date' => 'required|date',
-            'satker_id' => 'required|exists:satkers,id',
-            'recipient_name' => 'required|string|max:255',
-            'letter_number' => 'nullable|string|max:255',
-            'letter_date' => 'nullable|date',
-            'items' => 'required|array|min:1',
-            'items.*.warehouse_item_size_id' => 'required|exists:warehouse_item_sizes,id',
-            'items.*.quantity' => 'required|integer|min:1',
-        ]);
+        $method = $request->input('dispense_method', 'method_1');
+
+        if ($method === 'method_1') {
+            $request->validate([
+                'outflow_date' => 'required|date',
+                'satker_id' => 'required|exists:satkers,id',
+                'recipient_name' => 'required|string|max:255',
+                'letter_number' => 'nullable|string|max:255',
+                'letter_date' => 'nullable|date',
+                'items' => 'required|array|min:1',
+                'items.*.warehouse_item_size_id' => 'required|exists:warehouse_item_sizes,id',
+                'items.*.quantity' => 'required|integer|min:1',
+            ]);
+        } else {
+            $request->validate([
+                'outflow_date' => 'required|date',
+                'letter_number' => 'nullable|string|max:255',
+                'letter_date' => 'nullable|date',
+                'selected_satkers' => 'required|array|min:1',
+                'selected_satkers.*' => 'exists:satkers,id',
+                'selected_items' => 'required|array|min:1',
+                'selected_items.*' => 'exists:warehouse_item_sizes,id',
+                'quantities' => 'required|array',
+            ]);
+        }
 
         DB::beginTransaction();
         try {
             $createdCount = 0;
 
-            foreach ($request->items as $itemData) {
-                $size = WarehouseItemSize::with('item')->findOrFail($itemData['warehouse_item_size_id']);
+            if ($method === 'method_1') {
+                foreach ($request->items as $itemData) {
+                    $size = WarehouseItemSize::with('item')->findOrFail($itemData['warehouse_item_size_id']);
 
-                if ($size->stock < $itemData['quantity']) {
-                    DB::rollBack();
+                    if ($size->stock < $itemData['quantity']) {
+                        DB::rollBack();
 
-                    return back()->withInput()->with('error', 'Stok '.$size->item->name.' ukuran '.$size->size_label.' tidak mencukupi. (Stok tersisa: '.$size->stock.')');
+                        return back()->withInput()->with('error', 'Stok ' . $size->item->name . ' ukuran ' . $size->size_label . ' tidak mencukupi. (Stok tersisa: ' . $size->stock . ')');
+                    }
+
+                    // Kurangi stok
+                    $size->stock -= $itemData['quantity'];
+                    $size->save();
+
+                    // Catat pengeluaran
+                    WarehouseOutflow::create([
+                        'warehouse_item_size_id' => $size->id,
+                        'satker_id' => $request->satker_id,
+                        'quantity' => $itemData['quantity'],
+                        'outflow_date' => $request->outflow_date,
+                        'recipient_name' => $request->recipient_name,
+                        'reference_note' => 'Belum Ada',
+                        'letter_number' => $request->letter_number,
+                        'letter_date' => $request->letter_date,
+                    ]);
+
+                    $createdCount++;
                 }
-
-                // Kurangi stok
-                $size->stock -= $itemData['quantity'];
-                $size->save();
-
-                // Catat pengeluaran
-                WarehouseOutflow::create([
-                    'warehouse_item_size_id' => $size->id,
-                    'satker_id' => $request->satker_id,
-                    'quantity' => $itemData['quantity'],
-                    'outflow_date' => $request->outflow_date,
-                    'recipient_name' => $request->recipient_name,
-                    'reference_note' => 'Belum Ada',
-                    'letter_number' => $request->letter_number,
-                    'letter_date' => $request->letter_date,
+            } else {
+                // Method 2: Per Barang (Multiple Satkers & Items grid, No Size Selected)
+                $request->validate([
+                    'selected_items.*' => 'exists:warehouse_items,id',
                 ]);
 
-                $createdCount++;
+                $totalsNeeded = [];
+                // Calculate total needed per ITEM id
+                foreach ($request->selected_satkers as $satkerId) {
+                    foreach ($request->selected_items as $itemId) {
+                        $qty = isset($request->quantities[$satkerId][$itemId]) ? (int)$request->quantities[$satkerId][$itemId] : 0;
+                        if ($qty > 0) {
+                            $totalsNeeded[$itemId] = ($totalsNeeded[$itemId] ?? 0) + $qty;
+                        }
+                    }
+                }
+
+                if (empty($totalsNeeded)) {
+                    DB::rollBack();
+                    return back()->withInput()->with('error', 'Tidak ada barang dengan jumlah > 0 yang dibagikan ke satker mana pun.');
+                }
+
+                // Validate stocks across all items first (Total sum of all sizes)
+                foreach ($totalsNeeded as $itemId => $totalQty) {
+                    $totalStock = WarehouseItemSize::where('warehouse_item_id', $itemId)->sum('stock');
+                    if ($totalStock < $totalQty) {
+                        $item = \App\Models\WarehouseItem::findOrFail($itemId);
+                        DB::rollBack();
+                        return back()->withInput()->with('error', 'Total stok ' . $item->name . ' tidak mencukupi untuk total pembagian. (Dibutuhkan: ' . $totalQty . ', Stok tersisa: ' . $totalStock . ')');
+                    }
+                }
+
+                // If sufficient, reduce stock and create outflow using FIFO
+                foreach ($request->selected_satkers as $satkerId) {
+                    foreach ($request->selected_items as $itemId) {
+                        $qtyRequired = isset($request->quantities[$satkerId][$itemId]) ? (int)$request->quantities[$satkerId][$itemId] : 0;
+                        if ($qtyRequired > 0) {
+                            $sizes = WarehouseItemSize::where('warehouse_item_id', $itemId)
+                                        ->where('stock', '>', 0)
+                                        ->orderBy('id')
+                                        ->get();
+                            
+                            $remaining = $qtyRequired;
+                            
+                            foreach ($sizes as $size) {
+                                if ($remaining <= 0) break;
+                                
+                                $take = min($size->stock, $remaining);
+                                
+                                $size->stock -= $take;
+                                $size->save();
+                                
+                                WarehouseOutflow::create([
+                                    'warehouse_item_size_id' => $size->id,
+                                    'satker_id' => $satkerId,
+                                    'quantity' => $take,
+                                    'outflow_date' => $request->outflow_date,
+                                    'recipient_name' => null, 
+                                    'reference_note' => 'Belum Ada',
+                                    'letter_number' => $request->letter_number,
+                                    'letter_date' => $request->letter_date,
+                                ]);
+                                
+                                $createdCount++;
+                                $remaining -= $take;
+                            }
+                        }
+                    }
+                }
             }
 
             DB::commit();
