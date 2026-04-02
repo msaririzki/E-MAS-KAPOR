@@ -45,7 +45,11 @@ class KebutuhanController extends Controller
     public function create()
     {
         $kaporItems = IdentifikasiItem::where('is_active', true)
-            ->orderBy('category')
+            ->orderByRaw("CASE
+                WHEN category = 'Tutup_Kepala' THEN 1
+                WHEN category = 'Tutup_Badan' THEN 2
+                WHEN category = 'Tutup_Kaki' THEN 3
+                ELSE 999 END")
             ->orderBy('item_name')
             ->get()
             ->groupBy('category');
@@ -122,7 +126,11 @@ class KebutuhanController extends Controller
         $kebutuhan->load('items');
 
         $kaporItems = IdentifikasiItem::where('is_active', true)
-            ->orderBy('category')
+            ->orderByRaw("CASE
+                WHEN category = 'Tutup_Kepala' THEN 1
+                WHEN category = 'Tutup_Badan' THEN 2
+                WHEN category = 'Tutup_Kaki' THEN 3
+                ELSE 999 END")
             ->orderBy('item_name')
             ->get()
             ->groupBy('category');
