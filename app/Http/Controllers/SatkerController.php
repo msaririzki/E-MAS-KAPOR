@@ -4,19 +4,40 @@ namespace App\Http\Controllers;
 
 use App\Models\Satker;
 use App\Services\AuditLogger;
+use App\Services\SatkerPersonnelCountService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class SatkerController extends Controller
 {
+    public function __construct(
+        private readonly SatkerPersonnelCountService $satkerPersonnelCountService,
+    ) {}
+
     /**
      * Display listing of satkers.
      */
     public function index()
     {
+        $this->satkerPersonnelCountService->syncStoredCounts();
+
+        $countsBySatker = $this->satkerPersonnelCountService->getCountsBySatker();
         $satkers = Satker::with('parent')
             ->orderBy('sort_order')
-            ->get();
+            ->get()
+            ->map(function (Satker $satker) use ($countsBySatker) {
+                $counts = $countsBySatker->get($satker->id, [
+                    'polri_count' => 0,
+                    'pns_count' => 0,
+                    'total_personnel' => 0,
+                ]);
+
+                $satker->display_polri_count = (int) $counts['polri_count'];
+                $satker->display_pns_count = (int) $counts['pns_count'];
+                $satker->display_total_personnel = (int) $counts['total_personnel'];
+
+                return $satker;
+            });
 
         $parentSatkers = Satker::whereNull('parent_id')->orderBy('sort_order')->get();
 
@@ -99,14 +120,9 @@ class SatkerController extends Controller
      */
     public function updatePersonnelCount(Request $request, Satker $satker)
     {
-        $validated = $request->validate([
-            'polri_count' => 'required|integer|min:0',
-            'pns_count' => 'required|integer|min:0',
-        ]);
+        $this->satkerPersonnelCountService->syncStoredCountForSatker($satker->id);
 
-        $satker->update($validated);
-
-        return redirect()->route($this->getRedirectRoute())->with('success', "Jumlah personil {$satker->name} berhasil diperbarui.");
+        return redirect()->route($this->getRedirectRoute())->with('success', "Jumlah personil {$satker->name} disinkronkan dari data personel.");
     }
 
     /**

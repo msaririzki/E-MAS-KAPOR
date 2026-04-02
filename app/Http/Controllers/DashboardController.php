@@ -8,6 +8,7 @@ use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\KaporRequirementService;
+use App\Services\SatkerPersonnelCountService;
 use App\Services\TestimonialInsightService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class DashboardController extends Controller
 {
     public function __construct(
         private readonly KaporRequirementService $kaporRequirementService,
+        private readonly SatkerPersonnelCountService $satkerPersonnelCountService,
         private readonly TestimonialInsightService $testimonialInsightService,
     ) {}
 
@@ -50,11 +52,10 @@ class DashboardController extends Controller
         // Get available years for filter (Kept for legacy support or future use)
         $availableYears = [$defaultYear];
 
-        $totalPolri = Satker::sum('polri_count');
-        $totalPns = Satker::sum('pns_count');
-
-        // Total personel rill = jumlah record di database (sinkron dengan halaman Personel)
-        $totalPersonnel = Personnel::count();
+        $globalCounts = $this->satkerPersonnelCountService->getGlobalCounts();
+        $totalPolri = $globalCounts['polri_count'];
+        $totalPns = $globalCounts['pns_count'];
+        $totalPersonnel = $globalCounts['total_personnel'];
 
         $submittedCount = $this->countPersonnelWithCompleteSizes();
         $pendingCount = $totalPersonnel - $submittedCount;
@@ -148,11 +149,11 @@ class DashboardController extends Controller
     {
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
 
-        $totalPolri = Satker::sum('polri_count');
-        $totalPns = Satker::sum('pns_count');
-
+        $globalCounts = $this->satkerPersonnelCountService->getGlobalCounts();
+        $totalPolri = $globalCounts['polri_count'];
+        $totalPns = $globalCounts['pns_count'];
+        $totalPersonnel = $globalCounts['total_personnel'];
         $submittedCount = $this->countPersonnelWithCompleteSizes();
-        $totalPersonnel = Personnel::count();
 
         $stats = [
             'total_polri' => $totalPolri,
@@ -175,10 +176,10 @@ class DashboardController extends Controller
         $satkerId = $user->satker_id;
         $satker = Satker::find($satkerId);
 
-        $totalPolri = $satker->polri_count ?? 0;
-        $totalPns = $satker->pns_count ?? 0;
-
-        $totalPersonnel = Personnel::where('satker_id', $satkerId)->count();
+        $satkerCounts = $this->satkerPersonnelCountService->getCountsForSatker($satkerId);
+        $totalPolri = $satkerCounts['polri_count'];
+        $totalPns = $satkerCounts['pns_count'];
+        $totalPersonnel = $satkerCounts['total_personnel'];
         $submittedCount = $this->countPersonnelWithCompleteSizes($satkerId);
 
         $stats = [

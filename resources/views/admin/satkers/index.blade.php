@@ -42,7 +42,7 @@
         </div>
         <div class="stat-content">
             <span class="stat-label">Personil POLRI</span>
-            <span class="stat-number">{{ number_format($satkers->sum('polri_count')) }}</span>
+            <span class="stat-number">{{ number_format($satkers->sum('display_polri_count')) }}</span>
         </div>
     </div>
     <div class="stat-card">
@@ -51,7 +51,7 @@
         </div>
         <div class="stat-content">
             <span class="stat-label">Personil PNS/P3K</span>
-            <span class="stat-number">{{ number_format($satkers->sum('pns_count')) }}</span>
+            <span class="stat-number">{{ number_format($satkers->sum('display_pns_count')) }}</span>
         </div>
     </div>
     <div class="stat-card">
@@ -60,7 +60,7 @@
         </div>
         <div class="stat-content">
             <span class="stat-label">Total Kekuatan</span>
-            <span class="stat-number">{{ number_format($satkers->sum('polri_count') + $satkers->sum('pns_count')) }}</span>
+            <span class="stat-number">{{ number_format($satkers->sum('display_total_personnel')) }}</span>
         </div>
     </div>
 </div>
@@ -92,29 +92,18 @@
                     <span style="font-weight: 600; color: var(--text-main);">{{ $satker->name }}</span>
                 </td>
                 <td style="text-align: center;">
-                    <form method="POST" action="{{ route($routePrefix . '.satkers.update-personnel', $satker) }}" class="inline-personnel-form" id="form-{{ $satker->id }}">
-                        @csrf
-                        @method('PATCH')
-                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
-                            <input type="number" name="polri_count" value="{{ $satker->polri_count }}"
-                                min="0" class="input-inline" style="width: 70px; text-align: center;"
-                                oninput="showSaveBtn('{{ $satker->id }}')">
-                        </div>
+                    <span style="font-weight: 700; color: var(--text-main); background: var(--bg-body); padding: 6px 14px; border-radius: 8px; font-size: 13px; display: inline-block; min-width: 72px;">
+                        {{ number_format($satker->display_polri_count) }}
+                    </span>
                 </td>
                 <td style="text-align: center;">
-                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
-                            <input type="number" name="pns_count" value="{{ $satker->pns_count }}"
-                                min="0" class="input-inline" style="width: 70px; text-align: center;"
-                                oninput="showSaveBtn('{{ $satker->id }}')">
-                            <button type="submit" class="btn-save-inline" id="save-{{ $satker->id }}" title="Simpan Perubahan" style="display: none;">
-                                <i class="ri-checkbox-circle-fill"></i>
-                            </button>
-                        </div>
-                    </form>
+                    <span style="font-weight: 700; color: var(--text-main); background: var(--bg-body); padding: 6px 14px; border-radius: 8px; font-size: 13px; display: inline-block; min-width: 72px;">
+                        {{ number_format($satker->display_pns_count) }}
+                    </span>
                 </td>
                 <td style="text-align: center;">
                     <span style="font-weight: 700; color: var(--text-main); background: var(--bg-body); padding: 4px 12px; border-radius: 6px; font-size: 13px;">
-                        {{ number_format($satker->polri_count + $satker->pns_count) }}
+                        {{ number_format($satker->display_total_personnel) }}
                     </span>
                 </td>
                 <td style="text-align: center;">
@@ -147,9 +136,9 @@
             <tr style="background: var(--bg-body); border-top: 2px solid var(--border-color);">
                 <td></td>
                 <td style="font-weight: 700; color: var(--text-main);">REKAPITULASI TOTAL</td>
-                <td style="text-align: center; font-weight: 800; color: #B91C1C;">{{ number_format($satkers->sum('polri_count')) }}</td>
-                <td style="text-align: center; font-weight: 800; color: #B91C1C;">{{ number_format($satkers->sum('pns_count')) }}</td>
-                <td style="text-align: center; font-weight: 800; color: var(--text-main); background: var(--hover-bg);">{{ number_format($satkers->sum('polri_count') + $satkers->sum('pns_count')) }}</td>
+                <td style="text-align: center; font-weight: 800; color: #B91C1C;">{{ number_format($satkers->sum('display_polri_count')) }}</td>
+                <td style="text-align: center; font-weight: 800; color: #B91C1C;">{{ number_format($satkers->sum('display_pns_count')) }}</td>
+                <td style="text-align: center; font-weight: 800; color: var(--text-main); background: var(--hover-bg);">{{ number_format($satkers->sum('display_total_personnel')) }}</td>
                 <td></td>
             </tr>
         </tfoot>
@@ -171,15 +160,8 @@
                     <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Nama Satuan Kerja</label>
                     <input type="text" name="name" class="form-input-simple" placeholder="Masukkan nama satker..." required style="height: 46px;">
                 </div>
-                <div class="form-grid-2">
-                    <div class="form-group-simple">
-                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Jml POLRI</label>
-                        <input type="number" name="polri_count" class="form-input-simple" value="0" min="0" style="height: 46px;">
-                    </div>
-                    <div class="form-group-simple">
-                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Jml PNS/P3K</label>
-                        <input type="number" name="pns_count" class="form-input-simple" value="0" min="0" style="height: 46px;">
-                    </div>
+                <div style="font-size: 12px; color: var(--text-muted); background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px;">
+                    Jumlah personel dihitung otomatis dari data pada menu Personel setelah satker dibuat.
                 </div>
             </div>
             <div class="modal-footer" style="padding: 16px 24px; background: var(--hover-bg); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; border-radius: 0 0 16px 16px;">
@@ -205,15 +187,8 @@
                     <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Nama Satuan Kerja</label>
                     <input type="text" name="name" id="edit_name" class="form-input-simple" required style="height: 46px;">
                 </div>
-                <div class="form-grid-2">
-                    <div class="form-group-simple">
-                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Jml POLRI</label>
-                        <input type="number" name="polri_count" id="edit_polri_count" class="form-input-simple" min="0" style="height: 46px;">
-                    </div>
-                    <div class="form-group-simple">
-                        <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Jml PNS/P3K</label>
-                        <input type="number" name="pns_count" id="edit_pns_count" class="form-input-simple" min="0" style="height: 46px;">
-                    </div>
+                <div style="font-size: 12px; color: var(--text-muted); background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px;">
+                    Jumlah personel disinkronkan otomatis dari data personel satker ini.
                 </div>
             </div>
             <div class="modal-footer" style="padding: 16px 24px; background: var(--hover-bg); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; border-radius: 0 0 16px 16px;">
@@ -335,14 +310,8 @@
 
     function openEditModal(satker) {
         document.getElementById('edit_name').value = satker.name;
-        document.getElementById('edit_polri_count').value = satker.polri_count || 0;
-        document.getElementById('edit_pns_count').value = satker.pns_count || 0;
         document.getElementById('editForm').action = '/' + routePrefix + '/satkers/' + satker.id;
         openModal('editModal');
-    }
-
-    function showSaveBtn(id) {
-        document.getElementById('save-' + id).style.display = 'flex';
     }
 
     // Toast logic from User Index
