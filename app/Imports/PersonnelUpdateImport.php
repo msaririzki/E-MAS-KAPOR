@@ -517,7 +517,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         $personnel->update($updateData);
 
                         if ($canCreateLoginAccount) {
-                            $user = User::createOrUpdatePersonnelAccount(
+                            $user = User::createOrUpdatePersonnelImportAccount(
                                 $personnel->user,
                                 $data['nrp'],
                                 $data['full_name'] ?: $personnel->full_name,
@@ -542,7 +542,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         $hasNrpIssue = ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']);
                         $user = null;
                         if ($nrp && ! $hasNrpIssue) {
-                            $user = User::createOrUpdatePersonnelAccount(
+                            $user = User::createOrUpdatePersonnelImportAccount(
                                 null,
                                 $nrp,
                                 $data['full_name'],

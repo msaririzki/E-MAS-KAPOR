@@ -990,7 +990,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $ranksById = Rank::all()->keyBy('id');
         $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
         $existingPersonnel = Personnel::whereIn('nrp', $allNrp)->get()->keyBy('nrp');
-        $existingUsers = User::with('personnel')->whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
+        $existingUsers = User::with(['personnel', 'roles'])->whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
 
         // ── Satu transaksi besar untuk semua insert/update ───────────────────
         DB::transaction(function () use (
@@ -1042,7 +1042,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                         // ── User baru: bcrypt cost=4 (10× lebih cepat, password bisa diubah nanti) ──
                         $user = null;
                         if ($canCreateLoginAccount) {
-                            $user = User::createOrUpdatePersonnelAccount(
+                            $user = User::createOrUpdatePersonnelImportAccount(
                                 $existingUsers->get($nrp),
                                 $nrp,
                                 $fullName,
@@ -1108,7 +1108,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                         $personnel->update($updateData);
 
                         if ($canCreateLoginAccount) {
-                            $user = User::createOrUpdatePersonnelAccount(
+                            $user = User::createOrUpdatePersonnelImportAccount(
                                 $personnel->user ?? $existingUsers->get($nrp),
                                 $nrp,
                                 $fullName,
@@ -1278,7 +1278,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     $personnel = Personnel::where('nrp', $nrp)->first();
 
                     if (! $personnel) {
-                        $user = User::createOrUpdatePersonnelAccount(
+                        $user = User::createOrUpdatePersonnelImportAccount(
                             null,
                             $nrp,
                             $fullName,
@@ -1312,7 +1312,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'gender' => $gender,
                         ]);
 
-                        $user = User::createOrUpdatePersonnelAccount(
+                        $user = User::createOrUpdatePersonnelImportAccount(
                             $personnel->user,
                             $nrp,
                             $fullName,

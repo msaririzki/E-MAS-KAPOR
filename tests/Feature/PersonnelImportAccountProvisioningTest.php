@@ -57,6 +57,7 @@ class PersonnelImportAccountProvisioningTest extends TestCase
         $this->assertSame($user->id, $personnel->user_id);
         $this->assertTrue($user->hasRole('personil'));
         $this->assertTrue(Hash::check('198501012010011001', $user->password));
+        $this->assertSame(User::IMPORT_PASSWORD_ROUNDS, password_get_info($user->password)['options']['cost'] ?? null);
     }
 
     public function test_import_skips_login_account_creation_when_nrp_is_missing(): void

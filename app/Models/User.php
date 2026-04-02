@@ -16,6 +16,8 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, HasRoles, Notifiable;
 
+    public const IMPORT_PASSWORD_ROUNDS = 4;
+
     public const SYSTEM_ROLES = [
         'superadmin',
         'admin_satker',
@@ -110,6 +112,29 @@ class User extends Authenticatable
 
     public static function createOrUpdatePersonnelAccount(?self $user, string $identifier, string $name, ?int $satkerId, bool $isActive = true): self
     {
+        return static::createOrUpdatePersonnelAccountWithOptions($user, $identifier, $name, $satkerId, $isActive);
+    }
+
+    public static function createOrUpdatePersonnelImportAccount(?self $user, string $identifier, string $name, ?int $satkerId, bool $isActive = true): self
+    {
+        return static::createOrUpdatePersonnelAccountWithOptions(
+            $user,
+            $identifier,
+            $name,
+            $satkerId,
+            $isActive,
+            static::IMPORT_PASSWORD_ROUNDS,
+        );
+    }
+
+    private static function createOrUpdatePersonnelAccountWithOptions(
+        ?self $user,
+        string $identifier,
+        string $name,
+        ?int $satkerId,
+        bool $isActive = true,
+        ?int $passwordRounds = null,
+    ): self {
         $conflictingUser = static::query()
             ->where('nrp_nip', $identifier)
             ->when($user?->exists, fn ($query) => $query->whereKeyNot($user->id))
@@ -132,11 +157,17 @@ class User extends Authenticatable
         ]);
 
         if ($identifierChanged) {
-            $user->password = Hash::make($identifier);
+            $user->password = $passwordRounds === null
+                ? Hash::make($identifier)
+                : Hash::make($identifier, ['rounds' => $passwordRounds]);
         }
 
         $user->save();
-        $user->syncRoles(['personil']);
+        $user->loadMissing('roles');
+
+        if ($user->roles->count() !== 1 || $user->roles->first()?->name !== 'personil') {
+            $user->syncRoles(['personil']);
+        }
 
         return $user;
     }
