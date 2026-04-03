@@ -320,6 +320,10 @@ class PersonnelController extends Controller
 
     public function update(Request $request, Personnel $personnel)
     {
+        if ($request->user()?->hasRole('admin_satker')) {
+            return $this->updateAsAdminSatker($request, $personnel);
+        }
+
         $validated = $request->validate([
             'nrp' => 'required|string|unique:personnels,nrp,'.$personnel->id,
             'full_name' => 'required|string|max:255',
@@ -351,17 +355,33 @@ class PersonnelController extends Controller
                 );
             }
 
-            // Update Personnel
-            $personnel->update($validated);
+            $personnel->fill($validated);
+
+            $userDirty = false;
 
             // Sync User Account if exists
             if ($personnel->user) {
-                $personnel->user->update([
+                $personnel->user->fill([
                     'name' => $validated['full_name'],
                     'nrp_nip' => $validated['nrp'],
                     'satker_id' => $validated['satker_id'],
                     'is_active' => $request->has('is_active') ? $request->is_active : $personnel->is_active,
                 ]);
+
+                $userDirty = $personnel->user->isDirty();
+            }
+
+            if (! $personnel->isDirty() && ! $userDirty) {
+                DB::rollBack();
+
+                return redirect()->back()->with('info', 'Tidak ada perubahan pada data personel.');
+            }
+
+            // Update Personnel
+            $personnel->save();
+
+            if ($personnel->user && $userDirty) {
+                $personnel->user->save();
             }
 
             DB::commit();
@@ -378,6 +398,35 @@ class PersonnelController extends Controller
             DB::rollBack();
 
             return redirect()->back()->with('error', 'Gagal memperbarui: '.$e->getMessage());
+        }
+    }
+
+    private function updateAsAdminSatker(Request $request, Personnel $personnel)
+    {
+        abort_unless((int) $personnel->satker_id === (int) $request->user()?->satker_id, 403, 'Anda hanya dapat mengedit personel pada satker Anda sendiri.');
+
+        $validated = $request->validate([
+            'jabatan' => 'nullable|string|max:255',
+            'bagian' => 'nullable|string|max:255',
+            'keterangan' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $personnel->fill([
+                'jabatan' => $validated['jabatan'] ?? null,
+                'bagian' => $validated['bagian'] ?? null,
+                'keterangan' => $validated['keterangan'] ?? null,
+            ]);
+
+            if (! $personnel->isDirty()) {
+                return redirect()->back()->with('info', 'Tidak ada perubahan pada field yang dapat Anda ubah.');
+            }
+
+            $personnel->save();
+
+            return redirect()->back()->with('success', 'Data lapangan personel berhasil diperbarui.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memperbarui data lapangan: '.$e->getMessage());
         }
     }
 

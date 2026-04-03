@@ -183,6 +183,23 @@
 
     <form action="{{ route('personil.kapor.store') }}" method="POST" id="kaporForm" style="display: {{ $hasSubmitted ? 'none' : 'block' }};">
         @csrf
+
+        <div class="form-card">
+            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                Data Lapangan
+            </h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Jabatan</label>
+                    <input type="text" name="jabatan" class="form-control" value="{{ old('jabatan', $personnel->jabatan ?? '') }}" placeholder="Contoh: BANIT, PS. KASUBSI" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Bagian / Fungsi</label>
+                    <input type="text" name="bagian" class="form-control" value="{{ old('bagian', $personnel->bagian ?? '') }}" placeholder="Contoh: RESKRIM, INTEL" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                </div>
+            </div>
+            <p style="margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.6;">Data ini dapat Anda perbarui langsung bersama ukuran kapor. Perubahan ini dipertahankan ketika baseline SDM diimpor ulang.</p>
+        </div>
         
         <div class="form-card">
             <h3 style="margin: 0 0 20px 0; font-size: 18px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">

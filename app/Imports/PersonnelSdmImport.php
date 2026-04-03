@@ -328,6 +328,12 @@ class PersonnelSdmImport extends PersonnelImport
                             $existingPersonnel->put($effectiveNrp, $personnel);
                         }
                     } else {
+                        // Setelah baseline SDM masuk, field lapangan tetap menjadi ranah edit manual.
+                        $payload['jabatan'] = $personnel->jabatan;
+                        $payload['bagian'] = $personnel->bagian;
+                        $payload['keterangan'] = $personnel->keterangan;
+                        $payload['kapor_sizes'] = is_array($personnel->kapor_sizes) ? $personnel->kapor_sizes : [];
+
                         $personnel->update($payload);
                     }
 

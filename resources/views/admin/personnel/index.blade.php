@@ -1796,6 +1796,11 @@
             <input type="hidden" name="modal_type" value="edit">
             <input type="hidden" name="id" id="edit_personnel_id" value="{{ old('modal_type') == 'edit' ? old('id') : '' }}">
             <div class="modal-body">
+                @if(auth()->user()->hasRole('admin_satker'))
+                <div style="margin-bottom: 18px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 14px 16px; color: #1D4ED8; font-size: 13px; line-height: 1.6;">
+                    Sebagai <strong>Admin Satker</strong>, Anda hanya dapat mengubah <strong>Jabatan</strong>, <strong>Bagian / Fungsi</strong>, dan <strong>Keterangan 1</strong>. Field lain mengikuti baseline pusat dan dikunci pada form ini.
+                </div>
+                @endif
                 <div class="form-grid">
                     <!-- Row 1: Personnel Type -->
                     <div class="form-group col-span-2-desktop">
@@ -3518,7 +3523,48 @@
             });
         }
 
+        applyEditRoleRestrictions();
         openModal('editPersonnelModal');
+    }
+
+    function applyEditRoleRestrictions() {
+        const isAdminSatker = @json(auth()->user()->hasRole('admin_satker'));
+        if (!isAdminSatker) {
+            return;
+        }
+
+        const allowedNames = new Set(['_token', '_method', 'modal_type', 'id', 'jabatan', 'bagian', 'keterangan']);
+        const form = document.getElementById('editForm');
+
+        if (!form) {
+            return;
+        }
+
+        form.querySelectorAll('input, select, textarea').forEach((field) => {
+            const name = field.getAttribute('name');
+            if (!name) {
+                return;
+            }
+
+            field.disabled = !allowedNames.has(name);
+        });
+
+        form.querySelectorAll('.form-group').forEach((group) => {
+            const namedFields = Array.from(group.querySelectorAll('input[name], select[name], textarea[name]'));
+            if (namedFields.length === 0) {
+                return;
+            }
+
+            const hasAllowedField = namedFields.some((field) => allowedNames.has(field.name));
+            if (hasAllowedField) {
+                return;
+            }
+
+            group.querySelectorAll('.selection-card, .custom-select, .option, .select-trigger').forEach((element) => {
+                element.style.pointerEvents = 'none';
+                element.style.opacity = '0.6';
+            });
+        });
     }
 
     function confirmDelete(id, name) {
@@ -3553,6 +3599,7 @@
     }
 
     @if(session('success')) showToast("{{ session('success') }}"); @endif
+    @if(session('info')) showToast("{{ session('info') }}", 'info'); @endif
     @if(session('error')) showToast("{{ session('error') }}", 'error'); @endif
     @if(session('warning')) showToast("{{ session('warning') }}", 'warning'); @endif
     @if($errors->has('nrp')) 

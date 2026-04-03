@@ -46,6 +46,8 @@ Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')-
         $personnel = auth()->user()->personnel;
         if ($personnel) {
             $rules = [
+                'jabatan' => 'nullable|string|max:255',
+                'bagian' => 'nullable|string|max:255',
                 'kemeja' => 'required|string',
                 'celana' => 'required|string',
                 'olahraga' => 'required|string',
@@ -59,14 +61,19 @@ Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')-
                 $rules['jilbab'] = 'required|string';
             }
             $validated = $request->validate($rules);
+            $sizePayload = collect($validated)
+                ->except(['jabatan', 'bagian'])
+                ->all();
 
             // Menggabungkan dengan json format sebelumnya
             $currentSizes = is_array($personnel->kapor_sizes) ? $personnel->kapor_sizes : [];
             $newSizes = app(\App\Services\KaporRequirementService::class)->sanitizeSubmittedSizes(
-                array_merge($currentSizes, $validated),
+                array_merge($currentSizes, $sizePayload),
                 $personnel->gender,
             );
 
+            $personnel->jabatan = $validated['jabatan'] ?? $personnel->jabatan;
+            $personnel->bagian = $validated['bagian'] ?? $personnel->bagian;
             $personnel->kapor_sizes = $newSizes;
             $personnel->save();
         }
