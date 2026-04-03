@@ -18,6 +18,7 @@ class SettingsController extends Controller
             'app_name' => Setting::getValue('app_name', 'SI-KAPOR Polda NTB'),
             'input_start_date' => Setting::getValue('input_start_date', date('Y-02-01')),
             'input_end_date' => Setting::getValue('input_end_date', date('Y-08-31')),
+            'personnel_request_mode' => Setting::getValue('personnel_request_mode', 'auto'),
         ];
 
         // Get submission stats per year for history
@@ -62,6 +63,7 @@ class SettingsController extends Controller
             'is_system_locked' => 'nullable|boolean',
             'input_start_date' => 'nullable|date',
             'input_end_date' => 'nullable|date|after_or_equal:input_start_date',
+            'personnel_request_mode' => 'required|in:auto,pending_verification',
         ]);
 
         Setting::setValue('app_name', $validated['app_name']);
@@ -74,6 +76,7 @@ class SettingsController extends Controller
         if (isset($validated['input_end_date'])) {
             Setting::setValue('input_end_date', $validated['input_end_date']);
         }
+        Setting::setValue('personnel_request_mode', $validated['personnel_request_mode']);
 
         return redirect()->back()->with('success', 'Pengaturan sistem berhasil diperbarui.');
     }

@@ -68,6 +68,10 @@ class PersonnelController extends Controller
             $query->where('keterangan', $request->keterangan);
         }
 
+        if ($request->get('status') === 'pending_verification') {
+            $query->where('verification_status', 'pending_verification');
+        }
+
         // Filter: hanya tampilkan personel dengan data belum lengkap
         // (kapor_sizes NULL, atau ada ukuran yang hilang, ATAU rank_id NULL ATAU NRP NULL)
         $isIncompleteFilter = $request->get('status') === 'incomplete';
@@ -182,6 +186,7 @@ class PersonnelController extends Controller
             'submitted' => $submittedCount,
             'pending' => $totalReal - $submittedCount,
             'active' => $filteredStatsCollection->where('is_active', true)->count(),
+            'pending_verification' => $filteredStatsCollection->where('verification_status', 'pending_verification')->count(),
             'is_filtered' => $this->hasActivePersonnelFilters($request),
             'scope_label' => $this->buildPersonnelStatsScopeLabel($request),
         ];
@@ -206,6 +211,7 @@ class PersonnelController extends Controller
             || $request->filled('rank_id')
             || $request->filled('satker_id')
             || $request->filled('keterangan')
+            || $request->get('status') === 'pending_verification'
             || $request->get('status') === 'incomplete'
             || $request->filled('missing_size')
             || $request->filled('kapor_item_id');
@@ -237,6 +243,10 @@ class PersonnelController extends Controller
             $labels[] = 'Pencarian aktif';
         }
 
+        if ($request->get('status') === 'pending_verification') {
+            $labels[] = 'Menunggu verifikasi';
+        }
+
         if ($request->get('status') === 'incomplete') {
             $labels[] = 'Filter ukuran belum lengkap';
         }
@@ -246,11 +256,13 @@ class PersonnelController extends Controller
 
     public function store(Request $request)
     {
+        $isAdminSatker = $request->user()?->hasRole('admin_satker');
+
         $validated = $request->validate([
-            'nrp' => 'required|string|unique:personnels,nrp',
+            'nrp' => 'required|string',
             'full_name' => 'required|string|max:255',
             'rank_id' => 'required|exists:ranks,id',
-            'satker_id' => 'required|exists:satkers,id',
+            'satker_id' => $isAdminSatker ? 'nullable' : 'required|exists:satkers,id',
             'jabatan' => 'nullable|string|max:255',
             'bagian' => 'nullable|string|max:255',
             'personnel_type' => 'required|in:Polri,PNS',
@@ -264,6 +276,33 @@ class PersonnelController extends Controller
             'keterangan_4' => 'nullable|string|max:255',
             'kapor_sizes' => 'nullable|array',
         ]);
+
+        if ($isAdminSatker) {
+            $validated['satker_id'] = (int) $request->user()->satker_id;
+        }
+
+        $nrp = trim((string) $validated['nrp']);
+        $existingPersonnel = Personnel::where('nrp', $nrp)->first();
+        $existingUser = User::where('nrp_nip', $nrp)->first();
+
+        if ($existingPersonnel !== null) {
+            if ((int) $existingPersonnel->satker_id === (int) $validated['satker_id']) {
+                return redirect()->back()->withInput()->with('error', 'NRP/NIP tersebut sudah terdaftar pada satker ini.');
+            }
+
+            return redirect()->back()->withInput()->with('error', 'NRP/NIP tersebut sudah terdaftar pada satker lain. Silakan koordinasikan dengan superadmin.');
+        }
+
+        if ($existingUser !== null) {
+            if ((int) $existingUser->satker_id === (int) $validated['satker_id']) {
+                return redirect()->back()->withInput()->with('error', 'NRP/NIP tersebut sudah terdaftar pada satker ini.');
+            }
+
+            return redirect()->back()->withInput()->with('error', 'NRP/NIP tersebut sudah terdaftar pada satker lain. Silakan koordinasikan dengan superadmin.');
+        }
+
+        $requestMode = Setting::getValue('personnel_request_mode', 'auto');
+        $requiresVerification = $isAdminSatker && $requestMode === 'pending_verification';
 
         DB::beginTransaction();
         try {
@@ -280,19 +319,25 @@ class PersonnelController extends Controller
                 'nrp_nip' => $validated['nrp'],
                 'password' => Hash::make($validated['nrp']), // NRP as default password
                 'satker_id' => $validated['satker_id'],
-                'is_active' => true,
+                'is_active' => ! $requiresVerification,
             ]);
             $user->assignRole('personil');
 
             // 2. Create Personnel Record
             $personnelData = $validated;
             $personnelData['user_id'] = $user->id;
+            $personnelData['is_active'] = ! $requiresVerification;
+            $personnelData['verification_status'] = $requiresVerification ? 'pending_verification' : 'approved';
             $personnel = Personnel::create($personnelData);
 
             DB::commit();
 
             // Sinkronkan jumlah Polri/PNS di satker setelah tambah personil
             PersonnelImport::recalculateSatkerCount($validated['satker_id']);
+
+            if ($requiresVerification) {
+                return redirect()->route('admin.personnel.index')->with('warning', 'Usulan personel baru berhasil dibuat dan menunggu verifikasi superadmin.');
+            }
 
             return redirect()->route('admin.personnel.index')->with('success', 'Data personil dan ukuran berhasil ditambahkan.');
 
@@ -321,6 +366,59 @@ class PersonnelController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal menyimpan ukuran: '.$e->getMessage());
         }
+    }
+
+    public function approveVerification(Personnel $personnel)
+    {
+        abort_unless(auth()->user()?->hasRole('superadmin'), 403, 'Hanya Superadmin yang dapat memverifikasi usulan personel.');
+
+        if ($personnel->verification_status !== 'pending_verification') {
+            return redirect()->back()->with('info', 'Personel ini tidak sedang menunggu verifikasi.');
+        }
+
+        DB::transaction(function () use ($personnel) {
+            $personnel->update([
+                'verification_status' => 'approved',
+                'is_active' => true,
+            ]);
+
+            if ($personnel->user) {
+                $personnel->user->update([
+                    'is_active' => true,
+                    'satker_id' => $personnel->satker_id,
+                ]);
+            }
+        });
+
+        AuditLogger::log('Setujui Usulan Personel', 'Manajemen Personil', $personnel->fresh(), null, ['verification_status' => 'approved'], 'success', 'Menyetujui usulan personel baru.');
+
+        return redirect()->back()->with('success', 'Usulan personel berhasil disetujui dan diaktifkan.');
+    }
+
+    public function rejectVerification(Personnel $personnel)
+    {
+        abort_unless(auth()->user()?->hasRole('superadmin'), 403, 'Hanya Superadmin yang dapat menolak usulan personel.');
+
+        if ($personnel->verification_status !== 'pending_verification') {
+            return redirect()->back()->with('info', 'Personel ini tidak sedang menunggu verifikasi.');
+        }
+
+        DB::transaction(function () use ($personnel) {
+            $personnel->update([
+                'verification_status' => 'rejected',
+                'is_active' => false,
+            ]);
+
+            if ($personnel->user) {
+                $personnel->user->update([
+                    'is_active' => false,
+                ]);
+            }
+        });
+
+        AuditLogger::log('Tolak Usulan Personel', 'Manajemen Personil', $personnel->fresh(), null, ['verification_status' => 'rejected'], 'warning', 'Menolak usulan personel baru.');
+
+        return redirect()->back()->with('warning', 'Usulan personel ditolak dan tetap nonaktif.');
     }
 
     public function update(Request $request, Personnel $personnel)

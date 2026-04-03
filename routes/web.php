@@ -228,6 +228,8 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     Route::get('/personnel', [\App\Http\Controllers\Admin\PersonnelController::class, 'index'])->name('personnel.index');
     Route::post('/personnel', [\App\Http\Controllers\Admin\PersonnelController::class, 'store'])->name('personnel.store');
     Route::put('/personnel/{personnel}', [\App\Http\Controllers\Admin\PersonnelController::class, 'update'])->name('personnel.update');
+    Route::post('/personnel/{personnel}/approve-verification', [\App\Http\Controllers\Admin\PersonnelController::class, 'approveVerification'])->name('personnel.approve-verification');
+    Route::post('/personnel/{personnel}/reject-verification', [\App\Http\Controllers\Admin\PersonnelController::class, 'rejectVerification'])->name('personnel.reject-verification');
     Route::post('/personnel/{personnel}/measurements', [\App\Http\Controllers\Admin\PersonnelController::class, 'storeMeasurements'])->name('personnel.measurements.store');
     Route::delete('/personnel/{personnel}', [\App\Http\Controllers\Admin\PersonnelController::class, 'destroy'])->name('personnel.destroy');
 

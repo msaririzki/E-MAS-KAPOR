@@ -319,6 +319,24 @@
             </div>
         </div>
     </a>
+
+    @if(auth()->user()->hasRole('superadmin'))
+    <a href="{{ route('admin.personnel.index', array_merge(request()->except(['page']), ['status' => 'pending_verification'])) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center;">
+        <div class="stat-icon" style="background: #FEF3C7; color: #D97706;">
+            <i class="ri-time-line"></i>
+        </div>
+        <div class="stat-content" style="flex: 1;">
+            <span class="stat-label">MENUNGGU VERIFIKASI</span>
+            <span class="stat-number">{{ number_format($stats['pending_verification'] ?? 0) }}</span>
+            <span class="stat-helper">Klik untuk lihat usulan personel baru</span>
+        </div>
+        <div style="padding-left: 16px; margin-right: 8px;">
+            <div class="action-btn" style="background: rgba(217, 119, 6, 0.08); color: #D97706; border-color: rgba(217, 119, 6, 0.18);">
+                Verifikasi <i class="ri-arrow-right-line"></i>
+            </div>
+        </div>
+    </a>
+    @endif
 </div>
 
 @if(($stats['nrp_issues'] ?? 0) > 0)
@@ -332,6 +350,20 @@
     </div>
     <a href="{{ route('admin.personnel.nrp-issues') }}" class="btn" style="background: #EA580C; color: white; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;">
         <i class="ri-list-check"></i> Cek & Selesaikan
+    </a>
+</div>
+@endif
+
+@if(request('status') === 'pending_verification')
+<div class="alert-bar" style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <i class="ri-time-line" style="font-size: 18px; color: #D97706;"></i>
+        <span style="font-size: 14px; font-weight: 600; color: #92400E;">
+            Menampilkan personel dengan status <strong>menunggu verifikasi</strong> ({{ number_format($personnels->total()) }} orang)
+        </span>
+    </div>
+    <a href="{{ route('admin.personnel.index') }}" class="btn" style="background: #D97706; color: white; font-size: 13px; padding: 6px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+        <i class="ri-close-line"></i> Tampilkan Semua
     </a>
 </div>
 @endif
@@ -457,6 +489,8 @@
             @if(!empty($kaporItemId ?? request('kapor_item_id')))
                 <input type="hidden" name="kapor_item_id" value="{{ $kaporItemId ?? request('kapor_item_id') }}">
             @endif
+        @elseif(request('status') === 'pending_verification')
+            <input type="hidden" name="status" value="pending_verification">
         @endif
 
         <div>
@@ -556,6 +590,19 @@
                                     <i class="ri-file-copy-line icon-copy" title="Salin NRP" onclick="copyToClipboard('{{ $p->nrp }}')"></i>
                                     @endif
                                 </div>
+                                @if($p->verification_status === 'pending_verification')
+                                <div style="margin-top: 4px;">
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #FFFBEB; color: #B45309; font-size: 11px; font-weight: 700; border: 1px solid #FDE68A;">
+                                        <i class="ri-time-line"></i> Menunggu verifikasi
+                                    </span>
+                                </div>
+                                @elseif($p->verification_status === 'rejected')
+                                <div style="margin-top: 4px;">
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #FEF2F2; color: #B91C1C; font-size: 11px; font-weight: 700; border: 1px solid #FECACA;">
+                                        <i class="ri-close-circle-line"></i> Ditolak
+                                    </span>
+                                </div>
+                                @endif
                             </div>
                         </div>
                     </td>
@@ -576,6 +623,20 @@
                     </td>
                     <td>
                         <div class="action-buttons">
+                            @if(auth()->user()->hasRole('superadmin') && $p->verification_status === 'pending_verification')
+                            <form action="{{ route('admin.personnel.approve-verification', $p) }}" method="POST" onsubmit="return confirm('Setujui usulan personel {{ $p->full_name }}?')">
+                                @csrf
+                                <button type="submit" class="btn-icon" style="background: #DCFCE7; color: #15803D;" title="Setujui Usulan">
+                                    <i class="ri-check-line"></i>
+                                </button>
+                            </form>
+                            <form action="{{ route('admin.personnel.reject-verification', $p) }}" method="POST" onsubmit="return confirm('Tolak usulan personel {{ $p->full_name }}?')">
+                                @csrf
+                                <button type="submit" class="btn-icon" style="background: #FEF2F2; color: #B91C1C;" title="Tolak Usulan">
+                                    <i class="ri-close-line"></i>
+                                </button>
+                            </form>
+                            @endif
                             <button class="btn-icon green" onclick="openDetailModal({{ json_encode($p) }})" title="Lihat Detail & Ukuran">
                                 <i class="ri-eye-line"></i>
                             </button>
@@ -1270,6 +1331,11 @@
             @csrf
             <input type="hidden" name="modal_type" value="add">
             <div class="modal-body">
+                @if(auth()->user()->hasRole('admin_satker'))
+                <div style="margin-bottom: 18px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 14px 16px; color: #1D4ED8; font-size: 13px; line-height: 1.6;">
+                    Sebagai <strong>Admin Satker</strong>, Anda hanya dapat menambahkan personel untuk satker Anda sendiri. Jika mode verifikasi aktif, data baru akan masuk sebagai <strong>usulan</strong> dan menunggu verifikasi superadmin.
+                </div>
+                @endif
                 <div class="form-grid">
                     <!-- Row 1 -->
                     <div class="form-group">
@@ -1370,7 +1436,7 @@
                     <div class="form-group">
                         <label>SATKER / SATWIL</label>
                         <div class="custom-select-wrapper">
-                            <div class="custom-select" onclick="toggleDropdown(this)">
+                            <div class="custom-select" @if(!auth()->user()->hasRole('admin_satker')) onclick="toggleDropdown(this)" @endif>
                                 <div class="select-trigger"><span id="add_satker_label">{{ old('modal_type') == 'add' && old('satker_id') ? $satkers->firstWhere('id', old('satker_id'))->name : '— Pilih Satker —' }}</span><i class="ri-arrow-down-s-line"></i></div>
                                 <div class="custom-options">
                                     <div class="select-search-container">
@@ -1388,7 +1454,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <input type="hidden" name="satker_id" required id="add_satker_id" value="{{ old('modal_type') == 'add' ? old('satker_id') : '' }}">
+                            <input type="hidden" name="satker_id" required id="add_satker_id" value="{{ old('modal_type') == 'add' ? old('satker_id') : (auth()->user()->hasRole('admin_satker') ? auth()->user()->satker_id : '') }}">
                         </div>
                     </div>
                     <div class="form-group" id="add_bagian_manual_wrapper">

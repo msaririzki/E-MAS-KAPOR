@@ -33,6 +33,7 @@ class Personnel extends Model
         'address',
         'religion',
         'is_active',
+        'verification_status',
 
         'nrp_issue_note',
         'nrp_issue_resolved_at',
@@ -43,7 +44,7 @@ class Personnel extends Model
     {
         return [
             'is_active' => 'boolean',
-
+            'verification_status' => 'string',
             'nrp_issue_resolved_at' => 'datetime',
             'kapor_sizes' => 'array',
         ];

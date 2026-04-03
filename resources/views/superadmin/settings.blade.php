@@ -55,6 +55,15 @@
                     <p class="help-text">Tahun yang digunakan untuk Dashboard dan perhitungan data saat ini.</p>
                 </div>
 
+                <div class="modern-form-group">
+                    <label>Mode Penambahan Personel oleh Admin Satker <span class="required">*</span></label>
+                    <select name="personnel_request_mode" class="modern-input" required>
+                        <option value="auto" {{ $settings['personnel_request_mode'] === 'auto' ? 'selected' : '' }}>Auto approve</option>
+                        <option value="pending_verification" {{ $settings['personnel_request_mode'] === 'pending_verification' ? 'selected' : '' }}>Pending verification</option>
+                    </select>
+                    <p class="help-text">`Auto approve` akan langsung membuat akun personel aktif. `Pending verification` akan menyimpan usulan personel baru dalam status menunggu verifikasi.</p>
+                </div>
+
                 <div class="modern-toggle-group" style="padding-bottom: 12px; border-bottom: none;">
                     <div class="toggle-info">
                         <strong>Kunci Sistem Paksa (Force Lock System)</strong>
