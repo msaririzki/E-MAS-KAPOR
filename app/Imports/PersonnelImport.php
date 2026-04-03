@@ -1218,14 +1218,18 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     $isEmptyNrp = empty($nrp);
                     $isDuplicateNrp = ! empty($data['duplicate_nrp']);
                     $isBatchDuplicate = ! empty($nrp) && isset($processedBatchNrps[$nrp]);
+                    $existingUserAccount = ! $isEmptyNrp ? $existingUsers->get($nrp) : null;
 
                     $hasNrpConflict = $isDuplicateNrp || $isBatchDuplicate || ! empty($data['db_duplicate']);
-                    $canCreateLoginAccount = ! $isEmptyNrp && ! $hasNrpConflict;
 
                     // Jika NRP konflik (duplikat di file atau sudah dipakai record lain di DB),
                     // jangan update record existing. "Tetap Import" berarti buat personel baru
                     // sambil menandai konflik NRP, bukan menimpa data orang lain.
                     $personnel = ($isEmptyNrp || $hasNrpConflict) ? null : $existingPersonnel->get($nrp);
+                    $hasLoginAccountConflict = $existingUserAccount
+                        && $existingUserAccount->personnel
+                        && (! $personnel || $existingUserAccount->personnel->id !== $personnel->id);
+                    $canCreateLoginAccount = ! $isEmptyNrp && ! $hasNrpConflict && ! $hasLoginAccountConflict;
 
                     if (! $personnel) {
                         // ── User baru: bcrypt cost=4 (10× lebih cepat, password bisa diubah nanti) ──
