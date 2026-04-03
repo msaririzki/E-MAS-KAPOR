@@ -243,6 +243,8 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     // Laporan & Audit
     Route::get('/laporan', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('reports');
     Route::get('/laporan/export', [\App\Http\Controllers\Admin\ReportsController::class, 'export'])->name('reports.export');
+    Route::get('/laporan/arsip-tahunan', [\App\Http\Controllers\Admin\ReportsController::class, 'annualArchives'])->name('reports.annual-archives');
+    Route::get('/laporan/arsip-tahunan/{annualArchive}', [\App\Http\Controllers\Admin\ReportsController::class, 'downloadAnnualArchive'])->name('reports.annual-archives.download');
     Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
 
     // ── Budget / Rencana Anggaran ──────────────────────────────

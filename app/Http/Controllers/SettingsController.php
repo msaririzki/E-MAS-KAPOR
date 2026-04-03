@@ -8,12 +8,17 @@ use App\Models\BudgetYear;
 use App\Models\KaporSubmission;
 use App\Models\Personnel;
 use App\Models\Setting;
+use App\Services\AnnualArchiveService;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SettingsController extends Controller
 {
+    public function __construct(
+        private readonly AnnualArchiveService $annualArchiveService
+    ) {}
+
     public function index()
     {
         $settings = [
@@ -92,6 +97,8 @@ class SettingsController extends Controller
     {
         $currentYear = Setting::getValue('fiscal_year', date('Y'));
         $nextYear = $currentYear + 1;
+
+        $this->annualArchiveService->generateForYear((int) $currentYear, auth()->id());
 
         DB::transaction(function () use ($currentYear, $nextYear) {
             Setting::setValue('is_system_locked', 'true');

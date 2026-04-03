@@ -110,6 +110,25 @@
         </div>
     </div>
 
+    {{-- 6. Arsip Final Tahunan --}}
+    <div class="report-card">
+        <div class="report-icon" style="background: var(--warning-bg); color: var(--warning);">
+            <i class="ri-archive-stack-line"></i>
+        </div>
+        <div class="report-body">
+            <h3>Arsip Final Tahunan</h3>
+            <p>Lihat dan unduh kembali snapshot final tahunan yang tersimpan otomatis saat transisi ke tahun anggaran berikutnya.</p>
+            <div class="report-meta">
+                <span class="report-badge"><i class="ri-file-list-3-line"></i> XLSX & PDF</span>
+            </div>
+        </div>
+        <div class="report-action">
+            <a href="{{ route('admin.reports.annual-archives') }}" class="report-download-btn">
+                <i class="ri-folder-open-line"></i> Buka Arsip
+            </a>
+        </div>
+    </div>
+
 </div>
 
 @endsection

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AnnualArchive;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportsController extends Controller
@@ -11,6 +13,25 @@ class ReportsController extends Controller
     public function index()
     {
         return view('admin.reports.index');
+    }
+
+    public function annualArchives()
+    {
+        $archives = AnnualArchive::query()
+            ->with('generator:id,name')
+            ->orderByDesc('fiscal_year')
+            ->orderBy('format')
+            ->get()
+            ->groupBy('fiscal_year');
+
+        return view('admin.reports.annual_archives', compact('archives'));
+    }
+
+    public function downloadAnnualArchive(AnnualArchive $annualArchive)
+    {
+        abort_unless(Storage::disk($annualArchive->disk)->exists($annualArchive->file_path), 404, 'File arsip tidak ditemukan.');
+
+        return Storage::disk($annualArchive->disk)->download($annualArchive->file_path, $annualArchive->file_name);
     }
 
     public function export(Request $request)
