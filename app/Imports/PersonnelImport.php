@@ -1173,7 +1173,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         // ── Pre-load sekali agar tidak ada N+1 query ─────────────────────────
         $ranksById = Rank::all()->keyBy('id');
         $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
-        $existingPersonnel = Personnel::whereIn('nrp', $allNrp)->get()->keyBy('nrp');
+        $existingPersonnel = Personnel::where('satker_id', $satkerId)
+            ->whereIn('nrp', $allNrp)
+            ->get()
+            ->keyBy('nrp');
         $existingUsers = User::with(['personnel', 'roles'])->whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
 
         // ── Satu transaksi besar untuk semua insert/update ───────────────────
