@@ -5,7 +5,6 @@ namespace App\Http\Controllers\AdminSatker;
 use App\Http\Controllers\Controller;
 use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
-use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -54,9 +53,7 @@ class KebutuhanController extends Controller
             ->get()
             ->groupBy('category');
 
-        $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
-
-        return view('admin-satker.kebutuhan.create', compact('kaporItems', 'fiscalYear'));
+        return view('admin-satker.kebutuhan.create', compact('kaporItems'));
     }
 
     /**
@@ -65,7 +62,6 @@ class KebutuhanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'fiscal_year' => 'required|integer|min:2020',
             'items' => 'required|array|min:1',
             'items.*' => 'exists:identifikasi_items,id',
         ], [
@@ -73,7 +69,8 @@ class KebutuhanController extends Controller
             'items.min' => 'Minimal pilih 1 item kebutuhan.',
         ]);
 
-        $fiscalYear = $request->fiscal_year;
+        // Tahun anggaran otomatis = tahun sekarang + 1
+        $fiscalYear = (int) date('Y') + 1;
 
         $kebutuhan = DB::transaction(function () use ($request, $fiscalYear) {
             $kebutuhan = Kebutuhan::create([
@@ -152,15 +149,17 @@ class KebutuhanController extends Controller
         }
 
         $request->validate([
-            'fiscal_year' => 'required|integer|min:2020',
             'items' => 'required|array|min:1',
             'items.*' => 'exists:identifikasi_items,id',
         ]);
 
-        DB::transaction(function () use ($request, $kebutuhan) {
+        // Tahun anggaran otomatis = tahun sekarang + 1
+        $fiscalYear = (int) date('Y') + 1;
+
+        DB::transaction(function () use ($request, $kebutuhan, $fiscalYear) {
             $kebutuhan->update([
-                'title' => 'Pengajuan Kebutuhan TA ' . $request->fiscal_year,
-                'fiscal_year' => $request->fiscal_year,
+                'title' => 'Pengajuan Kebutuhan TA ' . $fiscalYear,
+                'fiscal_year' => $fiscalYear,
                 'notes' => null,
             ]);
 

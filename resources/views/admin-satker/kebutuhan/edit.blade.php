@@ -64,13 +64,12 @@
         <div class="card-body">
             <div class="form-group">
                 <label class="form-label">Tahun Anggaran <span style="color: var(--danger);">*</span></label>
-                <select name="fiscal_year" class="form-input" required>
-                    @php $currentYear = date('Y') + 1; @endphp
-                    @for($y = $currentYear - 1; $y <= $currentYear + 2; $y++)
-                        <option value="{{ $y }}" {{ old('fiscal_year', $kebutuhan->fiscal_year) == $y ? 'selected' : '' }}>{{ $y }}</option>
-                    @endfor
-                </select>
-                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">*) Judul pengajuan akan di-generate otomatis berdasarkan Tahun Anggaran terpilih.</small>
+                @php $nextYear = (int) date('Y') + 1; @endphp
+                <input type="hidden" name="fiscal_year" value="{{ $nextYear }}">
+                <div class="form-input" style="background: var(--slate-50); cursor: default; font-weight: 600;">
+                    {{ $nextYear }}
+                </div>
+                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">*) Tahun anggaran otomatis ditetapkan ke tahun depan ({{ date('Y') }} + 1). Judul pengajuan akan di-generate otomatis.</small>
             </div>
         </div>
     </div>
