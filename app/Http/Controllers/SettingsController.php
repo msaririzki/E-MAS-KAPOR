@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BagianOption;
 use App\Models\KaporSubmission;
 use App\Models\Setting;
 use Illuminate\Http\Request;
@@ -45,7 +46,12 @@ class SettingsController extends Controller
             ];
         }
 
-        return view('superadmin.settings', compact('settings', 'yearlyStats'));
+        $bagianOptions = BagianOption::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        return view('superadmin.settings', compact('settings', 'yearlyStats', 'bagianOptions'));
     }
 
     public function update(Request $request)

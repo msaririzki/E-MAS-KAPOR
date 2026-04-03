@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             RankSeeder::class,
             SatkerSeeder::class,
+            BagianOptionSeeder::class,
             KaporItemSeeder::class,
             SettingSeeder::class,
             TestimonialSeeder::class,

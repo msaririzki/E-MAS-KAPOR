@@ -253,10 +253,36 @@
             $s_jilbab = ['K', 'SD', 'B'];
             
             $gender = optional(auth()->user()->personnel)->gender ?? 'L';
+            $satkerName = strtoupper(optional(auth()->user()->satker)->name ?? optional($personnel?->satker)->name ?? '');
+            $usesBagianDropdown = str_contains($satkerName, 'POLRES') || str_contains($satkerName, 'POLRESTA');
         @endphp
 
         <form action="{{ route('personil.kapor.store') }}" method="POST" id="kaporForm">
             @csrf
+
+            <div class="form-card">
+                <h4 style="margin: 0 0 16px 0; font-size: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Data Lapangan</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Jabatan</label>
+                        <input type="text" name="jabatan" class="form-control" value="{{ old('jabatan', $personnel->jabatan ?? '') }}" placeholder="Contoh: BANIT, PS. KASUBSI" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bagian / Fungsi</label>
+                        @if($usesBagianDropdown)
+                            <select name="bagian" class="form-control select-control">
+                                <option value="">— Pilih Bagian —</option>
+                                @foreach(($bagianOptions ?? collect()) as $option)
+                                    <option value="{{ $option }}" {{ old('bagian', $personnel->bagian ?? '') === $option ? 'selected' : '' }}>{{ $option }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="text" name="bagian" class="form-control" value="{{ old('bagian', $personnel->bagian ?? '') }}" placeholder="Contoh: RESKRIM, INTEL" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                        @endif
+                    </div>
+                </div>
+                <p style="margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.6;">Untuk `POLRES/POLRESTA`, field bagian/fungsi mengikuti master dropdown. Untuk `POLDA`, field ini tetap bisa diisi manual.</p>
+            </div>
             
             <div class="form-card">
                 <h4 style="margin: 0 0 16px 0; font-size: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Tutup Badan & Pakaian</h4>

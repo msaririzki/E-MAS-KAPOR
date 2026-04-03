@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BagianOption;
 use App\Models\KaporItem;
 use App\Models\Personnel;
 use App\Models\Satker;
@@ -207,6 +208,11 @@ class DashboardController extends Controller
     {
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
         $personnel = $user->personnel;
+        $bagianOptions = BagianOption::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name');
 
         $kaporSizes = [];
         $hasSubmitted = false;
@@ -216,7 +222,7 @@ class DashboardController extends Controller
             $hasSubmitted = ! empty($kaporSizes);
         }
 
-        return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'fiscalYear'));
+        return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'fiscalYear', 'bagianOptions'));
     }
 
     private function countPersonnelWithCompleteSizes(?int $satkerId = null): int

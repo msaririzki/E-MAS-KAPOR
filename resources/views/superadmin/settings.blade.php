@@ -235,7 +235,82 @@
 
     <hr class="settings-divider">
 
-    {{-- 3. Transisi Tahun Anggaran & Riwayat --}}
+    {{-- 3. Master Bagian/Fungsi --}}
+    <div class="settings-section">
+        <div class="settings-info">
+            <h3><i class="ri-list-check-3"></i> Master Bagian / Fungsi</h3>
+            <p>Kelola daftar opsi `bagian/fungsi` yang dipakai sebagai dropdown untuk satker bertipe `POLRES` atau `POLRESTA`. Untuk `POLDA`, input tetap manual.</p>
+        </div>
+        <div class="settings-card transparent-card">
+            <div class="table-card" style="margin-bottom: 20px;">
+                <div class="table-card-head">
+                    <h4>Tambah Opsi Baru</h4>
+                </div>
+                <form method="POST" action="{{ route('superadmin.bagian-options.store') }}" style="padding: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: end;">
+                    @csrf
+                    <div style="flex: 1; min-width: 260px;">
+                        <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Nama Bagian / Fungsi</label>
+                        <input type="text" name="name" class="modern-input" placeholder="Contoh: SAT RESKRIM" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" required>
+                    </div>
+                    <button type="submit" class="btn-primary-modern">
+                        <i class="ri-add-line"></i> Tambah
+                    </button>
+                </form>
+            </div>
+
+            <div class="table-card">
+                <div class="table-card-head">
+                    <h4>Daftar Master Bagian / Fungsi</h4>
+                </div>
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+                    <table class="modern-table" style="min-width: 560px;">
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>Status</th>
+                                <th style="text-align:right;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($bagianOptions as $option)
+                            <tr>
+                                <td>
+                                    <form method="POST" action="{{ route('superadmin.bagian-options.update', $option) }}" style="display:flex; gap:8px; align-items:center;">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="text" name="name" value="{{ $option->name }}" class="modern-input" style="min-width: 220px; text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" required>
+                                </td>
+                                <td>
+                                        <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--text-main);">
+                                            <input type="checkbox" name="is_active" value="1" {{ $option->is_active ? 'checked' : '' }}>
+                                            {{ $option->is_active ? 'Aktif' : 'Nonaktif' }}
+                                        </label>
+                                </td>
+                                <td style="text-align:right; white-space:nowrap;">
+                                        <button type="submit" class="btn btn-outline" style="padding:8px 12px;">Simpan</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('superadmin.bagian-options.destroy', $option) }}" style="display:inline-block; margin-top:8px;" onsubmit="return confirm('Hapus opsi {{ $option->name }}?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn" style="padding:8px 12px; background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border);">Hapus</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="3" class="empty-state">Belum ada master bagian/fungsi.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="settings-divider">
+
+    {{-- 4. Transisi Tahun Anggaran & Riwayat --}}
     <div class="settings-section">
         <div class="settings-info">
             <h3><i class="ri-history-line"></i> Riwayat & Transisi</h3>

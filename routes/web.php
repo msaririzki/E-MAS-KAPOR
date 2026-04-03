@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SatkerController;
 use App\Http\Controllers\Superadmin\StatisticsController;
+use App\Models\BagianOption;
 use Illuminate\Support\Facades\Route;
 
 /* |-------------------------------------------------------------------------- | SI-KAPOR Polda NTB — Web Routes |-------------------------------------------------------------------------- */
@@ -38,8 +39,13 @@ Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')-
     Route::get('/kapor', function () {
         $personnel = auth()->user()->personnel;
         $kaporSizes = $personnel ? ($personnel->kapor_sizes ?? []) : [];
+        $bagianOptions = BagianOption::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name');
 
-        return view('personil.kapor.index', compact('kaporSizes'));
+        return view('personil.kapor.index', compact('kaporSizes', 'bagianOptions', 'personnel'));
     })->name('kapor.index');
 
     Route::post('/kapor', function (\Illuminate\Http\Request $request) {
@@ -275,6 +281,10 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::put('/satkers/{satker}', [SatkerController::class, 'update'])->name('satkers.update');
     Route::patch('/satkers/{satker}/personnel', [SatkerController::class, 'updatePersonnelCount'])->name('satkers.update-personnel');
     Route::delete('/satkers/{satker}', [SatkerController::class, 'destroy'])->name('satkers.destroy');
+
+    Route::post('/bagian-options', [\App\Http\Controllers\Admin\BagianOptionController::class, 'store'])->name('bagian-options.store');
+    Route::put('/bagian-options/{bagianOption}', [\App\Http\Controllers\Admin\BagianOptionController::class, 'update'])->name('bagian-options.update');
+    Route::delete('/bagian-options/{bagianOption}', [\App\Http\Controllers\Admin\BagianOptionController::class, 'destroy'])->name('bagian-options.destroy');
 
     Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');

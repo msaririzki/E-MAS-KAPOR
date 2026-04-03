@@ -10,6 +10,7 @@ use App\Imports\PersonnelImport;
 use App\Imports\PersonnelKeteranganImport;
 use App\Imports\PersonnelSdmImport;
 use App\Imports\PersonnelUpdateImport;
+use App\Models\BagianOption;
 use App\Models\KaporItem;
 use App\Models\Personnel;
 use App\Models\Rank;
@@ -187,7 +188,11 @@ class PersonnelController extends Controller
 
         $ranks = Rank::orderBy('sort_order')->get();
         $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
-        $bagians = Personnel::whereNotNull('bagian')->distinct()->pluck('bagian');
+        $bagians = BagianOption::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name');
 
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
 

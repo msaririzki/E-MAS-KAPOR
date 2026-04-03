@@ -1402,7 +1402,7 @@
                                 <div class="select-trigger"><span id="add_bagian_select_label">{{ old('modal_type') == 'add' && old('bagian') ? old('bagian') : '— Pilih Bagian —' }}</span><i class="ri-arrow-down-s-line"></i></div>
                                 <div class="custom-options">
                                     <div class="options-scroll">
-                                        @foreach(['PIMPINAN', 'BAG OPS', 'BAG REN', 'BAG SDM', 'BAG LOG', 'SIUM', 'SIKEU', 'SIPROPAM', 'SIWAS', 'SIKUM', 'SIHUMAS', 'SIDOKKES', 'SITIK', 'SPKT', 'SAT INTELKAM', 'SAT RESKRIM', 'SAT RESNARKOBA', 'SAT SAMAPTA', 'SAT BINMAS', 'SAT LANTAS', 'SAT POLAIRUD', 'SAT TAHTI', 'SAT OBVIT', 'POLSEK'] as $opt)
+                                        @foreach($bagians as $opt)
                                             <div class="option" onclick="selectBagianDropdown(this, 'add', '{{ $opt }}')">{{ $opt }}</div>
                                         @endforeach
                                     </div>
@@ -1924,7 +1924,7 @@
                                 <div class="select-trigger"><span id="edit_bagian_select_label">{{ old('modal_type') == 'edit' && old('bagian') ? old('bagian') : '— Pilih Bagian —' }}</span><i class="ri-arrow-down-s-line"></i></div>
                                 <div class="custom-options">
                                     <div class="options-scroll">
-                                        @foreach(['PIMPINAN', 'BAG OPS', 'BAG REN', 'BAG SDM', 'BAG LOG', 'SIUM', 'SIKEU', 'SIPROPAM', 'SIWAS', 'SIKUM', 'SIHUMAS', 'SIDOKKES', 'SITIK', 'SPKT', 'SAT INTELKAM', 'SAT RESKRIM', 'SAT RESNARKOBA', 'SAT SAMAPTA', 'SAT BINMAS', 'SAT LANTAS', 'SAT POLAIRUD', 'SAT TAHTI', 'SAT OBVIT', 'POLSEK'] as $opt)
+                                        @foreach($bagians as $opt)
                                             <div class="option" onclick="selectBagianDropdown(this, 'edit', '{{ $opt }}')">{{ $opt }}</div>
                                         @endforeach
                                     </div>
