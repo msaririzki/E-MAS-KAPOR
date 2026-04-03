@@ -35,7 +35,13 @@ class KebutuhanController extends Controller
             'ditolak' => Kebutuhan::where('satker_id', $satkerId)->where('status', 'ditolak')->count(),
         ];
 
-        return view('admin-satker.kebutuhan.index', compact('kebutuhans', 'stats'));
+        // Cek apakah sudah ada pengajuan untuk tahun anggaran berikutnya
+        $nextFiscalYear = (int) date('Y') + 1;
+        $hasSubmissionThisYear = Kebutuhan::where('satker_id', $satkerId)
+            ->where('fiscal_year', $nextFiscalYear)
+            ->exists();
+
+        return view('admin-satker.kebutuhan.index', compact('kebutuhans', 'stats', 'hasSubmissionThisYear', 'nextFiscalYear'));
     }
 
     /**
@@ -43,6 +49,17 @@ class KebutuhanController extends Controller
      */
     public function create()
     {
+        // Cek apakah satker sudah mengajukan untuk tahun anggaran ini
+        $nextFiscalYear = (int) date('Y') + 1;
+        $existing = Kebutuhan::where('satker_id', auth()->user()->satker_id)
+            ->where('fiscal_year', $nextFiscalYear)
+            ->exists();
+
+        if ($existing) {
+            return redirect()->route('admin-satker.kebutuhan.index')
+                ->with('error', 'Satker Anda sudah memiliki pengajuan untuk TA ' . $nextFiscalYear . '. Hanya diperbolehkan 1 pengajuan per tahun anggaran.');
+        }
+
         $kaporItems = IdentifikasiItem::where('is_active', true)
             ->orderByRaw("CASE
                 WHEN category = 'Tutup_Kepala' THEN 1
@@ -71,6 +88,16 @@ class KebutuhanController extends Controller
 
         // Tahun anggaran otomatis = tahun sekarang + 1
         $fiscalYear = (int) date('Y') + 1;
+
+        // Cek duplikasi: 1 satker hanya boleh 1 pengajuan per tahun anggaran
+        $existing = Kebutuhan::where('satker_id', $request->user()->satker_id)
+            ->where('fiscal_year', $fiscalYear)
+            ->exists();
+
+        if ($existing) {
+            return redirect()->route('admin-satker.kebutuhan.index')
+                ->with('error', 'Satker Anda sudah memiliki pengajuan untuk TA ' . $fiscalYear . '. Hanya diperbolehkan 1 pengajuan per tahun anggaran.');
+        }
 
         $kebutuhan = DB::transaction(function () use ($request, $fiscalYear) {
             $kebutuhan = Kebutuhan::create([
