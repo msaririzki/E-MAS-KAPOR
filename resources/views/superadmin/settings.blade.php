@@ -332,14 +332,14 @@
                 <div class="danger-header">
                     <i class="ri-alert-line"></i>
                     <div>
-                        <strong>Tutup Tahun Anggaran {{ $settings['fiscal_year'] }}</strong>
-                        <p>Tindakan ini akan mengunci seluruh data pada tahun ini, mengarsipkan data, dan memulai periode pembukuan untuk TA {{ $settings['fiscal_year'] + 1 }}.</p>
+                        <strong>Siapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}</strong>
+                        <p>Tindakan ini akan mengunci sistem, mengarsipkan paket anggaran tahun {{ $settings['fiscal_year'] }}, membuat Tahun Anggaran {{ $settings['fiscal_year'] + 1 }} menjadi aktif, dan mereset data tahunan aktif personel tanpa menghapus akun user.</p>
                     </div>
                 </div>
-                <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MENUTUP Tahun Anggaran {{ $settings['fiscal_year'] }} dan lanjut ke {{ $settings['fiscal_year'] + 1 }}? Data tahun ini tidak bisa diubah lagi.')">
+                <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menyiapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}? Sistem akan dikunci, paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan, dan data tahunan aktif personel akan direset.')">
                     @csrf
                     <button type="submit" class="btn-danger-modern">
-                        Selesaikan Periode {{ $settings['fiscal_year'] }}
+                        Siapkan Anggaran Berikutnya
                     </button>
                 </form>
             </div>

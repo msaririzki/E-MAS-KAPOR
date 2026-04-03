@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BudgetPackage;
 use App\Models\BudgetYear;
 use App\Models\Personnel;
+use App\Models\Setting;
 use App\Services\KaporRequirementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,10 @@ class BudgetController extends Controller
             ->orderByDesc('year')
             ->get();
 
-        return view('admin.budget.index', compact('years'));
+        $activeFiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $activeBudgetYear = $years->firstWhere('is_active', true);
+
+        return view('admin.budget.index', compact('years', 'activeFiscalYear', 'activeBudgetYear'));
     }
 
     public function storeYear(Request $request)

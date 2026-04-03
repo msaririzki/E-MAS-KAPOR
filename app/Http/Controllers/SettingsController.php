@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\BagianOption;
+use App\Models\BudgetPackage;
+use App\Models\BudgetYear;
 use App\Models\KaporSubmission;
+use App\Models\Personnel;
 use App\Models\Setting;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -89,15 +93,58 @@ class SettingsController extends Controller
         $currentYear = Setting::getValue('fiscal_year', date('Y'));
         $nextYear = $currentYear + 1;
 
-        // 1. Lock current year (Optional, but good for safety)
-        Setting::setValue('is_system_locked', 'true');
+        DB::transaction(function () use ($currentYear, $nextYear) {
+            Setting::setValue('is_system_locked', 'true');
+            Setting::setValue('fiscal_year', $nextYear);
+            Setting::setValue('input_start_date', $nextYear.'-02-01');
+            Setting::setValue('input_end_date', $nextYear.'-08-31');
 
-        // 2. Set new year
-        Setting::setValue('fiscal_year', $nextYear);
+            BudgetYear::query()->update(['is_active' => false]);
 
-        // 3. Keep system locked? Or unlock for new entries?
-        // Usually, we keep it locked until admin is ready.
+            BudgetYear::updateOrCreate(
+                ['year' => $nextYear],
+                [
+                    'name' => 'Tahun Anggaran '.$nextYear,
+                    'is_active' => true,
+                ]
+            );
 
-        return redirect()->back()->with('success', "Tahun Anggaran berhasil beralih ke $nextYear. Sistem saat ini terkunci untuk persiapan.");
+            BudgetPackage::query()
+                ->whereHas('budgetYear', fn ($query) => $query->where('year', $currentYear))
+                ->whereIn('status', ['draft', 'finalized'])
+                ->update(['status' => 'archived']);
+
+            Personnel::query()
+                ->where(function ($query) {
+                    $query->whereNull('verification_status')
+                        ->orWhere('verification_status', 'approved');
+                })
+                ->update([
+                    'jabatan' => null,
+                    'bagian' => null,
+                    'keterangan' => null,
+                    'keterangan_2' => null,
+                    'keterangan_3' => null,
+                    'keterangan_4' => null,
+                    'kapor_sizes' => json_encode([]),
+                    'nrp_issue_note' => null,
+                    'nrp_issue_resolved_at' => null,
+                ]);
+        });
+
+        AuditLogger::log(
+            'Siapkan Tahun Anggaran Berikutnya',
+            'Pengaturan Sistem',
+            null,
+            null,
+            [
+                'current_year' => $currentYear,
+                'next_year' => $nextYear,
+            ],
+            'success',
+            'Menyiapkan sistem untuk tahun anggaran berikutnya dan mereset data tahunan aktif personel.'
+        );
+
+        return redirect()->back()->with('success', "Tahun Anggaran $nextYear siap digunakan. Sistem dikunci, paket tahun $currentYear diarsipkan, dan data tahunan aktif personel telah direset.");
     }
 }

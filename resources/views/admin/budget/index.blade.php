@@ -21,6 +21,28 @@
     </div>
 </div>
 
+<div class="budget-prep-card">
+    <div class="budget-prep-content">
+        <div class="budget-prep-badge">
+            <i class="ri-calendar-check-line"></i>
+            <span>Tahun Anggaran Aktif</span>
+        </div>
+        <h2>TA {{ $activeFiscalYear }}</h2>
+        <p>
+            Budget year aktif: <strong>{{ $activeBudgetYear?->name ?? 'Belum tersinkron ke modul budget' }}</strong>.
+            Aksi ini akan mengarsipkan paket tahun berjalan, mengunci sistem, lalu menyiapkan tahun berikutnya dengan data tahunan aktif personel yang sudah direset.
+        </p>
+    </div>
+    @if(auth()->user()->hasRole('superadmin'))
+    <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menyiapkan Tahun Anggaran {{ $activeFiscalYear + 1 }}? Sistem akan dikunci, paket anggaran aktif akan diarsipkan, dan data tahunan aktif personel akan direset.')">
+        @csrf
+        <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
+            <i class="ri-arrow-right-up-line"></i> Siapkan Anggaran Berikutnya
+        </button>
+    </form>
+    @endif
+</div>
+
 {{-- Year Cards --}}
 <div class="budget-years-grid">
     @forelse($years as $year)
@@ -176,6 +198,42 @@
         gap: 20px;
     }
 
+    .budget-prep-card {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
+        background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%);
+        border: 1px solid #FECACA;
+        border-radius: 18px;
+        padding: 22px 24px;
+        margin-bottom: 24px;
+    }
+    .budget-prep-content h2 {
+        font-size: 28px;
+        font-weight: 800;
+        color: #991B1B;
+        margin: 10px 0 8px;
+    }
+    .budget-prep-content p {
+        margin: 0;
+        color: #7F1D1D;
+        font-size: 14px;
+        line-height: 1.7;
+        max-width: 760px;
+    }
+    .budget-prep-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(185, 28, 28, 0.08);
+        color: #B91C1C;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
     .budget-year-card {
         background: #fff;
         border: 1px solid #E5E7EB;
@@ -326,6 +384,22 @@
     .form-input:focus { border-color: #B91C1C; box-shadow: 0 0 0 3px #FEF2F2; }
     .form-input.is-invalid { border-color: #DC2626; box-shadow: 0 0 0 3px #FEF2F2; }
     .form-error { font-size: 12px; color: #B91C1C; margin-top: 6px; }
+
+    @media (max-width: 768px) {
+        .page-header-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .budget-prep-card {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .budget-prep-card .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>
