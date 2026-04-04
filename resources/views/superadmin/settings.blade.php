@@ -319,7 +319,103 @@
 
     <hr class="settings-divider">
 
-    {{-- 4. Transisi Tahun Anggaran & Riwayat --}}
+    {{-- 4. Alias Satker SDM --}}
+    <div class="settings-section">
+        <div class="settings-info">
+            <h3><i class="ri-links-line"></i> Alias Satker SDM</h3>
+            <p>Kelola alias tambahan yang dipakai resolver SDM saat membaca satker dari teks jabatan. Alias khusus di sini diprioritaskan lebih tinggi daripada alias turunan otomatis.</p>
+        </div>
+        <div class="settings-card transparent-card">
+            <div class="table-card" style="margin-bottom: 20px;">
+                <div class="table-card-head">
+                    <h4>Tambah Alias Baru</h4>
+                </div>
+                <form method="POST" action="{{ route('superadmin.sdm-satker-aliases.store') }}" style="padding: 20px; display: grid; gap: 12px;">
+                    @csrf
+                    <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr auto; gap:12px; align-items:end;">
+                        <div>
+                            <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Alias Jabatan</label>
+                            <input type="text" name="alias" class="modern-input" placeholder="Contoh: DEN GEGANA BRIMOB" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" required>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Satker Tujuan</label>
+                            <select name="satker_id" class="modern-input" required>
+                                <option value="">Pilih Satker</option>
+                                @foreach($satkers as $satker)
+                                    <option value="{{ $satker->id }}">{{ $satker->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">Catatan</label>
+                            <input type="text" name="notes" class="modern-input" placeholder="Opsional">
+                        </div>
+                        <button type="submit" class="btn-primary-modern">
+                            <i class="ri-add-line"></i> Tambah
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="table-card">
+                <div class="table-card-head">
+                    <h4>Daftar Alias Satker SDM</h4>
+                </div>
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+                    <table class="modern-table" style="min-width: 860px;">
+                        <thead>
+                            <tr>
+                                <th>Alias</th>
+                                <th>Satker</th>
+                                <th>Catatan</th>
+                                <th>Status</th>
+                                <th style="text-align:right;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($sdmSatkerAliases as $alias)
+                            <tr>
+                                <td colspan="5" style="padding:0; border:none;">
+                                    <form method="POST" action="{{ route('superadmin.sdm-satker-aliases.update', $alias) }}" style="display:grid; grid-template-columns: 1.2fr 1fr 1fr 0.6fr auto; gap:12px; align-items:center; padding:14px 16px; border-bottom:1px solid #F3F4F6;">
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="text" name="alias" value="{{ $alias->alias }}" class="modern-input" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" required>
+                                        <select name="satker_id" class="modern-input" required>
+                                            @foreach($satkers as $satker)
+                                                <option value="{{ $satker->id }}" {{ $alias->satker_id === $satker->id ? 'selected' : '' }}>{{ $satker->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <input type="text" name="notes" value="{{ $alias->notes }}" class="modern-input" placeholder="Opsional">
+                                        <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--text-main);">
+                                            <input type="checkbox" name="is_active" value="1" {{ $alias->is_active ? 'checked' : '' }}>
+                                            {{ $alias->is_active ? 'Aktif' : 'Nonaktif' }}
+                                        </label>
+                                        <div style="display:flex; justify-content:flex-end; gap:8px; white-space:nowrap;">
+                                            <button type="submit" class="btn btn-outline" style="padding:8px 12px;">Simpan</button>
+                                            <button type="submit" form="delete-alias-{{ $alias->id }}" class="btn" style="padding:8px 12px; background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border);">Hapus</button>
+                                        </div>
+                                    </form>
+                                    <form id="delete-alias-{{ $alias->id }}" method="POST" action="{{ route('superadmin.sdm-satker-aliases.destroy', $alias) }}" onsubmit="return confirm('Hapus alias {{ $alias->alias }}?')">
+                                        @csrf
+                                        @method('DELETE')
+                                    </form>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="empty-state">Belum ada alias satker SDM tambahan.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="settings-divider">
+
+    {{-- 5. Transisi Tahun Anggaran & Riwayat --}}
     <div class="settings-section">
         <div class="settings-info">
             <h3><i class="ri-history-line"></i> Riwayat & Transisi</h3>

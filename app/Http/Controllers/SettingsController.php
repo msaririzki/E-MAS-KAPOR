@@ -7,6 +7,8 @@ use App\Models\BudgetPackage;
 use App\Models\BudgetYear;
 use App\Models\KaporSubmission;
 use App\Models\Personnel;
+use App\Models\Satker;
+use App\Models\SdmSatkerAlias;
 use App\Models\Setting;
 use App\Services\AnnualArchiveService;
 use App\Services\AuditLogger;
@@ -60,8 +62,14 @@ class SettingsController extends Controller
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
+        $sdmSatkerAliases = SdmSatkerAlias::query()
+            ->with('satker:id,name')
+            ->orderByDesc('is_active')
+            ->latest()
+            ->get();
+        $satkers = Satker::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']);
 
-        return view('superadmin.settings', compact('settings', 'yearlyStats', 'bagianOptions'));
+        return view('superadmin.settings', compact('settings', 'yearlyStats', 'bagianOptions', 'sdmSatkerAliases', 'satkers'));
     }
 
     public function update(Request $request)

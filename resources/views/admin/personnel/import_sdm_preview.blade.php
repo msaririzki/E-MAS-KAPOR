@@ -150,6 +150,13 @@
                     <span style="color:#6B7280;">| File: <strong>{{ $stats['file_count'] ?? 1 }}</strong></span>
                     <span style="color:#6B7280;">| Satker terdeteksi: <strong>{{ $stats['satker_count'] ?? 0 }}</strong></span>
                 </p>
+                <p style="font-size:12px; color:#6B7280; margin-top:4px;">
+                    Unknown rank: <strong>{{ $stats['unknown_rank_count'] ?? 0 }}</strong>
+                    <span style="color:#9CA3AF;">|</span>
+                    Unresolved satker: <strong>{{ $stats['unresolved_satker_count'] ?? 0 }}</strong>
+                    <span style="color:#9CA3AF;">|</span>
+                    Duplicate NRP/NIP: <strong>{{ $stats['duplicate_count'] ?? 0 }}</strong>
+                </p>
                 <p style="font-size:12px; color:var(--brand); margin-top:4px;">
                     Baseline SDM: Nama, NRP/NIP, Pangkat, Jabatan, Jenis Kelamin, Agama, lalu satker ditentukan otomatis dari teks jabatan.
                 </p>
@@ -178,6 +185,11 @@
         </div>
 
         <div style="display:flex; gap:12px; align-items:center;">
+            @if(!empty($importRun?->error_report_path))
+            <a href="{{ route('admin.personnel.import-sdm-runs.error-report', $importRun) }}" class="btn btn-outline">
+                <i class="ri-file-download-line"></i> Unduh Laporan Error
+            </a>
+            @endif
             <button type="submit" form="cancelForm" class="btn btn-outline">
                 <i class="ri-close-line"></i> Batalkan
             </button>

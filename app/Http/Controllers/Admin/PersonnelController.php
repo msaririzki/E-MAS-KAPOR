@@ -10,15 +10,18 @@ use App\Imports\PersonnelImport;
 use App\Imports\PersonnelKeteranganImport;
 use App\Imports\PersonnelSdmImport;
 use App\Imports\PersonnelUpdateImport;
+use App\Jobs\ProcessSdmImportPreview;
 use App\Models\BagianOption;
 use App\Models\KaporItem;
 use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
+use App\Models\SdmImportRun;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\KaporRequirementService;
+use App\Services\SdmImportRunService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -31,7 +34,8 @@ use Maatwebsite\Excel\Facades\Excel;
 class PersonnelController extends Controller
 {
     public function __construct(
-        private readonly KaporRequirementService $kaporRequirementService
+        private readonly KaporRequirementService $kaporRequirementService,
+        private readonly SdmImportRunService $sdmImportRunService,
     ) {}
 
     public function index(Request $request)
@@ -198,10 +202,13 @@ class PersonnelController extends Controller
             ->orderBy('sort_order')
             ->orderBy('name')
             ->pluck('name');
+        $recentSdmImportRuns = auth()->user()?->hasRole('superadmin')
+            ? SdmImportRun::query()->with('initiator:id,name')->latest()->limit(5)->get()
+            : collect();
 
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
 
-        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId'));
+        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId', 'recentSdmImportRuns'));
 
     }
 
@@ -1101,50 +1108,53 @@ class PersonnelController extends Controller
         }
 
         try {
-            $import = new PersonnelSdmImport;
-            $preview = [];
             $uploadedFiles = $request->file('files', []);
+            $importRun = SdmImportRun::create([
+                'initiated_by' => $user->id,
+                'status' => 'queued',
+                'processing_mode' => config('queue.default') === 'sync' ? 'sync' : 'queued',
+                'source_files' => $this->stageSdmImportFiles($uploadedFiles),
+                'started_at' => now(),
+            ]);
+            session([
+                'sdm_import_run_id' => $importRun->id,
+            ]);
 
-            foreach ($uploadedFiles as $uploadedFile) {
-                $collection = Excel::toCollection($import, $uploadedFile);
-                $fileLabel = $uploadedFile->getClientOriginalName();
+            if (config('queue.default') === 'sync') {
+                $this->sdmImportRunService->processPreviewRun($importRun);
+                $importRun->refresh();
 
-                foreach ($collection as $sheetIndex => $sheetRows) {
-                    $sheetLabel = is_scalar($sheetIndex) ? 'Sheet '.((int) $sheetIndex + 1) : 'Sheet';
-                    $sourceLabel = $fileLabel.' / '.$sheetLabel;
-                    $sheetPreview = $import->generatePreview($sheetRows, $sourceLabel);
-                    $preview = array_merge($preview, $sheetPreview);
+                session([
+                    'sdm_import_preview_key' => $importRun->preview_payload_path,
+                    'sdm_import_stats' => $importRun->summary ?? [],
+                ]);
+
+                $stats = $importRun->summary ?? [];
+
+                AuditLogger::log('Preview Import Data SDM', 'Manajemen Personil', null, null, null, 'info', "Preview SDM: {$stats['ok']} siap, {$stats['corrected']} dikoreksi, {$stats['error']} error");
+
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'Preview import SDM berhasil disiapkan.',
+                        'redirect_url' => route('admin.personnel.import-sdm-preview'),
+                        'stats' => $stats,
+                    ]);
                 }
+
+                return redirect()->route('admin.personnel.import-sdm-preview');
             }
 
-            $totalOk = collect($preview)->where('status', 'ok')->count();
-            $totalCorrected = collect($preview)->where('status', 'corrected')->count();
-            $totalError = collect($preview)->where('status', 'error')->count();
-            $totalSatker = collect($preview)->pluck('satker_id')->filter()->unique()->count();
-            $totalFiles = count($uploadedFiles);
-
-            $stats = [
-                'ok' => $totalOk,
-                'corrected' => $totalCorrected,
-                'error' => $totalError,
-                'total' => count($preview),
-                'satker_count' => $totalSatker,
-                'file_count' => $totalFiles,
-            ];
-
-            $this->storeSdmPreviewPayload($preview, $stats);
-
-            AuditLogger::log('Preview Import Data SDM', 'Manajemen Personil', null, null, null, 'info', "Preview SDM: {$totalOk} siap, {$totalCorrected} dikoreksi, {$totalError} error");
+            ProcessSdmImportPreview::dispatch($importRun->id);
 
             if ($request->expectsJson()) {
                 return response()->json([
-                    'message' => 'Preview import SDM berhasil disiapkan.',
-                    'redirect_url' => route('admin.personnel.import-sdm-preview'),
-                    'stats' => $stats,
+                    'message' => 'File SDM berhasil diunggah dan sedang diproses di background.',
+                    'status_url' => route('admin.personnel.import-sdm-runs.status', $importRun),
+                    'run_id' => $importRun->id,
                 ]);
             }
 
-            return redirect()->route('admin.personnel.import-sdm-preview');
+            return redirect()->route('admin.personnel.index')->with('info', 'Upload SDM sedang diproses di background. Silakan cek Riwayat Import SDM.');
         } catch (\Exception $e) {
             $message = 'Gagal memproses file SDM: '.$e->getMessage();
 
@@ -1166,6 +1176,11 @@ class PersonnelController extends Controller
         $payload = $this->getSdmPreviewPayload();
         $preview = $payload['preview'] ?? null;
         $stats = $payload['stats'] ?? session('sdm_import_stats');
+        $importRun = $payload['run'] ?? $this->getCurrentSdmImportRun();
+
+        if ($importRun !== null && in_array($importRun->status, ['queued', 'processing'], true)) {
+            return redirect()->route('admin.personnel.index')->with('info', 'Preview SDM masih diproses di background. Silakan tunggu beberapa saat.');
+        }
 
         if (! $preview) {
             return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.');
@@ -1174,7 +1189,7 @@ class PersonnelController extends Controller
         $ranks = Rank::orderBy('sort_order')->get();
         $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
 
-        return view('admin.personnel.import_sdm_preview', compact('preview', 'stats', 'ranks', 'satkers'));
+        return view('admin.personnel.import_sdm_preview', compact('preview', 'stats', 'ranks', 'satkers', 'importRun'));
     }
 
     /**
@@ -1186,6 +1201,7 @@ class PersonnelController extends Controller
 
         $payload = $this->getSdmPreviewPayload();
         $preview = $payload['preview'] ?? null;
+        $importRun = $payload['run'] ?? $this->getCurrentSdmImportRun();
 
         if (! $preview) {
             $message = 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.';
@@ -1218,6 +1234,8 @@ class PersonnelController extends Controller
             }
         }
 
+        $preview = $this->sdmImportRunService->refreshPreviewRows($preview);
+
         try {
             $importer = new PersonnelSdmImport;
             $results = $importer->saveFromPreviewData($preview);
@@ -1228,6 +1246,23 @@ class PersonnelController extends Controller
             $notificationMessage = $errorCount > 0
                 ? "Berhasil mengimpor {$successCount} data SDM. Gagal: {$errorCount}."
                 : "Berhasil mengimpor {$successCount} data personil (SDM).";
+
+            if ($importRun !== null) {
+                $summary = array_merge($this->sdmImportRunService->buildStats($preview, count($importRun->source_files ?? [])), [
+                    'success_count' => $successCount,
+                    'error_count' => $errorCount,
+                    'processing_errors' => count($results['errors'] ?? []),
+                ]);
+
+                $errorPath = $this->sdmImportRunService->storeErrorReport($importRun, $preview, $results['errors'] ?? []);
+
+                $importRun->update([
+                    'status' => $errorCount > 0 ? 'completed_with_errors' : 'completed',
+                    'summary' => $summary,
+                    'error_report_path' => $errorPath,
+                    'finished_at' => now(),
+                ]);
+            }
 
             $this->clearSdmPreviewPayload();
 
@@ -1269,34 +1304,48 @@ class PersonnelController extends Controller
      */
     public function importSdmCancel()
     {
+        $importRun = $this->getCurrentSdmImportRun();
+        if ($importRun !== null && in_array($importRun->status, ['preview_ready', 'processing'], true)) {
+            $importRun->update([
+                'status' => 'cancelled',
+                'finished_at' => now(),
+            ]);
+        }
+
         $this->clearSdmPreviewPayload();
 
         return redirect()->route('admin.personnel.index')->with('info', 'Proses import Data SDM dibatalkan.');
     }
 
-    /**
-     * @param  array<int, array<string, mixed>>  $preview
-     * @param  array<string, mixed>  $stats
-     */
-    private function storeSdmPreviewPayload(array $preview, array $stats): void
+    public function downloadSdmImportErrorReport(SdmImportRun $sdmImportRun)
     {
-        $this->clearSdmPreviewPayload();
+        $this->ensureSuperadmin();
 
-        $path = 'import-previews/sdm/'.Str::uuid().'.json';
-        $payload = json_encode([
-            'preview' => $preview,
-            'stats' => $stats,
-        ], JSON_UNESCAPED_UNICODE);
-
-        if ($payload === false) {
-            throw new \RuntimeException('Gagal menyusun payload preview SDM.');
+        if (! $sdmImportRun->error_report_path || ! Storage::disk('local')->exists($sdmImportRun->error_report_path)) {
+            abort(404, 'File error report tidak ditemukan.');
         }
 
-        Storage::disk('local')->put($path, $payload);
+        return Storage::disk('local')->download(
+            $sdmImportRun->error_report_path,
+            'laporan_error_import_sdm_'.$sdmImportRun->id.'.csv'
+        );
+    }
 
-        session([
-            'sdm_import_preview_key' => $path,
-            'sdm_import_stats' => $stats,
+    public function getSdmImportRunStatus(SdmImportRun $sdmImportRun)
+    {
+        $this->ensureSuperadmin();
+
+        return response()->json([
+            'status' => $sdmImportRun->status,
+            'message' => match ($sdmImportRun->status) {
+                'queued' => 'Import SDM masuk antrean dan menunggu diproses.',
+                'processing' => 'Import SDM sedang diproses di background.',
+                'preview_ready' => 'Preview SDM siap dibuka.',
+                'failed' => $sdmImportRun->summary['error_message'] ?? 'Import SDM gagal diproses.',
+                default => 'Status import SDM diperbarui.',
+            },
+            'redirect_url' => $sdmImportRun->status === 'preview_ready' ? route('admin.personnel.import-sdm-preview') : null,
+            'summary' => $sdmImportRun->summary,
         ]);
     }
 
@@ -1305,7 +1354,11 @@ class PersonnelController extends Controller
      */
     private function getSdmPreviewPayload(): ?array
     {
+        $run = $this->getCurrentSdmImportRun();
         $path = session('sdm_import_preview_key');
+        if ((! is_string($path) || $path === '') && $run?->preview_payload_path) {
+            $path = $run->preview_payload_path;
+        }
         if (! is_string($path) || $path === '') {
             return null;
         }
@@ -1324,6 +1377,7 @@ class PersonnelController extends Controller
         return [
             'preview' => $payload['preview'],
             'stats' => is_array($payload['stats'] ?? null) ? $payload['stats'] : (session('sdm_import_stats', [])),
+            'run' => $run,
         ];
     }
 
@@ -1335,10 +1389,40 @@ class PersonnelController extends Controller
         }
 
         session()->forget([
+            'sdm_import_run_id',
             'sdm_import_preview_key',
             'sdm_import_preview',
             'sdm_import_stats',
         ]);
+    }
+
+    private function getCurrentSdmImportRun(): ?SdmImportRun
+    {
+        $runId = session('sdm_import_run_id');
+
+        return is_numeric($runId) ? SdmImportRun::find((int) $runId) : null;
+    }
+
+    /**
+     * @param  array<int, \Illuminate\Http\UploadedFile>  $uploadedFiles
+     * @return array<int, array<string, string>>
+     */
+    private function stageSdmImportFiles(array $uploadedFiles): array
+    {
+        $staged = [];
+
+        foreach ($uploadedFiles as $index => $uploadedFile) {
+            $originalName = $uploadedFile->getClientOriginalName();
+            $storedName = $index.'-'.Str::uuid().'-'.$originalName;
+            $path = $uploadedFile->storeAs('import-previews/sdm/uploads', $storedName, 'local');
+
+            $staged[] = [
+                'original_name' => $originalName,
+                'path' => $path,
+            ];
+        }
+
+        return $staged;
     }
 
     /**

@@ -3,12 +3,16 @@
 namespace Tests\Feature;
 
 use App\Imports\PersonnelSdmImport;
+use App\Jobs\ProcessSdmImportPreview;
 use App\Models\Personnel;
 use App\Models\Satker;
+use App\Models\SdmImportRun;
 use App\Models\User;
 use Database\Seeders\RankSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -19,6 +23,8 @@ class ImportSdmTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        config(['queue.default' => 'sync']);
 
         $this->seed(RankSeeder::class);
 
@@ -161,5 +167,132 @@ class ImportSdmTest extends TestCase
         $this->assertSame('KET MANUAL', $personnel->keterangan);
         $this->assertSame(['topi' => '57', 'kemeja' => '15'], $personnel->kapor_sizes);
         $this->assertSame('Katolik', $personnel->religion);
+    }
+
+    public function test_sdm_import_creates_persistent_run_log_and_error_report(): void
+    {
+        Storage::fake('local');
+
+        Satker::create([
+            'name' => 'POLDA NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        Satker::create([
+            'name' => 'SATBRIMOB',
+            'code' => 'SATBRIMOB',
+            'sort_order' => 2,
+        ]);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('superadmin');
+
+        $csv = implode("\n", [
+            'HEADER 1',
+            'HEADER 2',
+            "1,EGAS DOSANTOS,AIPDA,'76100151,BANIT II SUBDEN IV DENGEGANA SATBRIMOB POLDA NTB,PRIA,KATOLIK",
+            "2,NAMA ERROR,AIPDA,'76100152,JABATAN TANPA SATKER,PRIA,ISLAM",
+        ]);
+
+        $file = UploadedFile::fake()->createWithContent('sdm_import.csv', $csv);
+
+        $response = $this->actingAs($superAdmin)->post(route('admin.personnel.import-sdm'), [
+            'files' => [$file],
+        ]);
+
+        $response->assertRedirect(route('admin.personnel.import-sdm-preview'));
+
+        $run = SdmImportRun::firstOrFail();
+        $this->assertSame('preview_ready', $run->status);
+        $this->assertSame(2, $run->summary['total']);
+        $this->assertSame(1, $run->summary['error']);
+        $this->assertSame(1, $run->summary['unresolved_satker_count']);
+
+        Storage::disk('local')->assertExists($run->preview_payload_path);
+        Storage::disk('local')->assertExists($run->error_report_path);
+    }
+
+    public function test_sdm_import_confirm_updates_run_summary_and_keeps_error_report_downloadable(): void
+    {
+        Storage::fake('local');
+
+        Satker::create([
+            'name' => 'POLDA NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        Satker::create([
+            'name' => 'SATBRIMOB',
+            'code' => 'SATBRIMOB',
+            'sort_order' => 2,
+        ]);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('superadmin');
+
+        $csv = implode("\n", [
+            'HEADER 1',
+            'HEADER 2',
+            "1,EGAS DOSANTOS,AIPDA,'76100151,BANIT II SUBDEN IV DENGEGANA SATBRIMOB POLDA NTB,PRIA,KATOLIK",
+            "2,NAMA ERROR,AIPDA,'76100152,JABATAN TANPA SATKER,PRIA,ISLAM",
+        ]);
+
+        $file = UploadedFile::fake()->createWithContent('sdm_import.csv', $csv);
+
+        $this->actingAs($superAdmin)->post(route('admin.personnel.import-sdm'), [
+            'files' => [$file],
+        ])->assertRedirect(route('admin.personnel.import-sdm-preview'));
+
+        $run = SdmImportRun::firstOrFail();
+
+        $this->actingAs($superAdmin)->post(route('admin.personnel.import-sdm-confirm'))
+            ->assertRedirect(route('admin.personnel.index'));
+
+        $run->refresh();
+
+        $this->assertSame('completed_with_errors', $run->status);
+        $this->assertSame(1, $run->summary['success_count']);
+        $this->assertSame(1, $run->summary['error_count']);
+        Storage::disk('local')->assertExists($run->error_report_path);
+
+        $this->actingAs($superAdmin)
+            ->get(route('admin.personnel.import-sdm-runs.error-report', $run))
+            ->assertOk();
+    }
+
+    public function test_sdm_import_can_queue_preview_processing_when_queue_driver_is_async(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        config(['queue.default' => 'database']);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('superadmin');
+
+        $csv = implode("\n", [
+            'HEADER 1',
+            'HEADER 2',
+            "1,EGAS DOSANTOS,AIPDA,'76100151,BANIT II SUBDEN IV DENGEGANA SATBRIMOB POLDA NTB,PRIA,KATOLIK",
+        ]);
+
+        $file = UploadedFile::fake()->createWithContent('sdm_import.csv', $csv);
+
+        $response = $this->actingAs($superAdmin)
+            ->withHeaders(['Accept' => 'application/json', 'X-Requested-With' => 'XMLHttpRequest'])
+            ->post(route('admin.personnel.import-sdm'), [
+                'files' => [$file],
+            ]);
+
+        $response->assertOk()
+            ->assertJsonStructure(['message', 'status_url', 'run_id']);
+
+        $run = SdmImportRun::firstOrFail();
+        $this->assertSame('queued', $run->status);
+
+        Queue::assertPushed(ProcessSdmImportPreview::class, function (ProcessSdmImportPreview $job) use ($run) {
+            return $job->runId === $run->id;
+        });
     }
 }

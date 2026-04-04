@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Satker;
+use App\Models\SdmSatkerAlias;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -81,6 +82,28 @@ class SdmSatkerResolver
     private function satkerAliases(): Collection
     {
         $items = [];
+
+        foreach (SdmSatkerAlias::query()->with('satker')->where('is_active', true)->get() as $customAlias) {
+            if ($customAlias->satker === null) {
+                continue;
+            }
+
+            $normalizedAlias = $this->normalize($customAlias->alias);
+            $condensedAlias = $this->condense($normalizedAlias);
+            if ($condensedAlias === '') {
+                continue;
+            }
+
+            $items[] = [
+                'satker_id' => $customAlias->satker->id,
+                'satker_name' => $customAlias->satker->name,
+                'recipient_scope' => $customAlias->satker->recipientScope(),
+                'alias_original' => $customAlias->alias,
+                'alias_condensed' => $condensedAlias,
+                'alias_length' => strlen($condensedAlias),
+                'score' => 5000 + strlen($condensedAlias),
+            ];
+        }
 
         foreach (Satker::query()->orderBy('sort_order')->orderBy('name')->get() as $satker) {
             foreach ($this->buildAliasesForSatker($satker) as $alias) {

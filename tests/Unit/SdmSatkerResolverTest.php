@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\Satker;
+use App\Models\SdmSatkerAlias;
 use App\Services\SdmSatkerResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -136,5 +137,32 @@ class SdmSatkerResolverTest extends TestCase
 
         $this->assertSame($biroLog->id, $result['satker_id']);
         $this->assertSame('BIRO LOGISTIK', $result['satker_name']);
+    }
+
+    public function test_it_prefers_custom_database_alias_when_available(): void
+    {
+        Satker::create([
+            'name' => 'POLDA NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        $targetSatker = Satker::create([
+            'name' => 'SATBRIMOB',
+            'code' => 'SATBRIMOB',
+            'sort_order' => 2,
+        ]);
+
+        SdmSatkerAlias::create([
+            'satker_id' => $targetSatker->id,
+            'alias' => 'DEN GEGANA BRIMOB',
+            'is_active' => true,
+        ]);
+
+        $resolver = new SdmSatkerResolver;
+        $result = $resolver->resolve('PERSONEL DEN GEGANA BRIMOB POLDA NTB');
+
+        $this->assertSame($targetSatker->id, $result['satker_id']);
+        $this->assertSame('DEN GEGANA BRIMOB', $result['matched_alias']);
     }
 }

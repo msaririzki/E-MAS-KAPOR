@@ -193,6 +193,61 @@
     }
 </script>
 
+@if(auth()->user()->hasRole('superadmin') && $recentSdmImportRuns->isNotEmpty())
+<div style="background:#fff; border:1px solid #E5E7EB; border-radius:16px; padding:18px 20px; margin-bottom:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:14px; flex-wrap:wrap;">
+        <div>
+            <div style="font-size:15px; font-weight:800; color:#111827;">Riwayat Import SDM</div>
+            <div style="font-size:12px; color:#6B7280; margin-top:4px;">Ringkasan import terbaru beserta file error untuk troubleshooting.</div>
+        </div>
+    </div>
+    <div style="display:grid; gap:10px;">
+        @foreach($recentSdmImportRuns as $run)
+            @php
+                $summary = $run->summary ?? [];
+                $statusMap = [
+                    'queued' => ['label' => 'Masuk antrean', 'bg' => '#EDE9FE', 'color' => '#6D28D9'],
+                    'processing' => ['label' => 'Sedang diproses', 'bg' => '#DBEAFE', 'color' => '#1D4ED8'],
+                    'preview_ready' => ['label' => 'Preview siap', 'bg' => '#DBEAFE', 'color' => '#1D4ED8'],
+                    'completed' => ['label' => 'Selesai', 'bg' => '#D1FAE5', 'color' => '#047857'],
+                    'completed_with_errors' => ['label' => 'Selesai dengan error', 'bg' => '#FEF3C7', 'color' => '#B45309'],
+                    'cancelled' => ['label' => 'Dibatalkan', 'bg' => '#F3F4F6', 'color' => '#4B5563'],
+                    'failed' => ['label' => 'Gagal', 'bg' => '#FEE2E2', 'color' => '#B91C1C'],
+                ][$run->status] ?? ['label' => ucfirst($run->status), 'bg' => '#F3F4F6', 'color' => '#4B5563'];
+            @endphp
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 16px; border-radius:12px; background:#F9FAFB; border:1px solid #F3F4F6; flex-wrap:wrap;">
+                <div style="display:grid; gap:6px;">
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:{{ $statusMap['bg'] }}; color:{{ $statusMap['color'] }}; font-size:11px; font-weight:800;">{{ $statusMap['label'] }}</span>
+                        <span style="font-size:12px; color:#6B7280;">{{ optional($run->started_at)->format('d M Y H:i') ?? $run->created_at->format('d M Y H:i') }}</span>
+                        <span style="font-size:12px; color:#9CA3AF;">oleh {{ $run->initiator?->name ?? 'Sistem' }}</span>
+                    </div>
+                    <div style="font-size:12px; color:#374151; display:flex; gap:12px; flex-wrap:wrap;">
+                        <span>Total: <strong>{{ $summary['total'] ?? 0 }}</strong></span>
+                        <span>Berhasil: <strong>{{ $summary['success_count'] ?? ($summary['ok'] ?? 0) }}</strong></span>
+                        <span>Corrected: <strong>{{ $summary['corrected'] ?? 0 }}</strong></span>
+                        <span>Error: <strong>{{ $summary['error_count'] ?? ($summary['error'] ?? 0) }}</strong></span>
+                        <span>Unresolved satker: <strong>{{ $summary['unresolved_satker_count'] ?? 0 }}</strong></span>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    @if($run->error_report_path)
+                    <a href="{{ route('admin.personnel.import-sdm-runs.error-report', $run) }}" class="btn btn-outline" style="white-space:nowrap;">
+                        <i class="ri-file-download-line"></i> Error CSV
+                    </a>
+                    @endif
+                    @if($run->status === 'preview_ready')
+                    <a href="{{ route('admin.personnel.import-sdm-preview') }}" class="btn btn-outline" style="white-space:nowrap;">
+                        <i class="ri-eye-line"></i> Lanjutkan Preview
+                    </a>
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-icon icon-blue">
@@ -3905,6 +3960,26 @@
                 return;
             }
 
+             if (xhr.status >= 200 && xhr.status < 300 && payload.status_url) {
+                setSdmProgress(
+                    80,
+                    'Masuk antrean import SDM',
+                    payload.message || 'File berhasil diunggah. Server akan memproses preview di background.',
+                    'Menunggu worker queue memproses file',
+                );
+
+                animateSdmProgress(95, 'Memproses preview di background', {
+                    interval: 320,
+                    fastUntil: 88,
+                    fastIncrement: 1,
+                    slowIncrement: 1,
+                });
+
+                pollSdmImportRunStatus(payload.status_url);
+
+                return;
+            }
+
             closeSdmProgressOverlay();
             setImportSdmButtonState(false);
             showToast(extractAjaxError(xhr, 'Upload SDM gagal diproses.'), 'error');
@@ -3920,6 +3995,62 @@
         xhr.send(formData);
 
         return false;
+    }
+
+    function pollSdmImportRunStatus(statusUrl, attempt = 0) {
+        if (!statusUrl) {
+            closeSdmProgressOverlay();
+            setImportSdmButtonState(false);
+            showToast('Status import SDM tidak dapat dipantau.', 'error');
+            return;
+        }
+
+        window.setTimeout(() => {
+            fetch(statusUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok) {
+                    throw new Error(data.message || 'Gagal membaca status import SDM.');
+                }
+
+                if (data.status === 'preview_ready' && data.redirect_url) {
+                    setSdmProgress(100, 'Preview siap dibuka', data.message || 'Preview SDM berhasil dibuat.', 'Mengalihkan ke halaman preview');
+                    window.setTimeout(() => {
+                        window.location.href = data.redirect_url;
+                    }, 550);
+
+                    return;
+                }
+
+                if (data.status === 'failed') {
+                    closeSdmProgressOverlay();
+                    setImportSdmButtonState(false);
+                    showToast(data.message || 'Import SDM gagal diproses.', 'error');
+                    return;
+                }
+
+                const nextPercent = Math.min(96, 82 + Math.min(attempt, 10));
+                setSdmProgress(
+                    nextPercent,
+                    data.status === 'queued' ? 'Masih antre' : 'Sedang diproses',
+                    data.message || 'Import SDM masih diproses di background.',
+                    data.status === 'queued' ? 'Menunggu giliran worker queue' : 'Worker queue sedang membangun preview'
+                );
+
+                pollSdmImportRunStatus(statusUrl, attempt + 1);
+            })
+            .catch((error) => {
+                closeSdmProgressOverlay();
+                setImportSdmButtonState(false);
+                showToast(error.message || 'Gagal memantau status import SDM.', 'error');
+            });
+        }, attempt === 0 ? 1200 : 1800);
     }
 
     document.addEventListener('click', () => {

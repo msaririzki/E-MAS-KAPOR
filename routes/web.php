@@ -174,8 +174,10 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     // Import Data SDM (Super Admin Only)
     Route::post('/personnel/import-sdm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdm'])->name('personnel.import-sdm');
     Route::get('/personnel/import-sdm-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdmPreview'])->name('personnel.import-sdm-preview');
+    Route::get('/personnel/import-sdm-runs/{sdmImportRun}/status', [\App\Http\Controllers\Admin\PersonnelController::class, 'getSdmImportRunStatus'])->name('personnel.import-sdm-runs.status');
     Route::post('/personnel/import-sdm-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdmConfirm'])->name('personnel.import-sdm-confirm');
     Route::post('/personnel/import-sdm-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdmCancel'])->name('personnel.import-sdm-cancel');
+    Route::get('/personnel/import-sdm-runs/{sdmImportRun}/error-report', [\App\Http\Controllers\Admin\PersonnelController::class, 'downloadSdmImportErrorReport'])->name('personnel.import-sdm-runs.error-report');
 
     // Kapor Item & Sizes
     Route::resource('kapor-items', \App\Http\Controllers\Admin\KaporItemController::class)->except(['create', 'edit', 'show']);
@@ -289,6 +291,9 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::post('/bagian-options', [\App\Http\Controllers\Admin\BagianOptionController::class, 'store'])->name('bagian-options.store');
     Route::put('/bagian-options/{bagianOption}', [\App\Http\Controllers\Admin\BagianOptionController::class, 'update'])->name('bagian-options.update');
     Route::delete('/bagian-options/{bagianOption}', [\App\Http\Controllers\Admin\BagianOptionController::class, 'destroy'])->name('bagian-options.destroy');
+    Route::post('/sdm-satker-aliases', [\App\Http\Controllers\Admin\SdmSatkerAliasController::class, 'store'])->name('sdm-satker-aliases.store');
+    Route::put('/sdm-satker-aliases/{sdmSatkerAlias}', [\App\Http\Controllers\Admin\SdmSatkerAliasController::class, 'update'])->name('sdm-satker-aliases.update');
+    Route::delete('/sdm-satker-aliases/{sdmSatkerAlias}', [\App\Http\Controllers\Admin\SdmSatkerAliasController::class, 'destroy'])->name('sdm-satker-aliases.destroy');
 
     Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
