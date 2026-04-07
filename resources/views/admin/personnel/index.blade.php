@@ -706,7 +706,7 @@
                 <i class="ri-close-line"></i>
             </button>
         </div>
-        <form action="{{ route('admin.personnel.import') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.personnel.import') }}" method="POST" enctype="multipart/form-data" onsubmit="showGlobalLoader('Sedang membaca file Excel. Harap tunggu sebentar...')">
             @csrf
             <div class="modal-body" style="padding: 24px;">
                 @if(auth()->user()->hasRole('admin_satker'))
@@ -889,7 +889,7 @@
                 <i class="ri-close-line"></i>
             </button>
         </div>
-        <form action="{{ route('admin.personnel.import-update') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.personnel.import-update') }}" method="POST" enctype="multipart/form-data" onsubmit="showGlobalLoader('Sedang membaca file Excel. Harap tunggu sebentar...')">
             @csrf
             <div class="modal-body" style="padding: 24px;">
 
@@ -3453,5 +3453,24 @@
         form.submit();
         closeModal('printSatkerModal');
     }
+</script>
+
+{{-- Global Loader --}}
+<div id="fullScreenLoader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.85); z-index:9999; align-items:center; justify-content:center; flex-direction:column; backdrop-filter: blur(4px);">
+    <div style="width: 50px; height: 50px; border: 4px solid #E5E7EB; border-bottom-color: #059669; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <div style="margin-top: 16px; font-weight: 700; color: #111827; font-size: 16px;" id="loaderMsg">Memproses Data...</div>
+    <div style="margin-top: 4px; font-size: 12px; color: #6B7280;">Mohon jangan tutup atau refresh halaman ini</div>
+</div>
+<style>
+@keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+<script>
+function showGlobalLoader(msg) {
+    var loader = document.getElementById('fullScreenLoader');
+    if(loader) {
+        if(msg) document.getElementById('loaderMsg').innerText = msg;
+        loader.style.display = 'flex';
+    }
+}
 </script>
 @endsection
