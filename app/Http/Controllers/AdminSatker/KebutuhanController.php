@@ -5,6 +5,7 @@ namespace App\Http\Controllers\AdminSatker;
 use App\Http\Controllers\Controller;
 use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
+use App\Services\ExportSignatorySettingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -57,7 +58,7 @@ class KebutuhanController extends Controller
 
         if ($existing) {
             return redirect()->route('admin-satker.kebutuhan.index')
-                ->with('error', 'Satker Anda sudah memiliki pengajuan untuk TA ' . $nextFiscalYear . '. Hanya diperbolehkan 1 pengajuan per tahun anggaran.');
+                ->with('error', 'Satker Anda sudah memiliki pengajuan untuk TA '.$nextFiscalYear.'. Hanya diperbolehkan 1 pengajuan per tahun anggaran.');
         }
 
         $kaporItems = IdentifikasiItem::where('is_active', true)
@@ -96,14 +97,14 @@ class KebutuhanController extends Controller
 
         if ($existing) {
             return redirect()->route('admin-satker.kebutuhan.index')
-                ->with('error', 'Satker Anda sudah memiliki pengajuan untuk TA ' . $fiscalYear . '. Hanya diperbolehkan 1 pengajuan per tahun anggaran.');
+                ->with('error', 'Satker Anda sudah memiliki pengajuan untuk TA '.$fiscalYear.'. Hanya diperbolehkan 1 pengajuan per tahun anggaran.');
         }
 
         $kebutuhan = DB::transaction(function () use ($request, $fiscalYear) {
             $kebutuhan = Kebutuhan::create([
                 'satker_id' => $request->user()->satker_id,
                 'user_id' => $request->user()->id,
-                'title' => 'Pengajuan Kebutuhan TA ' . $fiscalYear,
+                'title' => 'Pengajuan Kebutuhan TA '.$fiscalYear,
                 'fiscal_year' => $fiscalYear,
                 'status' => 'diajukan',
                 'notes' => null,
@@ -185,7 +186,7 @@ class KebutuhanController extends Controller
 
         DB::transaction(function () use ($request, $kebutuhan, $fiscalYear) {
             $kebutuhan->update([
-                'title' => 'Pengajuan Kebutuhan TA ' . $fiscalYear,
+                'title' => 'Pengajuan Kebutuhan TA '.$fiscalYear,
                 'fiscal_year' => $fiscalYear,
                 'notes' => null,
             ]);
@@ -252,8 +253,9 @@ class KebutuhanController extends Controller
         $this->authorizeSatker($kebutuhan);
 
         $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
+        $signatorySettings = app(ExportSignatorySettingService::class)->resolveForUser(auth()->user());
 
-        return view('admin-satker.kebutuhan.print', compact('kebutuhan'));
+        return view('admin-satker.kebutuhan.print', compact('kebutuhan', 'signatorySettings'));
     }
 
     /**
@@ -263,10 +265,11 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
         $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
+        $signatorySettings = app(ExportSignatorySettingService::class)->resolveForUser(auth()->user());
 
         $filename = 'Usulan_Kaporlap_'.($kebutuhan->satker->name ?? 'Satker').'_'.$kebutuhan->fiscal_year.'.xlsx';
 
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\KebutuhanExport($kebutuhan), $filename);
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\KebutuhanExport($kebutuhan, $signatorySettings), $filename);
     }
 
     /**
@@ -276,11 +279,12 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
         $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
+        $signatorySettings = app(ExportSignatorySettingService::class)->resolveForUser(auth()->user());
 
         $filename = 'Usulan_Kaporlap_'.($kebutuhan->satker->name ?? 'Satker').'_'.$kebutuhan->fiscal_year.'.pdf';
 
         // We will reuse the 'print' view or a new 'pdf' view for actual PDF download
-        $pdf = \PDF::loadView('admin-satker.kebutuhan.print', compact('kebutuhan'));
+        $pdf = \PDF::loadView('admin-satker.kebutuhan.print', compact('kebutuhan', 'signatorySettings'));
         $pdf->setPaper('a4', 'portrait');
 
         return $pdf->download($filename);

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Personnel;
 use App\Models\Satker;
 use App\Models\Setting;
+use App\Services\AuditLogger;
+use App\Services\ExportSignatorySettingService;
 use Illuminate\Http\Request;
 
 class AdminSatkerController extends Controller
@@ -132,8 +134,43 @@ class AdminSatkerController extends Controller
     /**
      * Settings — Pengaturan tema untuk Admin Satker.
      */
-    public function settings()
+    public function settings(Request $request, ExportSignatorySettingService $signatoryService)
     {
-        return view('admin-satker.settings');
+        $satkerId = (int) $request->user()->satker_id;
+        $signatorySettings = $signatoryService->getSatkerSettings($satkerId);
+
+        return view('admin-satker.settings', compact('signatorySettings'));
+    }
+
+    public function updateSignatorySettings(Request $request, ExportSignatorySettingService $signatoryService)
+    {
+        $validated = $request->validate([
+            'signatory_name' => 'nullable|string|max:255',
+            'signatory_rank' => 'nullable|string|max:255',
+            'signatory_nrp' => 'nullable|string|max:100',
+            'signatory_title' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'organization_name' => 'nullable|string|max:255',
+        ]);
+
+        $satkerId = (int) $request->user()->satker_id;
+        if ($satkerId <= 0) {
+            abort(403, 'Akun Admin Satker tidak memiliki satker yang valid.');
+        }
+
+        $oldValues = $signatoryService->getSatkerSettings($satkerId);
+        $signatoryService->updateSatkerSettings($satkerId, $validated);
+
+        AuditLogger::log(
+            'Update Penanda Tangan Export (Satker)',
+            'Pengaturan',
+            $request->user()->satker,
+            $oldValues,
+            $signatoryService->getSatkerSettings($satkerId),
+            'success',
+            'Admin Satker memperbarui konfigurasi penanda tangan export satker.',
+        );
+
+        return redirect()->back()->with('success', 'Penanda tangan export satker berhasil diperbarui.');
     }
 }

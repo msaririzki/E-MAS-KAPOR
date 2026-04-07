@@ -17,15 +17,25 @@ class KebutuhanExport implements FromView, ShouldAutoSize, WithDrawings, WithEve
 {
     protected $kebutuhan;
 
-    public function __construct(Kebutuhan $kebutuhan)
+    /**
+     * @var array<string, string>
+     */
+    protected array $signatorySettings;
+
+    /**
+     * @param  array<string, string>  $signatorySettings
+     */
+    public function __construct(Kebutuhan $kebutuhan, array $signatorySettings = [])
     {
         $this->kebutuhan = $kebutuhan;
+        $this->signatorySettings = $signatorySettings;
     }
 
     public function view(): View
     {
         return view('admin-satker.kebutuhan.export_excel', [
             'kebutuhan' => $this->kebutuhan,
+            'signatorySettings' => $this->signatorySettings,
         ]);
     }
 

@@ -14,6 +14,7 @@ use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -204,10 +205,11 @@ class PersonnelController extends Controller
         $ranks = Rank::orderBy('sort_order')->get();
         $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
         $bagians = Personnel::whereNotNull('bagian')->distinct()->pluck('bagian');
+        $printSignatoryDefaults = app(ExportSignatorySettingService::class)->resolveForUser($request->user());
 
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
 
-        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId'));
+        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId', 'printSignatoryDefaults'));
 
     }
 
@@ -823,6 +825,11 @@ class PersonnelController extends Controller
         })->values();
 
         $kaporItems = KaporItem::where('is_active', true)->orderBy('id')->get();
+        $resolvedSignatory = app(ExportSignatorySettingService::class)->resolveForUser($request->user());
+        $defaultSignatoryIdentity = trim($resolvedSignatory['signatory_rank'] ?? '');
+        if (! empty($resolvedSignatory['signatory_nrp'])) {
+            $defaultSignatoryIdentity = trim($defaultSignatoryIdentity.' NRP '.$resolvedSignatory['signatory_nrp']);
+        }
 
         $options = [
             'dpi' => 72,        // Turunkan DPI untuk performa
@@ -839,10 +846,10 @@ class PersonnelController extends Controller
             'personnels' => $personnels,
             'kaporItems' => $kaporItems,
             'date' => date('d F Y'),
-            'location' => $request->get('location', 'Mataram'),
-            'signatory_role' => $request->get('signatory_role', 'KASUBBAG RENMIN KABAG LOG'),
-            'signatory_name' => $request->get('signatory_name', '__________________________'),
-            'signatory_nrp' => $request->get('signatory_nrp', ''),
+            'location' => $request->filled('location') ? $request->input('location') : ($resolvedSignatory['location'] ?? 'Mataram'),
+            'signatory_role' => $request->filled('signatory_role') ? $request->input('signatory_role') : ($resolvedSignatory['signatory_title'] ?? 'KASUBBAG RENMIN KABAG LOG'),
+            'signatory_name' => $request->filled('signatory_name') ? $request->input('signatory_name') : ($resolvedSignatory['signatory_name'] ?? '__________________________'),
+            'signatory_nrp' => $request->filled('signatory_nrp') ? $request->input('signatory_nrp') : $defaultSignatoryIdentity,
         ]);
 
         $pdf->setPaper('a4', 'landscape');

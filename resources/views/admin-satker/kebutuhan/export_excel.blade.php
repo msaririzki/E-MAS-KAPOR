@@ -66,21 +66,15 @@
             <td colspan="3"></td>
         </tr>
         @php
-            $bulanIndo = [
-                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
-                7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-            ];
-            $bulan = $bulanIndo[date('n')];
-            $tahun = date('Y');
-
-            $jabatan = 'KEPALA..........................';
-            $userName = '..........................................';
-            $userNrpNip = '.............................';
+            $jabatan = strtoupper($signatorySettings['signatory_title'] ?? 'KEPALA..........................');
+            $userName = strtoupper($signatorySettings['signatory_name'] ?? '..........................................');
+            $userNrpNip = $signatorySettings['signatory_nrp'] ?? '.............................';
+            $location = $signatorySettings['location'] ?? 'Mataram';
         @endphp
         <tr>
             <td></td>
             <td></td>
-            <td style="text-align: center; font-family: Arial;">................................., ................. {{ $bulan }} {{ $tahun }}</td>
+            <td style="text-align: center; font-family: Arial;">{{ $location }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</td>
         </tr>
         <tr>
             <td></td>

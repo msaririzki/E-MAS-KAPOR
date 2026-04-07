@@ -27,6 +27,55 @@
 
 <div class="settings-container">
 
+    {{-- Penanda Tangan Export Satker --}}
+    <div class="settings-section">
+        <div class="settings-info">
+            <h3><i class="ri-quill-pen-line"></i> Penanda Tangan Export</h3>
+            <p>Atur identitas penanda tangan untuk semua export satker. Jika ada kolom kosong, sistem otomatis memakai setting global dari Superadmin.</p>
+        </div>
+        <div class="settings-card">
+            <form method="POST" action="{{ route('admin-satker.settings.signatory.update') }}" class="form-block">
+                @csrf
+                @method('PUT')
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Lokasi Tanda Tangan</label>
+                        <input type="text" name="location" value="{{ $signatorySettings['location'] ?? '' }}" class="f-input" placeholder="Contoh: Mataram">
+                    </div>
+                    <div class="form-group">
+                        <label>Atas Nama Organisasi</label>
+                        <input type="text" name="organization_name" value="{{ $signatorySettings['organization_name'] ?? '' }}" class="f-input" placeholder="Contoh: KEPALA BAGIAN LOGISTIK">
+                    </div>
+                    <div class="form-group">
+                        <label>Jabatan Penanda Tangan</label>
+                        <input type="text" name="signatory_title" value="{{ $signatorySettings['signatory_title'] ?? '' }}" class="f-input" placeholder="Contoh: KASUBBAG RENMIN">
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Penanda Tangan</label>
+                        <input type="text" name="signatory_name" value="{{ $signatorySettings['signatory_name'] ?? '' }}" class="f-input" placeholder="Contoh: KOMPOL NAMA PEJABAT">
+                    </div>
+                    <div class="form-group">
+                        <label>Pangkat Penanda Tangan</label>
+                        <input type="text" name="signatory_rank" value="{{ $signatorySettings['signatory_rank'] ?? '' }}" class="f-input" placeholder="Contoh: KOMPOL">
+                    </div>
+                    <div class="form-group">
+                        <label>NRP / NIP Penanda Tangan</label>
+                        <input type="text" name="signatory_nrp" value="{{ $signatorySettings['signatory_nrp'] ?? '' }}" class="f-input" placeholder="Masukkan NRP/NIP">
+                    </div>
+                </div>
+
+                <div class="settings-action-bar">
+                    <button type="submit" class="btn-primary-modern">
+                        <i class="ri-save-3-line"></i> Simpan Penanda Tangan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <hr class="settings-divider">
+
     {{-- Personalisasi Tampilan --}}
     <div class="settings-section">
         <div class="settings-info">
@@ -49,7 +98,7 @@
                         </div>
                         <i class="ri-checkbox-circle-fill check-icon"></i>
                     </label>
-                    
+
                     {{-- Matcha --}}
                     <label class="theme-option {{ auth()->user()->theme == 'theme-matcha' ? 'active' : '' }}">
                         <input type="radio" name="theme" value="theme-matcha" {{ auth()->user()->theme == 'theme-matcha' ? 'checked' : '' }} onchange="document.getElementById('themeForm').submit()">
@@ -112,7 +161,7 @@
 
 @section('styles')
 <style>
-    /* ── Layouting ── */
+    /* Layout */
     .settings-container {
         display: flex;
         flex-direction: column;
@@ -130,8 +179,13 @@
     @media (max-width: 900px) {
         .settings-section { grid-template-columns: 1fr; gap: 20px; padding: 30px 0; }
     }
+    .settings-divider {
+        border: none;
+        border-top: 1px solid var(--slate-200);
+        margin: 0;
+    }
 
-    /* ── Left Side Info ── */
+    /* Left Side Info */
     .settings-info h3 {
         font-size: 16px;
         font-weight: 700;
@@ -151,7 +205,7 @@
         line-height: 1.6;
     }
 
-    /* ── Right Side Cards ── */
+    /* Right Side Cards */
     .settings-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
@@ -160,7 +214,63 @@
         overflow: hidden;
     }
 
-    /* ── Theme Grid ── */
+    .form-block {
+        padding: 20px;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+    @media (max-width: 700px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
+    .f-input {
+        width: 100%;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--input-bg);
+        color: var(--text-main);
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    .f-input:focus {
+        outline: none;
+        border-color: var(--brand-light);
+        box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.08);
+    }
+    .settings-action-bar {
+        margin-top: 14px;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .btn-primary-modern {
+        background: var(--brand);
+        color: #fff;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-primary-modern:hover {
+        background: #b71c1c;
+    }
+
+    /* Theme Grid */
     .theme-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -168,7 +278,7 @@
         padding: 24px;
     }
     @media (max-width: 600px) { .theme-grid { grid-template-columns: 1fr; } }
-    
+
     .theme-option {
         border: 2px solid var(--border-color);
         border-radius: 10px;
@@ -196,7 +306,10 @@
     }
     .theme-accent {
         position: absolute;
-        left: 0; top: 12px; bottom: 12px; width: 4px;
+        left: 0;
+        top: 12px;
+        bottom: 12px;
+        width: 4px;
         border-radius: 0 4px 4px 0;
     }
     .theme-texts strong {
@@ -227,7 +340,7 @@
         transform: scale(1);
     }
 
-    /* ── Flash Alert Custom ── */
+    /* Flash Alert Custom */
     .alert {
         display: flex;
         align-items: center;
@@ -252,10 +365,16 @@
     .alert-content strong { color: #166534; font-size: 14px; margin-bottom: 2px; }
     .alert-content span { color: #15803D; font-size: 13px; }
     .alert-close {
-        background: none; border: none; font-size: 20px; color: #16A34A; cursor: pointer; opacity: 0.7; transition: 0.2s;
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: #16A34A;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: 0.2s;
     }
     .alert-close:hover { opacity: 1; transform: scale(1.1); }
-    
+
     @keyframes slideDown {
         from { opacity: 0; transform: translateY(-20px); }
         to { opacity: 1; transform: translateY(0); }
@@ -265,7 +384,6 @@
 
 @section('scripts')
 <script>
-    // Auto-hide alert gracefully
     const alertBox = document.getElementById('flashMsg');
     if (alertBox) {
         setTimeout(() => {
@@ -277,3 +395,4 @@
     }
 </script>
 @endsection
+

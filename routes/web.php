@@ -105,6 +105,7 @@ Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope
     Route::get('/monitor', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'monitor'])->name('monitor');
     Route::get('/reports', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'reports'])->name('reports');
     Route::get('/settings', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'settings'])->name('settings');
+    Route::put('/settings/signatory', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'updateSignatorySettings'])->name('settings.signatory.update');
 
     // Identifikasi Kebutuhan (Admin Satker)
     Route::get('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'index'])->name('kebutuhan.index');
@@ -216,46 +217,46 @@ Route::middleware(['auth', 'role:superadmin|admin_gudang|admin_satker', 'satker.
     });
 
     Route::middleware('role:superadmin')->group(function () {
-    // Satker CRUD
-    Route::get('/satkers', [SatkerController::class, 'index'])->name('satkers.index');
-    Route::post('/satkers', [SatkerController::class, 'store'])->name('satkers.store');
-    Route::put('/satkers/{satker}', [SatkerController::class, 'update'])->name('satkers.update');
-    Route::patch('/satkers/{satker}/personnel', [SatkerController::class, 'updatePersonnelCount'])->name('satkers.update-personnel');
-    Route::delete('/satkers/{satker}', [SatkerController::class, 'destroy'])->name('satkers.destroy');
+        // Satker CRUD
+        Route::get('/satkers', [SatkerController::class, 'index'])->name('satkers.index');
+        Route::post('/satkers', [SatkerController::class, 'store'])->name('satkers.store');
+        Route::put('/satkers/{satker}', [SatkerController::class, 'update'])->name('satkers.update');
+        Route::patch('/satkers/{satker}/personnel', [SatkerController::class, 'updatePersonnelCount'])->name('satkers.update-personnel');
+        Route::delete('/satkers/{satker}', [SatkerController::class, 'destroy'])->name('satkers.destroy');
 
-    // Laporan & Audit
-    Route::get('/laporan', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('reports');
-    Route::get('/laporan/export', [\App\Http\Controllers\Admin\ReportsController::class, 'export'])->name('reports.export');
-    Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
+        // Laporan & Audit
+        Route::get('/laporan', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('reports');
+        Route::get('/laporan/export', [\App\Http\Controllers\Admin\ReportsController::class, 'export'])->name('reports.export');
+        Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
 
-    // ── Budget / Rencana Anggaran ──────────────────────────────
-    Route::prefix('budget')->name('budget.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\BudgetController::class, 'index'])->name('index');
-        Route::post('/years', [\App\Http\Controllers\Admin\BudgetController::class, 'storeYear'])->name('store-year');
-        Route::put('/years/{budgetYear}', [\App\Http\Controllers\Admin\BudgetController::class, 'updateYear'])->name('update-year');
-        Route::delete('/years/{budgetYear}', [\App\Http\Controllers\Admin\BudgetController::class, 'destroyYear'])->name('destroy-year');
-        Route::get('/years/{budgetYear}', [\App\Http\Controllers\Admin\BudgetController::class, 'showYear'])->name('show-year');
-        Route::post('/years/{budgetYear}/packages', [\App\Http\Controllers\Admin\BudgetController::class, 'storePackage'])->name('store-package');
-        Route::put('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'updatePackage'])->name('update-package');
-        Route::delete('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'destroyPackage'])->name('destroy-package');
-        Route::get('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'showPackage'])->name('show-package');
-        Route::post('/packages/{budgetPackage}/recalculate', [\App\Http\Controllers\Admin\BudgetController::class, 'recalculatePackage'])->name('recalculate-package');
-        Route::get('/packages/{budgetPackage}/select-items', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectItems'])->name('wizard.step1');
-        Route::post('/packages/{budgetPackage}/toggle-item', [\App\Http\Controllers\Admin\PackageItemController::class, 'toggleItem'])->name('wizard.toggle-item');
-        Route::post('/packages/{budgetPackage}/reorder-items', [\App\Http\Controllers\Admin\PackageItemController::class, 'reorderItems'])->name('wizard.reorder-items');
-        Route::get('/packages/{budgetPackage}/select-recipients', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectRecipients'])->name('wizard.step2');
-        Route::post('/package-items/{packageItem}/save-recipients', [\App\Http\Controllers\Admin\PackageItemController::class, 'saveRecipients'])->name('wizard.save-recipients');
-        Route::get('/packages/{budgetPackage}/preview', [\App\Http\Controllers\Admin\PackageItemController::class, 'preview'])->name('wizard.step3');
-        Route::delete('/package-items/{packageItem}', [\App\Http\Controllers\Admin\PackageItemController::class, 'removeItem'])->name('wizard.remove-item');
-        Route::get('/satker-keterangan/{satker}', [\App\Http\Controllers\Admin\PackageItemController::class, 'getSatkerKeterangan'])->name('wizard.satker-keterangan');
-        Route::get('/packages/{budgetPackage}/recap', [\App\Http\Controllers\Admin\BudgetExportController::class, 'previewRecap'])->name('recap');
-        Route::get('/packages/{budgetPackage}/invoice', [\App\Http\Controllers\Admin\BudgetExportController::class, 'previewInvoice'])->name('invoice');
-        Route::get('/packages/{budgetPackage}/export-csv', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportRecapExcel'])->name('export-csv');
-        Route::get('/packages/{budgetPackage}/export-pdf', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportRecapPdf'])->name('export-pdf');
-        Route::get('/packages/{budgetPackage}/export-detail', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportDetailExcel'])->name('export-detail');
-        Route::post('/packages/{budgetPackage}/export-sppm', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportSppmWord'])->name('export-sppm');
-        Route::post('/invoice-settings', [\App\Http\Controllers\Admin\BudgetExportController::class, 'updateSettings'])->name('update-settings');
-    });
+        // ── Budget / Rencana Anggaran ──────────────────────────────
+        Route::prefix('budget')->name('budget.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\BudgetController::class, 'index'])->name('index');
+            Route::post('/years', [\App\Http\Controllers\Admin\BudgetController::class, 'storeYear'])->name('store-year');
+            Route::put('/years/{budgetYear}', [\App\Http\Controllers\Admin\BudgetController::class, 'updateYear'])->name('update-year');
+            Route::delete('/years/{budgetYear}', [\App\Http\Controllers\Admin\BudgetController::class, 'destroyYear'])->name('destroy-year');
+            Route::get('/years/{budgetYear}', [\App\Http\Controllers\Admin\BudgetController::class, 'showYear'])->name('show-year');
+            Route::post('/years/{budgetYear}/packages', [\App\Http\Controllers\Admin\BudgetController::class, 'storePackage'])->name('store-package');
+            Route::put('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'updatePackage'])->name('update-package');
+            Route::delete('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'destroyPackage'])->name('destroy-package');
+            Route::get('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'showPackage'])->name('show-package');
+            Route::post('/packages/{budgetPackage}/recalculate', [\App\Http\Controllers\Admin\BudgetController::class, 'recalculatePackage'])->name('recalculate-package');
+            Route::get('/packages/{budgetPackage}/select-items', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectItems'])->name('wizard.step1');
+            Route::post('/packages/{budgetPackage}/toggle-item', [\App\Http\Controllers\Admin\PackageItemController::class, 'toggleItem'])->name('wizard.toggle-item');
+            Route::post('/packages/{budgetPackage}/reorder-items', [\App\Http\Controllers\Admin\PackageItemController::class, 'reorderItems'])->name('wizard.reorder-items');
+            Route::get('/packages/{budgetPackage}/select-recipients', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectRecipients'])->name('wizard.step2');
+            Route::post('/package-items/{packageItem}/save-recipients', [\App\Http\Controllers\Admin\PackageItemController::class, 'saveRecipients'])->name('wizard.save-recipients');
+            Route::get('/packages/{budgetPackage}/preview', [\App\Http\Controllers\Admin\PackageItemController::class, 'preview'])->name('wizard.step3');
+            Route::delete('/package-items/{packageItem}', [\App\Http\Controllers\Admin\PackageItemController::class, 'removeItem'])->name('wizard.remove-item');
+            Route::get('/satker-keterangan/{satker}', [\App\Http\Controllers\Admin\PackageItemController::class, 'getSatkerKeterangan'])->name('wizard.satker-keterangan');
+            Route::get('/packages/{budgetPackage}/recap', [\App\Http\Controllers\Admin\BudgetExportController::class, 'previewRecap'])->name('recap');
+            Route::get('/packages/{budgetPackage}/invoice', [\App\Http\Controllers\Admin\BudgetExportController::class, 'previewInvoice'])->name('invoice');
+            Route::get('/packages/{budgetPackage}/export-csv', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportRecapExcel'])->name('export-csv');
+            Route::get('/packages/{budgetPackage}/export-pdf', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportRecapPdf'])->name('export-pdf');
+            Route::get('/packages/{budgetPackage}/export-detail', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportDetailExcel'])->name('export-detail');
+            Route::post('/packages/{budgetPackage}/export-sppm', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportSppmWord'])->name('export-sppm');
+            Route::post('/invoice-settings', [\App\Http\Controllers\Admin\BudgetExportController::class, 'updateSettings'])->name('update-settings');
+        });
     });
 });
 
@@ -270,6 +271,7 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
 
     Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+    Route::put('/settings/signatory', [\App\Http\Controllers\SettingsController::class, 'updateSignatory'])->name('settings.signatory.update');
     Route::post('/settings/next-year', [\App\Http\Controllers\SettingsController::class, 'nextYear'])->name('settings.next-year');
 
     Route::get('/statistik', [StatisticsController::class, 'index'])->name('statistics');

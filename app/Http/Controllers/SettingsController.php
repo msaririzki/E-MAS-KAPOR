@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InvoiceSetting;
 use App\Models\KaporSubmission;
 use App\Models\Setting;
+use App\Services\AuditLogger;
+use App\Services\ExportSignatorySettingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -11,6 +14,8 @@ class SettingsController extends Controller
 {
     public function index()
     {
+        $signatoryService = app(ExportSignatorySettingService::class);
+
         $settings = [
             'fiscal_year' => Setting::getValue('fiscal_year', date('Y')),
             'is_system_locked' => Setting::getValue('is_system_locked', 'false') === 'true',
@@ -45,7 +50,9 @@ class SettingsController extends Controller
             ];
         }
 
-        return view('superadmin.settings', compact('settings', 'yearlyStats'));
+        $signatorySettings = $signatoryService->getGlobalSettings();
+
+        return view('superadmin.settings', compact('settings', 'yearlyStats', 'signatorySettings'));
     }
 
     public function update(Request $request)
@@ -90,5 +97,41 @@ class SettingsController extends Controller
         // Usually, we keep it locked until admin is ready.
 
         return redirect()->back()->with('success', "Tahun Anggaran berhasil beralih ke $nextYear. Sistem saat ini terkunci untuk persiapan.");
+    }
+
+    public function updateSignatory(Request $request, ExportSignatorySettingService $signatoryService)
+    {
+        $validated = $request->validate([
+            'signatory_name' => 'nullable|string|max:255',
+            'signatory_rank' => 'nullable|string|max:255',
+            'signatory_nrp' => 'nullable|string|max:100',
+            'signatory_title' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'organization_name' => 'nullable|string|max:255',
+        ]);
+
+        $oldValues = $signatoryService->getGlobalSettings();
+        $signatoryService->updateGlobalSettings($validated);
+
+        InvoiceSetting::getSettings()->update([
+            'signatory_name' => $validated['signatory_name'] ?? '',
+            'signatory_rank' => $validated['signatory_rank'] ?? '',
+            'signatory_nrp' => $validated['signatory_nrp'] ?? '',
+            'signatory_title' => $validated['signatory_title'] ?? '',
+            'location' => $validated['location'] ?? '',
+            'organization_name' => $validated['organization_name'] ?? '',
+        ]);
+
+        AuditLogger::log(
+            'Update Penanda Tangan Export (Global)',
+            'Pengaturan',
+            null,
+            $oldValues,
+            $signatoryService->getGlobalSettings(),
+            'success',
+            'Superadmin memperbarui konfigurasi penanda tangan export global.',
+        );
+
+        return redirect()->back()->with('success', 'Penanda tangan export (global) berhasil diperbarui.');
     }
 }

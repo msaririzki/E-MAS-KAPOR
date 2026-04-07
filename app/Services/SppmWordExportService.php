@@ -39,7 +39,10 @@ class SppmWordExportService
     public function generateForPackage(BudgetPackage $package, array $suratData): ?string
     {
         $data = $this->calcService->calculatePackage($package);
-        $settings = InvoiceSetting::getSettings();
+        $settings = app(ExportSignatorySettingService::class)->applyToInvoiceSetting(
+            InvoiceSetting::getSettings(),
+            auth()->user(),
+        );
         $templatePath = base_path(self::TEMPLATE_PATH);
 
         if (! file_exists($templatePath)) {

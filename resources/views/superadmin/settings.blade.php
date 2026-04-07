@@ -102,7 +102,77 @@
 
     <hr class="settings-divider">
 
-    {{-- 2. Personalisasi Tampilan --}}
+    {{-- 2. Penanda Tangan Export --}}
+    <div class="settings-section">
+        <div class="settings-info">
+            <h3><i class="ri-quill-pen-line"></i> Penanda Tangan Export</h3>
+            <p>Konfigurasi ini digunakan untuk export dokumen pada akun Superadmin dan menjadi fallback jika Admin Satker belum mengisi setting penanda tangan satker.</p>
+        </div>
+        <div class="settings-card">
+            <form method="POST" action="{{ route('superadmin.settings.signatory.update') }}">
+                @csrf
+                @method('PUT')
+
+                <div class="modern-form-group">
+                    <label>Lokasi Tanda Tangan</label>
+                    <div class="input-with-icon">
+                        <i class="ri-map-pin-line"></i>
+                        <input type="text" name="location" class="modern-input" value="{{ $signatorySettings['location'] ?? '' }}" placeholder="Contoh: Mataram">
+                    </div>
+                </div>
+
+                <div class="modern-form-group">
+                    <label>Atas Nama Organisasi</label>
+                    <div class="input-with-icon">
+                        <i class="ri-government-line"></i>
+                        <input type="text" name="organization_name" class="modern-input" value="{{ $signatorySettings['organization_name'] ?? '' }}" placeholder="Contoh: KEPALA BIRO LOGISTIK POLDA NTB">
+                    </div>
+                </div>
+
+                <div class="modern-form-group">
+                    <label>Jabatan Penanda Tangan</label>
+                    <div class="input-with-icon">
+                        <i class="ri-briefcase-4-line"></i>
+                        <input type="text" name="signatory_title" class="modern-input" value="{{ $signatorySettings['signatory_title'] ?? '' }}" placeholder="Contoh: PEJABAT PEMBUAT KOMITMEN">
+                    </div>
+                </div>
+
+                <div class="modern-form-group">
+                    <label>Nama Penanda Tangan</label>
+                    <div class="input-with-icon">
+                        <i class="ri-user-3-line"></i>
+                        <input type="text" name="signatory_name" class="modern-input" value="{{ $signatorySettings['signatory_name'] ?? '' }}" placeholder="Contoh: KOMISARIS BESAR POLISI NAMA">
+                    </div>
+                </div>
+
+                <div class="modern-form-group">
+                    <label>Pangkat Penanda Tangan</label>
+                    <div class="input-with-icon">
+                        <i class="ri-shield-user-line"></i>
+                        <input type="text" name="signatory_rank" class="modern-input" value="{{ $signatorySettings['signatory_rank'] ?? '' }}" placeholder="Contoh: KOMPOL">
+                    </div>
+                </div>
+
+                <div class="modern-form-group" style="border-bottom: none;">
+                    <label>NRP / NIP Penanda Tangan</label>
+                    <div class="input-with-icon">
+                        <i class="ri-id-card-line"></i>
+                        <input type="text" name="signatory_nrp" class="modern-input" value="{{ $signatorySettings['signatory_nrp'] ?? '' }}" placeholder="Masukkan NRP/NIP">
+                    </div>
+                </div>
+
+                <div class="settings-action-bar">
+                    <button type="submit" class="btn-primary-modern">
+                        <i class="ri-save-3-line"></i> Simpan Penanda Tangan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <hr class="settings-divider">
+
+    {{-- 3. Personalisasi Tampilan --}}
     <div class="settings-section">
         <div class="settings-info">
             <h3><i class="ri-palette-line"></i> Tampilan Antarmuka</h3>
@@ -235,7 +305,7 @@
 
     <hr class="settings-divider">
 
-    {{-- 3. Transisi Tahun Anggaran & Riwayat --}}
+    {{-- 4. Transisi Tahun Anggaran & Riwayat --}}
     <div class="settings-section">
         <div class="settings-info">
             <h3><i class="ri-history-line"></i> Riwayat & Transisi</h3>

@@ -1988,23 +1988,23 @@
                     </div>
                     <div class="form-group">
                         <label>TEMPAT CETAK</label>
-                        <input type="text" name="location" value="Mataram" class="form-input">
+                        <input type="text" name="location" value="{{ $printSignatoryDefaults['location'] ?? 'Mataram' }}" class="form-input">
                     </div>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label>JABATAN PENANDA TANGAN</label>
-                    <input type="text" name="signatory_role" value="KASUBBAG RENMIN KABAG LOG" class="form-input">
+                    <input type="text" name="signatory_role" value="{{ $printSignatoryDefaults['signatory_title'] ?? '' }}" class="form-input">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label>NAMA PEJABAT</label>
-                    <input type="text" name="signatory_name" placeholder="Nama Lengkap Pejabat" class="form-input">
+                    <input type="text" name="signatory_name" value="{{ $printSignatoryDefaults['signatory_name'] ?? '' }}" placeholder="Nama Lengkap Pejabat" class="form-input">
                 </div>
 
                 <div class="form-group">
                     <label>PANGKAT / NRP</label>
-                    <input type="text" name="signatory_nrp" placeholder="Pangkat & NRP/NIP" class="form-input">
+                    <input type="text" name="signatory_nrp" value="{{ trim(($printSignatoryDefaults['signatory_rank'] ?? '').' '.((!empty($printSignatoryDefaults['signatory_nrp'] ?? null)) ? 'NRP '.$printSignatoryDefaults['signatory_nrp'] : '')) }}" placeholder="Pangkat & NRP/NIP" class="form-input">
                 </div>
             </form>
         </div>
