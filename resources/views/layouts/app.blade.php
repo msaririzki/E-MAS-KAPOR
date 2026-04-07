@@ -1798,10 +1798,7 @@
                             class="nav-link {{ request()->routeIs('admin-satker.kebutuhan.*') ? 'active' : '' }}">
                             Identifikasi Kebutuhan
                         </a>
-                        <a href="{{ route('admin-satker.monitor') }}"
-                            class="nav-link {{ request()->routeIs('admin-satker.monitor') ? 'active' : '' }}">
-                            Monitoring
-                        </a>
+
                         <a href="{{ route('admin-satker.reports') }}"
                             class="nav-link {{ request()->routeIs('admin-satker.reports') ? 'active' : '' }}">
                             Laporan

@@ -102,7 +102,7 @@ Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')-
 // ── Admin Satker Routes ──────────────────────────────────────────────
 
 Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope::class])->prefix('admin-satker')->name('admin-satker.')->group(function () {
-    Route::get('/monitor', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'monitor'])->name('monitor');
+
     Route::get('/reports', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'reports'])->name('reports');
     Route::get('/settings', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'settings'])->name('settings');
     Route::put('/settings/signatory', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'updateSignatorySettings'])->name('settings.signatory.update');
