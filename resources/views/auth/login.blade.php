@@ -422,7 +422,7 @@
                             <p>Biro Logistik Polda NTB</p>
                         </div>
                     </div>
-                    <h1>Sistem Manajemen<br>Data Ukuran Kapor</h1>
+                    <h1 style="font-size: 28px; letter-spacing: 1px; line-height: 1.4;">Electronic Measurement<br>Perlengkapan Perorangan</h1>
                     <div class="glow-line" style="margin-top: 24px;"></div>
                     <p class="desc">
                         Platform pencatatan dan pengelolaan data perlengkapan perorangan untuk seluruh personel Polda NTB secara terpadu dan real-time.
