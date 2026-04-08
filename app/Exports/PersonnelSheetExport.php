@@ -17,11 +17,14 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Style\Protection;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
- * Sheet tunggal (satu tipe personel: Polri atau PNS).
- * Digunakan oleh PersonnelExport sebagai bagian dari multi-sheet export.
+ * Sheet tunggal untuk template update admin satker.
+ *
+ * Template ini hanya membawa field referensi utama dan field yang memang
+ * boleh diedit admin satker: jabatan, bag/fungsi, dan keterangan.
  */
 class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithEvents, WithHeadings, WithStyles, WithTitle
 {
@@ -48,48 +51,30 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
         $rows = collect();
         $no = 1;
 
-        foreach ($this->personnels as $p) {
-            $sizes = is_array($p->kapor_sizes) ? $p->kapor_sizes : [];
-
-            // Gender: L (Laki-laki) → 'P', P (Perempuan) → 'W' (sesuai format Excel template)
-            $genderExcel = ($p->gender === 'P') ? 'W' : 'P';
+        foreach ($this->personnels as $personnel) {
+            $genderExcel = $personnel->gender === 'P' ? 'W' : 'P';
 
             $rows->push([
-                $no++,                                           // A  NO
-                $p->full_name ?? '',                             // B  NAMA
-                $p->rank->name ?? '',                            // C  PANGKAT
-                $p->golongan ?? ($p->rank->category ?? ''),     // D  GOLONGAN
-                "\t".($p->nrp ?? ''),                         // E  NRP/NIP — prefix TAB agar Excel baca sebagai teks
-                $p->jabatan ?? '',                               // F  JABATAN
-                $p->bagian ?? '',                                // G  BAG/FUNGSI
-                $genderExcel,                                    // H  JENIS KELAMIN
-                $sizes['topi'] ?? '',                            // I  TUTUP KEPALA
-                $sizes['kemeja'] ?? '',                          // J  KEMEJA
-                $sizes['celana'] ?? '',                          // K  CELANA/ROK
-                $sizes['olahraga'] ?? '',                        // L  T-SHIRT/OLAHRAGA
-                $sizes['sepatu_dinas'] ?? '',                    // M  SEPATU DINAS
-                $sizes['sepatu_olahraga'] ?? '',                 // N  SEPATU OLAHRAGA
-                $sizes['jaket'] ?? '',                           // O  JAKET
-                $sizes['sabuk'] ?? '',                           // P  SABUK
-                $sizes['jilbab'] ?? '',                          // Q  JILBAB
-                $p->keterangan ?? '',                            // R  KETERANGAN
-                $p->keterangan_2 ?? '',                          // S  KET.1
-                $p->keterangan_3 ?? '',                          // T  KET.2
-                $p->keterangan_4 ?? '',                          // U  KET.3
+                $no++,
+                $personnel->full_name ?? '',
+                $personnel->rank->name ?? '',
+                $personnel->golongan ?? ($personnel->rank->category ?? ''),
+                "\t".($personnel->nrp ?? ''),
+                $personnel->jabatan ?? '',
+                $personnel->bagian ?? '',
+                $genderExcel,
+                $personnel->religion ?? '',
+                $personnel->keterangan ?? '',
             ]);
         }
 
         return $rows;
     }
 
-    /**
-     * Format kolom E (NRP/NIP) sebagai TEXT agar leading zero tidak hilang.
-     * Format kolom A (NO) tetap angka.
-     */
     public function columnFormats(): array
     {
         return [
-            'E' => NumberFormat::FORMAT_TEXT, // NRP/NIP → teks
+            'E' => NumberFormat::FORMAT_TEXT,
         ];
     }
 
@@ -102,12 +87,12 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
             ['DAERAH NUSA TENGGARA BARAT'],
             ['BIRO LOGISTIK'],
             [''],
-            ['DATA UKURAN KAPOR PERSONEL '.strtoupper($this->satkerName)],
-            ['UNTUK DUKUNGAN KAPOR TA. '.$fiscalYear],
+            ['DATA PERSONEL SATKER '.strtoupper($this->satkerName)],
+            ['TEMPLATE UPDATE JABATAN, BAG/FUNGSI, DAN KETERANGAN TA. '.$fiscalYear],
             [''],
-            ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'UKURAN', '', '', '', '', '', '', '', '', 'KETERANGAN', 'KET. 1', 'KET.2', 'KET.3'],
-            ['', '', '', '', '', '', '', '', 'TUTUP KEPALA', 'TUTUP BADAN', '', '', 'TUTUP KAKI SEPATU', '', 'JAKET', 'SABUK', 'JILBAB', '', '', '', ''],
-            ['', '', '', '', '', '', '', '', '', 'KEMEJA', 'CELANA / ROK', 'T.SHIRT / OLAHRAGA', 'DINAS', 'OLAHRAGA', '', '', '', '', '', '', ''],
+            ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP/NIP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'AGAMA', 'KETERANGAN'],
+            ['', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', ''],
         ];
     }
 
@@ -130,50 +115,27 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-
-                // ── Set kolom E sebagai teks sebelum data ditulis ──────────
-                // Ini memastikan leading zero (mis. 087701234) tidak hilang
                 $lastDataRow = $sheet->getHighestRow();
+
                 for ($row = 11; $row <= $lastDataRow; $row++) {
                     $cell = $sheet->getCell('E'.$row);
-                    $rawVal = ltrim((string) $cell->getValue(), "\t"); // hapus prefix TAB
-                    $cell->setValueExplicit($rawVal, DataType::TYPE_STRING);
+                    $rawValue = ltrim((string) $cell->getValue(), "\t");
+                    $cell->setValueExplicit($rawValue, DataType::TYPE_STRING);
                 }
 
-                // ── Alignment header ──────────────────────────────────────
-                $sheet->getStyle('A1:U6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('A1:J6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                // ── Merge Top Headers ─────────────────────────────────────
                 $sheet->mergeCells('A1:C1');
                 $sheet->mergeCells('A2:C2');
                 $sheet->mergeCells('A3:C3');
-                $sheet->mergeCells('A5:U5');
-                $sheet->mergeCells('A6:U6');
+                $sheet->mergeCells('A5:J5');
+                $sheet->mergeCells('A6:J6');
 
-                // ── Merge Table Headers ───────────────────────────────────
-                $sheet->mergeCells('A8:A10');
-                $sheet->mergeCells('B8:B10');
-                $sheet->mergeCells('C8:C10');
-                $sheet->mergeCells('D8:D10');
-                $sheet->mergeCells('E8:E10');
-                $sheet->mergeCells('F8:F10');
-                $sheet->mergeCells('G8:G10');
-                $sheet->mergeCells('H8:H10');
-                $sheet->mergeCells('I8:Q8');
-                $sheet->mergeCells('I9:I10');
-                $sheet->mergeCells('J9:L9');
-                $sheet->mergeCells('M9:N9');
-                $sheet->mergeCells('O9:O10');
-                $sheet->mergeCells('P9:P10');
-                $sheet->mergeCells('Q9:Q10');
-                $sheet->mergeCells('R8:R10');
+                foreach (range('A', 'J') as $column) {
+                    $sheet->mergeCells($column.'8:'.$column.'10');
+                }
 
-                $sheet->mergeCells('S8:S10'); // KET.1
-                $sheet->mergeCells('T8:T10'); // KET.2
-                $sheet->mergeCells('U8:U10'); // KET.3
-
-                // ── Border header ─────────────────────────────────────────
-                $sheet->getStyle('A8:U10')->applyFromArray([
+                $sheet->getStyle('A8:J10')->applyFromArray([
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
@@ -182,9 +144,8 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                     ],
                 ]);
 
-                // ── Border data rows ──────────────────────────────────────
                 if ($lastDataRow >= 11) {
-                    $sheet->getStyle('A11:U'.$lastDataRow)->applyFromArray([
+                    $sheet->getStyle('A11:J'.$lastDataRow)->applyFromArray([
                         'borders' => [
                             'allBorders' => [
                                 'borderStyle' => Border::BORDER_THIN,
@@ -198,29 +159,39 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                     ]);
                 }
 
-                // ── Background header ─────────────────────────────────────
-                $sheet->getStyle('A8:U10')->getFill()
+                $sheet->getStyle('A8:J10')->getFill()
                     ->setFillType(Fill::FILL_SOLID)
                     ->getStartColor()->setARGB('F2F2F2');
 
-                // ── Row heights ───────────────────────────────────────────
                 $sheet->getRowDimension(8)->setRowHeight(20);
                 $sheet->getRowDimension(9)->setRowHeight(20);
-                $sheet->getRowDimension(10)->setRowHeight(30);
-
-                // ── Freeze panes ──────────────────────────────────────────
+                $sheet->getRowDimension(10)->setRowHeight(24);
                 $sheet->freezePane('A11');
 
-                // ── Alignment data rows ───────────────────────────────────
                 if ($lastDataRow >= 11) {
                     $sheet->getStyle('A11:A'.$lastDataRow)
                         ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('H11:Q'.$lastDataRow)
+                    $sheet->getStyle('H11:I'.$lastDataRow)
                         ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    // Kolom NRP: left-aligned (teks)
                     $sheet->getStyle('E11:E'.$lastDataRow)
                         ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+                    $sheet->getStyle('A11:J'.$lastDataRow)
+                        ->getProtection()
+                        ->setLocked(Protection::PROTECTION_PROTECTED);
+
+                    foreach (['F', 'G', 'J'] as $editableColumn) {
+                        $sheet->getStyle($editableColumn.'11:'.$editableColumn.$lastDataRow)
+                            ->getProtection()
+                            ->setLocked(Protection::PROTECTION_UNPROTECTED);
+                    }
                 }
+
+                $sheet->getProtection()->setSheet(true);
+                $sheet->getProtection()->setSort(false);
+                $sheet->getProtection()->setInsertRows(false);
+                $sheet->getProtection()->setFormatCells(false);
+                $sheet->getProtection()->setPassword('EMAS-KAPOR');
             },
         ];
     }

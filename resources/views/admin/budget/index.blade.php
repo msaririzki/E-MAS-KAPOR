@@ -6,6 +6,7 @@
 @section('content')
 @php
     $nextBudgetYear = max((int) date('Y'), (int) ($years->max('year') ?? date('Y'))) + 1;
+    $canManageBudget = auth()->user()->hasAnyRole(['superadmin', 'admin']);
 @endphp
 <div class="page-header">
     <div class="page-header-row">
@@ -13,14 +14,17 @@
             <h1 class="page-title">Rencana Anggaran</h1>
             <p class="page-subtitle">Kelola tahun anggaran dan paket pengadaan kapor</p>
         </div>
+        @if($canManageBudget)
         <div class="page-header-actions">
             <button class="btn btn-primary" onclick="openModal('addYearModal')">
                 <i class="ri-add-line"></i> Tambah Tahun Anggaran
             </button>
         </div>
+        @endif
     </div>
 </div>
 
+@if($canManageBudget)
 <div class="budget-prep-card">
     <div class="budget-prep-content">
         <div class="budget-prep-badge">
@@ -42,6 +46,7 @@
     </form>
     @endif
 </div>
+@endif
 
 {{-- Year Cards --}}
 <div class="budget-years-grid">
@@ -52,6 +57,7 @@
                 <i class="ri-calendar-line"></i>
                 <span>T.A. {{ $year->year }}</span>
             </div>
+            @if($canManageBudget)
             <div class="year-actions">
                 <button class="btn-icon-sm" onclick="openEditYearModal({{ json_encode($year) }})" title="Edit">
                     <i class="ri-edit-line"></i>
@@ -61,6 +67,7 @@
                     <button class="btn-icon-sm red" title="Hapus"><i class="ri-delete-bin-line"></i></button>
                 </form>
             </div>
+            @endif
         </div>
         <div class="year-card-body">
             <h2 class="year-title">{{ $year->name }}</h2>
@@ -87,14 +94,17 @@
     <div class="empty-state" style="grid-column: 1 / -1;">
         <i class="ri-calendar-schedule-line"></i>
         <h3>Belum ada Tahun Anggaran</h3>
-        <p>Mulai dengan menambahkan tahun anggaran baru</p>
+        <p>{{ $canManageBudget ? 'Mulai dengan menambahkan tahun anggaran baru' : 'Belum ada tahun anggaran yang tersedia untuk ditampilkan.' }}</p>
+        @if($canManageBudget)
         <button class="btn btn-primary" onclick="openModal('addYearModal')">
             <i class="ri-add-line"></i> Tambah Tahun Anggaran
         </button>
+        @endif
     </div>
     @endforelse
 </div>
 
+@if($canManageBudget)
 {{-- Add Year Modal --}}
 <div id="addYearModal" class="modal">
     <div class="modal-content" style="max-width: 420px;">
@@ -183,6 +193,7 @@
         openModal('addYearModal');
     @endif
 </script>
+@endif
 @endsection
 
 @section('styles')

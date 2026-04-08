@@ -8,6 +8,9 @@
 @endsection
 
 @section('content')
+@php
+    $canManageBudget = auth()->user()->hasAnyRole(['superadmin', 'admin']);
+@endphp
 <div class="page-header">
     <div class="page-header-row">
         <div>
@@ -19,11 +22,13 @@
             </div>
             <p class="page-subtitle">Kelola paket pengadaan kapor untuk T.A. {{ $budgetYear->year }}</p>
         </div>
+        @if($canManageBudget)
         <div class="page-header-actions">
             <button class="btn btn-primary" onclick="openModal('addPackageModal')">
                 <i class="ri-add-line"></i> Tambah Paket
             </button>
         </div>
+        @endif
     </div>
 </div>
 
@@ -43,6 +48,7 @@
                     </span>
                 </div>
             </div>
+            @if($canManageBudget)
             <div class="package-actions">
                 <button class="btn-icon-sm" onclick="openEditPackageModal({{ json_encode($package) }})" title="Edit">
                     <i class="ri-edit-line"></i>
@@ -52,6 +58,7 @@
                     <button class="btn-icon-sm red" title="Hapus"><i class="ri-delete-bin-line"></i></button>
                 </form>
             </div>
+            @endif
         </div>
 
         @if($package->description)
@@ -80,14 +87,17 @@
     <div class="empty-state" style="grid-column: 1 / -1;">
         <i class="ri-box-3-line"></i>
         <h3>Belum ada Paket</h3>
-        <p>Tambahkan paket pengadaan untuk tahun anggaran ini</p>
+        <p>{{ $canManageBudget ? 'Tambahkan paket pengadaan untuk tahun anggaran ini' : 'Belum ada paket pengadaan pada tahun anggaran ini.' }}</p>
+        @if($canManageBudget)
         <button class="btn btn-primary" onclick="openModal('addPackageModal')">
             <i class="ri-add-line"></i> Tambah Paket
         </button>
+        @endif
     </div>
     @endforelse
 </div>
 
+@if($canManageBudget)
 {{-- Add Package Modal --}}
 <div id="addPackageModal" class="modal">
     <div class="modal-content" style="max-width: 480px;">
@@ -166,6 +176,7 @@
         if (e.target.classList.contains('modal')) e.target.classList.remove('open');
     }
 </script>
+@endif
 @endsection
 
 @section('styles')

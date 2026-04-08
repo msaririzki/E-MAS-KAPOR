@@ -17,6 +17,10 @@ class ProcessSdmImportPreview implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
+    public int $timeout = 900;
+
+    public int $tries = 1;
+
     public function __construct(
         public int $runId
     ) {}

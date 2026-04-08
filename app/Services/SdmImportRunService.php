@@ -49,6 +49,7 @@ class SdmImportRunService
                 'summary' => $stats,
                 'preview_payload_path' => $previewPath,
                 'error_report_path' => $errorPath,
+                'finished_at' => now(),
             ]);
 
             foreach ($sourceFiles as $fileMeta) {

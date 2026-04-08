@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\PersonnelImport;
 use App\Models\BagianOption;
 use App\Models\BudgetPackage;
 use App\Models\BudgetYear;
@@ -10,6 +11,7 @@ use App\Models\Personnel;
 use App\Models\Satker;
 use App\Models\SdmSatkerAlias;
 use App\Models\Setting;
+use App\Models\User;
 use App\Services\AnnualArchiveService;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
@@ -105,6 +107,7 @@ class SettingsController extends Controller
     {
         $currentYear = Setting::getValue('fiscal_year', date('Y'));
         $nextYear = $currentYear + 1;
+        $satkerIds = Satker::query()->pluck('id')->all();
 
         $this->annualArchiveService->generateForYear((int) $currentYear, auth()->id());
 
@@ -129,23 +132,28 @@ class SettingsController extends Controller
                 ->whereIn('status', ['draft', 'finalized'])
                 ->update(['status' => 'archived']);
 
+            $personnelUserIds = Personnel::query()
+                ->whereNotNull('user_id')
+                ->pluck('user_id')
+                ->unique()
+                ->all();
+
+            if ($personnelUserIds !== []) {
+                User::query()
+                    ->whereIn('id', $personnelUserIds)
+                    ->update([
+                        'satker_id' => null,
+                        'is_active' => false,
+                    ]);
+            }
+
             Personnel::query()
-                ->where(function ($query) {
-                    $query->whereNull('verification_status')
-                        ->orWhere('verification_status', 'approved');
-                })
-                ->update([
-                    'jabatan' => null,
-                    'bagian' => null,
-                    'keterangan' => null,
-                    'keterangan_2' => null,
-                    'keterangan_3' => null,
-                    'keterangan_4' => null,
-                    'kapor_sizes' => json_encode([]),
-                    'nrp_issue_note' => null,
-                    'nrp_issue_resolved_at' => null,
-                ]);
+                ->delete();
         });
+
+        foreach ($satkerIds as $satkerId) {
+            PersonnelImport::recalculateSatkerCount((int) $satkerId);
+        }
 
         AuditLogger::log(
             'Siapkan Tahun Anggaran Berikutnya',
@@ -157,9 +165,9 @@ class SettingsController extends Controller
                 'next_year' => $nextYear,
             ],
             'success',
-            'Menyiapkan sistem untuk tahun anggaran berikutnya dan mereset data tahunan aktif personel.'
+            'Menyiapkan sistem untuk tahun anggaran berikutnya, mengarsipkan hasil final, menonaktifkan akun personel, dan mengosongkan dataset aktif personel.'
         );
 
-        return redirect()->back()->with('success', "Tahun Anggaran $nextYear siap digunakan. Sistem dikunci, paket tahun $currentYear diarsipkan, dan data tahunan aktif personel telah direset.");
+        return redirect()->back()->with('success', "Tahun Anggaran $nextYear siap digunakan. Sistem dikunci, paket tahun $currentYear diarsipkan, akun personel tetap tersimpan, dan dataset aktif personel telah dikosongkan.");
     }
 }

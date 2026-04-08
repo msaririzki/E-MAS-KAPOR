@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
+use App\Models\SdmImportRun;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
@@ -64,7 +65,10 @@ class AuditLogController extends Controller
         $roles = Role::all();
         $categories = AuditLog::select('category')->distinct()->pluck('category');
         $actions = AuditLog::select('action')->distinct()->pluck('action');
+        $recentSdmImportRuns = $request->user()?->hasRole('superadmin')
+            ? SdmImportRun::query()->with('initiator:id,name')->latest()->limit(10)->get()
+            : collect();
 
-        return view('admin.audit_logs.index', compact('logs', 'roles', 'categories', 'actions', 'perPage', 'stats'));
+        return view('admin.audit_logs.index', compact('logs', 'roles', 'categories', 'actions', 'perPage', 'stats', 'recentSdmImportRuns'));
     }
 }

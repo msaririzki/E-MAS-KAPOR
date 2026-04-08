@@ -87,6 +87,14 @@ class AnnualArchiveWorkflowTest extends TestCase
 
         Storage::disk('local')->assertExists('annual-archives/2026/arsip_final_tahunan_2026.xlsx');
         Storage::disk('local')->assertExists('annual-archives/2026/arsip_final_tahunan_2026.pdf');
+
+        $archive = AnnualArchive::query()
+            ->where('fiscal_year', 2026)
+            ->where('format', 'xlsx')
+            ->firstOrFail();
+
+        $this->assertSame(1, $archive->metadata['total_personnel']);
+        $this->assertSame(0, $archive->metadata['submitted_personnel']);
     }
 
     public function test_superadmin_can_view_and_download_annual_archives_page(): void

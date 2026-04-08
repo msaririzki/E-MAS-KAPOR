@@ -202,13 +202,9 @@ class PersonnelController extends Controller
             ->orderBy('sort_order')
             ->orderBy('name')
             ->pluck('name');
-        $recentSdmImportRuns = auth()->user()?->hasRole('superadmin')
-            ? SdmImportRun::query()->with('initiator:id,name')->latest()->limit(5)->get()
-            : collect();
-
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
 
-        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId', 'recentSdmImportRuns'));
+        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId'));
 
     }
 
@@ -612,6 +608,10 @@ class PersonnelController extends Controller
         set_time_limit(0);
         ini_set('memory_limit', '2G');
 
+        if (auth()->user()?->hasRole('admin_satker')) {
+            abort(403, 'Admin satker harus menggunakan Impor Update Data untuk menambah atau menyesuaikan data personel.');
+        }
+
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv|max:51200', // max 50MB
             'satker_id' => 'required|exists:satkers,id',
@@ -978,6 +978,8 @@ class PersonnelController extends Controller
         ]);
 
         try {
+            $this->clearKeteranganPreviewPayload();
+
             $import = new PersonnelKeteranganImport;
             $collection = Excel::toCollection($import, $request->file('file'));
             $rows = collect();
@@ -988,15 +990,18 @@ class PersonnelController extends Controller
 
             $preview = $import->generatePreview($rows);
             $previewCollection = collect($preview);
+            $stats = [
+                'update' => $previewCollection->where('status', 'update')->count(),
+                'no_change' => $previewCollection->where('status', 'no_change')->count(),
+                'error' => $previewCollection->where('status', 'error')->count(),
+                'total' => $previewCollection->count(),
+            ];
+
+            $previewPath = $this->storeKeteranganPreviewPayload($preview, $stats);
 
             session([
-                'keterangan_import_preview' => $preview,
-                'keterangan_import_stats' => [
-                    'update' => $previewCollection->where('status', 'update')->count(),
-                    'no_change' => $previewCollection->where('status', 'no_change')->count(),
-                    'error' => $previewCollection->where('status', 'error')->count(),
-                    'total' => $previewCollection->count(),
-                ],
+                'keterangan_import_preview_key' => $previewPath,
+                'keterangan_import_stats' => $stats,
             ]);
 
             AuditLogger::log(
@@ -1019,8 +1024,9 @@ class PersonnelController extends Controller
     {
         $this->ensureSuperadmin();
 
-        $preview = session('keterangan_import_preview');
-        $stats = session('keterangan_import_stats');
+        $payload = $this->getKeteranganPreviewPayload();
+        $preview = $payload['preview'] ?? null;
+        $stats = $payload['stats'] ?? session('keterangan_import_stats');
 
         if (! $preview) {
             return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview import keterangan sudah kadaluwarsa. Silakan upload ulang file.');
@@ -1033,7 +1039,8 @@ class PersonnelController extends Controller
     {
         $this->ensureSuperadmin();
 
-        $preview = session('keterangan_import_preview');
+        $payload = $this->getKeteranganPreviewPayload();
+        $preview = $payload['preview'] ?? null;
 
         if (! $preview) {
             return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview import keterangan sudah kadaluwarsa. Silakan upload ulang file.');
@@ -1043,7 +1050,7 @@ class PersonnelController extends Controller
             $import = new PersonnelKeteranganImport;
             $results = $import->saveFromPreviewData($preview);
 
-            session()->forget(['keterangan_import_preview', 'keterangan_import_stats']);
+            $this->clearKeteranganPreviewPayload();
 
             AuditLogger::log(
                 'Konfirmasi Import Keterangan Personel',
@@ -1075,7 +1082,7 @@ class PersonnelController extends Controller
     {
         $this->ensureSuperadmin();
 
-        session()->forget(['keterangan_import_preview', 'keterangan_import_stats']);
+        $this->clearKeteranganPreviewPayload();
 
         return redirect()->route('admin.personnel.index')->with('info', 'Proses import keterangan dibatalkan.');
     }
@@ -1335,17 +1342,24 @@ class PersonnelController extends Controller
     {
         $this->ensureSuperadmin();
 
+        $elapsedSeconds = $sdmImportRun->started_at?->diffInSeconds(now()) ?? 0;
+        $isStaleQueue = $sdmImportRun->status === 'queued' && $elapsedSeconds >= 15;
+
         return response()->json([
             'status' => $sdmImportRun->status,
             'message' => match ($sdmImportRun->status) {
-                'queued' => 'Import SDM masuk antrean dan menunggu diproses.',
-                'processing' => 'Import SDM sedang diproses di background.',
+                'queued' => $isStaleQueue
+                    ? "Job preview SDM masih antre lebih dari {$elapsedSeconds} detik. Worker queue kemungkinan belum mengambil job ini."
+                    : 'Import SDM masuk antrean dan menunggu diproses.',
+                'processing' => "Import SDM sedang diproses di background ({$elapsedSeconds} detik).",
                 'preview_ready' => 'Preview SDM siap dibuka.',
                 'failed' => $sdmImportRun->summary['error_message'] ?? 'Import SDM gagal diproses.',
                 default => 'Status import SDM diperbarui.',
             },
             'redirect_url' => $sdmImportRun->status === 'preview_ready' ? route('admin.personnel.import-sdm-preview') : null,
             'summary' => $sdmImportRun->summary,
+            'elapsed_seconds' => $elapsedSeconds,
+            'stale_queue' => $isStaleQueue,
         ]);
     }
 
@@ -1423,6 +1437,68 @@ class PersonnelController extends Controller
         }
 
         return $staged;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $preview
+     * @param  array<string, mixed>  $stats
+     */
+    private function storeKeteranganPreviewPayload(array $preview, array $stats): string
+    {
+        $path = 'import-previews/keterangan/'.auth()->id().'-'.Str::uuid().'.json';
+        $payload = json_encode([
+            'preview' => $preview,
+            'stats' => $stats,
+        ], JSON_UNESCAPED_UNICODE);
+
+        if ($payload === false) {
+            throw new \RuntimeException('Gagal menyusun payload preview import keterangan.');
+        }
+
+        Storage::disk('local')->put($path, $payload);
+
+        return $path;
+    }
+
+    /**
+     * @return array{preview: array<int, array<string, mixed>>, stats: array<string, mixed>}|null
+     */
+    private function getKeteranganPreviewPayload(): ?array
+    {
+        $path = session('keterangan_import_preview_key');
+        if (! is_string($path) || $path === '') {
+            return null;
+        }
+
+        if (! Storage::disk('local')->exists($path)) {
+            return null;
+        }
+
+        $raw = Storage::disk('local')->get($path);
+        $payload = json_decode($raw, true);
+
+        if (! is_array($payload) || ! isset($payload['preview']) || ! is_array($payload['preview'])) {
+            return null;
+        }
+
+        return [
+            'preview' => $payload['preview'],
+            'stats' => is_array($payload['stats'] ?? null) ? $payload['stats'] : (session('keterangan_import_stats', [])),
+        ];
+    }
+
+    private function clearKeteranganPreviewPayload(): void
+    {
+        $path = session('keterangan_import_preview_key');
+        if (is_string($path) && $path !== '') {
+            Storage::disk('local')->delete($path);
+        }
+
+        session()->forget([
+            'keterangan_import_preview_key',
+            'keterangan_import_preview',
+            'keterangan_import_stats',
+        ]);
     }
 
     /**

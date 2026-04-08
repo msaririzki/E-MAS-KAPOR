@@ -221,18 +221,92 @@ class PersonnelKeteranganImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            $fileValue = $this->normalizeNullableString($row[$column] ?? null);
+            if ($this->shouldIgnoreReferenceWarning($column, $row[$column] ?? null)) {
+                continue;
+            }
+
+            $fileValue = $this->normalizeReferenceValue($column, $row[$column] ?? null);
             if ($fileValue === null) {
                 continue;
             }
 
-            $actualValue = $this->normalizeNullableString($meta['actual']);
+            $actualValue = $this->normalizeReferenceValue($column, $meta['actual']);
             if ($fileValue !== $actualValue) {
                 $warnings[] = $meta['label'].' pada file berbeda dari data saat ini.';
             }
         }
 
         return $warnings;
+    }
+
+    private function shouldIgnoreReferenceWarning(string $column, mixed $value): bool
+    {
+        if ($column !== 'nrp_nip') {
+            return false;
+        }
+
+        $normalized = $this->normalizeNullableString($value);
+        if ($normalized === null) {
+            return false;
+        }
+
+        $scientificCandidate = str_replace(',', '.', strtoupper($normalized));
+
+        return preg_match('/^([+-]?\d+(?:\.\d+)?)E([+-]?\d+)$/', $scientificCandidate) === 1;
+    }
+
+    private function normalizeReferenceValue(string $column, mixed $value): ?string
+    {
+        if ($column === 'nrp_nip') {
+            return $this->normalizeIdentifierString($value);
+        }
+
+        return $this->normalizeNullableString($value);
+    }
+
+    private function normalizeIdentifierString(mixed $value): ?string
+    {
+        $normalized = $this->normalizeNullableString($value);
+
+        if ($normalized === null) {
+            return null;
+        }
+
+        $normalized = ltrim($normalized, "'\t");
+
+        if (preg_match('/^\d+(?:\.0+)?$/', $normalized) === 1) {
+            return preg_replace('/\.0+$/', '', $normalized);
+        }
+
+        $scientificCandidate = str_replace(',', '.', strtoupper($normalized));
+        if (preg_match('/^([+-]?\d+(?:\.\d+)?)E([+-]?\d+)$/', $scientificCandidate, $matches) === 1) {
+            return $this->expandScientificNotation($matches[1], (int) $matches[2]);
+        }
+
+        return $normalized;
+    }
+
+    private function expandScientificNotation(string $mantissa, int $exponent): string
+    {
+        $mantissa = ltrim($mantissa, '+');
+        $negative = str_starts_with($mantissa, '-');
+        $mantissa = ltrim($mantissa, '-');
+
+        $parts = explode('.', $mantissa, 2);
+        $whole = $parts[0] ?? '0';
+        $fraction = $parts[1] ?? '';
+        $digits = ltrim($whole.$fraction, '0');
+        $digits = $digits === '' ? '0' : $digits;
+        $scale = strlen($fraction);
+
+        if ($exponent >= $scale) {
+            $result = $digits.str_repeat('0', $exponent - $scale);
+        } else {
+            $integerLength = strlen($digits) - ($scale - $exponent);
+            $result = $integerLength <= 0 ? '0' : substr($digits, 0, $integerLength);
+        }
+
+        return $negative ? '-'.$result : $result;
     }
 
     private function normalizeNullableString(mixed $value): ?string

@@ -3,62 +3,37 @@
 namespace App\Exports;
 
 use App\Models\Personnel;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithHeadings;
+use App\Models\Satker;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class PersonnelKeteranganExport implements FromCollection, ShouldAutoSize, WithHeadings
+class PersonnelKeteranganExport implements WithMultipleSheets
 {
-    public function collection(): Collection
+    public function sheets(): array
     {
-        return Personnel::query()
-            ->with(['rank:id,name', 'satker:id,name', 'user:id,nrp_nip'])
-            ->leftJoin('satkers', 'personnels.satker_id', '=', 'satkers.id')
-            ->select('personnels.*')
-            ->orderBy('satkers.sort_order')
-            ->orderBy('satkers.name')
-            ->orderBy('personnels.full_name')
-            ->get()
-            ->map(function (Personnel $personnel, int $index): array {
-                return [
-                    'id' => $personnel->id,
-                    'no' => $index + 1,
-                    'nama' => $personnel->full_name,
-                    'nrp_nip' => $personnel->user?->nrp_nip ?? $personnel->nrp,
-                    'satker' => $personnel->satker?->name,
-                    'pangkat' => $personnel->rank?->name,
-                    'golongan' => $personnel->golongan,
-                    'jenis_kelamin' => $personnel->gender,
-                    'agama' => $personnel->religion,
-                    'jabatan' => $personnel->jabatan,
-                    'bag_fungsi' => $personnel->bagian,
-                    'keterangan_1' => $personnel->keterangan,
-                    'keterangan_2' => $personnel->keterangan_2,
-                    'keterangan_3' => $personnel->keterangan_3,
-                    'keterangan_4' => $personnel->keterangan_4,
-                ];
-            });
-    }
+        $satkers = Satker::query()
+            ->whereHas('personnels')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
 
-    public function headings(): array
-    {
-        return [
-            'id',
-            'no',
-            'nama',
-            'nrp_nip',
-            'satker',
-            'pangkat',
-            'golongan',
-            'jenis_kelamin',
-            'agama',
-            'jabatan',
-            'bag_fungsi',
-            'keterangan_1',
-            'keterangan_2',
-            'keterangan_3',
-            'keterangan_4',
-        ];
+        $sheets = [];
+
+        foreach ($satkers as $satker) {
+            $personnels = Personnel::query()
+                ->with(['rank:id,name,sort_order', 'satker:id,name', 'user:id,nrp_nip'])
+                ->where('satker_id', $satker->id)
+                ->orderByRaw("CASE WHEN personnels.personnel_type = 'Polri' THEN 0 ELSE 1 END")
+                ->orderByRaw('COALESCE((SELECT sort_order FROM ranks WHERE ranks.id = personnels.rank_id), 999)')
+                ->orderBy('full_name')
+                ->get();
+
+            if ($personnels->isEmpty()) {
+                continue;
+            }
+
+            $sheets[] = new PersonnelKeteranganSheetExport($satker, $personnels);
+        }
+
+        return $sheets;
     }
 }

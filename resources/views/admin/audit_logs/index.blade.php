@@ -16,6 +16,12 @@
             <p style="color: #6B7280; font-size: 14px; margin-left: 52px;">Pantau seluruh jejak aktivitas admin dan pengguna dalam sistem</p>
         </div>
         <div class="page-header-actions">
+            @if(auth()->user()->hasRole('superadmin'))
+            <button type="button" class="btn" style="background:#4F46E5; color:#fff;" onclick="toggleSdmImportHistory()">
+                <i class="ri-file-list-3-line"></i>
+                <span id="sdmImportHistoryToggleLabel">Riwayat Import SDM</span>
+            </button>
+            @endif
             <button class="btn btn-primary btn-maroon" onclick="window.location.reload()">
                 <i class="ri-refresh-line"></i> Refresh Data
             </button>
@@ -62,6 +68,68 @@
         </div>
     </div>
 </div>
+
+@if(auth()->user()->hasRole('superadmin'))
+<div id="sdm-import-history" class="table-container shadow-sm" style="margin-bottom:24px; display:none;">
+    <div style="padding:18px 20px; border-bottom:1px solid #F3F4F6; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+        <div>
+            <div style="font-size:16px; font-weight:800; color:#111827;">Riwayat Import SDM</div>
+            <div style="font-size:12px; color:#6B7280; margin-top:4px;">Ringkasan import terbaru beserta file error untuk troubleshooting.</div>
+        </div>
+    </div>
+
+    @if($recentSdmImportRuns->isEmpty())
+    <div style="padding:24px 20px; color:#6B7280; font-size:13px;">
+        Belum ada riwayat import SDM.
+    </div>
+    @else
+    <div style="display:grid; gap:10px; padding:16px 20px;">
+        @foreach($recentSdmImportRuns as $run)
+            @php
+                $summary = $run->summary ?? [];
+                $statusMap = [
+                    'queued' => ['label' => 'Masuk antrean', 'bg' => '#EDE9FE', 'color' => '#6D28D9'],
+                    'processing' => ['label' => 'Sedang diproses', 'bg' => '#DBEAFE', 'color' => '#1D4ED8'],
+                    'preview_ready' => ['label' => 'Preview siap', 'bg' => '#DBEAFE', 'color' => '#1D4ED8'],
+                    'completed' => ['label' => 'Selesai', 'bg' => '#D1FAE5', 'color' => '#047857'],
+                    'completed_with_errors' => ['label' => 'Selesai dengan error', 'bg' => '#FEF3C7', 'color' => '#B45309'],
+                    'cancelled' => ['label' => 'Dibatalkan', 'bg' => '#F3F4F6', 'color' => '#4B5563'],
+                    'failed' => ['label' => 'Gagal', 'bg' => '#FEE2E2', 'color' => '#B91C1C'],
+                ][$run->status] ?? ['label' => ucfirst($run->status), 'bg' => '#F3F4F6', 'color' => '#4B5563'];
+            @endphp
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 16px; border-radius:12px; background:#F9FAFB; border:1px solid #F3F4F6; flex-wrap:wrap;">
+                <div style="display:grid; gap:6px;">
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:{{ $statusMap['bg'] }}; color:{{ $statusMap['color'] }}; font-size:11px; font-weight:800;">{{ $statusMap['label'] }}</span>
+                        <span style="font-size:12px; color:#6B7280;">{{ optional($run->started_at)->format('d M Y H:i') ?? $run->created_at->format('d M Y H:i') }}</span>
+                        <span style="font-size:12px; color:#9CA3AF;">oleh {{ $run->initiator?->name ?? 'Sistem' }}</span>
+                    </div>
+                    <div style="font-size:12px; color:#374151; display:flex; gap:12px; flex-wrap:wrap;">
+                        <span>Total: <strong>{{ $summary['total'] ?? 0 }}</strong></span>
+                        <span>Berhasil: <strong>{{ $summary['success_count'] ?? ($summary['ok'] ?? 0) }}</strong></span>
+                        <span>Corrected: <strong>{{ $summary['corrected'] ?? 0 }}</strong></span>
+                        <span>Error: <strong>{{ $summary['error_count'] ?? ($summary['error'] ?? 0) }}</strong></span>
+                        <span>Unresolved satker: <strong>{{ $summary['unresolved_satker_count'] ?? 0 }}</strong></span>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    @if($run->error_report_path)
+                    <a href="{{ route('admin.personnel.import-sdm-runs.error-report', $run) }}" class="btn btn-outline" style="white-space:nowrap;">
+                        <i class="ri-file-download-line"></i> Error CSV
+                    </a>
+                    @endif
+                    @if($run->status === 'preview_ready')
+                    <a href="{{ route('admin.personnel.import-sdm-preview') }}" class="btn btn-outline" style="white-space:nowrap;">
+                        <i class="ri-eye-line"></i> Lanjutkan Preview
+                    </a>
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    </div>
+    @endif
+</div>
+@endif
 
 {{-- Filter Bar --}}
 <div class="filter-bar">
@@ -382,6 +450,25 @@
         }
         else {
             return uri + separator + key + "=" + value;
+        }
+    }
+
+    function toggleSdmImportHistory() {
+        const panel = document.getElementById('sdm-import-history');
+        const label = document.getElementById('sdmImportHistoryToggleLabel');
+
+        if (!panel || !label) {
+            return;
+        }
+
+        const isHidden = panel.style.display === 'none' || panel.style.display === '';
+        panel.style.display = isHidden ? 'block' : 'none';
+        label.textContent = isHidden ? 'Sembunyikan Riwayat Import SDM' : 'Riwayat Import SDM';
+
+        if (isHidden) {
+            window.setTimeout(() => {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
         }
     }
 </script>

@@ -359,7 +359,7 @@
                             @endforeach
                         </select>
                     </div>
-                    @if($gender === 'P')
+                    @if($gender === 'P' && strtoupper(trim(optional(auth()->user()->personnel)->religion ?? '')) === 'ISLAM')
                     <div class="form-group">
                         <label class="form-label">Jilbab <span style="color: var(--brand); font-size: 11px; margin-left: 4px;">(Khusus Polwan)</span></label>
                         <select name="jilbab" class="form-control select-control" required>
@@ -444,7 +444,7 @@
                 ];
             @endphp
             @foreach($summaryItems as $label => $val)
-                @if($label === 'Jilbab' && $gender !== 'P')
+                @if($label === 'Jilbab' && !($gender === 'P' && strtoupper(trim(optional(auth()->user()->personnel)->religion ?? '')) === 'ISLAM'))
                     @continue
                 @endif
                 <div style="background: var(--bg-body); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">

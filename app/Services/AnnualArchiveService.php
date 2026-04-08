@@ -13,6 +13,10 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class AnnualArchiveService
 {
+    public function __construct(
+        private readonly KaporRequirementService $kaporRequirementService
+    ) {}
+
     /**
      * @return array<int, AnnualArchive>
      */
@@ -53,12 +57,9 @@ class AnnualArchiveService
             ->orderBy('name')
             ->get()
             ->map(function (Satker $satker) {
-                $submittedCount = Personnel::query()
-                    ->where('satker_id', $satker->id)
-                    ->whereNotNull('kapor_sizes')
-                    ->get()
-                    ->filter(fn (Personnel $personnel) => ! empty($personnel->kapor_sizes))
-                    ->count();
+                $submittedCount = $this->submittedPersonnelCount(
+                    Personnel::query()->where('satker_id', $satker->id)
+                );
 
                 return [
                     'satker_name' => $satker->name,
@@ -84,10 +85,7 @@ class AnnualArchiveService
 
         return [
             'total_personnel' => Personnel::count(),
-            'submitted_personnel' => Personnel::query()
-                ->get()
-                ->filter(fn (Personnel $personnel) => ! empty($personnel->kapor_sizes))
-                ->count(),
+            'submitted_personnel' => $this->submittedPersonnelCount(Personnel::query()),
             'satker_summaries' => $satkerSummaries,
             'budget_packages' => $budgetPackages,
         ];
@@ -117,5 +115,22 @@ class AnnualArchiveService
                 ],
             ]
         );
+    }
+
+    private function submittedPersonnelCount($query): int
+    {
+        return $query
+            ->get([
+                'id',
+                'gender',
+                'religion',
+                'keterangan',
+                'keterangan_2',
+                'keterangan_3',
+                'keterangan_4',
+                'kapor_sizes',
+            ])
+            ->filter(fn (Personnel $personnel) => $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
+            ->count();
     }
 }

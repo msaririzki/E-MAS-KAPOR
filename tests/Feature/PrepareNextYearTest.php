@@ -128,24 +128,15 @@ class PrepareNextYearTest extends TestCase
             'status' => 'archived',
         ]);
 
-        $personnel->refresh();
-
-        $this->assertSame('EGAS DOSANTOS', $personnel->full_name);
-        $this->assertSame('76100151', $personnel->nrp);
-        $this->assertNull($personnel->jabatan);
-        $this->assertNull($personnel->bagian);
-        $this->assertNull($personnel->keterangan);
-        $this->assertNull($personnel->keterangan_2);
-        $this->assertNull($personnel->keterangan_3);
-        $this->assertNull($personnel->keterangan_4);
-        $this->assertSame([], $personnel->kapor_sizes);
-        $this->assertNull($personnel->nrp_issue_note);
-        $this->assertNull($personnel->nrp_issue_resolved_at);
+        $this->assertDatabaseMissing('personnels', [
+            'id' => $personnel->id,
+        ]);
 
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
             'nrp_nip' => '76100151',
-            'is_active' => true,
+            'is_active' => false,
+            'satker_id' => null,
         ]);
     }
 

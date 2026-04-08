@@ -117,6 +117,7 @@
                         </div>
                     </button>
                     @endif
+                    @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superadmin'))
                     <button class="dropdown-item" onclick="openModal('importModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
                         <i class="ri-file-upload-line" style="color: #F59E0B; font-size: 16px;"></i>
                         <div style="text-align: left;">
@@ -124,11 +125,12 @@
                             <div style="font-size: 11px; color: #6B7280;">Upload personel dari template Excel</div>
                         </div>
                     </button>
+                    @endif
                     <button class="dropdown-item" onclick="openModal('importUpdateModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
                         <i class="ri-refresh-line" style="color: #3B82F6; font-size: 16px;"></i>
                         <div style="text-align: left;">
                             <div style="font-weight: 600; color: #111827; font-size: 13px;">Impor Update Data</div>
-                            <div style="font-size: 11px; color: #6B7280;">Update data yang sudah ada via Excel</div>
+                            <div style="font-size: 11px; color: #6B7280;">Tambah atau revisi jabatan, bag/fungsi, dan keterangan via Excel</div>
                         </div>
                     </button>
                 </div>
@@ -192,61 +194,6 @@
         if (dd) dd.classList.remove('open');
     }
 </script>
-
-@if(auth()->user()->hasRole('superadmin') && $recentSdmImportRuns->isNotEmpty())
-<div style="background:#fff; border:1px solid #E5E7EB; border-radius:16px; padding:18px 20px; margin-bottom:20px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:14px; flex-wrap:wrap;">
-        <div>
-            <div style="font-size:15px; font-weight:800; color:#111827;">Riwayat Import SDM</div>
-            <div style="font-size:12px; color:#6B7280; margin-top:4px;">Ringkasan import terbaru beserta file error untuk troubleshooting.</div>
-        </div>
-    </div>
-    <div style="display:grid; gap:10px;">
-        @foreach($recentSdmImportRuns as $run)
-            @php
-                $summary = $run->summary ?? [];
-                $statusMap = [
-                    'queued' => ['label' => 'Masuk antrean', 'bg' => '#EDE9FE', 'color' => '#6D28D9'],
-                    'processing' => ['label' => 'Sedang diproses', 'bg' => '#DBEAFE', 'color' => '#1D4ED8'],
-                    'preview_ready' => ['label' => 'Preview siap', 'bg' => '#DBEAFE', 'color' => '#1D4ED8'],
-                    'completed' => ['label' => 'Selesai', 'bg' => '#D1FAE5', 'color' => '#047857'],
-                    'completed_with_errors' => ['label' => 'Selesai dengan error', 'bg' => '#FEF3C7', 'color' => '#B45309'],
-                    'cancelled' => ['label' => 'Dibatalkan', 'bg' => '#F3F4F6', 'color' => '#4B5563'],
-                    'failed' => ['label' => 'Gagal', 'bg' => '#FEE2E2', 'color' => '#B91C1C'],
-                ][$run->status] ?? ['label' => ucfirst($run->status), 'bg' => '#F3F4F6', 'color' => '#4B5563'];
-            @endphp
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 16px; border-radius:12px; background:#F9FAFB; border:1px solid #F3F4F6; flex-wrap:wrap;">
-                <div style="display:grid; gap:6px;">
-                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                        <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:{{ $statusMap['bg'] }}; color:{{ $statusMap['color'] }}; font-size:11px; font-weight:800;">{{ $statusMap['label'] }}</span>
-                        <span style="font-size:12px; color:#6B7280;">{{ optional($run->started_at)->format('d M Y H:i') ?? $run->created_at->format('d M Y H:i') }}</span>
-                        <span style="font-size:12px; color:#9CA3AF;">oleh {{ $run->initiator?->name ?? 'Sistem' }}</span>
-                    </div>
-                    <div style="font-size:12px; color:#374151; display:flex; gap:12px; flex-wrap:wrap;">
-                        <span>Total: <strong>{{ $summary['total'] ?? 0 }}</strong></span>
-                        <span>Berhasil: <strong>{{ $summary['success_count'] ?? ($summary['ok'] ?? 0) }}</strong></span>
-                        <span>Corrected: <strong>{{ $summary['corrected'] ?? 0 }}</strong></span>
-                        <span>Error: <strong>{{ $summary['error_count'] ?? ($summary['error'] ?? 0) }}</strong></span>
-                        <span>Unresolved satker: <strong>{{ $summary['unresolved_satker_count'] ?? 0 }}</strong></span>
-                    </div>
-                </div>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    @if($run->error_report_path)
-                    <a href="{{ route('admin.personnel.import-sdm-runs.error-report', $run) }}" class="btn btn-outline" style="white-space:nowrap;">
-                        <i class="ri-file-download-line"></i> Error CSV
-                    </a>
-                    @endif
-                    @if($run->status === 'preview_ready')
-                    <a href="{{ route('admin.personnel.import-sdm-preview') }}" class="btn btn-outline" style="white-space:nowrap;">
-                        <i class="ri-eye-line"></i> Lanjutkan Preview
-                    </a>
-                    @endif
-                </div>
-            </div>
-        @endforeach
-    </div>
-</div>
-@endif
 
 <div class="stats-grid">
     <div class="stat-card">
@@ -1772,11 +1719,11 @@
                             </div>
 
                             {{-- 9. JILBAB --}}
-                            <div class="form-group">
+                            <div class="form-group" data-size-group="jilbab">
                                 <label>JILBAB</label>
                                 <div class="custom-select-wrapper">
                                     <div class="custom-select" onclick="toggleDropdown(this)">
-                                        <div class="select-trigger"><span id="add_size_label_jilbab">— Pilih —</span><i class="ri-arrow-down-s-line"></i></div>
+                                        <div class="select-trigger"><span id="add_size_label_jilbab" data-size-label="jilbab">— Pilih —</span><i class="ri-arrow-down-s-line"></i></div>
                                         <div class="custom-options">
                                             <div class="options-scroll">
                                                 @foreach($s_jilbab as $s)
@@ -2275,11 +2222,11 @@
                             </div>
 
                             {{-- 9. JILBAB --}}
-                            <div class="form-group">
+                            <div class="form-group" data-size-group="jilbab">
                                 <label>JILBAB</label>
                                 <div class="custom-select-wrapper">
                                     <div class="custom-select" onclick="toggleDropdown(this)">
-                                        <div class="select-trigger"><span id="edit_size_label_jilbab">— Pilih —</span><i class="ri-arrow-down-s-line"></i></div>
+                                        <div class="select-trigger"><span id="edit_size_label_jilbab" data-size-label="jilbab">— Pilih —</span><i class="ri-arrow-down-s-line"></i></div>
                                         <div class="custom-options">
                                             <div class="options-scroll">
                                                 @foreach($s_jilbab as $s)
@@ -3266,6 +3213,13 @@
         // Visual feedback
         wrapper.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
         el.classList.add('selected');
+
+        if (inputName === 'religion') {
+            const modal = wrapper.closest('.modal');
+            if (modal) {
+                syncJilbabVisibility(modal.id);
+            }
+        }
         
         // Close dropdown
         el.closest('.custom-select').querySelector('.custom-options').style.display = 'none';
@@ -3399,6 +3353,10 @@
             filterRanks('Polri');
             document.querySelector('input[name="personnel_type"][value="Polri"]').checked = true;
         }
+
+        if (id === 'addPersonnelModal' || id === 'editPersonnelModal') {
+            syncJilbabVisibility(id);
+        }
     }
     function closeModal(id) {
         document.getElementById(id).classList.remove('open');
@@ -3450,14 +3408,14 @@
         // Hardcoded list to ensure decoupling from KaporItem database
         const displayItems = [
             { label: 'TUTUP KEPALA', key: 'topi' },
+            ...(requiresJilbab(p.gender, p.religion) ? [{ label: 'JILBAB', key: 'jilbab' }] : []),
             { label: 'KEMEJA (PDH/PDL)', key: 'kemeja' },
             { label: 'CELANA/ROK', key: 'celana' },
             { label: 'T-SHIRT/OLAHRAGA', key: 'olahraga' },
             { label: 'JAKET', key: 'jaket' },
             { label: 'SEPATU DINAS', key: 'sepatu_dinas' },
             { label: 'SEPATU OLAHRAGA', key: 'sepatu_olahraga' },
-            { label: 'SABUK', key: 'sabuk' },
-            { label: 'JILBAB', key: 'jilbab' }
+            { label: 'SABUK', key: 'sabuk' }
         ];
 
         const sizes = p.kapor_sizes || {};
@@ -3542,6 +3500,44 @@
         });
     }
 
+    function requiresJilbab(gender, religion) {
+        return String(gender || '').trim().toUpperCase() === 'P'
+            && String(religion || '').trim().toUpperCase() === 'ISLAM';
+    }
+
+    function resetJilbabField(modal) {
+        const jilbabInput = modal.querySelector('input[name="kapor_sizes[jilbab]"]');
+        if (jilbabInput) {
+            jilbabInput.value = '';
+        }
+
+        const jilbabLabel = modal.querySelector('[data-size-label="jilbab"]');
+        if (jilbabLabel) {
+            jilbabLabel.innerText = '— Pilih —';
+        }
+
+        modal.querySelectorAll('[data-size-group="jilbab"] .option').forEach((option) => {
+            option.classList.remove('selected');
+        });
+    }
+
+    function syncJilbabVisibility(modalId = 'editPersonnelModal') {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        const gender = modal.querySelector('input[name="gender"]:checked')?.value || '';
+        const religion = modal.querySelector('input[name="religion"]')?.value || '';
+        const shouldShowJilbab = requiresJilbab(gender, religion);
+
+        modal.querySelectorAll('[data-size-group="jilbab"]').forEach((group) => {
+            group.style.display = shouldShowJilbab ? '' : 'none';
+        });
+
+        if (!shouldShowJilbab) {
+            resetJilbabField(modal);
+        }
+    }
+
     function filterMeasurements(gender, modalId = 'editPersonnelModal') {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -3555,6 +3551,8 @@
                 opt.style.display = 'none';
             }
         });
+
+        syncJilbabVisibility(modalId);
     }
 
     function openEditModal(p) {
@@ -3643,6 +3641,8 @@
                 }
             });
         }
+
+        syncJilbabVisibility('editPersonnelModal');
 
         applyEditRoleRestrictions();
         openModal('editPersonnelModal');
@@ -4036,11 +4036,15 @@
                 }
 
                 const nextPercent = Math.min(96, 82 + Math.min(attempt, 10));
+                const isQueued = data.status === 'queued';
+                const isStaleQueue = Boolean(data.stale_queue);
                 setSdmProgress(
                     nextPercent,
-                    data.status === 'queued' ? 'Masih antre' : 'Sedang diproses',
+                    isQueued ? (isStaleQueue ? 'Queue belum bergerak' : 'Masih antre') : 'Sedang diproses',
                     data.message || 'Import SDM masih diproses di background.',
-                    data.status === 'queued' ? 'Menunggu giliran worker queue' : 'Worker queue sedang membangun preview'
+                    isQueued
+                        ? (isStaleQueue ? 'Periksa container queue bila antrean tidak bergerak' : 'Menunggu giliran worker queue')
+                        : 'Worker queue sedang membangun preview'
                 );
 
                 pollSdmImportRunStatus(statusUrl, attempt + 1);
@@ -4114,8 +4118,10 @@
             searchInput.value = val;
         }
 
-        // Initialize Add Modal Filter (Default L)
-        filterMeasurements('L', 'addPersonnelModal');
+        // Initialize Add Modal Filter
+        const initialAddGender = document.querySelector('#addPersonnelModal input[name="gender"]:checked')?.value || 'L';
+        filterMeasurements(initialAddGender, 'addPersonnelModal');
+        syncJilbabVisibility('addPersonnelModal');
 
         @if($errors->any())
             @if(old('modal_type') == 'add')
@@ -4125,6 +4131,7 @@
                     const satkerNameAdd = "{{ $satkers->firstWhere('id', old('satker_id'))->name ?? '' }}";
                     updateBagianVisibility(satkerNameAdd, 'add', "{{ old('bagian') }}");
                 @endif
+                syncJilbabVisibility('addPersonnelModal');
             @elseif(old('modal_type') == 'edit' && old('id'))
                 document.getElementById('editForm').action = '/admin/personnel/' + "{{ old('id') }}";
                 openModal('editPersonnelModal');
@@ -4137,6 +4144,7 @@
                 @if(old('personnel_type'))
                     filterRanksEdit("{{ old('personnel_type') }}");
                 @endif
+                syncJilbabVisibility('editPersonnelModal');
             @endif
         @endif
     }

@@ -31,6 +31,8 @@ class BudgetController extends Controller
 
     public function storeYear(Request $request)
     {
+        $this->ensureBudgetManager();
+
         $validated = $request->validate([
             'year' => 'required|integer|min:2020|max:2050|unique:budget_years,year',
             'name' => 'nullable|string|max:255',
@@ -45,6 +47,8 @@ class BudgetController extends Controller
 
     public function updateYear(Request $request, BudgetYear $budgetYear)
     {
+        $this->ensureBudgetManager();
+
         $validated = $request->validate([
             'year' => 'required|integer|min:2020|max:2050|unique:budget_years,year,'.$budgetYear->id,
             'name' => 'nullable|string|max:255',
@@ -58,6 +62,8 @@ class BudgetController extends Controller
 
     public function destroyYear(BudgetYear $budgetYear)
     {
+        $this->ensureBudgetManager();
+
         $yearName = $budgetYear->name;
 
         DB::transaction(function () use ($budgetYear) {
@@ -87,6 +93,8 @@ class BudgetController extends Controller
 
     public function storePackage(Request $request, BudgetYear $budgetYear)
     {
+        $this->ensureBudgetManager();
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -99,6 +107,8 @@ class BudgetController extends Controller
 
     public function updatePackage(Request $request, BudgetPackage $budgetPackage)
     {
+        $this->ensureBudgetManager();
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -112,6 +122,8 @@ class BudgetController extends Controller
 
     public function destroyPackage(BudgetPackage $budgetPackage)
     {
+        $this->ensureBudgetManager();
+
         $yearId = $budgetPackage->budget_year_id;
         $budgetPackage->delete();
 
@@ -170,6 +182,8 @@ class BudgetController extends Controller
 
     public function recalculatePackage(BudgetPackage $budgetPackage)
     {
+        $this->ensureBudgetManager();
+
         $budgetPackage->load(['items.kaporItem', 'items.recipients.satker']);
 
         DB::transaction(function () use ($budgetPackage) {
@@ -206,5 +220,10 @@ class BudgetController extends Controller
         return redirect()
             ->route('admin.budget.show-package', $budgetPackage)
             ->with('success', 'Berhasil menyinkronkan jumlah penerima dengan data personel terkini.');
+    }
+
+    private function ensureBudgetManager(): void
+    {
+        abort_unless(auth()->user()?->hasAnyRole(['superadmin', 'admin']), 403, 'Hanya admin pengelola anggaran yang dapat melakukan aksi ini.');
     }
 }
