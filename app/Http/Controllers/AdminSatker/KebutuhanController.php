@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\AdminSatker;
 
 use App\Http\Controllers\Controller;
-use App\Models\KaporItem;
+use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
-use App\Models\Setting;
+use App\Services\ExportSignatorySettingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -36,7 +36,13 @@ class KebutuhanController extends Controller
             'ditolak' => Kebutuhan::where('satker_id', $satkerId)->where('status', 'ditolak')->count(),
         ];
 
-        return view('admin-satker.kebutuhan.index', compact('kebutuhans', 'stats'));
+        // Cek apakah sudah ada pengajuan untuk tahun anggaran berikutnya
+        $nextFiscalYear = (int) date('Y') + 1;
+        $hasSubmissionThisYear = Kebutuhan::where('satker_id', $satkerId)
+            ->where('fiscal_year', $nextFiscalYear)
+            ->exists();
+
+        return view('admin-satker.kebutuhan.index', compact('kebutuhans', 'stats', 'hasSubmissionThisYear', 'nextFiscalYear'));
     }
 
     /**
@@ -44,15 +50,28 @@ class KebutuhanController extends Controller
      */
     public function create()
     {
-        $kaporItems = KaporItem::where('is_active', true)
-            ->orderBy('category')
+        // Cek apakah satker sudah mengajukan untuk tahun anggaran ini
+        $nextFiscalYear = (int) date('Y') + 1;
+        $existing = Kebutuhan::where('satker_id', auth()->user()->satker_id)
+            ->where('fiscal_year', $nextFiscalYear)
+            ->exists();
+
+        if ($existing) {
+            return redirect()->route('admin-satker.kebutuhan.index')
+                ->with('error', 'Satker Anda sudah memiliki pengajuan untuk TA '.$nextFiscalYear.'. Hanya diperbolehkan 1 pengajuan per tahun anggaran.');
+        }
+
+        $kaporItems = IdentifikasiItem::where('is_active', true)
+            ->orderByRaw("CASE
+                WHEN category = 'Tutup_Kepala' THEN 1
+                WHEN category = 'Tutup_Badan' THEN 2
+                WHEN category = 'Tutup_Kaki' THEN 3
+                ELSE 999 END")
             ->orderBy('item_name')
             ->get()
             ->groupBy('category');
 
-        $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
-
-        return view('admin-satker.kebutuhan.create', compact('kaporItems', 'fiscalYear'));
+        return view('admin-satker.kebutuhan.create', compact('kaporItems'));
     }
 
     /**
@@ -61,31 +80,40 @@ class KebutuhanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'notes' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
-            'items.*' => 'exists:kapor_items,id',
+            'items.*' => 'exists:identifikasi_items,id',
         ], [
             'items.required' => 'Minimal pilih 1 item kebutuhan.',
             'items.min' => 'Minimal pilih 1 item kebutuhan.',
         ]);
 
-        $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
+        // Tahun anggaran otomatis = tahun sekarang + 1
+        $fiscalYear = (int) date('Y') + 1;
+
+        // Cek duplikasi: 1 satker hanya boleh 1 pengajuan per tahun anggaran
+        $existing = Kebutuhan::where('satker_id', $request->user()->satker_id)
+            ->where('fiscal_year', $fiscalYear)
+            ->exists();
+
+        if ($existing) {
+            return redirect()->route('admin-satker.kebutuhan.index')
+                ->with('error', 'Satker Anda sudah memiliki pengajuan untuk TA '.$fiscalYear.'. Hanya diperbolehkan 1 pengajuan per tahun anggaran.');
+        }
 
         $kebutuhan = DB::transaction(function () use ($request, $fiscalYear) {
             $kebutuhan = Kebutuhan::create([
                 'satker_id' => $request->user()->satker_id,
                 'user_id' => $request->user()->id,
-                'title' => $request->title,
+                'title' => 'Pengajuan Kebutuhan TA '.$fiscalYear,
                 'fiscal_year' => $fiscalYear,
                 'status' => 'diajukan',
-                'notes' => $request->notes,
+                'notes' => null,
                 'submitted_at' => now(),
             ]);
 
             foreach ($request->items as $kaporItemId) {
                 $kebutuhan->items()->create([
-                    'kapor_item_id' => $kaporItemId,
+                    'identifikasi_item_id' => $kaporItemId,
                     'quantity' => 1,
                 ]);
             }
@@ -104,7 +132,7 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
 
         return view('admin-satker.kebutuhan.show', compact('kebutuhan'));
     }
@@ -116,19 +144,23 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        if (! $kebutuhan->isDraft()) {
-            return back()->with('error', 'Hanya pengajuan berstatus draft yang dapat diedit.');
+        if (in_array($kebutuhan->status, ['disetujui', 'ditolak'])) {
+            return back()->with('error', 'Pengajuan yang sudah diproses tidak dapat diedit.');
         }
 
         $kebutuhan->load('items');
 
-        $kaporItems = KaporItem::where('is_active', true)
-            ->orderBy('category')
+        $kaporItems = IdentifikasiItem::where('is_active', true)
+            ->orderByRaw("CASE
+                WHEN category = 'Tutup_Kepala' THEN 1
+                WHEN category = 'Tutup_Badan' THEN 2
+                WHEN category = 'Tutup_Kaki' THEN 3
+                ELSE 999 END")
             ->orderBy('item_name')
             ->get()
             ->groupBy('category');
 
-        $selectedIds = $kebutuhan->items->pluck('kapor_item_id')->toArray();
+        $selectedIds = $kebutuhan->items->pluck('identifikasi_item_id')->toArray();
 
         return view('admin-satker.kebutuhan.edit', compact('kebutuhan', 'kaporItems', 'selectedIds'));
     }
@@ -140,28 +172,30 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        if (! $kebutuhan->isDraft()) {
-            return back()->with('error', 'Hanya pengajuan berstatus draft yang dapat diedit.');
+        if (in_array($kebutuhan->status, ['disetujui', 'ditolak'])) {
+            return back()->with('error', 'Pengajuan yang sudah diproses tidak dapat diedit.');
         }
 
         $request->validate([
-            'title' => 'required|string|max:255',
-            'notes' => 'nullable|string|max:2000',
             'items' => 'required|array|min:1',
-            'items.*' => 'exists:kapor_items,id',
+            'items.*' => 'exists:identifikasi_items,id',
         ]);
 
-        DB::transaction(function () use ($request, $kebutuhan) {
+        // Tahun anggaran otomatis = tahun sekarang + 1
+        $fiscalYear = (int) date('Y') + 1;
+
+        DB::transaction(function () use ($request, $kebutuhan, $fiscalYear) {
             $kebutuhan->update([
-                'title' => $request->title,
-                'notes' => $request->notes,
+                'title' => 'Pengajuan Kebutuhan TA '.$fiscalYear,
+                'fiscal_year' => $fiscalYear,
+                'notes' => null,
             ]);
 
             // Replace items
             $kebutuhan->items()->delete();
             foreach ($request->items as $kaporItemId) {
                 $kebutuhan->items()->create([
-                    'kapor_item_id' => $kaporItemId,
+                    'identifikasi_item_id' => $kaporItemId,
                     'quantity' => 1,
                 ]);
             }
@@ -178,8 +212,8 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        if (! $kebutuhan->isDraft()) {
-            return back()->with('error', 'Hanya pengajuan berstatus draft yang dapat dihapus.');
+        if (in_array($kebutuhan->status, ['disetujui', 'ditolak'])) {
+            return back()->with('error', 'Pengajuan yang sudah diproses tidak dapat dihapus.');
         }
 
         $kebutuhan->delete();
@@ -195,8 +229,8 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        if (! $kebutuhan->isDraft()) {
-            return back()->with('error', 'Hanya pengajuan berstatus draft yang dapat dikirim.');
+        if (in_array($kebutuhan->status, ['disetujui', 'ditolak'])) {
+            return back()->with('error', 'Pengajuan sudah diproses sehingga tidak bisa dikirim ulang.');
         }
 
         if ($kebutuhan->items()->count() === 0) {
@@ -218,9 +252,10 @@ class KebutuhanController extends Controller
     {
         $this->authorizeSatker($kebutuhan);
 
-        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
+        $signatorySettings = app(ExportSignatorySettingService::class)->resolveForUser(auth()->user());
 
-        return view('admin-satker.kebutuhan.print', compact('kebutuhan'));
+        return view('admin-satker.kebutuhan.print', compact('kebutuhan', 'signatorySettings'));
     }
 
     /**
@@ -229,10 +264,12 @@ class KebutuhanController extends Controller
     public function exportExcel(Kebutuhan $kebutuhan)
     {
         $this->authorizeSatker($kebutuhan);
-        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
+        $signatorySettings = app(ExportSignatorySettingService::class)->resolveForUser(auth()->user());
 
-        $filename = 'Usulan_Kaporlap_' . ($kebutuhan->satker->name ?? 'Satker') . '_' . $kebutuhan->fiscal_year . '.xlsx';
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\KebutuhanExport($kebutuhan), $filename);
+        $filename = 'Usulan_Kaporlap_'.($kebutuhan->satker->name ?? 'Satker').'_'.$kebutuhan->fiscal_year.'.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\KebutuhanExport($kebutuhan, $signatorySettings), $filename);
     }
 
     /**
@@ -241,12 +278,13 @@ class KebutuhanController extends Controller
     public function exportPdf(Kebutuhan $kebutuhan)
     {
         $this->authorizeSatker($kebutuhan);
-        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
+        $signatorySettings = app(ExportSignatorySettingService::class)->resolveForUser(auth()->user());
 
-        $filename = 'Usulan_Kaporlap_' . ($kebutuhan->satker->name ?? 'Satker') . '_' . $kebutuhan->fiscal_year . '.pdf';
-        
+        $filename = 'Usulan_Kaporlap_'.($kebutuhan->satker->name ?? 'Satker').'_'.$kebutuhan->fiscal_year.'.pdf';
+
         // We will reuse the 'print' view or a new 'pdf' view for actual PDF download
-        $pdf = \PDF::loadView('admin-satker.kebutuhan.print', compact('kebutuhan'));
+        $pdf = \PDF::loadView('admin-satker.kebutuhan.print', compact('kebutuhan', 'signatorySettings'));
         $pdf->setPaper('a4', 'portrait');
 
         return $pdf->download($filename);

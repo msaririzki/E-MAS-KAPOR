@@ -46,7 +46,7 @@
                         class="ri-team-line"></i></div>
             </div>
             <div class="stat-value">{{ number_format($stats['total_polri']) }}</div>
-            <div class="stat-footer">Personil Aktif</div>
+            <div class="stat-footer">Data personel riil</div>
         </div>
 
         {{-- Total PNS --}}
@@ -57,7 +57,7 @@
                         class="ri-user-star-line"></i></div>
             </div>
             <div class="stat-value">{{ number_format($stats['total_pns']) }}</div>
-            <div class="stat-footer">Personil Aktif</div>
+            <div class="stat-footer">Data personel riil</div>
         </div>
 
         {{-- Total Personil (Combined) --}}
@@ -912,4 +912,3 @@
     });
     </script>
 @endsection
-

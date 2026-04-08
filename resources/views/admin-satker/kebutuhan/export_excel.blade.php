@@ -41,7 +41,7 @@
         </thead>
         <tbody>
             @php
-                $grouped = $kebutuhan->items->groupBy(fn($item) => $item->kaporItem->category ?? 'Lainnya');
+                $grouped = $kebutuhan->items->groupBy(fn($item) => $item->identifikasiItem->category ?? 'Lainnya');
                 $noCategory = 1;
             @endphp
             @foreach($grouped as $category => $items)
@@ -53,8 +53,8 @@
                 @foreach($items as $item)
                 <tr>
                     <td style="border: 1px solid #000000;"></td>
-                    <td style="border: 1px solid #000000;">{{ $alphaNum++ }}. {{ strtoupper($item->kaporItem->item_name ?? '-') }}</td>
-                    <td style="border: 1px solid #000000;">{{ strtoupper(str_replace('_', ' ', $item->kaporItem->category ?? '-')) }}</td>
+                    <td style="border: 1px solid #000000;">{{ $alphaNum++ }}. {{ strtoupper($item->identifikasiItem->item_name ?? '-') }}</td>
+                    <td style="border: 1px solid #000000;">{{ strtoupper(str_replace('_', ' ', $item->identifikasiItem->category ?? '-')) }}</td>
                 </tr>
                 @endforeach
             @endforeach
@@ -66,38 +66,15 @@
             <td colspan="3"></td>
         </tr>
         @php
-            $satkerName = strtoupper($kebutuhan->satker->name ?? '');
-
-            $bulanIndo = [
-                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
-                7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-            ];
-            $bulan = $bulanIndo[date('n')];
-            $tahun = date('Y');
-
-            if (str_starts_with($satkerName, 'POLRESTA ')) {
-                $an = 'a.n. KEPALA KEPOLISIAN RESOR KOTA ' . str_replace('POLRESTA ', '', $satkerName);
-                $jabatan = 'KEPALA BAGIAN LOGISTIK';
-            } elseif (str_starts_with($satkerName, 'POLRES ')) {
-                $an = 'a.n. KEPALA KEPOLISIAN RESOR ' . str_replace('POLRES ', '', $satkerName);
-                $jabatan = 'KEPALA BAGIAN LOGISTIK';
-            } else {
-                $an = 'a.n. KEPALA KEPOLISIAN POLDA NTB';
-                $jabatan = 'KEPALA ' . $satkerName;
-            }
-
-            $userName = '..........................................';
-            $userNrpNip = '.............................';
+            $jabatan = strtoupper($signatorySettings['signatory_title'] ?? 'KEPALA..........................');
+            $userName = strtoupper($signatorySettings['signatory_name'] ?? '..........................................');
+            $userNrpNip = $signatorySettings['signatory_nrp'] ?? '.............................';
+            $location = $signatorySettings['location'] ?? 'Mataram';
         @endphp
         <tr>
             <td></td>
             <td></td>
-            <td style="text-align: center; font-family: Arial;">................................., ................. {{ $bulan }} {{ $tahun }}</td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td style="text-align: center; font-family: Arial;">{{ $an }}</td>
+            <td style="text-align: center; font-family: Arial;">{{ $location }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</td>
         </tr>
         <tr>
             <td></td>

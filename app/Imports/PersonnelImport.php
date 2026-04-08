@@ -9,11 +9,14 @@ use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStartRow;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleSheets, WithStartRow
 {
@@ -416,7 +419,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         return false;
     }
 
-    public static function findRankWithCorrection(string $rankName, Collection &$ranks, string $golongan = '', bool $isSiswaSatker = false): array
+    public static function findRankWithCorrection(string $rankName, Collection &$ranks, string $golongan = '', ?string $satkerCode = null): array
     {
         $upperInput = strtoupper(trim($rankName));
 
@@ -474,15 +477,8 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             return ['rank' => $rank, 'corrected' => false, 'original' => $rankName, 'corrected_to' => null];
         }
 
-        // --- AUTO-CREATE UNTUK SATKER SISWA ---
-        // Jika satker adalah SISWA, KITA LEWATI SEMUA KOREKSI (Correction Map & Levenshtein)
-        // dan langsung buat rank baru sesuai input asli dari Excel (AKPOL tetap AKPOL, dll)
-        if ($isSiswaSatker && ! empty($upperInput)) {
-            $newRank = \App\Models\Rank::create([
-                'name' => $upperInput,
-                'category' => 'SISWA',
-                'sort_order' => 50,
-            ]);
+        if (self::shouldPreserveSatkerSpecificRank($satkerCode, $upperInput)) {
+            $newRank = self::createSatkerSpecificRank($upperInput, $normalizedGolongan, $satkerCode);
             $ranks->put(strtoupper($upperInput), $newRank);
 
             return ['rank' => $newRank, 'corrected' => false, 'original' => $rankName, 'corrected_to' => null];
@@ -581,9 +577,196 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         return null;
     }
 
+    private static function shouldPreserveSatkerSpecificRank(?string $satkerCode, string $upperInput): bool
+    {
+        if (empty($satkerCode) || empty($upperInput)) {
+            return false;
+        }
+
+        $normalizedSatkerCode = strtoupper(trim($satkerCode));
+
+        if ($normalizedSatkerCode === 'SISWA') {
+            return true;
+        }
+
+        return in_array($upperInput, self::getSatkerSpecificRankNames($normalizedSatkerCode), true);
+    }
+
+    private static function getSatkerSpecificRankNames(string $satkerCode): array
+    {
+        return match ($satkerCode) {
+            'POLDA-NTB' => [
+                'BA BRIMOB',
+                'BA PTU',
+                'BA REKPRO',
+                'BAKOMSUS AKUTANSI',
+                'BA POLAIR',
+                'BAKOMSUS GIZI',
+                'BAKOMSUS HUKUM',
+                'BAKOMSUS NAKES',
+                'BAKOMSUS TATA BOGA',
+                'SIPSS',
+                'TAMTAMA POLRI',
+            ],
+            default => [],
+        };
+    }
+
+    private static function createSatkerSpecificRank(string $rankName, string $normalizedGolongan, ?string $satkerCode): Rank
+    {
+        $category = self::resolveSatkerSpecificRankCategory($rankName, $normalizedGolongan, $satkerCode);
+
+        return Rank::firstOrCreate(
+            ['name' => $rankName],
+            [
+                'category' => $category,
+                'sort_order' => 50,
+            ],
+        );
+    }
+
+    private static function resolveSatkerSpecificRankCategory(string $rankName, string $normalizedGolongan, ?string $satkerCode): string
+    {
+        if (strtoupper((string) $satkerCode) === 'SISWA') {
+            return 'SISWA';
+        }
+
+        if ($normalizedGolongan === 'PATI') {
+            return 'PATI';
+        }
+
+        if ($normalizedGolongan === 'PAMEN') {
+            return 'PAMEN';
+        }
+
+        if ($normalizedGolongan === 'PAMA') {
+            return 'PAMA';
+        }
+
+        if ($normalizedGolongan === 'PNS') {
+            return 'PNS';
+        }
+
+        // Skema rank saat ini belum memiliki kategori TAMTAMA.
+        // Untuk import satker khusus, fallback aman adalah BINTARA agar data tetap lolos import.
+        if ($normalizedGolongan === 'TAMTAMA' || $rankName === 'TAMTAMA POLRI') {
+            return 'BINTARA';
+        }
+
+        return 'BINTARA';
+    }
+
     public function __construct($satkerId = null)
     {
         $this->satkerId = $satkerId;
+    }
+
+    public static function loadPreviewSheets(string $filePath, int $startRow = 11): Collection
+    {
+        $dataReader = IOFactory::createReaderForFile($filePath);
+        if (method_exists($dataReader, 'setReadDataOnly')) {
+            $dataReader->setReadDataOnly(true);
+        }
+
+        $rawReader = IOFactory::createReaderForFile($filePath);
+
+        $spreadsheet = $dataReader->load($filePath);
+        $rawSpreadsheet = $rawReader->load($filePath);
+        $sheets = collect();
+
+        $sheetCount = $spreadsheet->getSheetCount();
+
+        foreach ([0, 1, 2] as $sheetIndex) {
+            if ($sheetIndex >= $sheetCount) {
+                continue;
+            }
+
+            $worksheet = $spreadsheet->getSheet($sheetIndex);
+            $rawWorksheet = $rawSpreadsheet->getSheet($sheetIndex);
+
+            $highestRow = $worksheet->getHighestRow();
+            $highestColumn = $worksheet->getHighestColumn();
+
+            if ($highestRow < $startRow) {
+                $sheets->push(collect());
+
+                continue;
+            }
+
+            $rows = [];
+            $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
+
+            for ($row = $startRow; $row <= $highestRow; $row++) {
+                $rowValues = [];
+
+                for ($column = 1; $column <= $highestColumnIndex; $column++) {
+                    $coordinate = Coordinate::stringFromColumnIndex($column).$row;
+                    $value = $worksheet->getCell($coordinate)->getValue();
+                    $rowValues[] = self::resolvePreviewCellValue(
+                        $value,
+                        $rawWorksheet,
+                        $rawSpreadsheet,
+                        $coordinate,
+                    );
+                }
+
+                $rows[] = collect($rowValues);
+            }
+
+            $sheets->push(collect($rows));
+        }
+
+        $spreadsheet->disconnectWorksheets();
+        $rawSpreadsheet->disconnectWorksheets();
+        unset($spreadsheet);
+        unset($rawSpreadsheet);
+
+        return $sheets;
+    }
+
+    private static function resolvePreviewCellValue(
+        mixed $value,
+        Worksheet $rawWorksheet,
+        Spreadsheet $rawSpreadsheet,
+        string $coordinate,
+        array $visited = [],
+    ): mixed {
+        if (! is_string($value) || ! str_starts_with(trim($value), '=')) {
+            return $value;
+        }
+
+        $visitedKey = $rawWorksheet->getTitle().'!'.$coordinate;
+        if (isset($visited[$visitedKey])) {
+            return $value;
+        }
+        $visited[$visitedKey] = true;
+
+        $formula = trim($value);
+        if (! preg_match('/^=\s*(?:(?:\'([^\']+)\'|([A-Za-z0-9_ ]+))!)?\$?([A-Z]+)\$?(\d+)$/i', $formula, $matches)) {
+            return $value;
+        }
+
+        $targetSheetName = $matches[1] ?: $matches[2] ?: $rawWorksheet->getTitle();
+        $targetWorksheet = $rawSpreadsheet->getSheetByName($targetSheetName);
+
+        if (! $targetWorksheet instanceof Worksheet) {
+            return $value;
+        }
+
+        $targetCoordinate = strtoupper($matches[3]).$matches[4];
+        $targetValue = $targetWorksheet->getCell($targetCoordinate)->getValue();
+
+        if (is_string($targetValue) && str_starts_with(trim($targetValue), '=')) {
+            return self::resolvePreviewCellValue(
+                $targetValue,
+                $targetWorksheet,
+                $rawSpreadsheet,
+                $targetCoordinate,
+                $visited,
+            );
+        }
+
+        return $targetValue;
     }
 
     /**
@@ -656,11 +839,11 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             ->get(['id', 'nrp', 'full_name', 'satker_id'])
             ->keyBy('nrp');
 
-        $isSiswaSatker = false;
+        $satkerCode = null;
         if ($this->satkerId) {
             $satker = \App\Models\Satker::find($this->satkerId);
-            if ($satker && strtoupper($satker->code) === 'SISWA') {
-                $isSiswaSatker = true;
+            if ($satker) {
+                $satkerCode = strtoupper($satker->code);
             }
         }
 
@@ -843,7 +1026,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $gender = ($genderRaw === 'W') ? 'P' : 'L';
 
             // Koreksi pangkat (sekarang menyertakan golongan untuk PPPK)
-            $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan, $isSiswaSatker);
+            $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan, $satkerCode);
 
             // Ukuran kapor (kolom I-Q, index 8-16, ditambah offset jika double-NO)
             $sizes = [
@@ -990,14 +1173,19 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         // ── Pre-load sekali agar tidak ada N+1 query ─────────────────────────
         $ranksById = Rank::all()->keyBy('id');
         $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
-        $existingPersonnel = Personnel::whereIn('nrp', $allNrp)->get()->keyBy('nrp');
-        $existingUsers = User::whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
+        $existingPersonnel = Personnel::where('satker_id', $satkerId)
+            ->whereIn('nrp', $allNrp)
+            ->get()
+            ->keyBy('nrp');
+        $existingUsers = User::with(['personnel', 'roles'])->whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
 
         // ── Satu transaksi besar untuk semua insert/update ───────────────────
         DB::transaction(function () use (
             $rows, $satker, $ranksById, $existingPersonnel, $existingUsers,
             $sizeMapping, &$successCount, &$errorCount, &$errors
         ) {
+            $processedBatchNrps = [];
+
             foreach ($rows as $idx => $data) {
                 $nrp = trim($data['nrp'] ?? '');
                 $fullName = trim($data['full_name'] ?? '');
@@ -1030,47 +1218,43 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                 try {
                     // Jika NRP kosong, generate ID sementara untuk akun user (login)
                     // tapi simpan personnels.nrp sebagai NULL agar tampil "—" di UI
-                    $effectiveNrp = $nrp;
                     $isEmptyNrp = empty($nrp);
                     $isDuplicateNrp = ! empty($data['duplicate_nrp']);
+                    $isBatchDuplicate = ! empty($nrp) && isset($processedBatchNrps[$nrp]);
+                    $existingUserAccount = ! $isEmptyNrp ? $existingUsers->get($nrp) : null;
 
-                    if ($isEmptyNrp || $isDuplicateNrp) {
-                        $effectiveNrp = 'TEMP-'.strtoupper(substr(md5($fullName.$idx.time()), 0, 8));
-                    }
+                    $hasNrpConflict = $isDuplicateNrp || $isBatchDuplicate || ! empty($data['db_duplicate']);
 
-                    // Jika NRP duplikat dalam batch, jangan lookup existing — buat record baru
-                    $personnel = ($isEmptyNrp || $isDuplicateNrp) ? null : $existingPersonnel->get($effectiveNrp);
+                    // Jika NRP konflik (duplikat di file atau sudah dipakai record lain di DB),
+                    // jangan update record existing. "Tetap Import" berarti buat personel baru
+                    // sambil menandai konflik NRP, bukan menimpa data orang lain.
+                    $personnel = ($isEmptyNrp || $hasNrpConflict) ? null : $existingPersonnel->get($nrp);
+                    $hasLoginAccountConflict = $existingUserAccount
+                        && $existingUserAccount->personnel
+                        && (! $personnel || $existingUserAccount->personnel->id !== $personnel->id);
+                    $canCreateLoginAccount = ! $isEmptyNrp && ! $hasNrpConflict && ! $hasLoginAccountConflict;
 
                     if (! $personnel) {
                         // ── User baru: bcrypt cost=4 (10× lebih cepat, password bisa diubah nanti) ──
-                        $user = $existingUsers->get($effectiveNrp);
-                        if (! $user) {
-                            $user = User::create([
-                                'name' => $fullName,
-                                'nrp_nip' => $effectiveNrp,
-                                'password' => password_hash($effectiveNrp, PASSWORD_BCRYPT, ['cost' => 4]),
-                                'satker_id' => $satker->id,
-                                'is_active' => true,
-                            ]);
-                            $user->assignRole('personil');
-                            $existingUsers->put($effectiveNrp, $user);
+                        $user = null;
+                        if ($canCreateLoginAccount) {
+                            $user = User::createOrUpdatePersonnelImportAccount(
+                                $existingUsers->get($nrp),
+                                $nrp,
+                                $fullName,
+                                $satker->id,
+                                true,
+                            );
+                            $existingUsers->put($nrp, $user);
                         }
 
                         // Tentukan personnel_type berdasarkan rank atau default
-                        $personnelType = 'Polri';
-                        if ($rank && $rank->category === 'PNS') {
-                            $personnelType = 'PNS';
-                        } elseif (! $rank && ! empty($golongan)) {
-                            // Jika tidak ada pangkat tapi ada golongan, kemungkinan PNS
-                            $personnelType = 'PNS';
-                        }
+                        $personnelType = self::resolvePersonnelType($rank, $golongan);
 
-                        // Simpan NRP asli untuk personil, tapi NRP duplikat disimpan NULL
-                        // agar tidak bentrok di database
-                        $saveNrp = $isEmptyNrp ? null : ($isDuplicateNrp ? $nrp : $effectiveNrp);
+                        $saveNrp = $isEmptyNrp ? null : $nrp;
 
                         $personnel = Personnel::create([
-                            'user_id' => $user->id,
+                            'user_id' => $user?->id,
                             'nrp' => $saveNrp,
                             'full_name' => $fullName,
                             'rank_id' => $rank ? $rank->id : null,
@@ -1088,8 +1272,8 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
 
                             'nrp_issue_note' => $this->buildNrpIssueNote($data),
                         ]);
-                        if (! $isDuplicateNrp) {
-                            $existingPersonnel->put($effectiveNrp, $personnel);
+                        if (! $hasNrpConflict) {
+                            $existingPersonnel->put($nrp, $personnel);
                         }
                     } else {
                         // ── Update personel yang sudah ada ──
@@ -1098,6 +1282,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'satker_id' => $satker->id,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
+                            'personnel_type' => self::resolvePersonnelType($rank, $golongan),
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
                             'keterangan_2' => $keterangan2 ?: null,
@@ -1112,6 +1297,26 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             $updateData['rank_id'] = $rank->id;
                         }
                         $personnel->update($updateData);
+
+                        if ($canCreateLoginAccount) {
+                            $user = User::createOrUpdatePersonnelImportAccount(
+                                $personnel->user ?? $existingUsers->get($nrp),
+                                $nrp,
+                                $fullName,
+                                $satker->id,
+                                (bool) $personnel->is_active,
+                            );
+                            $personnel->forceFill([
+                                'user_id' => $user->id,
+                            ])->save();
+                            $existingUsers->put($nrp, $user);
+                        } elseif ($personnel->user) {
+                            $personnel->user->update([
+                                'name' => $fullName,
+                                'satker_id' => $satker->id,
+                                'is_active' => (bool) $personnel->is_active,
+                            ]);
+                        }
                     }
 
                     // Simpan ukuran kapor
@@ -1130,6 +1335,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
 
                     $personnel->kapor_sizes = $kaporSizes;
                     $personnel->save();
+
+                    if (! empty($nrp)) {
+                        $processedBatchNrps[$nrp] = true;
+                    }
 
                     $successCount++;
                 } catch (\Exception $e) {
@@ -1205,6 +1414,52 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         ]);
     }
 
+    public static function resolvePersonnelType(?Rank $rank, string $golongan = ''): string
+    {
+        if ($rank && $rank->category === 'PNS') {
+            return 'PNS';
+        }
+
+        if (! $rank && ! empty(trim($golongan))) {
+            return 'PNS';
+        }
+
+        return 'Polri';
+    }
+
+    public static function markCrossSheetDuplicateNrps(array $preview): array
+    {
+        $seenNrps = [];
+
+        foreach ($preview as $index => $row) {
+            $nrp = trim((string) ($row['nrp'] ?? ''));
+
+            if ($nrp === '') {
+                continue;
+            }
+
+            if (! isset($seenNrps[$nrp])) {
+                $seenNrps[$nrp] = $index;
+
+                continue;
+            }
+
+            $firstIndex = $seenNrps[$nrp];
+
+            $preview[$index]['duplicate_nrp'] = true;
+            if (($preview[$index]['status'] ?? null) !== 'error') {
+                $preview[$index]['status'] = 'corrected';
+            }
+
+            $preview[$firstIndex]['duplicate_nrp'] = true;
+            if (($preview[$firstIndex]['status'] ?? null) !== 'error') {
+                $preview[$firstIndex]['status'] = 'corrected';
+            }
+        }
+
+        return $preview;
+    }
+
     /**
      * ToCollection — dipanggil oleh Maatwebsite Excel saat import langsung.
      * (Dipertahankan untuk kompatibilitas, tapi alur utama kini via preview)
@@ -1249,7 +1504,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             // Gender: P di Excel → L (Laki-laki), W di Excel → P (Perempuan)
             $gender = ($genderRaw === 'W') ? 'P' : 'L';
 
-            $rankResult = self::findRankWithCorrection($rankInput, $ranks);
+            $rankResult = self::findRankWithCorrection($rankInput, $ranks, $golongan, $satker?->code);
             $rank = $rankResult['rank'];
 
             if (! $rank) {
@@ -1264,14 +1519,13 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                     $personnel = Personnel::where('nrp', $nrp)->first();
 
                     if (! $personnel) {
-                        $user = User::create([
-                            'name' => $fullName,
-                            'nrp_nip' => $nrp,
-                            'password' => Hash::make($nrp),
-                            'satker_id' => $satker->id,
-                            'is_active' => true,
-                        ]);
-                        $user->assignRole('personil');
+                        $user = User::createOrUpdatePersonnelImportAccount(
+                            null,
+                            $nrp,
+                            $fullName,
+                            $satker->id,
+                            true,
+                        );
 
                         $personnel = Personnel::create([
                             'user_id' => $user->id,
@@ -1281,7 +1535,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'satker_id' => $satker->id,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
-                            'personnel_type' => $rank->category === 'PNS' ? 'PNS' : 'Polri',
+                            'personnel_type' => self::resolvePersonnelType($rank, $golongan),
                             'gender' => $gender,
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
@@ -1294,10 +1548,22 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'satker_id' => $satker->id,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
+                            'personnel_type' => self::resolvePersonnelType($rank, $golongan),
                             'golongan' => $golongan,
                             'keterangan' => $keterangan,
                             'gender' => $gender,
                         ]);
+
+                        $user = User::createOrUpdatePersonnelImportAccount(
+                            $personnel->user,
+                            $nrp,
+                            $fullName,
+                            $satker->id,
+                            (bool) $personnel->is_active,
+                        );
+                        $personnel->forceFill([
+                            'user_id' => $user->id,
+                        ])->save();
                     }
 
                     $kaporSizes = $personnel->kapor_sizes ?? [];

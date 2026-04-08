@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             SatkerSeeder::class,
             BagianOptionSeeder::class,
             KaporItemSeeder::class,
+            IdentifikasiItemSeeder::class,
             SettingSeeder::class,
             TestimonialSeeder::class,
         ];

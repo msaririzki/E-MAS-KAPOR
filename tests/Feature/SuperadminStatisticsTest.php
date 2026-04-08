@@ -17,9 +17,8 @@ class SuperadminStatisticsTest extends TestCase
     {
         parent::setUp();
 
-        if (! Role::where('name', 'superadmin')->exists()) {
-            Role::create(['name' => 'superadmin']);
-            Role::create(['name' => 'personil']);
+        foreach (['superadmin', 'personil'] as $roleName) {
+            Role::findOrCreate($roleName);
         }
     }
 

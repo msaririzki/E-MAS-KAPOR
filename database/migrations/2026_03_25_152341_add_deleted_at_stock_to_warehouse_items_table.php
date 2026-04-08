@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -23,9 +23,9 @@ return new class extends Migration
                 ->where('warehouse_item_id', $item->id)
                 ->whereNotNull('deleted_at')
                 ->sum('stock');
-            
+
             DB::table('warehouse_items')->where('id', $item->id)->update([
-                'deleted_at_stock' => $sum
+                'deleted_at_stock' => $sum,
             ]);
         }
     }

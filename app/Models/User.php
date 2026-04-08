@@ -8,12 +8,28 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, HasRoles, Notifiable;
+
+    public const IMPORT_PASSWORD_ROUNDS = 4;
+
+    public const SYSTEM_ROLES = [
+        'superadmin',
+        'admin_satker',
+        'personil',
+        'admin_gudang',
+    ];
+
+    public const ADMINISTRATIVE_ROLES = [
+        'superadmin',
+        'admin_gudang',
+        'admin_satker',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -93,6 +109,68 @@ class User extends Authenticatable
     }
 
     // ── Scopes ────────────────────────────────────────────────
+
+    public static function createOrUpdatePersonnelAccount(?self $user, string $identifier, string $name, ?int $satkerId, bool $isActive = true): self
+    {
+        return static::createOrUpdatePersonnelAccountWithOptions($user, $identifier, $name, $satkerId, $isActive);
+    }
+
+    public static function createOrUpdatePersonnelImportAccount(?self $user, string $identifier, string $name, ?int $satkerId, bool $isActive = true): self
+    {
+        return static::createOrUpdatePersonnelAccountWithOptions(
+            $user,
+            $identifier,
+            $name,
+            $satkerId,
+            $isActive,
+            static::IMPORT_PASSWORD_ROUNDS,
+        );
+    }
+
+    private static function createOrUpdatePersonnelAccountWithOptions(
+        ?self $user,
+        string $identifier,
+        string $name,
+        ?int $satkerId,
+        bool $isActive = true,
+        ?int $passwordRounds = null,
+    ): self {
+        $conflictingUser = static::query()
+            ->where('nrp_nip', $identifier)
+            ->when($user?->exists, fn ($query) => $query->whereKeyNot($user->id))
+            ->first();
+
+        if ($conflictingUser) {
+            throw new \RuntimeException("Akun login dengan NRP/NIP {$identifier} sudah digunakan.");
+        }
+
+        $user ??= new static;
+
+        $identifierChanged = ! $user->exists || $user->nrp_nip !== $identifier;
+
+        $user->fill([
+            'nrp_nip' => $identifier,
+            'name' => $name,
+            'email' => null,
+            'satker_id' => $satkerId,
+            'is_active' => $isActive,
+        ]);
+
+        if ($identifierChanged) {
+            $user->password = $passwordRounds === null
+                ? Hash::make($identifier)
+                : Hash::make($identifier, ['rounds' => $passwordRounds]);
+        }
+
+        $user->save();
+        $user->loadMissing('roles');
+
+        if ($user->roles->count() !== 1 || $user->roles->first()?->name !== 'personil') {
+            $user->syncRoles(['personil']);
+        }
+
+        return $user;
+    }
 
     public function scopeActive($query)
     {

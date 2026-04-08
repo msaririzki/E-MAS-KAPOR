@@ -40,12 +40,7 @@ trait HandlesUserAccountFields
         return [
             $presenceRule,
             'string',
-            Password::min(12)
-                ->letters()
-                ->mixedCase()
-                ->numbers()
-                ->symbols()
-                ->uncompromised(),
+            Password::defaults(),
         ];
     }
 

@@ -88,7 +88,8 @@
         <div style="display:flex; align-items:center; gap:8px;">
             <span style="font-size: 13px; color: #6B7280; white-space: nowrap;">Tampilkan:</span>
             <select name="per_page" class="form-input per-page-select" style="width: 70px; padding: 4px 8px; font-size: 13px; height: 36px; border-radius: 8px; border: 1px solid #D1D5DB; outline: none; background: #fff;">
-                <option value="15" {{ request('per_page') == 15 ? 'selected' : '' }}>15</option>
+                <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                <option value="15" {{ request('per_page', 10) == 15 ? 'selected' : '' }}>15</option>
                 <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
                 <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
                 <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>

@@ -17,24 +17,24 @@ class AuthLoginIdentifierTest extends TestCase
     {
         parent::setUp();
 
-        foreach (['superadmin', 'admin', 'admin_gudang', 'admin_satker', 'personil'] as $roleName) {
+        foreach (['superadmin', 'admin_gudang', 'admin_satker', 'personil'] as $roleName) {
             Role::findOrCreate($roleName);
         }
     }
 
-    public function test_admin_can_login_with_gmail(): void
+    public function test_superadmin_can_login_with_gmail(): void
     {
         $satker = $this->createSatker();
         $user = User::factory()->create([
-            'email' => 'admin.kapor@gmail.com',
+            'email' => 'superadmin.kapor@gmail.com',
             'nrp_nip' => null,
             'password' => Hash::make('password123'),
             'satker_id' => $satker->id,
         ]);
-        $user->assignRole('admin');
+        $user->assignRole('superadmin');
 
         $response = $this->post(route('login'), [
-            'login' => 'admin.kapor@gmail.com',
+            'login' => 'superadmin.kapor@gmail.com',
             'password' => 'password123',
         ]);
 
@@ -69,14 +69,14 @@ class AuthLoginIdentifierTest extends TestCase
         $user = User::factory()->create([
             'email' => null,
             'nrp_nip' => '198501012010011001',
-            'password' => Hash::make('password123'),
+            'password' => Hash::make('198501012010011001'),
             'satker_id' => $satker->id,
         ]);
         $user->assignRole('personil');
 
         $response = $this->post(route('login'), [
             'login' => '198501012010011001',
-            'password' => 'password123',
+            'password' => '198501012010011001',
         ]);
 
         $response->assertRedirect(route('dashboard'));
@@ -87,16 +87,16 @@ class AuthLoginIdentifierTest extends TestCase
     {
         $satker = $this->createSatker();
         $user = User::factory()->create([
-            'email' => 'admin.locked@gmail.com',
+            'email' => 'superadmin.locked@gmail.com',
             'nrp_nip' => null,
             'password' => Hash::make('StrongPass123!'),
             'satker_id' => $satker->id,
         ]);
-        $user->assignRole('admin');
+        $user->assignRole('superadmin');
 
         foreach (range(1, 5) as $attempt) {
             $response = $this->from(route('login'))->post(route('login'), [
-                'login' => 'admin.locked@gmail.com',
+                'login' => 'superadmin.locked@gmail.com',
                 'password' => 'wrong-password',
             ]);
 
@@ -105,7 +105,7 @@ class AuthLoginIdentifierTest extends TestCase
         }
 
         $response = $this->from(route('login'))->post(route('login'), [
-            'login' => 'admin.locked@gmail.com',
+            'login' => 'superadmin.locked@gmail.com',
             'password' => 'wrong-password',
         ]);
 

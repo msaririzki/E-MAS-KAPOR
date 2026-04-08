@@ -6,27 +6,36 @@ use App\Models\Kebutuhan;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithDrawings;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
-
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class KebutuhanExport implements FromView, ShouldAutoSize, WithStyles, WithDrawings, WithEvents
+class KebutuhanExport implements FromView, ShouldAutoSize, WithDrawings, WithEvents, WithStyles
 {
     protected $kebutuhan;
 
-    public function __construct(Kebutuhan $kebutuhan)
+    /**
+     * @var array<string, string>
+     */
+    protected array $signatorySettings;
+
+    /**
+     * @param  array<string, string>  $signatorySettings
+     */
+    public function __construct(Kebutuhan $kebutuhan, array $signatorySettings = [])
     {
         $this->kebutuhan = $kebutuhan;
+        $this->signatorySettings = $signatorySettings;
     }
 
     public function view(): View
     {
         return view('admin-satker.kebutuhan.export_excel', [
-            'kebutuhan' => $this->kebutuhan
+            'kebutuhan' => $this->kebutuhan,
+            'signatorySettings' => $this->signatorySettings,
         ]);
     }
 
@@ -37,7 +46,7 @@ class KebutuhanExport implements FromView, ShouldAutoSize, WithStyles, WithDrawi
 
     public function drawings()
     {
-        $drawing = new Drawing();
+        $drawing = new Drawing;
         $drawing->setName('Kop Surat');
         $drawing->setDescription('Kop Surat Kaporlap');
         $drawing->setPath(public_path('kop suratt.png'));
@@ -48,12 +57,13 @@ class KebutuhanExport implements FromView, ShouldAutoSize, WithStyles, WithDrawi
 
         return $drawing;
     }
+
     public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                
+
                 // --- Page Setup ---
                 $sheet->getPageSetup()
                     ->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_PORTRAIT)

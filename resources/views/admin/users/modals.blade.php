@@ -19,7 +19,7 @@
                     </div>
                     <div class="form-group" id="edit_email_group">
                         <label>Gmail <span class="required">*</span></label>
-                        <input type="email" name="email" id="edit_email" class="form-input" placeholder="Contoh: admin.kapor@gmail.com">
+                        <input type="email" name="email" id="edit_email" class="form-input" placeholder="Contoh: superadmin.kapor@gmail.com">
                     </div>
                     <div class="form-group" id="edit_nrp_group" style="display: none;">
                         <label>NRP / NIP <span class="required">*</span></label>
@@ -38,6 +38,9 @@
                             <button type="button" class="password-toggle" onclick="togglePassword('edit_password', this)">
                                 <i class="ri-eye-line"></i>
                             </button>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 12px; color: #6B7280;">
+                            Jika diubah, password minimal 8 karakter dan harus memakai huruf besar, huruf kecil, angka, dan simbol.
                         </div>
                     </div>
                     <div class="form-group">
@@ -64,7 +67,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group" style="grid-column: span 2;">
-                        <label>Satker (Untuk Admin Satker / Personil)</label>
+                        <label>Satker (Untuk Akun Administratif)</label>
                         <div class="custom-select form-input" onclick="toggleDropdown(this)" id="editSatkerSelect">
                             <div class="select-trigger">
                                 <span id="edit_satker_label">— Pilih Satker —</span>
@@ -118,7 +121,8 @@
                         <i class="ri-information-line" style="font-size: 20px; color: #F97316;"></i>
                         <div>
                             <h4 style="font-size: 14px; font-weight: 700; color: #9A3412; margin-bottom: 4px;">Instruksi Import</h4>
-                            <p style="font-size: 13px; color: #C2410C; line-height: 1.5;"> Pastikan format CSV sesuai dengan templat. Impor ini hanya untuk akun administratif dan kolom pertama harus berisi Gmail login admin.</p>
+                            <p style="font-size: 13px; color: #C2410C; line-height: 1.5;"> Pastikan format CSV sesuai dengan templat. Impor ini hanya untuk akun Superadmin, Admin Satker, dan Admin Gudang; kolom pertama harus berisi Gmail login.</p>
+                            <p style="font-size: 12px; color: #C2410C; line-height: 1.5; margin-top: 6px;">Password harus minimal 8 karakter serta mengandung huruf besar, huruf kecil, angka, dan simbol.</p>
                             <a href="{{ route('admin.users.template') }}" class="btn-template" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: #B91C1C; font-weight: 700; text-decoration: none; font-size: 13px;">
                                 <i class="ri-download-cloud-2-line"></i> Unduh Templat CSV
                             </a>

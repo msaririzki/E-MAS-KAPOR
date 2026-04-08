@@ -179,6 +179,16 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     Route::post('/personnel/import-sdm-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdmCancel'])->name('personnel.import-sdm-cancel');
     Route::get('/personnel/import-sdm-runs/{sdmImportRun}/error-report', [\App\Http\Controllers\Admin\PersonnelController::class, 'downloadSdmImportErrorReport'])->name('personnel.import-sdm-runs.error-report');
 
+    // Personnel Print & Actions
+    Route::get('/personnel/print-satker', [\App\Http\Controllers\Admin\PersonnelController::class, 'printSatker'])->name('personnel.print-satker');
+    Route::get('/personnel', [\App\Http\Controllers\Admin\PersonnelController::class, 'index'])->name('personnel.index');
+    Route::post('/personnel', [\App\Http\Controllers\Admin\PersonnelController::class, 'store'])->name('personnel.store');
+    Route::put('/personnel/{personnel}', [\App\Http\Controllers\Admin\PersonnelController::class, 'update'])->name('personnel.update');
+    Route::post('/personnel/{personnel}/approve-verification', [\App\Http\Controllers\Admin\PersonnelController::class, 'approveVerification'])->name('personnel.approve-verification');
+    Route::post('/personnel/{personnel}/reject-verification', [\App\Http\Controllers\Admin\PersonnelController::class, 'rejectVerification'])->name('personnel.reject-verification');
+    Route::post('/personnel/{personnel}/measurements', [\App\Http\Controllers\Admin\PersonnelController::class, 'storeMeasurements'])->name('personnel.measurements.store');
+    Route::delete('/personnel/{personnel}', [\App\Http\Controllers\Admin\PersonnelController::class, 'destroy'])->name('personnel.destroy');
+
     // Kapor Item & Sizes
     Route::resource('kapor-items', \App\Http\Controllers\Admin\KaporItemController::class)->except(['create', 'edit', 'show']);
     Route::get('/kapor-items/{kaporItem}/sizes', [\App\Http\Controllers\Admin\KaporItemController::class, 'getSizes'])->name('kapor-items.sizes.index');
@@ -225,29 +235,17 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     Route::put('/warehouse-items/{warehouse_item}/sizes/{size}', [\App\Http\Controllers\Admin\WarehouseController::class, 'updateSize'])->name('warehouse-items.sizes.update');
     Route::delete('/warehouse-items/{warehouse_item}/sizes/{size}', [\App\Http\Controllers\Admin\WarehouseController::class, 'deleteSize'])->name('warehouse-items.sizes.destroy');
 
-    // Personnel Print & Actions
-    Route::get('/personnel/print-satker', [\App\Http\Controllers\Admin\PersonnelController::class, 'printSatker'])->name('personnel.print-satker');
-    Route::get('/personnel', [\App\Http\Controllers\Admin\PersonnelController::class, 'index'])->name('personnel.index');
-    Route::post('/personnel', [\App\Http\Controllers\Admin\PersonnelController::class, 'store'])->name('personnel.store');
-    Route::put('/personnel/{personnel}', [\App\Http\Controllers\Admin\PersonnelController::class, 'update'])->name('personnel.update');
-    Route::post('/personnel/{personnel}/approve-verification', [\App\Http\Controllers\Admin\PersonnelController::class, 'approveVerification'])->name('personnel.approve-verification');
-    Route::post('/personnel/{personnel}/reject-verification', [\App\Http\Controllers\Admin\PersonnelController::class, 'rejectVerification'])->name('personnel.reject-verification');
-    Route::post('/personnel/{personnel}/measurements', [\App\Http\Controllers\Admin\PersonnelController::class, 'storeMeasurements'])->name('personnel.measurements.store');
-    Route::delete('/personnel/{personnel}', [\App\Http\Controllers\Admin\PersonnelController::class, 'destroy'])->name('personnel.destroy');
-
-    // Satker CRUD
-    Route::get('/satkers', [SatkerController::class, 'index'])->name('satkers.index');
-    Route::post('/satkers', [SatkerController::class, 'store'])->name('satkers.store');
-    Route::put('/satkers/{satker}', [SatkerController::class, 'update'])->name('satkers.update');
-    Route::patch('/satkers/{satker}/personnel', [SatkerController::class, 'updatePersonnelCount'])->name('satkers.update-personnel');
-    Route::delete('/satkers/{satker}', [SatkerController::class, 'destroy'])->name('satkers.destroy');
-
     // Laporan & Audit
     Route::get('/laporan', [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('reports');
     Route::get('/laporan/export', [\App\Http\Controllers\Admin\ReportsController::class, 'export'])->name('reports.export');
     Route::get('/laporan/arsip-tahunan', [\App\Http\Controllers\Admin\ReportsController::class, 'annualArchives'])->name('reports.annual-archives');
     Route::get('/laporan/arsip-tahunan/{annualArchive}', [\App\Http\Controllers\Admin\ReportsController::class, 'downloadAnnualArchive'])->name('reports.annual-archives.download');
     Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('/satkers', [SatkerController::class, 'index'])->name('satkers.index');
+    Route::post('/satkers', [SatkerController::class, 'store'])->name('satkers.store');
+    Route::put('/satkers/{satker}', [SatkerController::class, 'update'])->name('satkers.update');
+    Route::patch('/satkers/{satker}/personnel', [SatkerController::class, 'updatePersonnelCount'])->name('satkers.update-personnel');
+    Route::delete('/satkers/{satker}', [SatkerController::class, 'destroy'])->name('satkers.destroy');
 
     // ── Budget / Rencana Anggaran ──────────────────────────────
     Route::prefix('budget')->name('budget.')->group(function () {
@@ -297,9 +295,15 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
 
     Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+    Route::put('/settings/signatory', [\App\Http\Controllers\SettingsController::class, 'updateSignatory'])->name('settings.signatory.update');
     Route::post('/settings/next-year', [\App\Http\Controllers\SettingsController::class, 'nextYear'])->name('settings.next-year');
 
     Route::get('/statistik', [StatisticsController::class, 'index'])->name('statistics');
+
+    Route::resource('identifikasi-items', \App\Http\Controllers\Superadmin\IdentifikasiItemController::class)
+        ->parameters(['identifikasi-items' => 'identifikasi_item'])
+        ->except(['show']);
+    Route::patch('/identifikasi-items/{identifikasi_item}/toggle', [\App\Http\Controllers\Superadmin\IdentifikasiItemController::class, 'toggleActive'])->name('identifikasi-items.toggle');
 
     Route::get('/kapor-items', function () {
         return view('superadmin.kapor-items.index');

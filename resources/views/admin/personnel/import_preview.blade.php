@@ -151,15 +151,14 @@
                 @foreach($preview as $i => $row)
                 @php
                     $hasDupe = !empty($row['db_duplicate']) || !empty($row['duplicate_nrp']);
-                    $trClass = match(true) {
-                        $hasDupe => 'row-duplicate',
-                        $row['status'] === 'corrected' => 'row-corrected',
-                        $row['status'] === 'error' => 'row-error',
-                        default => 'row-ok',
-                    };
-                    $dataStatus = $hasDupe ? 'duplicate' : $row['status'];
+                    $trClasses = collect([
+                        $row['status'] === 'corrected' ? 'row-corrected' : null,
+                        $row['status'] === 'error' ? 'row-error' : null,
+                        $row['status'] === 'ok' ? 'row-ok' : null,
+                        $hasDupe ? 'row-duplicate' : null,
+                    ])->filter()->implode(' ');
                 @endphp
-                <tr class="{{ $trClass }}" id="row-{{ $i }}" data-status="{{ $dataStatus }}">
+                <tr class="{{ $trClasses }}" id="row-{{ $i }}" data-status="{{ $row['status'] }}" data-duplicate="{{ $hasDupe ? '1' : '0' }}">
 
                     {{-- HANYA kirim override rank_id untuk baris yang diubah manual.
                          Data lain (nama, nrp, dll) dibaca dari session di server.
@@ -331,7 +330,9 @@ function setFilter(status) {
 
     let visible = 0;
     document.querySelectorAll('#previewTableBody tr[data-status]').forEach(function(tr) {
-        const show = status === 'all' || tr.dataset.status === status;
+        const show = status === 'all'
+            || tr.dataset.status === status
+            || (status === 'duplicate' && tr.dataset.duplicate === '1');
         tr.classList.toggle('hidden-row', !show);
         if (show) visible++;
     });
@@ -413,6 +414,7 @@ function doConfirm(e) {
         alert('Masih ada ' + missing.length + ' baris yang belum dipilih pangkatnya.\nLihat baris merah di atas.');
         return false;
     }
+    showGlobalLoader('Sedang menyimpan data... Hampir selesai!');
     return true;
 }
 
@@ -420,5 +422,24 @@ recalcPending();
 
 // Initialize UI
 setFilter('all');
+</script>
+
+{{-- Global Loader --}}
+<div id="fullScreenLoader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.85); z-index:9999; align-items:center; justify-content:center; flex-direction:column; backdrop-filter: blur(4px);">
+    <div style="width: 50px; height: 50px; border: 4px solid #E5E7EB; border-bottom-color: #059669; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <div style="margin-top: 16px; font-weight: 700; color: #111827; font-size: 16px;" id="loaderMsg">Memproses Data...</div>
+    <div style="margin-top: 4px; font-size: 12px; color: #6B7280;">Mohon jangan tutup atau refresh halaman ini</div>
+</div>
+<style>
+@keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+<script>
+function showGlobalLoader(msg) {
+    var loader = document.getElementById('fullScreenLoader');
+    if(loader) {
+        if(msg) document.getElementById('loaderMsg').innerText = msg;
+        loader.style.display = 'flex';
+    }
+}
 </script>
 @endsection

@@ -115,7 +115,7 @@
                 <tbody>
                     @forelse($personnels as $idx => $p)
                     @php
-                        $hasValidNrp = $p->nrp && !str_starts_with($p->nrp, 'TEMP-');
+                        $hasValidNrp = filled($p->nrp);
                         $isComplete = $p->kapor_sizes && $p->rank_id && $hasValidNrp;
                     @endphp
                     <tr>
@@ -127,7 +127,7 @@
                                 </div>
                                 <div>
                                     <div style="font-weight: 600; color: #1E293B; font-size: 13px;">{{ $p->full_name }}</div>
-                                    <div style="font-size: 11.5px; color: #94A3B8;">{{ ($p->nrp && !str_starts_with($p->nrp, 'TEMP-')) ? $p->nrp : '-' }}</div>
+                                    <div style="font-size: 11.5px; color: #94A3B8;">{{ $p->nrp ?: '-' }}</div>
                                 </div>
                             </div>
                         </td>

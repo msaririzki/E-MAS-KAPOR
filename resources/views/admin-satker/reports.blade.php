@@ -124,7 +124,7 @@
                             $v = trim($kaporSizes[$key] ?? '');
                             return ($v !== '' && $v !== '-' && $v !== '0') ? $v : '-';
                         };
-                        $displayNrp = ($p->nrp && !str_starts_with($p->nrp, 'TEMP-')) ? $p->nrp : '-';
+                        $displayNrp = $p->nrp ?: '-';
                         $hasData = !empty($kaporSizes);
                     @endphp
                     <tr style="{{ !$hasData ? 'background: #FFFBEB;' : '' }}">

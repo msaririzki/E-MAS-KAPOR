@@ -4,19 +4,17 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usulan Kaporlap — {{ $kebutuhan->satker->name ?? '' }}</title>
+    <title>Usulan Kaporlap - {{ $kebutuhan->satker->name ?? '' }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Times New Roman', Times, serif; font-size: 12px; color: #000; background: #fff; padding: 0; }
         .print-container { max-width: 800px; margin: 0 auto; padding: 30px 40px; }
 
-        /* ── KOP SURAT ── */
         .kop-surat { width: 350px; text-align: center; margin-bottom: 30px; }
         .kop-logo { height: 50px; margin-bottom: 4px; }
         .kop-text { font-size: 13px; font-weight: bold; line-height: 1.2; font-family: Arial, Helvetica, sans-serif; }
         .kop-line-1 { border-bottom: 2px solid #000; margin-top: 4px; width: 100%; }
 
-        /* ── JUDUL DOKUMEN ── */
         .doc-title {
             text-align: center;
             font-size: 14px;
@@ -27,7 +25,6 @@
             line-height: 1.4;
         }
 
-        /* ── TABEL DATA ── */
         .data-table {
             width: 100%;
             border-collapse: collapse;
@@ -64,7 +61,6 @@
             font-size: 12px;
         }
 
-        /* ── FOOTER TTD ── */
         .print-footer {
             margin-top: 40px;
             float: right;
@@ -76,9 +72,6 @@
         }
         .print-footer .ttd-location {
             margin-bottom: 10px;
-        }
-        .print-footer .ttd-an {
-            margin-bottom: 0px;
         }
         .print-footer .ttd-jabatan {
             margin-bottom: 70px;
@@ -93,7 +86,6 @@
 
         .clearfix::after { content: ""; clear: both; display: table; }
 
-        /* ── TOMBOL CETAK ── */
         .no-print {
             text-align: center;
             margin-bottom: 20px;
@@ -121,10 +113,8 @@
 </head>
 <body>
     <div class="print-container clearfix">
-        <!-- Tanda tangan dihapus dari tombol cetak web, karena hanya digunakan untuk export PDF -->
-        {{-- KOP SURAT --}}
         <div class="kop-surat">
-            <?php 
+            <?php
                 $path = public_path('kop suratt.png');
                 $type = pathinfo($path, PATHINFO_EXTENSION);
                 $data = file_get_contents($path);
@@ -139,12 +129,10 @@
             <div class="kop-line-1"></div>
         </div>
 
-        {{-- JUDUL --}}
         <div class="doc-title">
             USULAN KAPORLAP {{ strtoupper($kebutuhan->satker->name ?? '') }} TAHUN ANGGARAN {{ $kebutuhan->fiscal_year }}
         </div>
 
-        {{-- TABEL ITEM --}}
         <table class="data-table">
             <thead>
                 <tr>
@@ -155,7 +143,7 @@
             </thead>
             <tbody>
                 @php
-                    $grouped = $kebutuhan->items->groupBy(fn($item) => $item->kaporItem->category ?? 'Lainnya');
+                    $grouped = $kebutuhan->items->groupBy(fn($item) => $item->identifikasiItem->category ?? 'Lainnya');
                     $noCategory = 1;
                 @endphp
                 @foreach($grouped as $category => $items)
@@ -167,46 +155,23 @@
                     @foreach($items as $item)
                     <tr>
                         <td></td>
-                        <td style="padding-left: 20px;">{{ $alphaNum++ }}. {{ strtoupper($item->kaporItem->item_name ?? '-') }}</td>
-                        <td>{{ strtoupper(str_replace('_', ' ', $item->kaporItem->category ?? '-')) }}</td>
+                        <td style="padding-left: 20px;">{{ $alphaNum++ }}. {{ strtoupper($item->identifikasiItem->item_name ?? '-') }}</td>
+                        <td>{{ strtoupper(str_replace('_', ' ', $item->identifikasiItem->category ?? '-')) }}</td>
                     </tr>
                     @endforeach
                 @endforeach
             </tbody>
         </table>
 
-        {{-- ── FOOTER TANDA TANGAN ── --}}
         @php
-            $satkerName = strtoupper($kebutuhan->satker->name ?? '');
-            
-            // ── Bulan Indonesia ──
-            $bulanIndo = [
-                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni',
-                7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-            ];
-            $bulan = $bulanIndo[date('n')];
-            $tahun = date('Y');
-
-            // ── Tentukan nama kepala dan Jabatan ──
-            if (str_starts_with($satkerName, 'POLRESTA ')) {
-                $an = 'a.n. KEPALA KEPOLISIAN RESOR KOTA ' . str_replace('POLRESTA ', '', $satkerName);
-                $jabatan = 'KEPALA BAGIAN LOGISTIK';
-            } elseif (str_starts_with($satkerName, 'POLRES ')) {
-                $an = 'a.n. KEPALA KEPOLISIAN RESOR ' . str_replace('POLRES ', '', $satkerName);
-                $jabatan = 'KEPALA BAGIAN LOGISTIK';
-            } else {
-                $an = 'a.n. KEPALA KEPOLISIAN POLDA NTB';
-                $jabatan = 'KEPALA ' . $satkerName;
-            }
-
-            // ── User pengaju ──
-            $userName = '..........................................';
-            $userNrpNip = '.............................';
+            $jabatan = strtoupper($signatorySettings['signatory_title'] ?? 'KEPALA..........................');
+            $userName = strtoupper($signatorySettings['signatory_name'] ?? '..........................................');
+            $userNrpNip = $signatorySettings['signatory_nrp'] ?? '.............................';
+            $location = $signatorySettings['location'] ?? 'Mataram';
         @endphp
 
         <div class="print-footer">
-            <div class="ttd-location">................................., ................. {{ $bulan }} {{ $tahun }}</div>
-            <div class="ttd-an">{{ $an }}</div>
+            <div class="ttd-location">{{ $location }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</div>
             <div class="ttd-jabatan">{{ $jabatan }}</div>
             <div class="ttd-nama">{{ $userName }}</div>
             <div class="ttd-nrp">NRP/NIP. {{ $userNrpNip }}</div>

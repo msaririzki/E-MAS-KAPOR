@@ -6,6 +6,7 @@ use App\Imports\PersonnelImport;
 use App\Models\BagianOption;
 use App\Models\BudgetPackage;
 use App\Models\BudgetYear;
+use App\Models\InvoiceSetting;
 use App\Models\KaporSubmission;
 use App\Models\Personnel;
 use App\Models\Satker;
@@ -14,6 +15,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\AnnualArchiveService;
 use App\Services\AuditLogger;
+use App\Services\ExportSignatorySettingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -25,6 +27,8 @@ class SettingsController extends Controller
 
     public function index()
     {
+        $signatoryService = app(ExportSignatorySettingService::class);
+
         $settings = [
             'fiscal_year' => Setting::getValue('fiscal_year', date('Y')),
             'is_system_locked' => Setting::getValue('is_system_locked', 'false') === 'true',
@@ -70,8 +74,9 @@ class SettingsController extends Controller
             ->latest()
             ->get();
         $satkers = Satker::query()->orderBy('sort_order')->orderBy('name')->get(['id', 'name']);
+        $signatorySettings = $signatoryService->getGlobalSettings();
 
-        return view('superadmin.settings', compact('settings', 'yearlyStats', 'bagianOptions', 'sdmSatkerAliases', 'satkers'));
+        return view('superadmin.settings', compact('settings', 'yearlyStats', 'bagianOptions', 'sdmSatkerAliases', 'satkers', 'signatorySettings'));
     }
 
     public function update(Request $request)
@@ -169,5 +174,41 @@ class SettingsController extends Controller
         );
 
         return redirect()->back()->with('success', "Tahun Anggaran $nextYear siap digunakan. Sistem dikunci, paket tahun $currentYear diarsipkan, akun personel tetap tersimpan, dan dataset aktif personel telah dikosongkan.");
+    }
+
+    public function updateSignatory(Request $request, ExportSignatorySettingService $signatoryService)
+    {
+        $validated = $request->validate([
+            'signatory_name' => 'nullable|string|max:255',
+            'signatory_rank' => 'nullable|string|max:255',
+            'signatory_nrp' => 'nullable|string|max:100',
+            'signatory_title' => 'nullable|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'organization_name' => 'nullable|string|max:255',
+        ]);
+
+        $oldValues = $signatoryService->getGlobalSettings();
+        $signatoryService->updateGlobalSettings($validated);
+
+        InvoiceSetting::getSettings()->update([
+            'signatory_name' => $validated['signatory_name'] ?? '',
+            'signatory_rank' => $validated['signatory_rank'] ?? '',
+            'signatory_nrp' => $validated['signatory_nrp'] ?? '',
+            'signatory_title' => $validated['signatory_title'] ?? '',
+            'location' => $validated['location'] ?? '',
+            'organization_name' => $validated['organization_name'] ?? '',
+        ]);
+
+        AuditLogger::log(
+            'Update Penanda Tangan Export (Global)',
+            'Pengaturan',
+            null,
+            $oldValues,
+            $signatoryService->getGlobalSettings(),
+            'success',
+            'Superadmin memperbarui konfigurasi penanda tangan export global.',
+        );
+
+        return redirect()->back()->with('success', 'Penanda tangan export (global) berhasil diperbarui.');
     }
 }

@@ -28,15 +28,6 @@ class DemoUserSeeder extends Seeder
         $superadmin->assignRole('superadmin');
 
         // ── 2. Admin ───────────────────────────────────────────
-        $admin = User::create([
-            'name' => 'Administrator',
-            'email' => 'admin.kapor@gmail.com',
-            'password' => Hash::make('password'),
-            'satker_id' => $polda->id,
-            'is_active' => true,
-        ]);
-        $admin->assignRole('admin');
-
         $adminGudang = User::create([
             'name' => 'Admin Gudang',
             'email' => 'admin.gudang.kapor@gmail.com',
@@ -50,7 +41,7 @@ class DemoUserSeeder extends Seeder
         $adminSatker = User::create([
             'name' => 'Admin Satker Polresta Mataram',
             'email' => 'admin.satker.mataram@gmail.com',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('87654321'),
             'satker_id' => $resMataram->id,
             'is_active' => true,
         ]);
@@ -60,7 +51,7 @@ class DemoUserSeeder extends Seeder
         $adminSatker2 = User::create([
             'name' => 'Admin Satker Polres Lotim',
             'email' => 'admin.satker.lotim@gmail.com',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('76543210'),
             'satker_id' => $resLotim->id,
             'is_active' => true,
         ]);
@@ -70,8 +61,8 @@ class DemoUserSeeder extends Seeder
         $rankBintara = Rank::where('name', 'BRIPKA')->first();
         $personil1 = User::create([
             'nrp_nip' => '87654321',
-            'name' => 'Bripka Ahmad Fauzi',
-            'password' => Hash::make('password'),
+            'name' => 'Ahmad Fauzi',
+            'password' => Hash::make('87654321'),
             'satker_id' => $resMataram->id,
             'is_active' => true,
         ]);
@@ -91,8 +82,8 @@ class DemoUserSeeder extends Seeder
         $rankPama = Rank::where('name', 'IPTU')->first();
         $personil2 = User::create([
             'nrp_nip' => '76543210',
-            'name' => 'Iptu Siti Nurhaliza',
-            'password' => Hash::make('password'),
+            'name' => 'Siti Nurhaliza',
+            'password' => Hash::make('76543210'),
             'satker_id' => $resMataram->id,
             'is_active' => true,
         ]);
@@ -113,7 +104,7 @@ class DemoUserSeeder extends Seeder
         $personil3 = User::create([
             'nrp_nip' => '198501012010011001',
             'name' => 'Lalu Muhamad Zainul',
-            'password' => Hash::make('password'),
+            'password' => Hash::make('198501012010011001'),
             'satker_id' => $resLotim->id,
             'is_active' => true,
         ]);

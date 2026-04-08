@@ -24,9 +24,15 @@
             <p>Pengajuan kebutuhan item kapor satker Anda.</p>
         </div>
         <div class="page-header-actions">
-            <a href="{{ route('admin-satker.kebutuhan.create') }}" class="btn btn-primary btn-sm">
-                <i class="ri-add-line"></i> Buat Pengajuan
-            </a>
+            @if($hasSubmissionThisYear)
+                <span class="btn btn-ghost btn-sm" style="cursor: default; opacity: 0.6;" title="Sudah ada pengajuan untuk TA {{ $nextFiscalYear }}">
+                    <i class="ri-lock-line"></i> Pengajuan TA {{ $nextFiscalYear }} Sudah Dibuat
+                </span>
+            @else
+                <a href="{{ route('admin-satker.kebutuhan.create') }}" class="btn btn-primary btn-sm">
+                    <i class="ri-add-line"></i> Buat Pengajuan
+                </a>
+            @endif
         </div>
     </div>
 </div>
@@ -106,7 +112,11 @@
                 <tr>
                     <td colspan="6" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
                         <i class="ri-file-list-3-line" style="font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.5;"></i>
-                        Belum ada pengajuan. <a href="{{ route('admin-satker.kebutuhan.create') }}" style="color: var(--brand); text-decoration: none; font-weight: 600;">Buat pengajuan baru →</a>
+                        @if($hasSubmissionThisYear)
+                            Tidak ada pengajuan yang ditampilkan.
+                        @else
+                            Belum ada pengajuan. <a href="{{ route('admin-satker.kebutuhan.create') }}" style="color: var(--brand); text-decoration: none; font-weight: 600;">Buat pengajuan baru →</a>
+                        @endif
                     </td>
                 </tr>
                 @endforelse

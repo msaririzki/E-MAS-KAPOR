@@ -3,9 +3,9 @@
 namespace App\Exports;
 
 use App\Models\BudgetPackage;
-use App\Models\InvoiceSetting;
 use App\Models\PackageItem;
 use App\Models\Personnel;
+use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -80,7 +80,7 @@ class PackageDetailSheet implements FromArray, WithEvents, WithTitle
         $sizeKey = $this->getSizeKey();
 
         $this->packageItem->load('recipients.satker');
-        $settings = InvoiceSetting::getSettings();
+        $settings = (object) app(ExportSignatorySettingService::class)->resolveForCurrentUser();
 
         // Kop surat
         $this->rows[] = [$settings->organization_name ?? 'KEPOLISIAN NEGARA REPUBLIK INDONESIA', '', ''];

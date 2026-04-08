@@ -21,7 +21,7 @@ class PackageRecipientKeteranganFilterTest extends TestCase
     {
         parent::setUp();
 
-        Role::findOrCreate('admin', 'web');
+        Role::findOrCreate('superadmin', 'web');
     }
 
     public function test_save_recipients_applies_scoped_keterangan_filters_by_satker_group_and_field(): void
@@ -49,7 +49,7 @@ class PackageRecipientKeteranganFilterTest extends TestCase
         $user = User::factory()->create([
             'satker_id' => $rootSatker->id,
         ]);
-        $user->assignRole('admin');
+        $user->assignRole('superadmin');
 
         $budgetYear = BudgetYear::create([
             'year' => 2026,

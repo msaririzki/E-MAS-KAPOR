@@ -168,7 +168,7 @@ class PersonnelSdmImport extends PersonnelImport
                 'satker_id' => $resolvedSatker['satker_id'],
                 'satker_name' => $resolvedSatker['satker_name'],
                 'satker_match' => $resolvedSatker['matched_alias'],
-                'personnel_type' => $this->resolvePersonnelType($rankResult['rank']),
+                'personnel_type' => $this->resolvePersonnelTypeFromRank($rankResult['rank']),
                 'status' => $status,
                 'status_notes' => array_values(array_unique($statusNotes)),
                 'incomplete_fields' => $incompleteFields,
@@ -308,7 +308,7 @@ class PersonnelSdmImport extends PersonnelImport
                         'satker_id' => $satker->id,
                         'jabatan' => $jabatan,
                         'bagian' => null,
-                        'personnel_type' => $this->resolvePersonnelType($rank),
+                    'personnel_type' => $this->resolvePersonnelTypeFromRank($rank),
                         'gender' => $gender,
                         'golongan' => $golongan !== '' ? $golongan : $this->deriveGolongan($rank),
                         'religion' => $religion,
@@ -422,7 +422,7 @@ class PersonnelSdmImport extends PersonnelImport
         };
     }
 
-    private function resolvePersonnelType(?Rank $rank): string
+    private function resolvePersonnelTypeFromRank(?Rank $rank): string
     {
         return $rank?->category === 'PNS' ? 'PNS' : 'Polri';
     }

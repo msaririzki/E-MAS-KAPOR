@@ -3,10 +3,9 @@
 namespace App\Exports;
 
 use App\Models\BudgetPackage;
-use App\Models\InvoiceSetting;
 use App\Models\PackageItem;
 use App\Models\Personnel;
-use App\Models\Satker;
+use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -235,7 +234,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
         }
 
         $this->packageItem->load('recipients.satker');
-        $settings = InvoiceSetting::getSettings();
+        $settings = (object) app(ExportSignatorySettingService::class)->resolveForCurrentUser();
 
         // ── MODE COMBINED (Pria + Wanita dalam 1 sheet, menyamping) ──
         if ($this->combinedGender) {
@@ -353,7 +352,7 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                 // ═══ TANDA TANGAN (Injeksi Murni via PHP) ═══
-                $settings = \App\Models\InvoiceSetting::getSettings();
+                $settings = (object) app(ExportSignatorySettingService::class)->resolveForCurrentUser();
                 $bulanIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                 $bulanSekarang = $bulanIndo[now()->month - 1];
                 $tahun = $this->budgetPackage->budgetYear->year;

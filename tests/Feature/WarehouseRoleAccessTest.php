@@ -16,7 +16,7 @@ class WarehouseRoleAccessTest extends TestCase
     {
         parent::setUp();
 
-        foreach (['admin', 'admin_satker', 'admin_gudang', 'superadmin'] as $roleName) {
+        foreach (['admin_satker', 'admin_gudang', 'superadmin'] as $roleName) {
             Role::findOrCreate($roleName);
         }
     }

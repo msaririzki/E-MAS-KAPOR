@@ -136,8 +136,8 @@
                 </div>
             </div>
 
-            {{-- [3] DROPDOWN: LAINNYA (admin only) --}}
-            @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superadmin'))
+            {{-- [3] DROPDOWN: LAINNYA (superadmin only) --}}
+            @if(auth()->user()->hasRole('superadmin'))
             <div class="dropdown-container" id="moreActionsDropdown" style="position: relative;">
                 <button type="button" class="btn btn-success" onclick="this.parentElement.classList.toggle('open')">
                     <span style="display: flex; align-items: center; gap: 6px;">
@@ -1008,7 +1008,7 @@
                 <i class="ri-close-line"></i>
             </button>
         </div>
-        <form action="{{ route('admin.personnel.import') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.personnel.import') }}" method="POST" enctype="multipart/form-data" onsubmit="showGlobalLoader('Sedang membaca file Excel. Harap tunggu sebentar...')">
             @csrf
             <div class="modal-body" style="padding: 24px;">
                 @if(auth()->user()->hasRole('admin_satker'))
@@ -1100,9 +1100,9 @@
 </div>
 
 {{-- ============================================================ --}}
-{{-- Modal Export Personel (Admin: pilih satker, Admin Satker: skip) --}}
+{{-- Modal Export Personel (Superadmin: pilih satker, Admin Satker: skip) --}}
 {{-- ============================================================ --}}
-@if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superadmin'))
+@if(auth()->user()->hasRole('superadmin'))
 <div id="exportPersonnelModal" class="modal">
     <div class="modal-content" style="max-width: 480px;">
         <div class="modal-header">
@@ -1191,7 +1191,7 @@
                 <i class="ri-close-line"></i>
             </button>
         </div>
-        <form action="{{ route('admin.personnel.import-update') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('admin.personnel.import-update') }}" method="POST" enctype="multipart/form-data" onsubmit="showGlobalLoader('Sedang membaca file Excel. Harap tunggu sebentar...')">
             @csrf
             <div class="modal-body" style="padding: 24px;">
 
@@ -1202,7 +1202,7 @@
                     </div>
                 </div>
 
-                @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superadmin'))
+                @if(auth()->user()->hasRole('superadmin'))
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label style="font-weight: 700; color: #374151;">PILIH SATKER TUJUAN <span style="color: #EF4444;">*</span></label>
                     <div class="custom-search-select" style="position: relative; margin-top: 8px;">
@@ -2300,23 +2300,23 @@
                     </div>
                     <div class="form-group">
                         <label>TEMPAT CETAK</label>
-                        <input type="text" name="location" value="Mataram" class="form-input">
+                        <input type="text" name="location" value="{{ $printSignatoryDefaults['location'] ?? 'Mataram' }}" class="form-input">
                     </div>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label>JABATAN PENANDA TANGAN</label>
-                    <input type="text" name="signatory_role" value="KASUBBAG RENMIN KABAG LOG" class="form-input">
+                    <input type="text" name="signatory_role" value="{{ $printSignatoryDefaults['signatory_title'] ?? '' }}" class="form-input">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 12px;">
                     <label>NAMA PEJABAT</label>
-                    <input type="text" name="signatory_name" placeholder="Nama Lengkap Pejabat" class="form-input">
+                    <input type="text" name="signatory_name" value="{{ $printSignatoryDefaults['signatory_name'] ?? '' }}" placeholder="Nama Lengkap Pejabat" class="form-input">
                 </div>
 
                 <div class="form-group">
                     <label>PANGKAT / NRP</label>
-                    <input type="text" name="signatory_nrp" placeholder="Pangkat & NRP/NIP" class="form-input">
+                    <input type="text" name="signatory_nrp" value="{{ trim(($printSignatoryDefaults['signatory_rank'] ?? '').' '.((!empty($printSignatoryDefaults['signatory_nrp'] ?? null)) ? 'NRP '.$printSignatoryDefaults['signatory_nrp'] : '')) }}" placeholder="Pangkat & NRP/NIP" class="form-input">
                 </div>
             </form>
         </div>
@@ -4207,5 +4207,24 @@
         form.submit();
         closeModal('printSatkerModal');
     }
+</script>
+
+{{-- Global Loader --}}
+<div id="fullScreenLoader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.85); z-index:9999; align-items:center; justify-content:center; flex-direction:column; backdrop-filter: blur(4px);">
+    <div style="width: 50px; height: 50px; border: 4px solid #E5E7EB; border-bottom-color: #059669; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <div style="margin-top: 16px; font-weight: 700; color: #111827; font-size: 16px;" id="loaderMsg">Memproses Data...</div>
+    <div style="margin-top: 4px; font-size: 12px; color: #6B7280;">Mohon jangan tutup atau refresh halaman ini</div>
+</div>
+<style>
+@keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+<script>
+function showGlobalLoader(msg) {
+    var loader = document.getElementById('fullScreenLoader');
+    if(loader) {
+        if(msg) document.getElementById('loaderMsg').innerText = msg;
+        loader.style.display = 'flex';
+    }
+}
 </script>
 @endsection

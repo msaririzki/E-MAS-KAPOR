@@ -22,6 +22,17 @@
     .dispense-card-header h2 { font-size: 20px; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 10px; }
     .dispense-card-header p { font-size: 13px; opacity: 0.85; margin: 4px 0 0; }
     .dispense-card-body { padding: 28px; }
+    
+    /* Tabs */
+    .method-tabs { display: flex; gap: 10px; margin-bottom: 24px; }
+    .method-tab {
+        flex: 1; padding: 14px; text-align: center; border: 2px solid var(--border-color, #E5E7EB);
+        border-radius: 12px; background: var(--bg-body, #F9FAFB); color: var(--text-muted, #6B7280);
+        font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .method-tab.active { border-color: #D97706; background: #FFFBEB; color: #D97706; }
+
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .form-group { margin-bottom: 20px; }
     .form-group label {
@@ -37,20 +48,6 @@
     }
     .f-input:focus { border-color: #D97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.1); }
     .f-input::placeholder { color: #9CA3AF; }
-
-    /* Native select styled */
-    .f-select {
-        width: 100%; padding: 10px 14px; border: 1px solid var(--border-color, #D1D5DB);
-        border-radius: 8px; font-size: 14px; font-family: inherit;
-        background: var(--bg-card, #fff); color: var(--text-main, #1F2937);
-        transition: border-color 0.2s, box-shadow 0.2s; outline: none;
-        cursor: pointer; appearance: none; -webkit-appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        padding-right: 36px;
-    }
-    .f-select:focus { border-color: #D97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.1); }
 
     /* Searchable select */
     .ss-wrap { position: relative; }
@@ -125,11 +122,14 @@
     }
     .btn-remove-item:hover { background: #FEE2E2; border-color: #F87171; }
     .item-row-fields { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; }
+    .m2-row-fields { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+    
     .stock-badge {
         display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px;
         border-radius: 20px; font-size: 11px; font-weight: 600; background: #FEF3C7; color: #92400E; margin-top: 4px;
     }
     .stock-warning { color: #DC2626; font-size: 12px; margin-top: 4px; font-weight: 600; display: none; }
+    
     .btn-add-item {
         width: 100%; padding: 12px; border: 2px dashed #D97706; border-radius: 12px;
         background: transparent; color: #D97706; font-size: 14px; font-weight: 700;
@@ -156,9 +156,75 @@
     }
     .btn-back-link:hover { color: var(--text-main, #1F2937); }
 
+    /* Checkbox List for M2 */
+    .m2-checkbox-list-wrapper {
+        border: 1px solid var(--border-color, #E5E7EB);
+        border-radius: 12px;
+        background: #fff;
+        padding: 12px;
+    }
+    .m2-search-input {
+        width: 100%; padding: 8px 12px; border: 1px solid var(--border-color, #E5E7EB);
+        border-radius: 8px; font-size: 13px; margin-bottom: 10px; outline: none;
+    }
+    .m2-search-input:focus { border-color: #D97706; box-shadow: 0 0 0 2px rgba(217,119,6,0.1); }
+    
+    .m2-list-container {
+        max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+        padding-right: 4px;
+    }
+    .m2-list-container::-webkit-scrollbar { width: 5px; }
+    .m2-list-container::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 10px; }
+    
+    .m2-checkbox-item {
+        display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px;
+        cursor: pointer; transition: all 0.15s; border: 1px solid transparent;
+    }
+    .m2-checkbox-item:hover { background: #FFFBEB; border-color: #FEF3C7; }
+    .m2-checkbox-item.checked { background: #FEF3C7; border-color: #FDE68A; }
+    
+    .m2-checkbox-item input[type="checkbox"] {
+        width: 18px; height: 18px; cursor: pointer; accent-color: #D97706;
+    }
+    .m2-checkbox-label { font-size: 13px; font-weight: 600; color: #374151; flex: 1; }
+    .m2-checkbox-stock { font-size: 11px; color: #D97706; font-weight: 700; background: #FFFBEB; padding: 2px 8px; border-radius: 10px; }
+
+    .m2-action-btns { display: flex; gap: 8px; margin-bottom: 10px; }
+    .btn-m2-small {
+        padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px;
+        border: 1px solid #E5E7EB; background: #fff; cursor: pointer; transition: all 0.2s;
+        text-transform: uppercase;
+    }
+    .btn-m2-small:hover { background: #F9FAFB; border-color: #D1D5DB; }
+
+    /* Grid Table for M2 */
+    .qty-grid-wrapper {
+        border-radius: 12px;
+        border: 1px solid var(--border-color, #E5E7EB);
+        overflow-x: auto;
+        background: #fff;
+    }
+    .qty-grid-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    .qty-grid-table th {
+        background: var(--bg-body, #F9FAFB); padding: 12px 16px; font-size: 12px;
+        text-transform: uppercase; color: var(--text-muted, #6B7280); border-bottom: 2px solid #E5E7EB;
+        text-align: left;
+    }
+    .qty-grid-table td {
+        padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-size: 13px; color: var(--text-main, #1F2937);
+        vertical-align: middle;
+    }
+    .qty-grid-table tr:last-child td { border-bottom: none; }
+    .f-input-small {
+        width: 80px; padding: 8px 10px; border: 1px solid var(--border-color, #D1D5DB);
+        border-radius: 6px; font-size: 13px; outline: none; background: #fff;
+    }
+    .f-input-small:focus { border-color: #D97706; }
+
     @media (max-width: 768px) {
         .form-row { grid-template-columns: 1fr; }
         .item-row-fields { grid-template-columns: 1fr; }
+        .m2-row-fields { grid-template-columns: 1fr; }
         .dispense-card-body { padding: 20px; }
         .submit-section { flex-direction: column; gap: 12px; }
     }
@@ -180,127 +246,123 @@
 
         <form action="{{ route('admin.warehouse-items.dispense') }}" method="POST" id="dispenseForm">
             @csrf
+            <input type="hidden" name="dispense_method" id="dispense_method" value="method_1">
+
             <div class="dispense-card-body">
-                {{-- Section: Info Surat (Disembunyikan) --}}
-                <div style="display: none;">
-                    <div class="section-label"><i class="ri-file-text-line"></i> Informasi Surat</div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Nomor Surat <span class="req">*</span></label>
-                            <input type="text" name="letter_number" class="f-input" placeholder="Contoh: B/123/III/2026" value="-">
-                        </div>
-                        <div class="form-group">
-                            <label>Tanggal Surat <span class="req">*</span></label>
-                            <input type="date" name="letter_date" class="f-input" value="{{ date('Y-m-d') }}">
-                        </div>
+                <div class="method-tabs">
+                    <div class="method-tab active" id="tab_method_1" onclick="switchMethod('method_1')">
+                        <i class="ri-user-smile-line"></i> Metode 1: Per Satker
                     </div>
-                    <hr class="section-divider">
-                </div>
-
-                {{-- Section: Penerima --}}
-                <div class="section-label"><i class="ri-user-received-line"></i> Informasi Penerima</div>
-
-                <div class="form-group">
-                    <label>Satker Penerima <span class="req">*</span></label>
-                    <div class="ss-wrap" id="satkerSelect">
-                        <div class="ss-trigger" onclick="ssToggle('satkerSelect')">
-                            <span class="ss-text ss-placeholder" id="satker_text">-- Pilih Satker --</span>
-                            <i class="ri-arrow-down-s-line ss-arrow"></i>
-                        </div>
-                        <div class="ss-dropdown" id="satkerSelect_dd">
-                            <div class="ss-search">
-                                <input type="text" placeholder="Cari satker..." oninput="ssFilter(this, 'satkerSelect')">
-                            </div>
-                            <div class="ss-list">
-                                @foreach($satkers as $satker)
-                                    <div class="ss-opt" data-val="{{ $satker->id }}" data-label="{{ $satker->name }}" onclick="ssSelect('satkerSelect', '{{ $satker->id }}', '{{ $satker->name }}')">
-                                        {{ $satker->name }}
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                        <input type="hidden" name="satker_id" id="satkerSelect_val" required>
+                    <div class="method-tab" id="tab_method_2" onclick="switchMethod('method_2')">
+                        <i class="ri-community-line"></i> Metode 2: Per Barang (Multi Satker)
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Nama Penerima <span class="req">*</span></label>
-                        <input type="text" name="recipient_name" class="f-input" placeholder="Nama penerima barang" required value="{{ old('recipient_name') }}">
+                        <label>Tanggal Surat <span class="req">*</span></label>
+                        <input type="date" name="letter_date" class="f-input" value="{{ old('letter_date', date('Y-m-d')) }}">
                     </div>
                     <div class="form-group">
-                        <label>Tanggal Pengeluaran <span class="req">*</span></label>
-                        <input type="date" name="outflow_date" class="f-input" required value="{{ old('outflow_date', date('Y-m-d')) }}">
+                        <label>Nomor Surat / Referensi <span class="req">*</span></label>
+                        <input type="text" name="letter_number" class="f-input" placeholder="Contoh: B/123/III/2026" value="{{ old('letter_number', '-') }}">
                     </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tanggal Pengeluaran <span class="req">*</span></label>
+                    <input type="date" name="outflow_date" class="f-input" required value="{{ old('outflow_date', date('Y-m-d')) }}">
                 </div>
 
                 <hr class="section-divider">
 
-                {{-- Section: Barang (Multi) --}}
-                <div class="section-label"><i class="ri-archive-line"></i> Detail Barang</div>
-
-                <div class="item-rows" id="itemRowsContainer">
-                    {{-- Row 1 (default) --}}
-                    <div class="item-row" data-index="0">
-                        <div class="item-row-header">
-                            <div class="item-row-number">1</div>
-                        </div>
-                        <div class="item-row-fields">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label>Nama Barang <span class="req">*</span></label>
-                                <div class="ss-wrap" id="itemSelect_0">
-                                    <div class="ss-trigger" onclick="ssToggle('itemSelect_0')">
-                                        <span class="ss-text ss-placeholder" id="item_text_0">-- Pilih Barang --</span>
-                                        <i class="ri-arrow-down-s-line ss-arrow"></i>
-                                    </div>
-                                    <div class="ss-dropdown" id="itemSelect_0_dd">
-                                        <div class="ss-search">
-                                            <input type="text" placeholder="Cari barang..." oninput="ssFilter(this, 'itemSelect_0')">
+                {{-- WRAPPER METHOD 1 --}}
+                <div id="wrapper_method_1">
+                    <div class="section-label"><i class="ri-user-received-line"></i> Satker Penerima</div>
+                    <div class="form-group">
+                        <div class="ss-wrap" id="satkerSelect_m1">
+                            <div class="ss-trigger" onclick="ssToggle('satkerSelect_m1')">
+                                <span class="ss-text ss-placeholder" id="satker_text_m1">-- Pilih Satker --</span>
+                                <i class="ri-arrow-down-s-line ss-arrow"></i>
+                            </div>
+                            <div class="ss-dropdown" id="satkerSelect_m1_dd">
+                                <div class="ss-search">
+                                    <input type="text" placeholder="Cari satker..." oninput="ssFilter(this, 'satkerSelect_m1')">
+                                </div>
+                                <div class="ss-list">
+                                    @foreach($satkers as $satker)
+                                        <div class="ss-opt" data-val="{{ $satker->id }}" data-label="{{ $satker->name }}" onclick="ssSelect('satkerSelect_m1', '{{ $satker->id }}', '{{ $satker->name }}')">
+                                            {{ $satker->name }}
                                         </div>
-                                        <div class="ss-list">
-                                            @foreach($items as $item)
-                                                <div class="ss-opt" data-val="{{ $item->id }}" data-label="{{ $item->name }}" onclick="ssSelect('itemSelect_0', '{{ $item->id }}', '{{ $item->name }}', 0)">
-                                                    {{ $item->name }}
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    <input type="hidden" class="item-val" id="itemSelect_0_val" required>
+                                    @endforeach
                                 </div>
                             </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label>Ukuran <span class="req">*</span></label>
-                                <div class="ss-wrap disabled" id="sizeSelect_0">
-                                    <div class="ss-trigger" onclick="ssToggle('sizeSelect_0')">
-                                        <span class="ss-text ss-placeholder" id="size_text_0">-- Pilih Barang Dulu --</span>
-                                        <i class="ri-arrow-down-s-line ss-arrow"></i>
-                                    </div>
-                                    <div class="ss-dropdown" id="sizeSelect_0_dd">
-                                        <div class="ss-search">
-                                            <input type="text" placeholder="Cari ukuran..." oninput="ssFilter(this, 'sizeSelect_0')">
-                                        </div>
-                                        <div class="ss-list">
-                                            {{-- Populated via JS --}}
-                                        </div>
-                                    </div>
-                                    <input type="hidden" name="items[0][warehouse_item_size_id]" class="size-val" id="sizeSelect_0_val" required>
-                                </div>
-                                <div class="stock-badge" id="stockBadge_0" style="display:none;">
-                                    <i class="ri-information-line"></i> Stok: <span id="stockVal_0">0</span>
-                                </div>
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label>Jumlah <span class="req">*</span></label>
-                                <input type="number" name="items[0][quantity]" class="f-input qty-input" placeholder="0" min="1" required oninput="checkStock(0)" data-index="0">
-                                <p class="stock-warning" id="stockWarn_0"><i class="ri-error-warning-line"></i> Melebihi stok!</p>
-                            </div>
+                            <input type="hidden" name="satker_id" id="satkerSelect_m1_val">
                         </div>
                     </div>
+                    
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label>Nama Penerima Pihak Satker <span class="req">*</span></label>
+                        <input type="text" name="recipient_name" id="m1_recipient_name" class="f-input" placeholder="Nama penerima barang" value="{{ old('recipient_name') }}">
+                    </div>
+
+                    <div class="section-label"><i class="ri-archive-line"></i> Daftar Barang</div>
+                    <div class="item-rows" id="itemRowsContainer_m1"></div>
+                    <button type="button" class="btn-add-item" onclick="addItemRowM1()" style="margin-top: 16px;">
+                        <i class="ri-add-circle-line"></i> Tambah Barang Lain
+                    </button>
+                    <p class="stock-warning" id="globalStockWarn_m1" style="margin-top:20px; text-align:center;"><i class="ri-error-warning-line"></i> Ada barang yang melebihi stok!</p>
                 </div>
 
-                <button type="button" class="btn-add-item" onclick="addItemRow()" style="margin-top: 16px;">
-                    <i class="ri-add-circle-line"></i> Tambah Barang Lain
-                </button>
+                {{-- WRAPPER METHOD 2 --}}
+                <div id="wrapper_method_2" style="display: none;">
+                    
+                    <div class="section-label"><i class="ri-archive-line"></i> Daftar Barang</div>
+                    <div class="m2-checkbox-list-wrapper">
+                        <input type="text" class="m2-search-input" placeholder="Cari nama barang..." oninput="filterM2List(this, 'm2_item_list')">
+                        <div class="m2-list-container" id="m2_item_list">
+                            {{-- Dynamic contents --}}
+                        </div>
+                    </div>
+                    
+                    <hr class="section-divider" style="margin-top:30px;">
+                    
+                    <div class="section-label"><i class="ri-community-line"></i> Daftar Satker Penerima</div>
+                    <div class="m2-checkbox-list-wrapper">
+                        <div class="m2-action-btns">
+                            <button type="button" class="btn-m2-small" onclick="toggleAllM2Checkboxes('m2_satker_list', true)">Pilih Semua</button>
+                            <button type="button" class="btn-m2-small" onclick="toggleAllM2Checkboxes('m2_satker_list', false)">Hapus Semua</button>
+                        </div>
+                        <input type="text" class="m2-search-input" placeholder="Cari satuan kerja..." oninput="filterM2List(this, 'm2_satker_list')">
+                        <div class="m2-list-container" id="m2_satker_list">
+                            {{-- Dynamic contents --}}
+                        </div>
+                    </div>
+
+                    <hr class="section-divider" style="margin-top:30px;">
+                    
+                    <div class="section-label"><i class="ri-equalizer-line"></i> Jumlah Per Barang (Otomatis)</div>
+                    <p style="font-size: 13px; color: #6B7280; margin-bottom: 12px; margin-top:-10px;">
+                        Isi angka 0 jika satker tersebut tidak menerima barang yang bersangkutan.
+                    </p>
+                    <div class="qty-grid-wrapper" id="m2_grid_wrapper">
+                        <table class="qty-grid-table" id="m2_table">
+                            <thead>
+                                <tr id="m2_table_head">
+                                    <th>Satker Penerima</th>
+                                    <th>Pilih barang & satker di atas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="m2_table_body">
+                                <tr>
+                                    <td colspan="2" style="text-align:center; color:#9CA3AF; padding:20px;">Belum ada data barang dan satker yang dipilih lengkap.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="stock-warning" id="globalStockWarn_m2" style="margin-top:12px; text-align:center;"><i class="ri-error-warning-line"></i> Total kebutuhan dari semua satker melebihi stok gudang!</p>
+                </div>
+
             </div>
 
             <div class="submit-section">
@@ -316,21 +378,136 @@
 </div>
 
 <script>
-    // Items data for dynamic use
+    // Data setup
     const itemsData = @json(collect($items)->map(fn($i) => ['id' => $i->id, 'name' => $i->name, 'stock' => $i->sizes_sum_stock ?? 0]));
-    let rowCount = 1;
-    let stockLimits = {};
+    const satkersData = @json(collect($satkers)->map(fn($s) => ['id' => $s->id, 'name' => $s->name]));
+    
+    // Core Methods Tracking
+    let currentMethod = 'method_1';
+    let rowCountM1 = 0;
+    
+    let rowCountM2Item = 0;
+    let rowCountM2Satker = 0;
 
-    // ── Searchable Select ──
+    let stockLimitsM1 = {};
+    let stockLimitsM2 = {}; // stores maximum stock per size ID
+
+    document.addEventListener('DOMContentLoaded', () => {
+        addItemRowM1(); // Init 1 row for M1
+        
+        // Init M2 Lists
+        initM2Checkboxes();
+    });
+
+    function initM2Checkboxes() {
+        // Items
+        const itemContainer = document.getElementById('m2_item_list');
+        itemsData.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'm2-checkbox-item';
+            div.innerHTML = `
+                <input type="checkbox" name="selected_items[]" value="${item.id}" class="m2-item-check" data-name="${item.name}" onchange="handleM2CheckboxChange(this)">
+                <span class="m2-checkbox-label">${item.name}</span>
+                <span class="m2-checkbox-stock">Stok: ${item.stock}</span>
+            `;
+            div.onclick = function(e) {
+                if (e.target.tagName !== 'INPUT') {
+                    const cb = this.querySelector('input');
+                    cb.checked = !cb.checked;
+                    handleM2CheckboxChange(cb);
+                }
+            };
+            itemContainer.appendChild(div);
+        });
+
+        // Satkers
+        const satkerContainer = document.getElementById('m2_satker_list');
+        satkersData.forEach(sat => {
+            const div = document.createElement('div');
+            div.className = 'm2-checkbox-item';
+            div.innerHTML = `
+                <input type="checkbox" name="selected_satkers[]" value="${sat.id}" class="m2-satker-check" data-name="${sat.name}" onchange="handleM2CheckboxChange(this)">
+                <span class="m2-checkbox-label">${sat.name}</span>
+            `;
+            div.onclick = function(e) {
+                if (e.target.tagName !== 'INPUT') {
+                    const cb = this.querySelector('input');
+                    cb.checked = !cb.checked;
+                    handleM2CheckboxChange(cb);
+                }
+            };
+            satkerContainer.appendChild(div);
+        });
+    }
+
+    function filterM2List(input, containerId) {
+        const val = input.value.toLowerCase();
+        const items = document.getElementById(containerId).querySelectorAll('.m2-checkbox-item');
+        items.forEach(item => {
+            const text = item.querySelector('.m2-checkbox-label').textContent.toLowerCase();
+            item.style.display = text.includes(val) ? 'flex' : 'none';
+        });
+    }
+
+    function handleM2CheckboxChange(cb) {
+        cb.closest('.m2-checkbox-item').classList.toggle('checked', cb.checked);
+        
+        // Update stock limit map for regenerateGrid
+        if (cb.classList.contains('m2-item-check')) {
+            const itemObj = itemsData.find(i => i.id == cb.value);
+            stockLimitsM2[cb.value] = itemObj ? parseInt(itemObj.stock) : 0;
+        }
+
+        regenerateGridM2();
+    }
+
+    function toggleAllM2Checkboxes(containerId, state) {
+        const container = document.getElementById(containerId);
+        container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            // Only toggle visible ones
+            if (cb.closest('.m2-checkbox-item').style.display !== 'none') {
+                cb.checked = state;
+                cb.closest('.m2-checkbox-item').classList.toggle('checked', state);
+            }
+        });
+        regenerateGridM2();
+    }
+
+    function switchMethod(method) {
+        currentMethod = method;
+        document.getElementById('dispense_method').value = method;
+        
+        document.getElementById('tab_method_1').classList.remove('active');
+        document.getElementById('tab_method_2').classList.remove('active');
+        document.getElementById('tab_' + method).classList.add('active');
+        
+        document.getElementById('wrapper_method_1').style.display = 'none';
+        document.getElementById('wrapper_method_2').style.display = 'none';
+        
+        document.getElementById('wrapper_' + method).style.display = 'block';
+
+        if (method === 'method_1') {
+            document.getElementById('satkerSelect_m1_val').required = true;
+            document.getElementById('m1_recipient_name').required = true;
+        } else {
+            document.getElementById('satkerSelect_m1_val').required = false;
+            document.getElementById('m1_recipient_name').required = false;
+        }
+    }
+
+    // ── Searchable Select Core ──
     function ssToggle(id) {
         const wrap = document.getElementById(id);
-        if (wrap.classList.contains('disabled')) return;
+        if (!wrap || wrap.classList.contains('disabled')) return;
 
         const dd = document.getElementById(id + '_dd');
         const trigger = wrap.querySelector('.ss-trigger');
         const isOpen = dd.classList.contains('open');
-        // Close all others
-        document.querySelectorAll('.ss-dropdown.open').forEach(d => { d.classList.remove('open'); d.closest('.ss-wrap').querySelector('.ss-trigger').classList.remove('open'); });
+        // Close all
+        document.querySelectorAll('.ss-dropdown.open').forEach(d => { 
+            d.classList.remove('open'); 
+            d.closest('.ss-wrap').querySelector('.ss-trigger').classList.remove('open'); 
+        });
         if (!isOpen) {
             dd.classList.add('open');
             trigger.classList.add('open');
@@ -343,11 +520,14 @@
         const opts = document.getElementById(id + '_dd').querySelectorAll('.ss-opt');
         opts.forEach(o => { o.style.display = (o.dataset.label || o.textContent).toLowerCase().includes(val) ? '' : 'none'; });
     }
-    function ssSelect(id, value, label, idx) {
-        document.getElementById(id + '_val').value = value;
+    function ssSelect(id, value, label, metaData = null) {
+        const valInput = document.getElementById(id + '_val');
+        if (valInput) valInput.value = value;
         const textEl = document.getElementById(id.replace('Select', '_text'));
-        textEl.textContent = label;
-        textEl.classList.remove('ss-placeholder');
+        if (textEl) {
+            textEl.textContent = label;
+            textEl.classList.remove('ss-placeholder');
+        }
 
         // Mark selected
         document.getElementById(id + '_dd').querySelectorAll('.ss-opt').forEach(o => o.classList.toggle('selected', o.dataset.val === value));
@@ -355,43 +535,114 @@
         document.getElementById(id + '_dd').classList.remove('open');
         document.getElementById(id).querySelector('.ss-trigger').classList.remove('open');
 
-        // SPECIAL: If Item selected, load sizes
-        if (id.startsWith('itemSelect')) {
-            loadSizes(value, idx);
-        }
-        // SPECIAL: If Size selected, update stock badge
-        if (id.startsWith('sizeSelect')) {
+        // Logic based on ID patterns
+        if (id.startsWith('itemSelect_m1_')) {
+            loadSizesM1(value, id.split('_').pop());
+        } 
+        else if (id.startsWith('sizeSelect_m1_')) {
+            const idx = id.split('_').pop();
             const opt = document.querySelector(`#${id}_dd .ss-opt[data-val="${value}"]`);
             const stock = parseInt(opt.dataset.stock || 0);
-            stockLimits[idx] = stock;
-            document.getElementById('stockVal_' + idx).textContent = stock;
-            document.getElementById('stockBadge_' + idx).style.display = stock > 0 ? 'inline-flex' : 'none';
-            checkStock(idx);
+            stockLimitsM1[idx] = stock;
+            document.getElementById('stockVal_m1_' + idx).textContent = stock;
+            document.getElementById('stockBadge_m1_' + idx).style.display = stock > 0 ? 'inline-flex' : 'none';
+            checkStockM1(idx);
         }
     }
+    
     document.addEventListener('click', e => {
         if (!e.target.closest('.ss-wrap')) {
-            document.querySelectorAll('.ss-dropdown.open').forEach(d => { d.classList.remove('open'); d.closest('.ss-wrap').querySelector('.ss-trigger').classList.remove('open'); });
+            document.querySelectorAll('.ss-dropdown.open').forEach(d => { 
+                d.classList.remove('open'); 
+                d.closest('.ss-wrap').querySelector('.ss-trigger').classList.remove('open'); 
+            });
         }
     });
 
-    // ── Load sizes via AJAX ──
-    function loadSizes(itemId, index) {
-        const sizeWrap = document.getElementById('sizeSelect_' + index);
+    // ── METHOD 1: PER SATKER ──
+    function addItemRowM1() {
+        const idx = rowCountM1++;
+        const container = document.getElementById('itemRowsContainer_m1');
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.dataset.index = idx;
+
+        let itemOptsHTML = '';
+        itemsData.forEach(i => {
+            itemOptsHTML += `<div class="ss-opt" data-val="${i.id}" data-label="${i.name}" onclick="ssSelect('itemSelect_m1_${idx}', '${i.id}', '${i.name}')">${i.name}</div>`;
+        });
+
+        div.innerHTML = `
+            <div class="item-row-header">
+                <div class="item-row-number">${idx + 1}</div>
+                <button type="button" class="btn-remove-item" onclick="removeItemRowM1(this)" title="Hapus baris">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="item-row-fields">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>Nama Barang <span class="req">*</span></label>
+                    <div class="ss-wrap" id="itemSelect_m1_${idx}">
+                        <div class="ss-trigger" onclick="ssToggle('itemSelect_m1_${idx}')">
+                            <span class="ss-text ss-placeholder" id="item_text_m1_${idx}">-- Pilih Barang --</span>
+                            <i class="ri-arrow-down-s-line ss-arrow"></i>
+                        </div>
+                        <div class="ss-dropdown" id="itemSelect_m1_${idx}_dd" style="z-index:900;">
+                            <div class="ss-search"><input type="text" placeholder="Cari barang..." oninput="ssFilter(this, 'itemSelect_m1_${idx}')"></div>
+                            <div class="ss-list">${itemOptsHTML}</div>
+                        </div>
+                        <input type="hidden" class="item-val-m1" id="itemSelect_m1_${idx}_val">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>Ukuran <span class="req">*</span></label>
+                    <div class="ss-wrap disabled" id="sizeSelect_m1_${idx}">
+                        <div class="ss-trigger" onclick="ssToggle('sizeSelect_m1_${idx}')">
+                            <span class="ss-text ss-placeholder" id="size_text_m1_${idx}">-- Pilih Barang Dulu --</span>
+                            <i class="ri-arrow-down-s-line ss-arrow"></i>
+                        </div>
+                        <div class="ss-dropdown" id="sizeSelect_m1_${idx}_dd" style="z-index:900;">
+                            <div class="ss-search"><input type="text" placeholder="Cari ukuran..." oninput="ssFilter(this, 'sizeSelect_m1_${idx}')"></div>
+                            <div class="ss-list"><!-- dynamic --></div>
+                        </div>
+                        <input type="hidden" name="items[${idx}][warehouse_item_size_id]" class="size-val-m1" id="sizeSelect_m1_${idx}_val">
+                    </div>
+                    <div class="stock-badge" id="stockBadge_m1_${idx}" style="display:none;">
+                        <i class="ri-information-line"></i> Stok: <span id="stockVal_m1_${idx}">0</span>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>Jumlah <span class="req">*</span></label>
+                    <input type="number" name="items[${idx}][quantity]" class="f-input qty-input-m1" placeholder="0" min="1" oninput="checkStockM1(${idx})" data-index="${idx}">
+                    <p class="stock-warning" id="stockWarn_m1_${idx}"><i class="ri-error-warning-line"></i> Melebihi stok!</p>
+                </div>
+            </div>`;
+        container.appendChild(div);
+        renumberRows('itemRowsContainer_m1');
+    }
+
+    function removeItemRowM1(btn) {
+        btn.closest('.item-row').remove();
+        delete stockLimitsM1[btn.closest('.item-row').dataset.index];
+        renumberRows('itemRowsContainer_m1');
+        evaluateGlobalStockM1();
+    }
+
+    function loadSizesM1(itemId, index) {
+        const sizeWrap = document.getElementById('sizeSelect_m1_' + index);
         const sizeList = sizeWrap.querySelector('.ss-list');
-        const sizeText = document.getElementById('size_text_' + index);
-        const sizeVal = document.getElementById('sizeSelect_' + index + '_val');
-        const stockBadge = document.getElementById('stockBadge_' + index);
-        const stockWarn = document.getElementById('stockWarn_' + index);
+        const sizeText = document.getElementById('size_text_m1_' + index);
+        const sizeVal = document.getElementById('sizeSelect_m1_' + index + '_val');
+        const stockBadge = document.getElementById('stockBadge_m1_' + index);
 
         sizeList.innerHTML = '<div style="padding:10px; font-size:12px; color:#9CA3AF;">Memuat...</div>';
         sizeWrap.classList.add('disabled');
-        sizeText.textContent = '-- Pilih Barang Dulu --';
+        sizeText.textContent = '-- Pilih --';
         sizeText.classList.add('ss-placeholder');
         sizeVal.value = '';
         if (stockBadge) stockBadge.style.display = 'none';
-        if (stockWarn) stockWarn.style.display = 'none';
-        stockLimits[index] = 0;
+        stockLimitsM1[index] = 0;
+        checkStockM1(index);
 
         if (!itemId) return;
 
@@ -400,128 +651,141 @@
         .then(sizes => {
             if (!sizes.length) {
                 sizeList.innerHTML = '<div style="padding:10px; font-size:12px; color:#9CA3AF;">Tidak ada stok / ukuran</div>';
-                sizeText.textContent = 'Tidak ada stok';
                 return;
             }
             let html = '';
             sizes.forEach(s => {
-                html += `<div class="ss-opt" data-val="${s.id}" data-label="${s.size_label}" data-stock="${s.stock}" onclick="ssSelect('sizeSelect_${index}', '${s.id}', '${s.size_label} (stok: ${s.stock})', ${index})">
+                html += `<div class="ss-opt" data-val="${s.id}" data-label="${s.size_label}" data-stock="${s.stock}" onclick="ssSelect('sizeSelect_m1_${index}', '${s.id}', '${s.size_label} (stok: ${s.stock})')">
                             ${s.size_label} <span class="ss-badge">Stok: ${s.stock}</span>
                          </div>`;
             });
             sizeList.innerHTML = html;
             sizeWrap.classList.remove('disabled');
             sizeText.textContent = '-- Pilih Ukuran --';
-        })
-        .catch(() => { sizeList.innerHTML = '<div style="padding:10px; font-size:12px; color:#EF4444;">Gagal memuat</div>'; });
+        });
     }
 
-    function checkStock(index) {
-        const qtyInput = document.querySelector(`.qty-input[data-index="${index}"]`);
+    function checkStockM1(index) {
+        const qtyInput = document.querySelector(`.qty-input-m1[data-index="${index}"]`);
+        if (!qtyInput) return;
         const qty = parseInt(qtyInput.value) || 0;
-        const max = stockLimits[index] || 0;
-        const warn = document.getElementById('stockWarn_' + index);
+        const max = stockLimitsM1[index] || 0;
+        const warn = document.getElementById('stockWarn_m1_' + index);
         if (max > 0 && qty > max) { warn.style.display = 'block'; } else { warn.style.display = 'none'; }
+        evaluateGlobalStockM1();
+    }
+    
+    function evaluateGlobalStockM1() {
+        const warnings = document.querySelectorAll('#wrapper_method_1 .stock-warning[id^="stockWarn_m1_"]');
+        let any = false;
+        warnings.forEach(w => { if(w.style.display === 'block') any = true; });
+        document.getElementById('globalStockWarn_m1').style.display = any ? 'block' : 'none';
     }
 
-    // ── Add/Remove item rows ──
-    function addItemRow() {
-        const idx = rowCount;
-        rowCount++;
-        const container = document.getElementById('itemRowsContainer');
-        const div = document.createElement('div');
-        div.className = 'item-row';
-        div.dataset.index = idx;
-
-        let itemOptsHTML = '';
-        itemsData.forEach(i => {
-            itemOptsHTML += `<div class="ss-opt" data-val="${i.id}" data-label="${i.name}" onclick="ssSelect('itemSelect_${idx}', '${i.id}', '${i.name}', ${idx})">${i.name}</div>`;
+    function regenerateGridM2() {
+        // Collect checked items
+        const selectedItems = [];
+        document.querySelectorAll('.m2-item-check:checked').forEach(cb => {
+            selectedItems.push({ id: cb.value, label: cb.dataset.name });
         });
 
-        div.innerHTML = `
-            <div class="item-row-header">
-                <div class="item-row-number">${idx + 1}</div>
-                <button type="button" class="btn-remove-item" onclick="removeItemRow(this)" title="Hapus baris">
-                    <i class="ri-close-line"></i>
-                </button>
-            </div>
-            <div class="item-row-fields">
-                <div class="form-group" style="margin-bottom:0;">
-                    <label>Nama Barang <span class="req">*</span></label>
-                    <div class="ss-wrap" id="itemSelect_${idx}">
-                        <div class="ss-trigger" onclick="ssToggle('itemSelect_${idx}')">
-                            <span class="ss-text ss-placeholder" id="item_text_${idx}">-- Pilih Barang --</span>
-                            <i class="ri-arrow-down-s-line ss-arrow"></i>
-                        </div>
-                        <div class="ss-dropdown" id="itemSelect_${idx}_dd">
-                            <div class="ss-search">
-                                <input type="text" placeholder="Cari barang..." oninput="ssFilter(this, 'itemSelect_${idx}')">
-                            </div>
-                            <div class="ss-list">
-                                ${itemOptsHTML}
-                            </div>
-                        </div>
-                        <input type="hidden" class="item-val" id="itemSelect_${idx}_val" required>
-                    </div>
-                </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label>Ukuran <span class="req">*</span></label>
-                    <div class="ss-wrap disabled" id="sizeSelect_${idx}">
-                        <div class="ss-trigger" onclick="ssToggle('sizeSelect_${idx}')">
-                            <span class="ss-text ss-placeholder" id="size_text_${idx}">-- Pilih Barang Dulu --</span>
-                            <i class="ri-arrow-down-s-line ss-arrow"></i>
-                        </div>
-                        <div class="ss-dropdown" id="sizeSelect_${idx}_dd">
-                            <div class="ss-search">
-                                <input type="text" placeholder="Cari ukuran..." oninput="ssFilter(this, 'sizeSelect_${idx}')">
-                            </div>
-                            <div class="ss-list">
-                                {{-- Populated via JS --}}
-                            </div>
-                        </div>
-                        <input type="hidden" name="items[${idx}][warehouse_item_size_id]" class="size-val" id="sizeSelect_${idx}_val" required>
-                    </div>
-                    <div class="stock-badge" id="stockBadge_${idx}" style="display:none;">
-                        <i class="ri-information-line"></i> Stok: <span id="stockVal_${idx}">0</span>
-                    </div>
-                </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label>Jumlah <span class="req">*</span></label>
-                    <input type="number" name="items[${idx}][quantity]" class="f-input qty-input" placeholder="0" min="1" required oninput="checkStock(${idx})" data-index="${idx}">
-                    <p class="stock-warning" id="stockWarn_${idx}"><i class="ri-error-warning-line"></i> Melebihi stok!</p>
-                </div>
-            </div>`;
-        container.appendChild(div);
-        renumberRows();
+        // Collect checked satkers
+        const selectedSatkers = [];
+        document.querySelectorAll('.m2-satker-check:checked').forEach(cb => {
+            selectedSatkers.push({ id: cb.value, label: cb.dataset.name });
+        });
+
+        const tbody = document.getElementById('m2_table_body');
+        const thead_tr = document.getElementById('m2_table_head');
+
+        // Store old values from inputs currently in DOM
+        const oldValues = {};
+        document.querySelectorAll('.m2-qty-grid-input').forEach(inp => {
+            oldValues[inp.name] = inp.value;
+        });
+
+        if (selectedItems.length === 0 || selectedSatkers.length === 0) {
+            thead_tr.innerHTML = `<th>Satker Penerima</th><th>Pilih minimal 1 barang & 1 satker</th>`;
+            tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#9CA3AF; padding:20px;">Belum ada data barang dan satker yang dipilih lengkap. Centang barang dan satker di atas.</td></tr>`;
+            evaluateGridStockM2();
+            return;
+        }
+
+        // Build header
+        let thHtml = '<th>Satker Penerima</th>';
+        selectedItems.forEach(item => {
+            const max = stockLimitsM2[item.id] || 0;
+            thHtml += `<th><span style="display:block; max-width:140px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${item.label}">${item.label}</span> <div style="font-size:10px; color:#D97706; margin-top:4px;">Stok Max: ${max}</div></th>`;
+        });
+        thead_tr.innerHTML = thHtml;
+
+        // Build body
+        let tbHtml = '';
+        selectedSatkers.forEach(sat => {
+            tbHtml += `<tr><td><strong>${sat.label}</strong></td>`;
+            selectedItems.forEach(item => {
+                const nameAttr = `quantities[${sat.id}][${item.id}]`;
+                const oldVal = oldValues[nameAttr] || '0';
+                tbHtml += `<td><input type="number" name="${nameAttr}" data-sizeid="${item.id}" class="f-input-small m2-qty-grid-input" value="${oldVal}" min="0" oninput="evaluateGridStockM2()"></td>`;
+            });
+            tbHtml += `</tr>`;
+        });
+        tbody.innerHTML = tbHtml;
+        evaluateGridStockM2();
     }
 
-    function removeItemRow(btn) {
-        const row = btn.closest('.item-row');
-        row.remove();
-        renumberRows();
+    function evaluateGridStockM2() {
+        const inputs = document.querySelectorAll('.m2-qty-grid-input');
+        const sums = {};
+        inputs.forEach(inp => {
+            const itemId = inp.dataset.sizeid; // wait, sizeid -> itemid
+            const val = parseInt(inp.value) || 0;
+            if (!sums[itemId]) sums[itemId] = 0;
+            sums[itemId] += val;
+        });
+
+        let anyExceed = false;
+        Object.keys(sums).forEach(itemId => {
+            const max = stockLimitsM2[itemId] || 0;
+            if (sums[itemId] > max) anyExceed = true;
+        });
+
+        document.getElementById('globalStockWarn_m2').style.display = anyExceed ? 'block' : 'none';
+        
+        // Highlight logic could be added to specific columns, but a global warning is enough for MVP
     }
 
-    function renumberRows() {
-        document.querySelectorAll('.item-row').forEach((row, i) => {
+    function renumberRows(containerId) {
+        document.querySelectorAll(`#${containerId} .item-row`).forEach((row, i) => {
             row.querySelector('.item-row-number').textContent = i + 1;
         });
     }
 
-    // ── Form submit validation ──
+    // ── SUPER SUBMIT VALIDATION ──
     document.getElementById('dispenseForm').addEventListener('submit', function(e) {
-        const satker = document.getElementById('satkerSelect_val').value;
-        if (!satker) { e.preventDefault(); Swal.fire({ icon: 'warning', title: 'Pilih Satker', text: 'Harap pilih satker penerima.' }); return; }
-
-        const sizeVals = document.querySelectorAll('.size-val');
-        for (const s of sizeVals) {
-            if (!s.value) { e.preventDefault(); Swal.fire({ icon: 'warning', title: 'Lengkapi Data', text: 'Harap pilih barang & ukuran untuk semua baris.' }); return; }
-        }
-
-        // Check stock warnings
-        const warnings = document.querySelectorAll('.stock-warning');
-        for (const w of warnings) {
-            if (w.style.display === 'block') { e.preventDefault(); Swal.fire({ icon: 'error', title: 'Stok Tidak Cukup', text: 'Ada barang yang jumlahnya melebihi stok.' }); return; }
+        if (currentMethod === 'method_1') {
+            const satker = document.getElementById('satkerSelect_m1_val').value;
+            if (!satker) { e.preventDefault(); Swal.fire({ icon: 'warning', title: 'Pilih Satker', text: 'Harap pilih satker penerima.' }); return; }
+            
+            const sizeVals = document.querySelectorAll('.size-val-m1');
+            if (sizeVals.length === 0) { e.preventDefault(); Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Harap pilih barang!' }); return; }
+            for (const s of sizeVals) {
+                if (!s.value) { e.preventDefault(); Swal.fire({ icon: 'warning', title: 'Lengkapi Data', text: 'Harap lengkapi barang & ukuran.' }); return; }
+            }
+            if (document.getElementById('globalStockWarn_m1').style.display === 'block') { e.preventDefault(); Swal.fire({ icon: 'error', title: 'Stok Kurang', text: 'Ada barang melebihi stok.' }); return; }
+        
+        } else {
+            const m2Items = document.querySelectorAll('.m2-item-check:checked');
+            const m2Satkers = document.querySelectorAll('.m2-satker-check:checked');
+            
+            if (m2Items.length === 0 || m2Satkers.length === 0) { 
+                e.preventDefault(); 
+                Swal.fire({ icon: 'warning', title: 'Lengkapi Data', text: 'Pilih minimal 1 barang & 1 satker pada metode ke 2.' }); 
+                return; 
+            }
+            if (document.getElementById('globalStockWarn_m2').style.display === 'block') { e.preventDefault(); Swal.fire({ icon: 'error', title: 'Stok Total Kurang', text: 'Total kebutuhan barang melebihi kuota stok keseluruhan (semua ukuran yang ada)!' }); return; }
         }
     });
+
 </script>
 @endsection

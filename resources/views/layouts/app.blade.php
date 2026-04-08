@@ -1798,10 +1798,7 @@
                             class="nav-link {{ request()->routeIs('admin-satker.kebutuhan.*') ? 'active' : '' }}">
                             Identifikasi Kebutuhan
                         </a>
-                        <a href="{{ route('admin-satker.monitor') }}"
-                            class="nav-link {{ request()->routeIs('admin-satker.monitor') ? 'active' : '' }}">
-                            Monitoring
-                        </a>
+
                         <a href="{{ route('admin-satker.reports') }}"
                             class="nav-link {{ request()->routeIs('admin-satker.reports') ? 'active' : '' }}">
                             Laporan
@@ -1815,7 +1812,7 @@
             @endif
 
             {{-- ══ Admin / Superadmin Roles ══ --}}
-            @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
+            @if(auth()->user()->hasRole('superadmin'))
                 <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') || request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-t-shirt-2-line group-icon"></i> Data Personel
@@ -1830,6 +1827,12 @@
                             class="nav-link {{ request()->routeIs('admin.kapor-items.*') ? 'active' : '' }}">
                             Item Kapor
                         </a>
+                        @if(auth()->user()->hasRole('superadmin'))
+                            <a href="{{ route('superadmin.identifikasi-items.index') }}"
+                                class="nav-link {{ request()->routeIs('superadmin.identifikasi-items.*') ? 'active' : '' }}">
+                                Item Identifikasi
+                            </a>
+                        @endif
                         <a href="{{ route('admin.identifikasi-kebutuhan.index') }}"
                             class="nav-link {{ request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'active' : '' }}">
                             Identifikasi Kebutuhan
@@ -1876,7 +1879,7 @@
                 </div>
             @endif
 
-            @if(auth()->user()->hasAnyRole(['admin', 'superadmin', 'admin_gudang']))
+            @if(auth()->user()->hasAnyRole(['superadmin', 'admin_gudang']))
                 <div class="nav-group {{ request()->routeIs('admin.warehouse-items.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-archive-line group-icon"></i> Data Gudang
@@ -1895,7 +1898,7 @@
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.reports') ? 'active' : '' }}">
                             Laporan Detail
                         </a>
-                        @if(auth()->user()->hasAnyRole(['admin', 'superadmin']))
+                        @if(auth()->user()->hasRole('superadmin'))
                             <a href="{{ route('admin.warehouse-items.sppm') }}"
                                 class="nav-link {{ request()->routeIs('admin.warehouse-items.sppm') ? 'active' : '' }}">
                                 SPPM

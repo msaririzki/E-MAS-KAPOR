@@ -5,18 +5,6 @@
 
 @section('content')
 <style>
-    /* ── Category Summary Cards ── */
-    .cat-card { padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); }
-    .cat-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .cat-card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-    .cat-card-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
-    .cat-card-subtitle { font-size: 11px; color: var(--text-muted); }
-    .cat-bar { height: 8px; background: var(--slate-100); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
-    .cat-bar-fill { height: 100%; border-radius: 99px; transition: width .8s ease; }
-    .cat-card-stats { display: flex; justify-content: space-between; font-size: 12px; }
-    .cat-card-stats .stat-num { font-weight: 700; color: var(--text-main); }
-    .cat-card-stats .stat-lbl { color: var(--text-muted); }
-
     /* ── Top Items List ── */
     .top-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
     .top-item:last-child { border-bottom: none; }
@@ -26,24 +14,87 @@
     .top-rank.bronze { background: #fed7aa; color: #9a3412; }
     .top-rank.normal { background: var(--slate-100); color: var(--text-muted); }
     .top-info { flex: 1; min-width: 0; }
-    .top-name { font-size: 13px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .top-cat { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; display: inline-block; margin-top: 2px; }
-    .top-cat-Tutup_Kepala { background: #dbeafe; color: #1d4ed8; }
-    .top-cat-Tutup_Badan { background: #fef3c7; color: #92400e; }
-    .top-cat-Tutup_Kaki { background: #d1fae5; color: #065f46; }
-    .top-pct { font-size: 14px; font-weight: 800; color: var(--brand); min-width: 50px; text-align: right; }
+    .top-name { font-size: 13px; font-weight: 600; color: var(--text-main); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── View More Link ── */
+    .view-more-link {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        padding: 10px 0 2px; margin-top: 4px; border-top: 1px dashed var(--border-color);
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        text-decoration: none; transition: all .2s;
+    }
+    .view-more-link:hover { opacity: .8; }
+    .view-more-link i { font-size: 14px; }
+
+    /* ── Detail Modal ── */
+    .detail-modal-overlay {
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
+        display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .detail-modal-overlay.active { display: flex; }
+    .detail-modal {
+        background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 560px;
+        max-height: 85vh; display: flex; flex-direction: column;
+        box-shadow: 0 25px 50px rgba(0,0,0,.2); overflow: hidden;
+    }
+    .detail-modal-header {
+        display: flex; align-items: center; gap: 12px; padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .detail-modal-header .modal-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .detail-modal-header .modal-title { font-size: 16px; font-weight: 700; color: var(--text-main); }
+    .detail-modal-header .modal-subtitle { font-size: 12px; color: var(--text-muted); }
+    .detail-modal-close {
+        margin-left: auto; width: 32px; height: 32px; border-radius: 8px;
+        border: 1px solid var(--border-color); background: transparent;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; font-size: 18px; color: var(--text-muted); transition: all .2s;
+    }
+    .detail-modal-close:hover { background: var(--slate-100); color: var(--text-main); }
+    .detail-modal-body { padding: 16px 24px; overflow-y: auto; flex: 1; }
+    .detail-modal-body .modal-item {
+        display: flex; align-items: center; gap: 12px; padding: 10px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .detail-modal-body .modal-item:last-child { border-bottom: none; }
+    .detail-modal-body .modal-item-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text-main); line-height: 1.4; }
+    .detail-modal-body .modal-item-pct { font-size: 14px; font-weight: 800; min-width: 55px; text-align: right; }
+    .top-pct { font-size: 14px; font-weight: 800; min-width: 50px; text-align: right; }
     .top-bar-mini { width: 80px; height: 6px; background: var(--slate-100); border-radius: 99px; overflow: hidden; }
-    .top-bar-mini-fill { height: 100%; background: var(--brand); border-radius: 99px; }
+    .top-bar-mini-fill { height: 100%; border-radius: 99px; }
+
+    /* ── Per-Category Cards Grid ── */
+    .category-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    .cat-top-card { border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); overflow: hidden; }
+    .cat-top-card-head {
+        display: flex; align-items: center; gap: 10px; padding: 14px 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .cat-top-card-head .cat-icon {
+        width: 36px; height: 36px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .cat-top-card-head .cat-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
+    .cat-top-card-head .cat-count { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-left: auto; }
+    .cat-top-card-body { padding: 8px 20px 16px; }
 
     @media (max-width: 768px) {
         .stats-row { grid-template-columns: 1fr !important; }
+        .category-cards-grid { grid-template-columns: 1fr !important; }
         .responsive-filter { flex-direction: column !important; align-items: stretch !important; }
         .responsive-filter > * { width: 100% !important; flex: none !important; margin-bottom: 8px; }
         .responsive-filter > .btn { justify-content: center; }
         .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
         .table-wrap table { min-width: 700px; }
-        
-        /* Fix Top 10 Item agar padat namun tetap membungkus */
         .top-item {
             display: grid !important;
             grid-template-columns: auto 1fr;
@@ -54,14 +105,14 @@
         .top-rank { grid-column: 1; grid-row: 1; align-self: flex-start; margin-top: 2px; }
         .top-info { grid-column: 2; grid-row: 1; min-width: 0; display: block; }
         .top-name { white-space: normal; line-height: 1.3; margin-bottom: 4px; display: block; overflow: visible; }
-        .top-percent-wrap { 
-            grid-column: 2; 
-            grid-row: 2; 
-            width: 100%; 
-            justify-content: space-between !important; 
-            margin-top: 4px; 
-            background: transparent; 
-            padding: 0; 
+        .top-percent-wrap {
+            grid-column: 2;
+            grid-row: 2;
+            width: 100%;
+            justify-content: space-between !important;
+            margin-top: 4px;
+            background: transparent;
+            padding: 0;
         }
         .top-bar-mini { flex: 1; margin-right: 12px; }
         .card { min-width: 0; }
@@ -83,21 +134,21 @@
             <span class="stat-label">Total Pengajuan</span>
             <div class="stat-icon-sm" style="background: var(--info-bg); color: var(--info);"><i class="ri-file-list-3-line"></i></div>
         </div>
-        <div class="stat-value">{{ $stats['total'] }}</div>
+        <div class="stat-value" title="Total seluruh dokumen pengajuan di sistem">{{ $stats['totalPengajuan'] }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-top">
-            <span class="stat-label">Satker Mengajukan</span>
+            <span class="stat-label">Total Satker Mengajukan</span>
             <div class="stat-icon-sm" style="background: var(--success-bg); color: var(--success);"><i class="ri-building-line"></i></div>
         </div>
-        <div class="stat-value">{{ $totalKebutuhans }}</div>
+        <div class="stat-value" title="Jumlah satker berbeda yang sudah mengajukan kebutuhan">{{ $stats['totalSatker'] }}</div>
     </div>
     <div class="stat-card">
         <div class="stat-top">
             <span class="stat-label">Total Item Diajukan</span>
             <div class="stat-icon-sm" style="background: var(--warning-bg); color: var(--warning);"><i class="ri-stack-line"></i></div>
         </div>
-        <div class="stat-value">{{ \App\Models\KebutuhanItem::whereHas('kebutuhan', fn($q) => $q->whereIn('status', ['diajukan','disetujui']))->count() }}</div>
+        <div class="stat-value" title="Total akumulasi item dari seluruh pengajuan">{{ $stats['totalItem'] }}</div>
     </div>
 </div>
 
@@ -108,62 +159,76 @@
     </div>
 @endif
 
-{{-- ═══ Compact Statistics Section ═══ --}}
-@if($totalKebutuhans > 0)
-<div class="grid-2" style="margin-bottom: 16px;">
-
-    {{-- Category Coverage Cards --}}
-    <div class="card">
-        <div class="card-head"><h3><i class="ri-pie-chart-line" style="margin-right: 6px; color: var(--brand);"></i> Cakupan per Kategori</h3></div>
-        <div class="card-body">
-            @php
-                $catColors = ['Tutup_Kepala' => '#3b82f6', 'Tutup_Badan' => '#f59e0b', 'Tutup_Kaki' => '#10b981'];
-                $catIcons = ['Tutup_Kepala' => 'ri-shirt-line', 'Tutup_Badan' => 'ri-t-shirt-line', 'Tutup_Kaki' => 'ri-footprint-line'];
-            @endphp
-            <div style="display: flex; flex-direction: column; gap: 16px;">
-                @foreach($categoryStats as $cat)
-                <div>
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <i class="{{ $catIcons[$cat['category']] ?? 'ri-box-3-line' }}" style="font-size: 16px; color: {{ $catColors[$cat['category']] ?? '#64748b' }};"></i>
-                            <span style="font-size: 13px; font-weight: 600;">{{ str_replace('_', ' ', $cat['category']) }}</span>
-                        </div>
-                        <span style="font-size: 13px; font-weight: 700; color: {{ $catColors[$cat['category']] ?? '#64748b' }};">
-                            {{ $cat['unique_items'] }}/{{ $cat['total_in_category'] }} item
-                        </span>
-                    </div>
-                    <div class="cat-bar">
-                        <div class="cat-bar-fill" style="width: {{ $cat['coverage'] }}%; background: {{ $catColors[$cat['category']] ?? '#64748b' }};"></div>
-                    </div>
-                    <div style="font-size: 11px; color: var(--text-muted);">
-                        {{ $cat['coverage'] }}% item dari kategori ini sudah diajukan · {{ $cat['total_requests'] }} total permintaan
-                    </div>
-                </div>
-                @endforeach
+{{-- ═══ Top 10 Per-Category Cards ═══ --}}
+@if($itemStatsByCategory->count() > 0)
+@php
+    $catStyles = [
+        'Tutup_Kepala' => ['icon' => 'ri-shirt-line', 'color' => '#3b82f6', 'bg' => '#dbeafe', 'barColor' => '#3b82f6'],
+        'Tutup_Badan'  => ['icon' => 'ri-t-shirt-line', 'color' => '#f59e0b', 'bg' => '#fef3c7', 'barColor' => '#f59e0b'],
+        'Tutup_Kaki'   => ['icon' => 'ri-footprint-line', 'color' => '#10b981', 'bg' => '#d1fae5', 'barColor' => '#10b981'],
+    ];
+    $defaultStyle = ['icon' => 'ri-box-3-line', 'color' => '#8b5cf6', 'bg' => '#ede9fe', 'barColor' => '#8b5cf6'];
+@endphp
+<div class="category-cards-grid">
+    @foreach($itemStatsByCategory as $category => $items)
+    @php $style = $catStyles[$category] ?? $defaultStyle; @endphp
+    <div class="cat-top-card">
+        <div class="cat-top-card-head">
+            <div class="cat-icon" style="background: {{ $style['bg'] }}; color: {{ $style['color'] }};">
+                <i class="{{ $style['icon'] }}"></i>
+            </div>
+            <div>
+                <div class="cat-title">{{ str_replace('_', ' ', $category) }}</div>
+            </div>
+            <div class="cat-count" style="background: {{ $style['bg'] }}; color: {{ $style['color'] }};">
+                Top {{ $items->count() }}
             </div>
         </div>
-    </div>
-
-    {{-- Top 10 Most Requested --}}
-    <div class="card">
-        <div class="card-head"><h3><i class="ri-trophy-line" style="margin-right: 6px; color: var(--brand);"></i> Top 10 Item Terpopuler</h3></div>
-        <div class="card-body" style="padding-top: 4px;">
-            @foreach($itemStats as $idx => $stat)
+        <div class="cat-top-card-body">
+            @foreach($items as $idx => $stat)
             <div class="top-item">
                 <div class="top-rank {{ $idx === 0 ? 'gold' : ($idx === 1 ? 'silver' : ($idx === 2 ? 'bronze' : 'normal')) }}">
                     {{ $idx + 1 }}
                 </div>
                 <div class="top-info">
                     <div class="top-name" title="{{ $stat['item_name'] }}">{{ $stat['item_name'] }}</div>
-                    <span class="top-cat top-cat-{{ $stat['category'] }}" style="margin-top: 4px;">{{ str_replace('_', ' ', $stat['category']) }}</span>
                 </div>
                 <div class="top-percent-wrap" style="display: flex; align-items: center; gap: 8px;">
-                    <div class="top-bar-mini"><div class="top-bar-mini-fill" style="width: {{ $stat['percentage'] }}%;"></div></div>
-                    <div class="top-pct">{{ $stat['percentage'] }}%</div>
+                    <div class="top-bar-mini"><div class="top-bar-mini-fill" style="width: {{ $stat['percentage'] }}%; background: {{ $style['barColor'] }};"></div></div>
+                    <div class="top-pct" style="color: {{ $style['color'] }};">{{ $stat['percentage'] }}%</div>
                 </div>
             </div>
             @endforeach
+
+            @if($items->isEmpty())
+            <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px;">
+                <i class="ri-inbox-line" style="font-size: 24px; display: block; margin-bottom: 6px; opacity: 0.4;"></i>
+                Belum ada data
+            </div>
+            @endif
+
+            @if($items->count() > 0)
+            <a href="javascript:void(0)" class="view-more-link" style="color: {{ $style['color'] }};" onclick="openDetailModal('{{ $category }}')">
+                <i class="ri-eye-line"></i> Lihat Selengkapnya
+            </a>
+            @endif
         </div>
+    </div>
+    @endforeach
+</div>
+
+{{-- Detail Modal --}}
+<div class="detail-modal-overlay" id="detailModalOverlay" onclick="if(event.target===this) closeDetailModal()">
+    <div class="detail-modal">
+        <div class="detail-modal-header">
+            <div class="modal-icon" id="modalIcon"></div>
+            <div>
+                <div class="modal-title" id="modalTitle"></div>
+                <div class="modal-subtitle" id="modalSubtitle"></div>
+            </div>
+            <button class="detail-modal-close" onclick="closeDetailModal()"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="detail-modal-body" id="modalBody"></div>
     </div>
 </div>
 @endif
@@ -262,6 +327,64 @@
 <!-- SweetAlert2 Plugin -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    // ── Category detail data (from server) ──
+    @php
+        $modalData = [];
+        foreach ($itemStatsByCategory as $cat => $catItems) {
+            $modalData[$cat] = $catItems->map(function($stat, $idx) {
+                return [
+                    'rank' => $idx + 1,
+                    'name' => $stat['item_name'],
+                    'percentage' => $stat['percentage'],
+                    'count' => $stat['submission_count'],
+                ];
+            })->values()->toArray();
+        }
+    @endphp
+    const categoryData = @json($modalData);
+
+    const catStyles = {
+        'Tutup_Kepala': { icon: 'ri-shirt-line', color: '#3b82f6', bg: '#dbeafe' },
+        'Tutup_Badan':  { icon: 'ri-t-shirt-line', color: '#f59e0b', bg: '#fef3c7' },
+        'Tutup_Kaki':   { icon: 'ri-footprint-line', color: '#10b981', bg: '#d1fae5' },
+    };
+    const defaultCatStyle = { icon: 'ri-box-3-line', color: '#8b5cf6', bg: '#ede9fe' };
+
+    function openDetailModal(category) {
+        const items = categoryData[category] || [];
+        const style = catStyles[category] || defaultCatStyle;
+        const displayName = category.replace(/_/g, ' ');
+
+        document.getElementById('modalIcon').innerHTML = `<i class="${style.icon}"></i>`;
+        document.getElementById('modalIcon').style.background = style.bg;
+        document.getElementById('modalIcon').style.color = style.color;
+        document.getElementById('modalTitle').textContent = `Top ${items.length} — ${displayName}`;
+        document.getElementById('modalSubtitle').textContent = `Item terpopuler di kategori ${displayName}`;
+
+        let html = '';
+        items.forEach(item => {
+            const rankClass = item.rank === 1 ? 'gold' : (item.rank === 2 ? 'silver' : (item.rank === 3 ? 'bronze' : 'normal'));
+            html += `
+            <div class="modal-item">
+                <div class="top-rank ${rankClass}">${item.rank}</div>
+                <div class="modal-item-name">${item.name}</div>
+                <div class="modal-item-pct" style="color: ${style.color};">${item.percentage}%</div>
+            </div>`;
+        });
+        document.getElementById('modalBody').innerHTML = html;
+        document.getElementById('detailModalOverlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detailModalOverlay').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetailModal(); });
+
+    // ── Delete confirmation ──
     document.addEventListener('DOMContentLoaded', function () {
         const deleteButtons = document.querySelectorAll('.btn-delete-kebutuhan');
         deleteButtons.forEach(button => {

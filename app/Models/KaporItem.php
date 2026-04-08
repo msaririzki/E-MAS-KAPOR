@@ -23,6 +23,7 @@ class KaporItem extends Model
         'unit_keywords',
         'default_recipients',
         'is_active',
+        'for_identifikasi',
     ];
 
     protected function casts(): array
@@ -33,6 +34,7 @@ class KaporItem extends Model
             'unit_keywords' => 'array',
             'default_recipients' => 'array',
             'is_active' => 'boolean',
+            'for_identifikasi' => 'boolean',
         ];
     }
 
@@ -62,11 +64,24 @@ class KaporItem extends Model
         return $this->hasMany(KaporSubmission::class);
     }
 
+    public function kebutuhanItems(): HasMany
+    {
+        return $this->hasMany(KebutuhanItem::class);
+    }
+
     // ── Scopes ────────────────────────────────────────────────
 
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Filter hanya item yang tersedia untuk Identifikasi Kebutuhan.
+     */
+    public function scopeForIdentifikasi($query)
+    {
+        return $query->where('for_identifikasi', true)->where('is_active', true);
     }
 
     /**

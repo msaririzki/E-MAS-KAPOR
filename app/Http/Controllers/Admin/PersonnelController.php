@@ -20,13 +20,13 @@ use App\Models\SdmImportRun;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
 use App\Services\SdmImportRunService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
@@ -202,9 +202,10 @@ class PersonnelController extends Controller
             ->orderBy('sort_order')
             ->orderBy('name')
             ->pluck('name');
+        $printSignatoryDefaults = app(ExportSignatorySettingService::class)->resolveForUser($request->user());
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
 
-        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId'));
+        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId', 'printSignatoryDefaults'));
 
     }
 
@@ -317,14 +318,13 @@ class PersonnelController extends Controller
             }
 
             // 1. Create User Account
-            $user = User::create([
-                'name' => $validated['full_name'],
-                'nrp_nip' => $validated['nrp'],
-                'password' => Hash::make($validated['nrp']), // NRP as default password
-                'satker_id' => $validated['satker_id'],
-                'is_active' => ! $requiresVerification,
-            ]);
-            $user->assignRole('personil');
+            $user = User::createOrUpdatePersonnelAccount(
+                null,
+                $validated['nrp'],
+                $validated['full_name'],
+                $validated['satker_id'],
+                ! $requiresVerification,
+            );
 
             // 2. Create Personnel Record
             $personnelData = $validated;
@@ -463,32 +463,38 @@ class PersonnelController extends Controller
 
             $personnel->fill($validated);
 
-            $userDirty = false;
+            $user = $personnel->user;
+            $targetUserState = [
+                'nrp_nip' => $validated['nrp'],
+                'name' => $validated['full_name'],
+                'satker_id' => $validated['satker_id'],
+                'is_active' => (bool) ($validated['is_active'] ?? $personnel->is_active),
+            ];
 
-            // Sync User Account if exists
-            if ($personnel->user) {
-                $personnel->user->fill([
-                    'name' => $validated['full_name'],
-                    'nrp_nip' => $validated['nrp'],
-                    'satker_id' => $validated['satker_id'],
-                    'is_active' => $request->has('is_active') ? $request->is_active : $personnel->is_active,
-                ]);
+            $userNeedsSync = ! $user
+                || $user->nrp_nip !== $targetUserState['nrp_nip']
+                || $user->name !== $targetUserState['name']
+                || (int) $user->satker_id !== (int) $targetUserState['satker_id']
+                || (bool) $user->is_active !== $targetUserState['is_active'];
 
-                $userDirty = $personnel->user->isDirty();
-            }
-
-            if (! $personnel->isDirty() && ! $userDirty) {
+            if (! $personnel->isDirty() && ! $userNeedsSync) {
                 DB::rollBack();
 
                 return redirect()->back()->with('info', 'Tidak ada perubahan pada data personel.');
             }
 
-            // Update Personnel
-            $personnel->save();
+            $user = User::createOrUpdatePersonnelAccount(
+                $user,
+                $validated['nrp'],
+                $validated['full_name'],
+                $validated['satker_id'],
+                $targetUserState['is_active'],
+            );
 
-            if ($personnel->user && $userDirty) {
-                $personnel->user->save();
-            }
+            // Update Personnel
+            $personnel->forceFill([
+                'user_id' => $user->id,
+            ])->save();
 
             DB::commit();
 

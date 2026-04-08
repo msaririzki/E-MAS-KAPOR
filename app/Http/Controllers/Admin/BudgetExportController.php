@@ -7,6 +7,7 @@ use App\Models\BudgetPackage;
 use App\Models\InvoiceSetting;
 use App\Models\Personnel;
 use App\Services\BudgetCalculationService;
+use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
 use App\Services\SppmWordExportService;
 use Illuminate\Http\Request;
@@ -19,11 +20,18 @@ class BudgetExportController extends Controller
 
     protected SppmWordExportService $sppmExportService;
 
-    public function __construct(BudgetCalculationService $calcService, KaporRequirementService $kaporRequirementService, SppmWordExportService $sppmExportService)
-    {
+    protected ExportSignatorySettingService $exportSignatorySettingService;
+
+    public function __construct(
+        BudgetCalculationService $calcService,
+        KaporRequirementService $kaporRequirementService,
+        SppmWordExportService $sppmExportService,
+        ExportSignatorySettingService $exportSignatorySettingService
+    ) {
         $this->calcService = $calcService;
         $this->kaporRequirementService = $kaporRequirementService;
         $this->sppmExportService = $sppmExportService;
+        $this->exportSignatorySettingService = $exportSignatorySettingService;
     }
 
     /**
@@ -145,7 +153,10 @@ class BudgetExportController extends Controller
     public function previewInvoice(BudgetPackage $budgetPackage)
     {
         $data = $this->calcService->calculatePackage($budgetPackage);
-        $settings = InvoiceSetting::getSettings();
+        $settings = $this->exportSignatorySettingService->applyToInvoiceSetting(
+            InvoiceSetting::getSettings(),
+            auth()->user(),
+        );
         $budgetPackage->load('budgetYear');
 
         return view('admin.budget.invoice', array_merge($data, [
@@ -173,6 +184,15 @@ class BudgetExportController extends Controller
         $settings = InvoiceSetting::getSettings();
         $settings->update(array_filter($validated, fn ($v) => $v !== null));
 
+        $this->exportSignatorySettingService->updateGlobalSettings([
+            'signatory_name' => $validated['signatory_name'] ?? '',
+            'signatory_rank' => $validated['signatory_rank'] ?? '',
+            'signatory_nrp' => $validated['signatory_nrp'] ?? '',
+            'signatory_title' => $validated['signatory_title'] ?? '',
+            'location' => $validated['location'] ?? '',
+            'organization_name' => $validated['organization_name'] ?? '',
+        ]);
+
         return redirect()->back()->with('success', 'Pengaturan invoice berhasil disimpan');
     }
 
@@ -197,7 +217,10 @@ class BudgetExportController extends Controller
             'items.recipients.satker',
         ]);
 
-        $settings = \App\Models\InvoiceSetting::getSettings();
+        $settings = $this->exportSignatorySettingService->applyToInvoiceSetting(
+            \App\Models\InvoiceSetting::getSettings(),
+            auth()->user(),
+        );
         $recapExport = new \App\Exports\PackageRecapExport($budgetPackage);
 
         // Ukuran celana standar (sama dengan PackageRecapExport)

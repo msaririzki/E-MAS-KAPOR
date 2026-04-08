@@ -18,10 +18,8 @@ class PersonnelBulkDeleteAllTest extends TestCase
     {
         parent::setUp();
 
-        // Seed needed roles
-        if (! Role::where('name', 'superadmin')->exists()) {
-            Role::create(['name' => 'superadmin']);
-            Role::create(['name' => 'personil']);
+        foreach (['superadmin', 'personil'] as $roleName) {
+            Role::findOrCreate($roleName);
         }
     }
 
@@ -30,7 +28,7 @@ class PersonnelBulkDeleteAllTest extends TestCase
         $superadmin = User::factory()->create();
         $superadmin->assignRole('superadmin');
 
-        $satker = Satker::create(['name' => 'Satker Test', 'sort_order' => 1]);
+        $satker = Satker::create(['name' => 'Satker Test', 'code' => 'SATKER-TEST', 'sort_order' => 1]);
         $rank = Rank::create(['name' => 'Brigadir', 'sort_order' => 1, 'category' => 'BINTARA']);
 
         // Create some normal users which represent personnel
@@ -83,7 +81,7 @@ class PersonnelBulkDeleteAllTest extends TestCase
         $superadmin = User::factory()->create();
         $superadmin->assignRole('superadmin');
 
-        $satker = Satker::create(['name' => 'Satker Test', 'sort_order' => 1]);
+        $satker = Satker::create(['name' => 'Satker Test', 'code' => 'SATKER-TEST', 'sort_order' => 1]);
         $rank = Rank::create(['name' => 'Brigadir', 'sort_order' => 1, 'category' => 'BINTARA']);
 
         $user1 = User::factory()->create();

@@ -77,7 +77,7 @@
                         class="ri-team-line"></i></div>
             </div>
             <div class="stat-value">{{ number_format($stats['total_polri']) }}</div>
-            <div class="stat-footer">Personil Aktif</div>
+            <div class="stat-footer">Data personel riil</div>
         </div>
 
         <div class="stat-card">
@@ -87,7 +87,7 @@
                         class="ri-user-star-line"></i></div>
             </div>
             <div class="stat-value">{{ number_format($stats['total_pns']) }}</div>
-            <div class="stat-footer">Personil Aktif</div>
+            <div class="stat-footer">Data personel riil</div>
         </div>
 
         <div class="stat-card">
@@ -197,7 +197,7 @@
                                         <div style="font-weight: 600; color: var(--text-main); font-size: 14px;">{{ $p->full_name }}</div>
                                     </td>
                                     <td style="padding: 16px 24px; font-size: 13px; font-family: 'SFMono-Regular', Consolas, monospace; color: var(--text-muted);">
-                                        {{ ($p->user->nrp_nip && !str_starts_with($p->user->nrp_nip, 'TEMP-')) ? $p->user->nrp_nip : '—' }}
+                                        {{ $p->user?->nrp_nip ?: '—' }}
                                     </td>
                                     <td style="padding: 16px 24px; font-size: 13px; color: var(--text-muted);">
                                         {{ $p->rank->name ?? '—' }}

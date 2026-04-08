@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\KaporItem;
+use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
 use App\Models\KebutuhanItem;
 use App\Models\Satker;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 class IdentifikasiKebutuhanController extends Controller
 {
     /**
-     * Semua pengajuan kebutuhan (Admin/Superadmin melihat semua satker).
+     * Semua pengajuan kebutuhan untuk Superadmin.
      */
     public function index(Request $request)
     {
@@ -45,63 +45,61 @@ class IdentifikasiKebutuhanController extends Controller
 
         // Stats
         $stats = [
-            'total' => Kebutuhan::count(),
-            'diajukan' => Kebutuhan::where('status', 'diajukan')->count(),
-            'disetujui' => Kebutuhan::where('status', 'disetujui')->count(),
-            'ditolak' => Kebutuhan::where('status', 'ditolak')->count(),
+            'totalPengajuan' => Kebutuhan::count(),
+            'totalSatker' => Kebutuhan::distinct('satker_id')->count('satker_id'),
+            'totalItem' => \App\Models\KebutuhanItem::count(),
         ];
 
         // ── Item Popularity Statistics ─────────────────────────────
-        $totalKebutuhans = Kebutuhan::whereIn('status', ['diajukan', 'disetujui'])->count();
+        $totalKebutuhans = $stats['totalPengajuan'];
 
-        $itemStats = collect();
-        $categoryStats = collect();
+        // Top 10 items per category
+        $itemStatsByCategory = collect();
         if ($totalKebutuhans > 0) {
-            // Top 10 most requested items
-            $itemStats = KebutuhanItem::query()
-                ->select('kapor_item_id', DB::raw('COUNT(DISTINCT kebutuhan_id) as submission_count'))
-                ->whereHas('kebutuhan', fn ($q) => $q->whereIn('status', ['diajukan', 'disetujui']))
-                ->groupBy('kapor_item_id')
-                ->orderByDesc('submission_count')
-                ->limit(10)
-                ->get()
-                ->map(function ($row) use ($totalKebutuhans) {
-                    $kaporItem = KaporItem::find($row->kapor_item_id);
+            $categories = IdentifikasiItem::where('is_active', true)
+                ->select('category')
+                ->distinct()
+                ->orderByRaw("CASE
+                    WHEN category = 'Tutup_Kepala' THEN 1
+                    WHEN category = 'Tutup_Badan' THEN 2
+                    WHEN category = 'Tutup_Kaki' THEN 3
+                    ELSE 999 END")
+                ->pluck('category');
 
-                    return [
-                        'item_name' => $kaporItem->item_name ?? '-',
-                        'category' => $kaporItem->category ?? '-',
-                        'submission_count' => $row->submission_count,
-                        'percentage' => round(($row->submission_count / $totalKebutuhans) * 100, 1),
-                    ];
-                });
+            foreach ($categories as $category) {
+                $categoryItemIds = IdentifikasiItem::where('is_active', true)
+                    ->where('category', $category)
+                    ->pluck('id');
 
-            // Category summary: how many unique items per category were requested
-            $categoryStats = KebutuhanItem::query()
-                ->join('kapor_items', 'kebutuhan_items.kapor_item_id', '=', 'kapor_items.id')
-                ->join('kebutuhans', 'kebutuhan_items.kebutuhan_id', '=', 'kebutuhans.id')
-                ->whereIn('kebutuhans.status', ['diajukan', 'disetujui'])
-                ->select('kapor_items.category', DB::raw('COUNT(DISTINCT kebutuhan_items.kapor_item_id) as unique_items'), DB::raw('COUNT(kebutuhan_items.id) as total_requests'))
-                ->groupBy('kapor_items.category')
-                ->get()
-                ->map(function ($row) {
-                    $totalInCategory = KaporItem::where('category', $row->category)->count();
-                    return [
-                        'category' => $row->category,
-                        'unique_items' => $row->unique_items,
-                        'total_in_category' => $totalInCategory,
-                        'total_requests' => $row->total_requests,
-                        'coverage' => $totalInCategory > 0 ? round(($row->unique_items / $totalInCategory) * 100) : 0,
-                    ];
-                });
+                $topItems = KebutuhanItem::query()
+                    ->select('identifikasi_item_id', DB::raw('COUNT(DISTINCT kebutuhan_id) as submission_count'))
+                    ->whereIn('identifikasi_item_id', $categoryItemIds)
+                    ->whereHas('kebutuhan', fn ($q) => $q->whereIn('status', ['diajukan', 'disetujui']))
+                    ->groupBy('identifikasi_item_id')
+                    ->orderByDesc('submission_count')
+                    ->limit(10)
+                    ->get()
+                    ->map(function ($row) use ($totalKebutuhans) {
+                        $item = IdentifikasiItem::find($row->identifikasi_item_id);
+
+                        return [
+                            'item_name' => $item->item_name ?? '-',
+                            'submission_count' => $row->submission_count,
+                            'percentage' => round(($row->submission_count / $totalKebutuhans) * 100, 1),
+                        ];
+                    });
+
+                if ($topItems->isNotEmpty()) {
+                    $itemStatsByCategory[$category] = $topItems;
+                }
+            }
         }
 
         return view('admin.identifikasi-kebutuhan.index', compact(
             'kebutuhans',
             'satkers',
             'stats',
-            'itemStats',
-            'categoryStats',
+            'itemStatsByCategory',
             'totalKebutuhans',
         ));
     }
@@ -111,7 +109,7 @@ class IdentifikasiKebutuhanController extends Controller
      */
     public function show(Kebutuhan $kebutuhan)
     {
-        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.kaporItem']);
+        $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
 
         return view('admin.identifikasi-kebutuhan.show', compact('kebutuhan'));
     }
@@ -121,8 +119,8 @@ class IdentifikasiKebutuhanController extends Controller
      */
     public function approve(Request $request, Kebutuhan $kebutuhan)
     {
-        if (! $request->user()->hasAnyRole(['admin', 'superadmin'])) {
-            abort(403, 'Hanya Admin/Superadmin yang dapat menyetujui pengajuan.');
+        if (! $request->user()->hasRole('superadmin')) {
+            abort(403, 'Hanya Superadmin yang dapat menyetujui pengajuan.');
         }
 
         if (! $kebutuhan->isDiajukan()) {
@@ -144,8 +142,8 @@ class IdentifikasiKebutuhanController extends Controller
      */
     public function reject(Request $request, Kebutuhan $kebutuhan)
     {
-        if (! $request->user()->hasAnyRole(['admin', 'superadmin'])) {
-            abort(403, 'Hanya Admin/Superadmin yang dapat menolak pengajuan.');
+        if (! $request->user()->hasRole('superadmin')) {
+            abort(403, 'Hanya Superadmin yang dapat menolak pengajuan.');
         }
 
         if (! $kebutuhan->isDiajukan()) {
@@ -181,7 +179,7 @@ class IdentifikasiKebutuhanController extends Controller
             DB::transaction(function () use ($kebutuhan) {
                 // Hapus item-item terkait terlebih dahulu
                 $kebutuhan->items()->delete();
-                
+
                 // Kemudian hapus kebutuhan
                 $kebutuhan->delete();
             });
@@ -192,13 +190,13 @@ class IdentifikasiKebutuhanController extends Controller
                     action: 'delete_kebutuhan',
                     category: 'Identifikasi Kebutuhan',
                     model: $kebutuhan,
-                    details: "Menghapus pengajuan kebutuhan secara permanen: {$kebutuhan->title} (Satker: " . ($kebutuhan->satker->name ?? '-') . ")"
+                    details: "Menghapus pengajuan kebutuhan secara permanen: {$kebutuhan->title} (Satker: ".($kebutuhan->satker->name ?? '-').')'
                 );
             }
 
             return back()->with('success', 'Pengajuan kebutuhan berhasil dihapus secara permanen.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus pengajuan kebutuhan: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menghapus pengajuan kebutuhan: '.$e->getMessage());
         }
     }
 }

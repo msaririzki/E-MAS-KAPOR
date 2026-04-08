@@ -7,7 +7,6 @@ use App\Models\Rank;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\SkipsUnknownSheets;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
@@ -336,22 +335,14 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         if (($data['match_by'] ?? '') === 'name_add_nrp' && ! empty($data['nrp'])) {
                             $updateData['nrp'] = $data['nrp'];
 
-                            if (! $personnel->user) {
-                                $user = User::create([
-                                    'name' => $personnel->full_name,
-                                    'nrp_nip' => $data['nrp'],
-                                    'email' => $data['nrp'].'@polda-ntb.local',
-                                    'password' => Hash::make($data['nrp']),
-                                    'satker_id' => $personnel->satker_id,
-                                    'is_active' => true,
-                                ]);
-                                $user->assignRole('personil');
-                                $updateData['user_id'] = $user->id;
-                            } else {
-                                $personnel->user->update([
-                                    'nrp_nip' => $data['nrp'],
-                                ]);
-                            }
+                            $user = User::createOrUpdatePersonnelImportAccount(
+                                $personnel->user,
+                                $data['nrp'],
+                                $personnel->full_name,
+                                $personnel->satker_id,
+                                true,
+                            );
+                            $updateData['user_id'] = $user->id;
                         }
 
                         $hasNrpIssue = ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']);
@@ -369,25 +360,17 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                     }
 
                     $nrp = $data['nrp'] ?: null;
-                    $password = $nrp ?? ('kapor'.date('Y'));
                     $rank = ! empty($data['rank_id']) ? Rank::find($data['rank_id']) : null;
 
                     $user = null;
                     if ($nrp) {
-                        $user = User::firstOrCreate(
-                            ['nrp_nip' => $nrp],
-                            [
-                                'name' => $data['full_name'],
-                                'email' => $nrp.'@polda-ntb.local',
-                                'password' => Hash::make($password),
-                                'satker_id' => $this->satkerId,
-                                'is_active' => true,
-                            ]
+                        $user = User::createOrUpdatePersonnelImportAccount(
+                            null,
+                            $nrp,
+                            $data['full_name'],
+                            $this->satkerId,
+                            true,
                         );
-
-                        if (! $user->hasRole('personil')) {
-                            $user->assignRole('personil');
-                        }
                     }
 
                     Personnel::create([
