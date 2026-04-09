@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Laporan Satker')
-@section('breadcrumb', 'Laporan')
+@section('title', 'Monitoring Satker')
+@section('breadcrumb', 'Monitoring')
 
 @section('content')
 {{-- Print-only Header (KOP) --}}
 <div class="print-only print-header" style="display: none; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
     <div style="text-align: center;">
-        <h2 style="margin: 0; font-size: 18px; text-transform: uppercase; font-weight: 800;">LAPORAN DATA PERSONEL & UKURAN KAPOR</h2>
+        <h2 style="margin: 0; font-size: 18px; text-transform: uppercase; font-weight: 800;">MONITORING DATA PERSONEL & UKURAN KAPOR</h2>
         <h3 style="margin: 5px 0 0 0; font-size: 16px; font-weight: 700;">{{ strtoupper($stats['satker_name']) }} — TA {{ $stats['fiscal_year'] }}</h3>
         <p style="margin: 5px 0 0 0; font-size: 11px; color: #333;">Dicetak pada: {{ now()->format('d/m/Y H:i') }}</p>
     </div>
@@ -17,7 +17,7 @@
     <div class="page-header-row">
         <div>
             <h1>
-                <i class="ri-file-list-3-line no-print" style="margin-right: 6px; color: var(--brand);"></i> Laporan Data Personel & Ukuran Kapor
+                <i class="ri-file-list-3-line no-print" style="margin-right: 6px; color: var(--brand);"></i> Monitoring Data Personel & Ukuran Kapor
             </h1>
             <p>
                 {{ $stats['satker_name'] }} — TA {{ $stats['fiscal_year'] }}

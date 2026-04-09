@@ -1801,7 +1801,7 @@
 
                         <a href="{{ route('admin-satker.reports') }}"
                             class="nav-link {{ request()->routeIs('admin-satker.reports') ? 'active' : '' }}">
-                            Laporan
+                            Monitoring
                         </a>
                         <a href="{{ route('admin-satker.settings') }}"
                             class="nav-link {{ request()->routeIs('admin-satker.settings') ? 'active' : '' }}">
