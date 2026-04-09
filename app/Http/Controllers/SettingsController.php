@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Imports\PersonnelImport;
+use App\Models\AnnualArchive;
 use App\Models\BagianOption;
 use App\Models\BudgetPackage;
 use App\Models\BudgetYear;
@@ -38,17 +39,30 @@ class SettingsController extends Controller
             'personnel_request_mode' => Setting::getValue('personnel_request_mode', 'auto'),
         ];
 
-        // Get submission stats per year for history
+        // Build yearly history so archived years stay locked to their saved snapshot.
         $activeYear = $settings['fiscal_year'];
 
-        $submissionStats = KaporSubmission::select('fiscal_year', DB::raw('count(*) as total'))
-            ->groupBy('fiscal_year')
-            ->orderBy('fiscal_year', 'desc')
-            ->get()
-            ->keyBy('fiscal_year');
+        $budgetYears = BudgetYear::query()
+            ->get(['year', 'is_active'])
+            ->keyBy('year');
 
-        // Build a comprehensive list of years to show
-        $yearsToShow = $submissionStats->keys()->toArray();
+        $annualArchives = AnnualArchive::query()
+            ->orderByDesc('generated_at')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('fiscal_year');
+
+        $currentSnapshot = $this->annualArchiveService->buildSnapshot((int) $activeYear);
+        $currentSubmissionTotal = KaporSubmission::query()
+            ->where('fiscal_year', $activeYear)
+            ->count();
+
+        $yearsToShow = array_values(array_unique(array_merge(
+            $annualArchives->keys()->all(),
+            $budgetYears->keys()->all(),
+            [(int) $activeYear]
+        )));
+
         if (! in_array($activeYear, $yearsToShow)) {
             $yearsToShow[] = $activeYear;
         }
@@ -56,11 +70,41 @@ class SettingsController extends Controller
 
         $yearlyStats = [];
         foreach ($yearsToShow as $year) {
+            $budgetYear = $budgetYears->get((int) $year);
+            $archiveItems = $annualArchives->get((int) $year);
+            $archiveItem = $archiveItems?->first();
+            $archiveFiles = (int) ($archiveItems?->count() ?? 0);
+            $isActive = ((int) $year === (int) $activeYear) || (bool) ($budgetYear?->is_active);
+
+            if ($isActive) {
+                $personnelTotal = (int) ($currentSnapshot['total_personnel'] ?? 0);
+                $submittedTotal = (int) ($currentSnapshot['submitted_personnel'] ?? 0);
+                $submissionTotal = $currentSubmissionTotal;
+                $status = 'Berjalan';
+                $snapshotSource = 'Data aktif saat ini';
+            } elseif ($archiveItem) {
+                $personnelTotal = (int) data_get($archiveItem->metadata, 'total_personnel', 0);
+                $submittedTotal = (int) data_get($archiveItem->metadata, 'submitted_personnel', 0);
+                $submissionTotal = 0;
+                $status = 'Terkunci';
+                $snapshotSource = 'Snapshot arsip final';
+            } else {
+                $personnelTotal = 0;
+                $submittedTotal = 0;
+                $submissionTotal = 0;
+                $status = (int) $year < (int) $activeYear ? 'Belum Diarsipkan' : 'Mendatang';
+                $snapshotSource = 'Belum ada snapshot final';
+            }
+
             $yearlyStats[] = (object) [
                 'fiscal_year' => $year,
-                'total' => $submissionStats[$year]->total ?? 0,
-                'is_active' => $year == $activeYear,
-                'status' => $year < $activeYear ? 'Selesai' : ($year == $activeYear ? 'Aktif' : 'Mendatang'),
+                'personnel_total' => $personnelTotal,
+                'submitted_total' => $submittedTotal,
+                'submission_total' => $submissionTotal,
+                'archive_files' => $archiveFiles,
+                'is_active' => $isActive,
+                'status' => $status,
+                'snapshot_source' => $snapshotSource,
             ];
         }
 
@@ -170,10 +214,10 @@ class SettingsController extends Controller
                 'next_year' => $nextYear,
             ],
             'success',
-            'Menyiapkan sistem untuk tahun anggaran berikutnya, mengarsipkan hasil final, menonaktifkan akun personel, dan mengosongkan dataset aktif personel.'
+            'Menyiapkan sistem untuk tahun anggaran berikutnya, mengarsipkan hasil final, menonaktifkan akun personel, mengosongkan satker akun personel, dan menghapus dataset aktif personel untuk import ulang.'
         );
 
-        return redirect()->back()->with('success', "Tahun Anggaran $nextYear siap digunakan. Sistem dikunci, paket tahun $currentYear diarsipkan, akun personel tetap tersimpan, dan dataset aktif personel telah dikosongkan.");
+        return redirect()->back()->with('success', "Tahun Anggaran $nextYear siap digunakan. Sistem dikunci, paket tahun $currentYear diarsipkan, akun personel dinonaktifkan dan dilepas dari satker, lalu dataset aktif personel direset untuk import ulang SDM.");
     }
 
     public function updateSignatory(Request $request, ExportSignatorySettingService $signatoryService)

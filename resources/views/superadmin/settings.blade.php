@@ -604,7 +604,7 @@
                     <i class="ri-alert-line"></i>
                     <div>
                         <strong>Siapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}</strong>
-                        <p>Tindakan ini akan mengunci sistem, mengarsipkan paket anggaran tahun {{ $settings['fiscal_year'] }}, membuat Tahun Anggaran {{ $settings['fiscal_year'] + 1 }} menjadi aktif, dan mereset data tahunan aktif personel tanpa menghapus akun user.</p>
+                        <p>Tindakan ini akan mengunci sistem, mengarsipkan paket anggaran tahun {{ $settings['fiscal_year'] }}, membuat Tahun Anggaran {{ $settings['fiscal_year'] + 1 }} menjadi aktif, menonaktifkan akun personel, mengosongkan satker pada akun personel, lalu mereset dataset aktif personel agar siap diimport ulang dari SDM tanpa menghapus akun user.</p>
                     </div>
                 </div>
                 <div class="danger-checklist">
@@ -613,10 +613,12 @@
                         <li>Sistem langsung dikunci.</li>
                         <li>Paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan.</li>
                         <li>Tahun Anggaran {{ $settings['fiscal_year'] + 1 }} menjadi aktif.</li>
-                        <li>Dataset personel aktif dikosongkan, tetapi akun user tetap disimpan.</li>
+                        <li>Akun personel dinonaktifkan, tetapi akun user tetap disimpan.</li>
+                        <li>Satker pada akun user personel dikosongkan untuk persiapan import ulang SDM.</li>
+                        <li>Dataset personel aktif dihapus agar tahun berikutnya dimulai dari baseline baru hasil import.</li>
                     </ul>
                 </div>
-                <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menyiapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}? Sistem akan dikunci, paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan, dan data tahunan aktif personel akan direset.')">
+                <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menyiapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}? Sistem akan dikunci, paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan, akun personel dinonaktifkan, satker akun personel dikosongkan, dan dataset aktif personel akan direset untuk import ulang SDM.')">
                     @csrf
                     <button type="submit" class="btn-danger-modern">
                         Siapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}
@@ -625,16 +627,22 @@
             </div>
 
             {{-- History Table --}}
-            <div class="table-card">
-                <div class="table-card-head">
-                    <h4>Riwayat Tahun Anggaran</h4>
-                </div>
-                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
-                    <table class="modern-table" style="min-width: 500px;">
+                <div class="table-card">
+                    <div class="table-card-head">
+                        <h4>Riwayat Tahun Anggaran</h4>
+                    </div>
+                    <div style="padding: 0 20px 14px; color: var(--text-muted); font-size: 13px;">
+                        Tahun yang sudah selesai akan membaca <strong>snapshot arsip final</strong> yang tersimpan saat transisi tahun, jadi hasil lama tidak dihitung ulang dari data aktif sekarang.
+                    </div>
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+                    <table class="modern-table" style="min-width: 760px;">
                         <thead>
                             <tr>
                                 <th>Periode</th>
-                                <th style="text-align:right;">Total Item Direkap</th>
+                                <th style="text-align:right;">Personel Final</th>
+                                <th style="text-align:right;">Lengkap Ukuran</th>
+                                <th style="text-align:right;">Entri Pengisian</th>
+                                <th style="text-align:right;">Arsip Final</th>
                                 <th style="text-align:right;">Status</th>
                             </tr>
                         </thead>
@@ -647,17 +655,29 @@
                                         @if($ys->is_active)
                                             <span class="pulse-badge">AKTIF</span>
                                         @endif
+                                        <div style="margin-top: 4px; font-size: 12px; color: var(--text-muted);">
+                                            {{ $ys->snapshot_source }}
+                                        </div>
                                     </div>
                                 </td>
-                                <td align="right"><strong>{{ number_format($ys->total) }}</strong> entri</td>
+                                <td align="right"><strong>{{ number_format($ys->personnel_total) }}</strong> personel</td>
+                                <td align="right"><strong>{{ number_format($ys->submitted_total) }}</strong> personel</td>
+                                <td align="right"><strong>{{ number_format($ys->submission_total) }}</strong> entri</td>
                                 <td align="right">
-                                    <span class="status-pill {{ $ys->status == 'Aktif' ? 'success' : 'neutral' }}">
-                                        {{ $ys->status == 'Aktif' ? 'Berjalan' : 'Arsip' }}
+                                    @if($ys->archive_files > 0)
+                                        <strong>{{ number_format($ys->archive_files) }}</strong> file
+                                    @else
+                                        <span style="color: var(--text-muted);">Belum ada</span>
+                                    @endif
+                                </td>
+                                <td align="right">
+                                    <span class="status-pill {{ in_array($ys->status, ['Berjalan', 'Terkunci']) ? ($ys->status === 'Berjalan' ? 'success' : 'neutral') : 'warning' }}">
+                                        {{ $ys->status }}
                                     </span>
                                 </td>
                             </tr>
                             @empty
-                            <tr><td colspan="3" class="empty-state">Belum ada riwayat data sebelumnya.</td></tr>
+                            <tr><td colspan="6" class="empty-state">Belum ada riwayat data sebelumnya.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

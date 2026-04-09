@@ -34,11 +34,11 @@
         <h2>TA {{ $activeFiscalYear }}</h2>
         <p>
             Budget year aktif: <strong>{{ $activeBudgetYear?->name ?? 'Belum tersinkron ke modul budget' }}</strong>.
-            Aksi ini akan mengarsipkan paket tahun berjalan, mengunci sistem, lalu menyiapkan tahun berikutnya dengan data tahunan aktif personel yang sudah direset.
+            Aksi ini akan mengarsipkan paket tahun berjalan, mengunci sistem, menonaktifkan akun personel, mengosongkan satker pada akun personel, lalu menyiapkan tahun berikutnya dengan dataset aktif personel yang direset untuk import ulang SDM.
         </p>
     </div>
     @if(auth()->user()->hasRole('superadmin'))
-    <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menyiapkan Tahun Anggaran {{ $activeFiscalYear + 1 }}? Sistem akan dikunci, paket anggaran aktif akan diarsipkan, dan data tahunan aktif personel akan direset.')">
+    <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menyiapkan Tahun Anggaran {{ $activeFiscalYear + 1 }}? Sistem akan dikunci, paket anggaran aktif akan diarsipkan, akun personel dinonaktifkan, satker akun personel dikosongkan, dan dataset aktif personel akan direset untuk import ulang SDM.')">
         @csrf
         <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
             <i class="ri-arrow-right-up-line"></i> Siapkan Anggaran Berikutnya

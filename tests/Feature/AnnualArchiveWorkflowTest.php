@@ -126,4 +126,34 @@ class AnnualArchiveWorkflowTest extends TestCase
             ->get(route('admin.reports.annual-archives.download', $archive))
             ->assertOk();
     }
+
+    public function test_superadmin_settings_history_displays_archive_and_submission_columns(): void
+    {
+        Setting::setValue('fiscal_year', '2026');
+
+        $superadmin = User::factory()->create();
+        $superadmin->assignRole('superadmin');
+
+        AnnualArchive::create([
+            'fiscal_year' => 2025,
+            'format' => 'pdf',
+            'title' => 'Arsip Final Tahunan 2025',
+            'file_name' => 'arsip_final_tahunan_2025.pdf',
+            'file_path' => 'annual-archives/2025/arsip_final_tahunan_2025.pdf',
+            'disk' => 'local',
+            'generated_by' => $superadmin->id,
+            'generated_at' => now(),
+            'metadata' => ['total_personnel' => 1],
+        ]);
+
+        $this->actingAs($superadmin)
+            ->get(route('superadmin.settings.index'))
+            ->assertOk()
+            ->assertSeeText('Personel Final')
+            ->assertSeeText('Lengkap Ukuran')
+            ->assertSeeText('Arsip Final')
+            ->assertSeeText('Snapshot arsip final')
+            ->assertSeeText('Terkunci')
+            ->assertSeeText('TA 2025');
+    }
 }
