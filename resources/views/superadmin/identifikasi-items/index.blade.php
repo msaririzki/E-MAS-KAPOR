@@ -64,7 +64,7 @@
 
 {{-- Filter Form --}}
 <div class="filter-bar">
-    <form method="GET" action="{{ route('superadmin.identifikasi-items.index') }}" class="filter-form">
+    <form method="GET" action="{{ route('superadmin.identifikasi-items.index') }}" class="filter-form" id="filterForm">
         <div class="search-input-wrapper" style="flex: 2;">
             <i class="ri-search-line search-icon"></i>
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama item..." class="search-field" autocomplete="off">
@@ -73,22 +73,48 @@
         <div class="filter-divider"></div>
 
         <div class="custom-select-wrapper" style="flex: 1;">
-            <select name="category" class="form-input" style="height: 44px; border: none; background: transparent; padding-left: 10px; appearance: auto;" onchange="this.form.submit()">
-                <option value="">Semua Kategori</option>
-                @foreach($categories as $key => $label)
-                    <option value="{{ $key }}" {{ request('category') == $key ? 'selected' : '' }}>{{ $label }}</option>
-                @endforeach
-            </select>
+            <div class="custom-select" onclick="toggleDropdown(this)" style="border: none; background: transparent; height: 44px;">
+                <div class="select-trigger" style="padding-left: 10px;">
+                    <span id="filter_category_label">{{ request('category') ? ($categories[request('category')] ?? 'Semua Kategori') : 'Semua Kategori' }}</span>
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+                <div class="custom-options">
+                    <div class="options-scroll">
+                        <div class="option {{ !request('category') ? 'selected' : '' }}" onclick="selectOptionSearch(this, 'category', '', 'Semua Kategori')">Semua Kategori</div>
+                        @foreach($categories as $key => $label)
+                            <div class="option {{ request('category') == $key ? 'selected' : '' }}" onclick="selectOptionSearch(this, 'category', '{{ $key }}', '{{ $label }}')">{{ $label }}</div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" name="category" value="{{ request('category') }}">
         </div>
 
         <div class="filter-divider"></div>
 
         <div class="custom-select-wrapper" style="flex: 1;">
-            <select name="status" class="form-input" style="height: 44px; border: none; background: transparent; padding-left: 10px; appearance: auto;" onchange="this.form.submit()">
-                <option value="">Semua Status</option>
-                <option value="aktif" {{ request('status') == 'aktif' ? 'selected' : '' }}>Item Aktif</option>
-                <option value="nonaktif" {{ request('status') == 'nonaktif' ? 'selected' : '' }}>Item Non-Aktif</option>
-            </select>
+            <div class="custom-select" onclick="toggleDropdown(this)" style="border: none; background: transparent; height: 44px;">
+                <div class="select-trigger" style="padding-left: 10px;">
+                    <span id="filter_status_label">
+                        @if(request('status') == 'aktif')
+                            Item Aktif
+                        @elseif(request('status') == 'nonaktif')
+                            Item Non-Aktif
+                        @else
+                            Semua Status
+                        @endif
+                    </span>
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+                <div class="custom-options">
+                    <div class="options-scroll">
+                        <div class="option {{ !request('status') ? 'selected' : '' }}" onclick="selectOptionSearch(this, 'status', '', 'Semua Status')">Semua Status</div>
+                        <div class="option {{ request('status') == 'aktif' ? 'selected' : '' }}" onclick="selectOptionSearch(this, 'status', 'aktif', 'Item Aktif')">Item Aktif</div>
+                        <div class="option {{ request('status') == 'nonaktif' ? 'selected' : '' }}" onclick="selectOptionSearch(this, 'status', 'nonaktif', 'Item Non-Aktif')">Item Non-Aktif</div>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" name="status" value="{{ request('status') }}">
         </div>
         
         @if(request('search'))
@@ -219,7 +245,7 @@
         </div>
         <form action="{{ route('superadmin.identifikasi-items.store') }}" method="POST">
             @csrf
-            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <div class="modal-body" style="max-height: 70vh; overflow: visible;">
                 <div class="form-group">
                     <label>NAMA ITEM</label>
                     <input type="text" name="item_name" required class="form-input" placeholder="Contoh: PDL, PDH, PDU">
@@ -227,12 +253,21 @@
                 <div class="form-group">
                     <label>KATEGORI</label>
                     <div class="custom-select-wrapper">
-                        <select name="category" class="form-input" required style="appearance: auto;">
-                            <option value="">-- Pilih --</option>
-                            @foreach($categories as $key => $label)
-                                <option value="{{ $key }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
+                        <div class="custom-select" onclick="toggleDropdown(this)">
+                            <div class="select-trigger">
+                                <span id="add_category_label">-- Pilih --</span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </div>
+                            <div class="custom-options">
+                                <div class="options-scroll">
+                                    <div class="option" onclick="selectOptionManual(this, 'category', '', '-- Pilih --', 'add_category_label')">-- Pilih --</div>
+                                    @foreach($categories as $key => $label)
+                                        <div class="option" onclick="selectOptionManual(this, 'category', '{{ $key }}', '{{ $label }}', 'add_category_label')">{{ $label }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="category" required>
                     </div>
                 </div>
             </div>
@@ -254,7 +289,7 @@
         <form id="editForm" method="POST">
             @csrf
             @method('PUT')
-            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <div class="modal-body" style="max-height: 70vh; overflow: visible;">
                 <div class="form-group">
                     <label>NAMA ITEM</label>
                     <input type="text" name="item_name" id="edit_item_name" required class="form-input">
@@ -262,11 +297,20 @@
                 <div class="form-group">
                     <label>KATEGORI</label>
                     <div class="custom-select-wrapper">
-                        <select name="category" id="edit_category" class="form-input" required style="appearance: auto;">
-                            @foreach($categories as $key => $label)
-                                <option value="{{ $key }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
+                        <div class="custom-select" onclick="toggleDropdown(this)">
+                            <div class="select-trigger">
+                                <span id="edit_category_label">-- Pilih --</span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </div>
+                            <div class="custom-options">
+                                <div class="options-scroll">
+                                    @foreach($categories as $key => $label)
+                                        <div class="option" onclick="selectOptionManual(this, 'category', '{{ $key }}', '{{ $label }}', 'edit_category_label')">{{ $label }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="category" id="edit_category" required>
                     </div>
                 </div>
                 
@@ -323,6 +367,17 @@
         document.getElementById('edit_is_active').checked = item.is_active;
 
         document.getElementById('editForm').action = "{{ url('superadmin/identifikasi-items') }}/" + item.id;
+        
+        const catLabels = {!! json_encode($categories) !!};
+        document.getElementById('edit_category_label').innerText = catLabels[item.category] || '-- Pilih --';
+        const options = document.querySelectorAll('#editItemModal .option');
+        options.forEach(opt => opt.classList.remove('selected'));
+        options.forEach(opt => {
+            if(opt.innerText === (catLabels[item.category] || '')) {
+                opt.classList.add('selected');
+            }
+        });
+
         openModal('editItemModal');
     }
 
@@ -337,6 +392,59 @@
         if (event.target.classList.contains('modal')) {
             event.target.classList.remove('open');
         }
+    }
+
+    // Add dropdown logic
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-select')) {
+            document.querySelectorAll('.custom-options').forEach(opt => {
+                opt.style.display = 'none';
+            });
+            document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+        }
+    });
+
+    function toggleDropdown(el) {
+        const options = el.querySelector('.custom-options');
+        const isOpen = options.style.display === 'block';
+
+        document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
+        document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+
+        if (!isOpen) {
+            options.style.display = 'block';
+            el.classList.add('active');
+        } 
+        
+        event.stopPropagation();
+    }
+
+    function selectOptionSearch(el, inputName, value, label) {
+        const wrapper = el.closest('.custom-select-wrapper');
+        const trigger = wrapper.querySelector('.select-trigger span');
+        const input = wrapper.querySelector('input[type="hidden"]');
+        
+        trigger.innerText = label;
+        input.value = value;
+        
+        document.getElementById('filterForm').submit();
+    }
+
+    function selectOptionManual(el, inputName, value, label, triggerId) {
+        const wrapper = el.closest('.custom-select-wrapper');
+        const trigger = document.getElementById(triggerId);
+        const input = wrapper.querySelector('input[type="hidden"]');
+        
+        trigger.innerText = label;
+        input.value = value;
+        
+        wrapper.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+        el.classList.add('selected');
+        
+        el.closest('.custom-select').querySelector('.custom-options').style.display = 'none';
+        el.closest('.custom-select').classList.remove('active');
+        
+        event.stopPropagation();
     }
 </script>
 
@@ -406,5 +514,101 @@
     .page-info { font-size: 13px; color: #4B5563; padding: 0 12px; }
     
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    /* ── Custom Select UI ───────────────────── */
+    .custom-select-wrapper { position: relative; width: 100%; }
+    
+    .custom-select {
+        background: #fff;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+        height: 48px;
+        display: flex; align-items: center;
+    }
+    .custom-select:hover { border-color: #D1D5DB; }
+    
+    .custom-select.active {
+        border-color: #B91C1C;
+        box-shadow: 0 0 0 4px #FEF2F2;
+        background: #fff;
+    }
+
+    .select-trigger {
+        width: 100%;
+        padding: 0 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 500;
+        color: #374151;
+        font-size: 14px;
+    }
+    .select-trigger i { 
+        color: #9CA3AF; 
+        font-size: 20px; 
+        transition: transform 0.2s ease; 
+    }
+    .custom-select.active .select-trigger { color: #111827; }
+    .custom-select.active .select-trigger i { 
+        transform: rotate(180deg); 
+        color: #B91C1C; 
+    }
+
+    .custom-options {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0; right: 0;
+        background: #fff;
+        border: 1px solid #F3F4F6;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+        z-index: 2000;
+        display: none;
+        padding: 8px;
+    }
+    
+    .custom-select.dropup .custom-options {
+        top: auto;
+        bottom: calc(100% + 8px);
+        box-shadow: 0 -10px 40px -10px rgba(0,0,0,0.1);
+    }
+    
+    .options-scroll {
+        max-height: 240px;
+        overflow-y: auto;
+        padding-right: 2px;
+    }
+    
+    .options-scroll::-webkit-scrollbar { width: 4px; }
+    .options-scroll::-webkit-scrollbar-track { background: transparent; }
+    .options-scroll::-webkit-scrollbar-thumb { background-color: #E5E7EB; border-radius: 10px; }
+    .options-scroll::-webkit-scrollbar-thumb:hover { background-color: #D1D5DB; }
+    
+    .option {
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: all 0.1s;
+        font-size: 14px;
+        color: #4B5563;
+        border-radius: 8px;
+        margin-bottom: 2px;
+        font-weight: 500;
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .option:last-child { margin-bottom: 0; }
+    
+    .option:hover {
+        background-color: #F9FAFB;
+        color: #111827;
+    }
+    
+    .option.selected {
+        background-color: #FEF2F2;
+        color: #B91C1C;
+        font-weight: 600;
+    }
 </style>
 @endsection
