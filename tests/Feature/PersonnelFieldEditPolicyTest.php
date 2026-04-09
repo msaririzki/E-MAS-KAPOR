@@ -335,6 +335,115 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $this->assertSame(['jabatan' => 'BANIT SAMAPTA', 'bagian' => 'SIAGA'], $auditLog->new_values);
     }
 
+    public function test_personil_non_polres_can_update_jabatan_and_sizes_without_bagian(): void
+    {
+        Setting::setValue('is_system_locked', 'false');
+        Setting::setValue('input_start_date', now()->subDay()->toDateString());
+        Setting::setValue('input_end_date', now()->addDay()->toDateString());
+
+        $satker = Satker::create([
+            'name' => 'DIT LANTAS',
+            'code' => 'DITLANTAS',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPDA',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'AYUB',
+            'nrp_nip' => '197001012014121003',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        $personnel = Personnel::create([
+            'user_id' => $user->id,
+            'nrp' => '197001012014121003',
+            'full_name' => 'AYUB',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'golongan' => 'BINTARA',
+            'jabatan' => 'JABATAN AWAL',
+            'bagian' => 'BAGIAN SDM',
+            'satker_id' => $satker->id,
+            'religion' => 'Islam',
+            'is_active' => true,
+            'kapor_sizes' => [],
+        ]);
+
+        $response = $this->actingAs($user)->post(route('personil.kapor.store'), [
+            'jabatan' => 'BANUM URMINTU SUBBAGRENMIN DITLANTAS',
+            'kemeja' => '15',
+            'celana' => '32',
+            'olahraga' => 'B',
+            'jaket' => 'B',
+            'topi' => '57',
+            'sabuk' => '42',
+            'sepatu_dinas' => '41',
+            'sepatu_olahraga' => '41',
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+        $response->assertSessionHas('success');
+
+        $personnel->refresh();
+
+        $this->assertSame('BANUM URMINTU SUBBAGRENMIN DITLANTAS', $personnel->jabatan);
+        $this->assertSame('BAGIAN SDM', $personnel->bagian);
+        $this->assertSame('15', $personnel->kapor_sizes['kemeja']);
+        $this->assertSame('57', $personnel->kapor_sizes['topi']);
+    }
+
+    public function test_personil_dashboard_hides_bagian_field_for_non_polres_satker(): void
+    {
+        $satker = Satker::create([
+            'name' => 'DIT LANTAS',
+            'code' => 'DITLANTAS',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPTU',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'AYUB',
+            'nrp_nip' => '197001012014121003',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        Personnel::create([
+            'user_id' => $user->id,
+            'nrp' => '197001012014121003',
+            'full_name' => 'AYUB',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'golongan' => 'BINTARA',
+            'jabatan' => 'BANUM DITLANTAS',
+            'bagian' => 'BAGIAN SDM',
+            'satker_id' => $satker->id,
+            'religion' => 'Islam',
+            'is_active' => true,
+            'kapor_sizes' => ['topi' => '57'],
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSeeText('1. Jabatan');
+        $response->assertDontSee('name="bagian"', false);
+        $response->assertDontSeeText('Bag/Fungsi');
+    }
+
     public function test_personil_dashboard_renders_mobile_first_form_flow(): void
     {
         $satker = Satker::create([
@@ -375,7 +484,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response = $this->actingAs($user)->get(route('dashboard'));
 
         $response->assertOk();
-        $response->assertSeeText('Form Kaporlap');
+        $response->assertSeeText('Data Kaporlap Personil');
         $response->assertSeeText('Data tugas');
         $response->assertSeeText('Ukuran kaporlap');
     }

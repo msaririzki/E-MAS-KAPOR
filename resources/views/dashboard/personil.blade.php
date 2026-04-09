@@ -225,6 +225,9 @@
             font-family: inherit;
             padding: 6px;
         }
+        .ts-dropdown.personil-floating-dropdown {
+            z-index: 2000;
+        }
         .ts-dropdown .option {
             padding: 10px 12px;
             border-radius: 6px;
@@ -327,7 +330,8 @@
             $bagianOptionsList = $bagianOptionsList->prepend($selectedBagian);
         }
 
-        $usesBagianDropdown = $bagianOptionsList->isNotEmpty();
+        $usesBagianDropdown = $requiresBagian ?? false;
+        $identityStepLabel = $usesBagianDropdown ? '1. Jabatan + Bag/Fungsi' : '1. Jabatan';
         $showIdentityForm = !$identityReady || old('mode') === 'identity' || $errors->has('jabatan') || $errors->has('bagian');
         $showSizesForm = !$hasSubmitted || old('mode') === 'sizes';
         $progressClass = !$identityReady ? 'progress-38' : ($isComplete ? 'progress-100' : ($hasSubmitted ? 'progress-82' : 'progress-64'));
@@ -368,7 +372,7 @@
                     <div class="progress {{ $progressClass }}"><span></span></div>
 
                     <div class="step-row" style="margin-top: 12px;">
-                        <div class="step-item {{ $identityReady ? 'done' : 'active' }}">1. Jabatan + Bag/Fungsi</div>
+                        <div class="step-item {{ $identityReady ? 'done' : 'active' }}">{{ $identityStepLabel }}</div>
                         <div class="step-item {{ !$identityReady ? '' : ($isComplete ? 'done' : 'active') }}">2. Ukuran Kaporlap
                         </div>
                     </div>
@@ -397,7 +401,9 @@
                     <div data-identity-summary>
                         <div class="summary-grid">
                             <div class="summary-item"><strong>Jabatan</strong><span>{{ $personnel->jabatan }}</span></div>
-                            <div class="summary-item"><strong>Bag/Fungsi</strong><span>{{ $personnel->bagian }}</span></div>
+                            @if ($usesBagianDropdown)
+                                <div class="summary-item"><strong>Bag/Fungsi</strong><span>{{ $personnel->bagian }}</span></div>
+                            @endif
                         </div>
 
                         <div style="margin-top: 12px;">
@@ -423,9 +429,9 @@
                             @error('jabatan')<span class="error">{{ $message }}</span>@enderror
                         </div>
 
-                        <div class="field">
-                            <label class="label" for="bagian">Bag/Fungsi</label>
-                            @if ($usesBagianDropdown)
+                        @if ($usesBagianDropdown)
+                            <div class="field">
+                                <label class="label" for="bagian">Bag/Fungsi</label>
                                 <select id="bagian" name="bagian" class="control">
                                     <option value="">Pilih Bagian / Fungsi</option>
                                     @if ($selectedBagian && ! $bagianOptionsList->contains($selectedBagian))
@@ -436,16 +442,13 @@
                                         </option>
                                     @endforeach
                                 </select>
-                            @else
-                                <input id="bagian" type="text" name="bagian" class="control" value="{{ $selectedBagian }}"
-                                    style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
-                            @endif
-                            <span class="hint">Mengikuti master yang ditetapkan superadmin. Jika opsi belum tersedia, hubungi admin.</span>
-                            @error('bagian')<span class="error">{{ $message }}</span>@enderror
-                        </div>
+                                <span class="hint">Khusus satker kategori polres, bag/fungsi dipilih dari master superadmin.</span>
+                                @error('bagian')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                        @endif
                     </div>
 
-                    <div class="note">Simpan langkah ini dulu, lalu lanjut ke ukuran.</div>
+                    <div class="note">{{ $usesBagianDropdown ? 'Simpan jabatan dan bag/fungsi dulu, lalu lanjut ke ukuran.' : 'Simpan jabatan dulu, lalu lanjut ke ukuran.' }}</div>
 
                         <div style="margin-top: 14px;">
                             <button type="submit" class="button">Simpan Data Tugas</button>
@@ -482,7 +485,9 @@
                         @csrf
                         <input type="hidden" name="mode" value="sizes">
                         <input type="hidden" name="jabatan" value="{{ old('jabatan', $personnel->jabatan ?? '') }}">
-                        <input type="hidden" name="bagian" value="{{ old('bagian', $personnel->bagian ?? '') }}">
+                        @if ($usesBagianDropdown)
+                            <input type="hidden" name="bagian" value="{{ old('bagian', $personnel->bagian ?? '') }}">
+                        @endif
 
                         <div class="field-grid">
                             <div class="field">
@@ -612,14 +617,43 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const positionTomSelectDropdown = (instance) => {
+                const dropdown = instance.dropdown;
+                const control = instance.control;
+
+                if (!dropdown || !control) {
+                    return;
+                }
+
+                const rect = control.getBoundingClientRect();
+                const dropdownHeight = Math.min(dropdown.scrollHeight || 0, 320) || dropdown.offsetHeight || 0;
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const spaceAbove = rect.top;
+                const openUp = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+
+                dropdown.style.width = `${rect.width}px`;
+                dropdown.style.left = `${window.scrollX + rect.left}px`;
+                dropdown.style.top = openUp
+                    ? `${window.scrollY + rect.top - dropdownHeight - 8}px`
+                    : `${window.scrollY + rect.bottom + 8}px`;
+            };
+
             // Apply Tom Select to all select elements with class 'control'
             document.querySelectorAll('select.control').forEach((el) => {
-                new TomSelect(el, {
+                const tom = new TomSelect(el, {
                     create: false,
-                    sortField: null, // preserve original order
-                    maxOptions: null, 
+                    sortField: null,
+                    maxOptions: null,
                     searchField: ['text'],
+                    dropdownParent: 'body',
+                    dropdownClass: 'ts-dropdown personil-floating-dropdown',
+                    onDropdownOpen() {
+                        positionTomSelectDropdown(this);
+                    },
                 });
+
+                window.addEventListener('resize', () => positionTomSelectDropdown(tom));
+                window.addEventListener('scroll', () => positionTomSelectDropdown(tom), true);
             });
 
             const openIdentityButton = document.querySelector('[data-open-identity]');

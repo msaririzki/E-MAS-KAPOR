@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Testimonial;
 use App\Services\AuditLogger;
 use App\Services\KaporRequirementService;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,11 +23,15 @@ class PersonilPortalController extends Controller
         $mode = $request->input('mode') === 'identity' ? 'identity' : 'sizes';
         $requiresJilbab = $personnel->gender === 'P'
             && strtoupper(trim((string) $personnel->religion)) === 'ISLAM';
+        $requiresBagian = ($personnel->satker ?? $request->user()?->satker)?->recipientScope() === 'polres';
 
         $rules = [
             'jabatan' => 'required|string|max:255',
-            'bagian' => 'required|string|max:255',
         ];
+
+        if ($requiresBagian) {
+            $rules['bagian'] = 'required|string|max:255';
+        }
 
         if ($mode === 'sizes') {
             $rules = array_merge($rules, [
@@ -56,7 +59,9 @@ class PersonilPortalController extends Controller
 
         $nextIdentity = [
             'jabatan' => $this->normalizeIdentityValue($validated['jabatan']),
-            'bagian' => $this->normalizeIdentityValue($validated['bagian']),
+            'bagian' => $requiresBagian
+                ? $this->normalizeIdentityValue($validated['bagian'])
+                : $personnel->bagian,
         ];
 
         $personnel->jabatan = $nextIdentity['jabatan'];
@@ -80,7 +85,9 @@ class PersonilPortalController extends Controller
 
         if ($mode === 'identity') {
             return redirect()->to(route('dashboard').'#ukuran-form')
-                ->with('success', 'Data jabatan dan bag/fungsi tersimpan. Lanjutkan ke form ukuran kaporlap.');
+                ->with('success', $requiresBagian
+                    ? 'Data jabatan dan bag/fungsi tersimpan. Lanjutkan ke form ukuran kaporlap.'
+                    : 'Data jabatan tersimpan. Lanjutkan ke form ukuran kaporlap.');
         }
 
         return redirect()->route('dashboard')
@@ -156,7 +163,7 @@ class PersonilPortalController extends Controller
 
             if (now()->lessThan($cooldownEndsAt)) {
                 return redirect()->route('personil.testimoni.index')
-                    ->with('error_testimoni', 'Anda sudah memberi testimoni baru-baru ini. Silakan tunggu hingga '.$cooldownEndsAt->format('d M Y').'.') ;
+                    ->with('error_testimoni', 'Anda sudah memberi testimoni baru-baru ini. Silakan tunggu hingga '.$cooldownEndsAt->format('d M Y').'.');
             }
         }
 

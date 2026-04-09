@@ -219,16 +219,18 @@ class DashboardController extends Controller
         $hasSubmitted = false;
         $isComplete = false;
         $identityReady = false;
+        $requiresBagian = false;
 
         if ($personnel) {
             $kaporSizes = $personnel->kapor_sizes ?? [];
             $hasSubmitted = ! empty(array_filter((array) $kaporSizes));
             $isComplete = $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel);
+            $requiresBagian = ($personnel->satker ?? $user->satker)?->recipientScope() === 'polres';
             $identityReady = filled(trim((string) $personnel->jabatan))
-                && filled(trim((string) $personnel->bagian));
+                && (! $requiresBagian || filled(trim((string) $personnel->bagian)));
         }
 
-        return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'isComplete', 'identityReady', 'fiscalYear', 'bagianOptions'));
+        return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'isComplete', 'identityReady', 'requiresBagian', 'fiscalYear', 'bagianOptions'));
     }
 
     private function countPersonnelWithCompleteSizes(?int $satkerId = null): int
