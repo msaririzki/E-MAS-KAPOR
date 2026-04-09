@@ -209,14 +209,18 @@
         overflow: hidden !important;
     }
 
+    /* Memaksa semua font menjadi warna hitam murni di cetakan */
+    * {
+        color: #000000 !important;
+    }
+
     /* 2. LAYOUT RESET - Gunakan seluruh lebar kertas */
-    html, body, * {
+    html, body {
         background-color: #ffffff !important;
         color: #000 !important;
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
-        height: auto !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
@@ -266,24 +270,29 @@
     .table-wrap {
         overflow: visible !important;
         width: 100% !important;
+        zoom: 75% !important; /* Perkecil keseluruhan tabel 25% agar pasti pas di kertas */
     }
 
     table {
         width: 100% !important;
+        min-width: auto !important;
         border-collapse: collapse !important;
         border: 1.5px solid #000 !important;
         font-family: Arial, sans-serif !important;
-        font-size: 7.5pt !important; /* Font diperkecil agar kolom muat */
+        font-size: 6.5pt !important; /* Font diperkecil lagi agar pasti muat */
         color: #000 !important;
         table-layout: auto !important;
     }
 
     th, td {
         border: 1px solid #000 !important;
-        padding: 3px 2px !important; /* Padding minimal */
+        padding: 2px 1px !important; /* Padding diminimalkan */
         text-align: center !important; /* Rata tengah secara default */
         vertical-align: middle !important;
         word-wrap: break-word !important;
+        width: auto !important;      /* TImpa inline width */
+        min-width: 0 !important;     /* TImpa inline min-width */
+        max-width: none !important;
     }
 
     /* Kolom Nama Lengkap (kolom ke-2) tetap rata kiri */
@@ -310,12 +319,12 @@
         background-color: #ffffca !important;
     }
 
-    /* Spefisikasi Cell NRP agar lebih terlihat */
+    /* Spefisikasi Cell NRP agar lebih terlihat proporsional */
     .nrp-cell {
         font-weight: 700 !important;
         font-family: Arial, sans-serif !important;
-        font-size: 8pt !important;
-        letter-spacing: 0.1px !important;
+        font-size: 7pt !important;
+        letter-spacing: 0px !important;
     }
 
     /* Page Breaks */
@@ -325,7 +334,7 @@
 
     @page {
         size: A4 landscape;
-        margin: 1cm 0.7cm;
+        margin: 5mm; /* Margin dikecilkan semaksimal mungkin */
     }
 }
 </style>
