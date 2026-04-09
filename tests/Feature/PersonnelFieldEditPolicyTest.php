@@ -444,6 +444,93 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response->assertDontSeeText('Bag/Fungsi');
     }
 
+    public function test_personil_write_routes_are_blocked_when_system_is_locked_but_history_remains_read_only(): void
+    {
+        Setting::setValue('is_system_locked', 'true');
+
+        $satker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPDA',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'EGAS DOSANTOS',
+            'nrp_nip' => '76100151',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        Personnel::create([
+            'user_id' => $user->id,
+            'nrp' => '76100151',
+            'full_name' => 'EGAS DOSANTOS',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'golongan' => 'BINTARA',
+            'jabatan' => 'BANIT RESKRIM',
+            'bagian' => 'SAT RESKRIM',
+            'satker_id' => $satker->id,
+            'religion' => 'Islam',
+            'is_active' => true,
+            'kapor_sizes' => ['topi' => '57'],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('personil.kapor.history'))
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->post(route('personil.kapor.store'), [
+                'jabatan' => 'BANIT RESKRIM',
+                'bagian' => 'SAT RESKRIM',
+                'kemeja' => '15',
+                'celana' => '32',
+                'olahraga' => 'B',
+                'jaket' => 'B',
+                'topi' => '57',
+                'sabuk' => '42',
+                'sepatu_dinas' => '41',
+                'sepatu_olahraga' => '41',
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_admin_satker_write_routes_are_blocked_outside_input_period_but_index_remains_read_only(): void
+    {
+        Setting::setValue('is_system_locked', 'false');
+        Setting::setValue('input_start_date', now()->subMonths(3)->toDateString());
+        Setting::setValue('input_end_date', now()->subDay()->toDateString());
+
+        $satker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $adminSatker = User::factory()->create([
+            'satker_id' => $satker->id,
+        ]);
+        $adminSatker->assignRole('admin_satker');
+
+        $this->actingAs($adminSatker)
+            ->get(route('admin-satker.kebutuhan.index'))
+            ->assertOk();
+
+        $this->actingAs($adminSatker)
+            ->post(route('admin-satker.kebutuhan.store'), [
+                'items' => [],
+            ])
+            ->assertForbidden();
+    }
+
     public function test_personil_dashboard_renders_mobile_first_form_flow(): void
     {
         $satker = Satker::create([

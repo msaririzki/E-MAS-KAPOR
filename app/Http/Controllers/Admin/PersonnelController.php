@@ -6,6 +6,7 @@ use App\Exports\PersonnelExport;
 use App\Exports\PersonnelKeteranganExport;
 use App\Exports\PersonnelTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\SystemLock;
 use App\Imports\PersonnelImport;
 use App\Imports\PersonnelKeteranganImport;
 use App\Imports\PersonnelSdmImport;
@@ -262,6 +263,8 @@ class PersonnelController extends Controller
     {
         $isAdminSatker = $request->user()?->hasRole('admin_satker');
 
+        $this->abortIfAdminSatkerWriteLocked($request);
+
         $validated = $request->validate([
             'nrp' => 'required|string',
             'full_name' => 'required|string|max:255',
@@ -353,6 +356,8 @@ class PersonnelController extends Controller
 
     public function storeMeasurements(Request $request, Personnel $personnel)
     {
+        $this->abortIfAdminSatkerWriteLocked($request);
+
         $validated = $request->validate([
             'kapor_sizes' => 'required|array',
         ]);
@@ -517,6 +522,8 @@ class PersonnelController extends Controller
     {
         abort_unless((int) $personnel->satker_id === (int) $request->user()?->satker_id, 403, 'Anda hanya dapat mengedit personel pada satker Anda sendiri.');
 
+        $this->abortIfAdminSatkerWriteLocked($request);
+
         $validated = $request->validate([
             'nrp' => 'required|string|unique:personnels,nrp,'.$personnel->id,
             'full_name' => 'required|string|max:255',
@@ -595,6 +602,8 @@ class PersonnelController extends Controller
 
     public function destroy(Personnel $personnel)
     {
+        $this->abortIfAdminSatkerWriteLocked(request());
+
         $satkerId = $personnel->satker_id;
 
         DB::beginTransaction();
@@ -873,6 +882,8 @@ class PersonnelController extends Controller
         set_time_limit(0);
         ini_set('memory_limit', '2G');
 
+        $this->abortIfAdminSatkerWriteLocked($request);
+
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv|max:51200',
             'satker_id' => 'required|exists:satkers,id',
@@ -958,6 +969,8 @@ class PersonnelController extends Controller
     {
         set_time_limit(0);
 
+        $this->abortIfAdminSatkerWriteLocked($request);
+
         $satkerId = session('update_import_satker_id');
         $preview = session('update_import_preview');
 
@@ -1021,6 +1034,8 @@ class PersonnelController extends Controller
      */
     public function importUpdateCancel()
     {
+        $this->abortIfAdminSatkerWriteLocked(request());
+
         session()->forget(['update_import_preview', 'update_import_satker_id', 'update_import_stats']);
 
         return redirect()->route('admin.personnel.index')->with('info', 'Proses import update dibatalkan.');
@@ -1774,5 +1789,19 @@ class PersonnelController extends Controller
     private function ensureSuperadmin(): void
     {
         abort_unless(auth()->user()?->hasRole('superadmin'), 403, 'Hanya Superadmin yang dapat mengakses fitur ini.');
+    }
+
+    private function abortIfAdminSatkerWriteLocked(?Request $request = null): void
+    {
+        $request ??= request();
+
+        if (! $request?->user()?->hasRole('admin_satker')) {
+            return;
+        }
+
+        $lockMessage = SystemLock::resolveLockMessage();
+        if ($lockMessage !== null) {
+            abort(403, $lockMessage);
+        }
     }
 }

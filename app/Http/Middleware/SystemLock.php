@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Setting;
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -10,33 +11,42 @@ use Symfony\Component\HttpFoundation\Response;
 class SystemLock
 {
     /**
-     * Block kapor submissions when the system is locked by Superadmin.
+     * Block write actions when the system is locked by Superadmin.
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $isLocked = Setting::getValue('is_system_locked', 'false');
+        $lockMessage = self::resolveLockMessage();
 
-        // 1. Cek kunci manual (Force Lock)
-        if ($isLocked === 'true' || $isLocked === '1') {
-            abort(403, 'Sistem sedang dikunci paksa oleh Administrator. Pengisian data kapor ditutup.');
+        if ($lockMessage !== null && ! in_array($request->method(), ['GET', 'HEAD', 'OPTIONS'], true)) {
+            abort(403, $lockMessage);
         }
 
-        // 2. Cek rentang tanggal (Periode Input)
+        return $next($request);
+    }
+
+    public static function resolveLockMessage(): ?string
+    {
+        $isLocked = Setting::getValue('is_system_locked', 'false');
+
+        if ($isLocked === 'true' || $isLocked === '1') {
+            return 'Sistem sedang dikunci paksa oleh Administrator. Pengisian data kapor ditutup.';
+        }
+
         $startDateStr = Setting::getValue('input_start_date', date('Y-02-01'));
         $endDateStr = Setting::getValue('input_end_date', date('Y-08-31'));
 
         try {
-            $startDate = \Carbon\Carbon::parse($startDateStr)->startOfDay();
-            $endDate = \Carbon\Carbon::parse($endDateStr)->endOfDay();
+            $startDate = Carbon::parse($startDateStr)->startOfDay();
+            $endDate = Carbon::parse($endDateStr)->endOfDay();
             $now = now();
 
             if ($now->lessThan($startDate) || $now->greaterThan($endDate)) {
-                abort(403, "Sistem terkunci. Saat ini berada di luar periode pengisian data KAPOR ({$startDate->format('d M Y')} s/d {$endDate->format('d M Y')}).");
+                return "Sistem terkunci. Saat ini berada di luar periode pengisian data KAPOR ({$startDate->format('d M Y')} s/d {$endDate->format('d M Y')}).";
             }
         } catch (\Exception $e) {
-            // Jika parsing tanggal gagal (tidak valid), biarkan lanjut untuk mencegah error server
+            return null;
         }
 
-        return $next($request);
+        return null;
     }
 }
