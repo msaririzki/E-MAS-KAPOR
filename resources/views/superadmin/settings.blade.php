@@ -4,11 +4,27 @@
 @section('breadcrumb', 'Pengaturan')
 
 @section('content')
+@php
+    $today = now()->toDateString();
+    $isWithinInputPeriod = $today >= $settings['input_start_date'] && $today <= $settings['input_end_date'];
+    $systemStatusLabel = $settings['is_system_locked']
+        ? 'Terkunci paksa'
+        : ($isWithinInputPeriod ? 'Periode input aktif' : 'Di luar periode input');
+    $systemStatusClass = $settings['is_system_locked']
+        ? 'danger'
+        : ($isWithinInputPeriod ? 'success' : 'warning');
+    $personnelRequestModeLabel = $settings['personnel_request_mode'] === 'auto'
+        ? 'Langsung aktif'
+        : 'Perlu verifikasi superadmin';
+    $periodSummary = \Illuminate\Support\Carbon::parse($settings['input_start_date'])->translatedFormat('d M Y')
+        .' - '.
+        \Illuminate\Support\Carbon::parse($settings['input_end_date'])->translatedFormat('d M Y');
+@endphp
 <div class="page-header">
     <div class="page-header-row">
         <div>
-            <h1>Pengaturan & Personalisasi</h1>
-            <p>Kelola konfigurasi sistem E-MAS KAPOR dan preferensi tampilan Anda.</p>
+            <h1>Pengaturan Sistem Superadmin</h1>
+            <p>Pusat kontrol untuk mengatur perilaku sistem, master referensi, dan preferensi tampilan akun Anda.</p>
         </div>
     </div>
 </div>
@@ -25,18 +41,64 @@
 </div>
 @endif
 
+@if($errors->any())
+<div class="alert alert-danger">
+    <i class="ri-error-warning-line"></i>
+    <div class="alert-content">
+        <strong>Data belum tersimpan</strong>
+        <span>{{ $errors->first() }}</span>
+    </div>
+</div>
+@endif
+
 <div class="settings-container">
+    <div class="settings-overview">
+        <div class="overview-card">
+            <span class="overview-label">Tahun Anggaran Aktif</span>
+            <strong>TA {{ $settings['fiscal_year'] }}</strong>
+            <span class="overview-note">Dipakai pada dashboard, rekap, dan pengolahan data berjalan.</span>
+        </div>
+        <div class="overview-card">
+            <span class="overview-label">Status Sistem</span>
+            <strong>{{ $systemStatusLabel }}</strong>
+            <span class="status-pill {{ $systemStatusClass }}">{{ $settings['is_system_locked'] ? 'Input ditutup' : 'Mengikuti jadwal' }}</span>
+        </div>
+        <div class="overview-card">
+            <span class="overview-label">Periode Input Aktif</span>
+            <strong>{{ $periodSummary }}</strong>
+            <span class="overview-note">Di luar rentang ini, input personel otomatis ditutup.</span>
+        </div>
+        <div class="overview-card">
+            <span class="overview-label">Mode Tambah Personel</span>
+            <strong>{{ $personnelRequestModeLabel }}</strong>
+            <span class="overview-note">Mengatur usulan personel baru dari admin satker.</span>
+        </div>
+    </div>
 
     {{-- 1. Konfigurasi Umum --}}
     <div class="settings-section">
         <div class="settings-info">
+            <span class="settings-eyebrow">Pengaturan global</span>
             <h3><i class="ri-settings-4-line"></i> Konfigurasi Umum</h3>
-            <p>Atur nama aplikasi dan tentukan Tahun Anggaran yang sedang aktif. Pengaturan ini akan berdampak pada seluruh pengguna sistem E-MAS KAPOR.</p>
+            <p>Bagian ini memengaruhi seluruh pengguna. Gunakan untuk mengatur tahun berjalan, jadwal masa pengisian, dan cara usulan personel baru diproses.</p>
+            <div class="impact-pill">Berlaku untuk seluruh sistem</div>
         </div>
         <div class="settings-card">
             <form method="POST" action="{{ route('superadmin.settings.update') }}">
                 @csrf
                 @method('PUT')
+
+                <div class="section-guide">
+                    <div class="guide-title">
+                        <i class="ri-information-line"></i>
+                        <strong>Panduan singkat</strong>
+                    </div>
+                    <ul class="guide-list">
+                        <li>Ubah Tahun Anggaran aktif hanya saat Anda memang memindahkan siklus kerja.</li>
+                        <li>`Kunci Sistem Paksa` dipakai untuk kondisi darurat, misalnya ingin menutup akses input segera.</li>
+                        <li>Jika kunci paksa mati, sistem akan membuka atau menutup input berdasarkan periode tanggal di bawah.</li>
+                    </ul>
+                </div>
                 
                 <div class="modern-form-group">
                     <label>Nama Aplikasi <span class="required">*</span></label>
@@ -58,46 +120,64 @@
                 <div class="modern-form-group">
                     <label>Mode Penambahan Personel oleh Admin Satker <span class="required">*</span></label>
                     <select name="personnel_request_mode" class="modern-input" required>
-                        <option value="auto" {{ $settings['personnel_request_mode'] === 'auto' ? 'selected' : '' }}>Auto approve</option>
-                        <option value="pending_verification" {{ $settings['personnel_request_mode'] === 'pending_verification' ? 'selected' : '' }}>Pending verification</option>
+                        <option value="auto" {{ $settings['personnel_request_mode'] === 'auto' ? 'selected' : '' }}>Langsung aktif</option>
+                        <option value="pending_verification" {{ $settings['personnel_request_mode'] === 'pending_verification' ? 'selected' : '' }}>Perlu verifikasi superadmin</option>
                     </select>
-                    <p class="help-text">`Auto approve` akan langsung membuat akun personel aktif. `Pending verification` akan menyimpan usulan personel baru dalam status menunggu verifikasi.</p>
+                    <p class="help-text">Pilih `Langsung aktif` jika usulan personel dari admin satker boleh langsung menjadi akun aktif. Pilih `Perlu verifikasi superadmin` jika setiap usulan harus dicek lebih dulu.</p>
                 </div>
 
                 <div class="modern-toggle-group" style="padding-bottom: 12px; border-bottom: none;">
                     <div class="toggle-info">
-                        <strong>Kunci Sistem Paksa (Force Lock System)</strong>
-                        <span>Tombol Darurat: Jika diaktifkan, sistem akan SELALU TERKUNCI untuk input/perubahan tanpa memedulikan batas rentang tanggal masa pengisian di bawah.</span>
+                        <strong>Kunci Sistem Paksa</strong>
+                        <span>Jika diaktifkan, seluruh input dan perubahan data akan langsung ditutup walaupun periode input masih berjalan.</span>
                     </div>
                     <label class="modern-toggle">
                         <input type="checkbox" name="is_system_locked" value="1" {{ $settings['is_system_locked'] ? 'checked' : '' }}>
                         <div class="toggle-slider"></div>
                     </label>
                 </div>
+
+                <div class="status-banner {{ $systemStatusClass }}">
+                    <i class="{{ $settings['is_system_locked'] ? 'ri-lock-line' : 'ri-calendar-check-line' }}"></i>
+                    <div>
+                        <strong>Status saat ini: {{ $systemStatusLabel }}</strong>
+                        <span>
+                            @if($settings['is_system_locked'])
+                                Sistem sedang ditutup manual oleh superadmin.
+                            @elseif($isWithinInputPeriod)
+                                Hari ini masih berada di dalam masa pengisian data.
+                            @else
+                                Hari ini berada di luar masa pengisian data sehingga input otomatis ditutup.
+                            @endif
+                        </span>
+                    </div>
+                </div>
                 
-                <div style="padding: 0 24px 20px 24px; border-bottom: 1px solid var(--border-color);">
-                    <div style="background: var(--bg-body); border-radius: 8px; padding: 16px; border: 1px solid var(--border-color);">
-                        <div style="margin-bottom: 12px;">
-                            <strong style="font-size: 13px; color: var(--text-main); display: block;">Rentang Waktu Masa Pengisian Data</strong>
-                            <span style="font-size: 12px; color: var(--text-muted);">Sistem akan <b>otomatis terkunci</b> apabila tanggal saat ini berada di luar rentang tanggal (Periode Input) ini.</span>
+                <div class="period-card">
+                    <div class="period-card-head">
+                        <div>
+                            <strong>Masa Pengisian Data</strong>
+                            <span>Tentukan kapan form input dibuka dan kapan sistem otomatis menutup pengisian.</span>
                         </div>
-                        <div style="display: flex; gap: 16px;">
-                            <div style="flex: 1;">
-                                <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Tanggal Mulai</label>
-                                <div class="input-with-icon">
-                                    <i class="ri-calendar-event-line"></i>
-                                    <input type="date" name="input_start_date" class="modern-input" value="{{ $settings['input_start_date'] }}" required>
-                                </div>
+                        <span class="compact-pill">{{ $periodSummary }}</span>
+                    </div>
+                    <div class="period-grid">
+                        <div>
+                            <label>Tanggal Mulai</label>
+                            <div class="input-with-icon">
+                                <i class="ri-calendar-event-line"></i>
+                                <input type="date" name="input_start_date" class="modern-input" value="{{ $settings['input_start_date'] }}" required>
                             </div>
-                            <div style="flex: 1;">
-                                <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Tanggal Ditutup</label>
-                                <div class="input-with-icon">
-                                    <i class="ri-calendar-close-line"></i>
-                                    <input type="date" name="input_end_date" class="modern-input" value="{{ $settings['input_end_date'] }}" required>
-                                </div>
+                        </div>
+                        <div>
+                            <label>Tanggal Ditutup</label>
+                            <div class="input-with-icon">
+                                <i class="ri-calendar-close-line"></i>
+                                <input type="date" name="input_end_date" class="modern-input" value="{{ $settings['input_end_date'] }}" required>
                             </div>
                         </div>
                     </div>
+                    <p class="help-text">Jika tanggal hari ini berada di luar rentang ini, form pengisian personel tidak bisa dipakai kecuali Anda membuka kembali periodenya.</p>
                 </div>
 
                 <div class="settings-action-bar">
@@ -114,12 +194,21 @@
     {{-- 2. Personalisasi Tampilan --}}
     <div class="settings-section">
         <div class="settings-info">
+            <span class="settings-eyebrow">Khusus akun Anda</span>
             <h3><i class="ri-palette-line"></i> Tampilan Antarmuka</h3>
             <p>Sesuaikan tema warna sidebar sistem. Pengaturan ini <strong>hanya berlaku untuk akun Anda sendiri</strong> dan tidak akan memengaruhi admin lainnya.</p>
+            <div class="impact-pill neutral">Tidak mengubah data sistem</div>
         </div>
         <div class="settings-card">
             <form action="{{ route('profile.updateTheme') }}" method="POST" id="themeForm">
                 @csrf
+                <div class="section-guide subtle">
+                    <div class="guide-title">
+                        <i class="ri-brush-line"></i>
+                        <strong>Pilih tema yang paling nyaman</strong>
+                    </div>
+                    <p class="guide-text">Tema akan langsung diterapkan ke sidebar akun Anda setelah dipilih.</p>
+                </div>
                 <div class="theme-grid">
                     {{-- Default Navy --}}
                     <label class="theme-option {{ auth()->user()->theme == 'theme-default' || !auth()->user()->theme ? 'active' : '' }}">
@@ -247,13 +336,23 @@
     {{-- 2. Penanda Tangan Export --}}
     <div class="settings-section">
         <div class="settings-info">
+            <span class="settings-eyebrow">Default export</span>
             <h3><i class="ri-quill-pen-line"></i> Penanda Tangan Export</h3>
             <p>Konfigurasi ini dipakai sebagai default penanda tangan export pada akun superadmin dan menjadi fallback jika admin satker belum mengisi penanda tangan satkernya.</p>
+            <div class="impact-pill">Dipakai pada dokumen export</div>
         </div>
         <div class="settings-card">
             <form method="POST" action="{{ route('superadmin.settings.signatory.update') }}">
                 @csrf
                 @method('PUT')
+
+                <div class="section-guide subtle">
+                    <div class="guide-title">
+                        <i class="ri-file-text-line"></i>
+                        <strong>Isi sesuai format dokumen resmi</strong>
+                    </div>
+                    <p class="guide-text">Data ini akan muncul sebagai penanda tangan bawaan saat export. Jika admin satker punya pengaturan sendiri, pengaturan satker akan diprioritaskan.</p>
+                </div>
 
                 <div class="modern-form-group">
                     <label>Lokasi Tanda Tangan</label>
@@ -317,8 +416,10 @@
     {{-- 3. Master Bagian/Fungsi --}}
     <div class="settings-section">
         <div class="settings-info">
+            <span class="settings-eyebrow">Referensi dropdown</span>
             <h3><i class="ri-list-check-3"></i> Master Bagian / Fungsi</h3>
             <p>Kelola daftar opsi `bagian/fungsi` yang dipakai sebagai dropdown untuk satker bertipe `POLRES` atau `POLRESTA`. Untuk `POLDA`, input tetap manual.</p>
+            <div class="impact-pill neutral">{{ number_format($bagianOptions->count()) }} opsi tersimpan</div>
         </div>
         <div class="settings-card transparent-card">
             <div class="table-card" style="margin-bottom: 20px;">
@@ -392,8 +493,10 @@
     {{-- 4. Alias Satker SDM --}}
     <div class="settings-section">
         <div class="settings-info">
+            <span class="settings-eyebrow">Resolver import SDM</span>
             <h3><i class="ri-links-line"></i> Alias Satker SDM</h3>
             <p>Kelola alias tambahan yang dipakai resolver SDM saat membaca satker dari teks jabatan. Alias khusus di sini diprioritaskan lebih tinggi daripada alias turunan otomatis.</p>
+            <div class="impact-pill neutral">{{ number_format($sdmSatkerAliases->count()) }} alias tersimpan</div>
         </div>
         <div class="settings-card transparent-card">
             <div class="table-card" style="margin-bottom: 20px;">
@@ -488,8 +591,10 @@
     {{-- 5. Transisi Tahun Anggaran & Riwayat --}}
     <div class="settings-section">
         <div class="settings-info">
+            <span class="settings-eyebrow">Aksi sensitif</span>
             <h3><i class="ri-history-line"></i> Riwayat & Transisi</h3>
             <p>Kelola perpindahan Tahun Anggaran. Saat satu siklus tahun sudah ditutup, Anda bisa melangkah ke siklus tahun berikutnya.</p>
+            <div class="impact-pill warning">Perlu kehati-hatian tinggi</div>
         </div>
         <div class="settings-card transparent-card">
             
@@ -502,10 +607,19 @@
                         <p>Tindakan ini akan mengunci sistem, mengarsipkan paket anggaran tahun {{ $settings['fiscal_year'] }}, membuat Tahun Anggaran {{ $settings['fiscal_year'] + 1 }} menjadi aktif, dan mereset data tahunan aktif personel tanpa menghapus akun user.</p>
                     </div>
                 </div>
+                <div class="danger-checklist">
+                    <span>Yang akan terjadi:</span>
+                    <ul>
+                        <li>Sistem langsung dikunci.</li>
+                        <li>Paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan.</li>
+                        <li>Tahun Anggaran {{ $settings['fiscal_year'] + 1 }} menjadi aktif.</li>
+                        <li>Dataset personel aktif dikosongkan, tetapi akun user tetap disimpan.</li>
+                    </ul>
+                </div>
                 <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menyiapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}? Sistem akan dikunci, paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan, dan data tahunan aktif personel akan direset.')">
                     @csrf
                     <button type="submit" class="btn-danger-modern">
-                        Siapkan Anggaran Berikutnya
+                        Siapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}
                     </button>
                 </form>
             </div>
@@ -568,6 +682,39 @@
         margin: 0 auto;
         padding-bottom: 60px;
     }
+    .settings-overview {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 8px;
+    }
+    .overview-card {
+        background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+    }
+    .overview-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+    .overview-card strong {
+        font-size: 18px;
+        color: var(--text-main);
+        line-height: 1.3;
+    }
+    .overview-note {
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--text-muted);
+    }
     .settings-section {
         display: grid;
         grid-template-columns: 300px 1fr;
@@ -602,6 +749,43 @@
         color: var(--text-muted);
         line-height: 1.6;
     }
+    .settings-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: var(--bg-body);
+        border: 1px solid var(--border-color);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+    }
+    .impact-pill {
+        margin-top: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: var(--brand-bg);
+        border: 1px solid rgba(198, 40, 40, 0.14);
+        color: var(--brand);
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .impact-pill.neutral {
+        background: var(--bg-body);
+        border-color: var(--border-color);
+        color: var(--text-muted);
+    }
+    .impact-pill.warning {
+        background: #FFF7ED;
+        border-color: #FED7AA;
+        color: #C2410C;
+    }
 
     /* ── Right Side Cards ── */
     .settings-card {
@@ -618,6 +802,39 @@
         display: flex;
         flex-direction: column;
         gap: 20px;
+    }
+    .section-guide {
+        padding: 20px 24px 0;
+    }
+    .section-guide.subtle {
+        padding-bottom: 4px;
+    }
+    .guide-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        color: var(--text-main);
+    }
+    .guide-title i {
+        font-size: 18px;
+        color: var(--brand);
+    }
+    .guide-title strong {
+        font-size: 14px;
+    }
+    .guide-list {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--text-muted);
+        font-size: 12.5px;
+        line-height: 1.7;
+    }
+    .guide-text {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 12.5px;
+        line-height: 1.7;
     }
 
     /* ── Modern Form Elements ── */
@@ -666,6 +883,107 @@
         font-size: 11.5px;
         color: var(--text-muted);
         margin-top: 6px;
+    }
+    .status-banner {
+        margin: 0 24px 20px;
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-body);
+    }
+    .status-banner i {
+        font-size: 20px;
+        margin-top: 1px;
+    }
+    .status-banner strong {
+        display: block;
+        font-size: 13px;
+        color: var(--text-main);
+        margin-bottom: 4px;
+    }
+    .status-banner span {
+        display: block;
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+    .status-banner.success {
+        border-color: #BBF7D0;
+        background: #F0FDF4;
+    }
+    .status-banner.success i,
+    .status-banner.success strong {
+        color: #166534;
+    }
+    .status-banner.warning {
+        border-color: #FDE68A;
+        background: #FFFBEB;
+    }
+    .status-banner.warning i,
+    .status-banner.warning strong {
+        color: #92400E;
+    }
+    .status-banner.danger {
+        border-color: #FECACA;
+        background: #FEF2F2;
+    }
+    .status-banner.danger i,
+    .status-banner.danger strong {
+        color: #B91C1C;
+    }
+    .period-card {
+        margin: 0 24px 20px;
+        padding: 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: var(--bg-body);
+    }
+    .period-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    .period-card-head strong {
+        display: block;
+        font-size: 13px;
+        color: var(--text-main);
+        margin-bottom: 4px;
+    }
+    .period-card-head span {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.6;
+    }
+    .compact-pill {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+    .period-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+    .period-grid label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        margin-bottom: 6px;
     }
 
     /* ── Toggle Switch ── */
@@ -865,6 +1183,24 @@
         line-height: 1.5;
         margin: 0;
     }
+    .danger-checklist {
+        border-top: 1px dashed rgba(180, 83, 9, 0.2);
+        padding-top: 14px;
+    }
+    .danger-checklist > span {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: #92400E;
+        margin-bottom: 8px;
+    }
+    .danger-checklist ul {
+        margin: 0;
+        padding-left: 18px;
+        color: #B45309;
+        font-size: 12.5px;
+        line-height: 1.7;
+    }
     .btn-danger-modern {
         background: var(--bg-card);
         border: 1px solid #F59E0B;
@@ -946,6 +1282,8 @@
         font-weight: 600;
     }
     .status-pill.success { background: var(--success-bg); color: #065F46; }
+    .status-pill.warning { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
+    .status-pill.danger { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
     .status-pill.neutral { background: var(--slate-100); color: var(--slate-600); }
     
     .empty-state { text-align: center; color: var(--slate-400); padding: 32px !important; font-style: italic; }
@@ -963,10 +1301,16 @@
         box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.1);
         animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
+    .alert.alert-danger {
+        background: #FEF2F2;
+        border-color: #FECACA;
+        box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.08);
+    }
     .alert > i {
         font-size: 24px;
         color: #16A34A;
     }
+    .alert.alert-danger > i { color: #DC2626; }
     .alert-content {
         flex: 1;
         display: flex;
@@ -974,11 +1318,24 @@
     }
     .alert-content strong { color: #166534; font-size: 14px; margin-bottom: 2px; }
     .alert-content span { color: #15803D; font-size: 13px; }
+    .alert.alert-danger .alert-content strong { color: #991B1B; }
+    .alert.alert-danger .alert-content span { color: #B91C1C; }
     .alert-close {
         background: none; border: none; font-size: 20px; color: #16A34A; cursor: pointer; opacity: 0.7; transition: 0.2s;
     }
     .alert-close:hover { opacity: 1; transform: scale(1.1); }
     
+    @media (max-width: 900px) {
+        .settings-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px) {
+        .settings-overview,
+        .theme-grid,
+        .period-grid { grid-template-columns: 1fr; }
+        .period-card-head,
+        .modern-toggle-group { flex-direction: column; align-items: stretch; }
+    }
+
     @keyframes slideDown {
         from { opacity: 0; transform: translateY(-20px); }
         to { opacity: 1; transform: translateY(0); }

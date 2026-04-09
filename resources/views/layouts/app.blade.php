@@ -1813,55 +1813,53 @@
 
             {{-- ══ Admin / Superadmin Roles ══ --}}
             @if(auth()->user()->hasRole('superadmin'))
-                <div class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin.kapor-items.*') || request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'open' : '' }}">
+                <div class="nav-group {{ request()->routeIs('admin.identifikasi-kebutuhan.*') || request()->routeIs('admin.personnel.*') || request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-t-shirt-2-line group-icon"></i> Data Personel
+                        <i class="ri-t-shirt-2-line group-icon"></i> Data Kapor
                         <i class="ri-arrow-down-s-line group-chevron"></i>
                     </button>
                     <div class="nav-group-children">
-                        <a href="{{ route('admin.personnel.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.personnel.*') ? 'active' : '' }}">
-                            Data Personel
-                        </a>
-                        <a href="{{ route('admin.kapor-items.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.kapor-items.*') ? 'active' : '' }}">
-                            Item Kapor
-                        </a>
-                        @if(auth()->user()->hasRole('superadmin'))
-                            <a href="{{ route('superadmin.identifikasi-items.index') }}"
-                                class="nav-link {{ request()->routeIs('superadmin.identifikasi-items.*') ? 'active' : '' }}">
-                                Item Identifikasi
-                            </a>
-                        @endif
                         <a href="{{ route('admin.identifikasi-kebutuhan.index') }}"
                             class="nav-link {{ request()->routeIs('admin.identifikasi-kebutuhan.*') ? 'active' : '' }}">
                             Identifikasi Kebutuhan
                         </a>
-                    </div>
-                </div>
-
-                <div class="nav-group {{ request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
-                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-bar-chart-grouped-line group-icon"></i> Keuangan & Laporan
-                        <i class="ri-arrow-down-s-line group-chevron"></i>
-                    </button>
-                    <div class="nav-group-children">
+                        <a href="{{ route('admin.personnel.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.personnel.*') ? 'active' : '' }}">
+                            Data Personel
+                        </a>
                         <a href="{{ route('admin.budget.index') }}"
                             class="nav-link {{ request()->routeIs('admin.budget.*') ? 'active' : '' }}">
-                            Rencana Anggaran
+                            Rencana Pengadaan Kapor
                         </a>
                         <a href="{{ route('admin.reports') }}"
                             class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
                             Laporan
                         </a>
-                        <a href="{{ route('admin.audit-logs.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
-                            Log Audit
+                    </div>
+                </div>
+
+                <div class="nav-group {{ request()->routeIs('superadmin.identifikasi-items.*') || request()->routeIs('admin.kapor-items.*') || request()->routeIs('admin.satkers.*') ? 'open' : '' }}">
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
+                        <i class="ri-stack-line group-icon"></i> Data Pendukung
+                        <i class="ri-arrow-down-s-line group-chevron"></i>
+                    </button>
+                    <div class="nav-group-children">
+                        <a href="{{ route('superadmin.identifikasi-items.index') }}"
+                            class="nav-link {{ request()->routeIs('superadmin.identifikasi-items.*') ? 'active' : '' }}">
+                            Item Kapor Identifikasi Kebutuhan
+                        </a>
+                        <a href="{{ route('admin.kapor-items.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.kapor-items.*') ? 'active' : '' }}">
+                            Item Rencana Pengadaan Kapor
+                        </a>
+                        <a href="{{ route('admin.satkers.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.satkers.*') ? 'active' : '' }}">
+                            Data Satker dan Satwil
                         </a>
                     </div>
                 </div>
 
-                <div class="nav-group {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.satkers.*') ? 'open' : '' }}">
+                <div class="nav-group {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.audit-logs.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-shield-user-line group-icon"></i> Administrasi
                         <i class="ri-arrow-down-s-line group-chevron"></i>
@@ -1871,9 +1869,9 @@
                             class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                             Manajemen User
                         </a>
-                        <a href="{{ route('admin.satkers.index') }}"
-                            class="nav-link {{ request()->routeIs('admin.satkers.*') ? 'active' : '' }}">
-                            Data Satker
+                        <a href="{{ route('admin.audit-logs.index') }}"
+                            class="nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'active' : '' }}">
+                            Log Audit
                         </a>
                     </div>
                 </div>

@@ -10,30 +10,34 @@
             <h1 class="page-title">Personel</h1>
             <p class="page-subtitle">Direktorii personel dan informasi kapor</p>
         </div>
-        <div class="page-header-actions" style="display: flex; gap: 10px; align-items: center;">
+        <div class="page-header-actions personnel-header-actions">
 
             {{-- [1] TOMBOL TAMBAH PERSONEL — selalu tampil --}}
-            <button class="btn btn-primary" onclick="openModal('addPersonnelModal')">
-                <i class="ri-user-add-line"></i> Tambah
+            <button class="btn personnel-header-btn btn-add" onclick="openModal('addPersonnelModal')">
+                <div class="btn-content">
+                    <i class="ri-user-add-line"></i>
+                    <span>Tambah</span>
+                </div>
             </button>
 
             {{-- [2] DROPDOWN: IMPOR / EKSPOR --}}
-            <div class="dropdown-container" id="importExportDropdown" style="position: relative;">
-                <button type="button" class="btn" style="background: var(--slate-600); color: white;" onclick="this.parentElement.classList.toggle('open')">
-                    <span style="display: flex; align-items: center; gap: 6px;">
-                        <i class="ri-exchange-line"></i> Impor / Ekspor
-                    </span>
-                    <i class="ri-arrow-down-s-line" style="margin-left: 4px;"></i>
+            <div class="dropdown-container personnel-dropdown" id="importExportDropdown">
+                <button type="button" class="btn personnel-header-btn btn-export" onclick="this.parentElement.classList.toggle('open')">
+                    <div class="btn-content">
+                        <i class="ri-exchange-line"></i>
+                        <span>Impor / Ekspor</span>
+                        <i class="ri-arrow-down-s-line arrow-icon"></i>
+                    </div>
                 </button>
-                <div class="dropdown-menu" style="width: 260px; right: 0; left: auto;">
+                <div class="dropdown-menu personnel-dropdown-menu personnel-dropdown-menu-wide">
 
                     {{-- Export Personel (Update) --}}
-                    <div class="px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-100" style="padding: 8px 14px; font-size: 11px; font-weight: 700; color: #6B7280; background: #F9FAFB; border-bottom: 1px solid #F3F4F6; letter-spacing: 0.05em;">
+                    <div class="dropdown-section-label">
                         EKSPOR
                     </div>
                     @if(auth()->user()->hasRole('admin_satker'))
                     {{-- Admin Satker: langsung export tanpa modal --}}
-                    <a href="{{ route('admin.personnel.export-personnel') }}" class="dropdown-item" style="display: flex; align-items: center; gap: 10px;">
+                    <a href="{{ route('admin.personnel.export-personnel') }}" class="dropdown-item personnel-dropdown-item">
                         <i class="ri-file-excel-2-line" style="color: #059669; font-size: 16px;"></i>
                         <div>
                             <div style="font-weight: 600; color: #111827; font-size: 13px;">Export Data Personel</div>
@@ -42,7 +46,7 @@
                     </a>
                     @else
                     {{-- Admin: buka modal pilih satker --}}
-                    <button class="dropdown-item" onclick="openModal('exportPersonnelModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <button class="dropdown-item personnel-dropdown-item" onclick="openModal('exportPersonnelModal')">
                         <i class="ri-file-excel-2-line" style="color: #059669; font-size: 16px;"></i>
                         <div style="text-align: left;">
                             <div style="font-weight: 600; color: #111827; font-size: 13px;">Export Data Personel</div>
@@ -52,7 +56,7 @@
                     @endif
 
                     @if(auth()->user()->hasRole('superadmin'))
-                    <a href="{{ route('admin.personnel.export-keterangan') }}" class="dropdown-item" style="display: flex; align-items: center; gap: 10px;">
+                    <a href="{{ route('admin.personnel.export-keterangan') }}" class="dropdown-item personnel-dropdown-item">
                         <i class="ri-file-list-3-line" style="color: #7C3AED; font-size: 16px;"></i>
                         <div>
                             <div style="font-weight: 600; color: #111827; font-size: 13px;">Export Referensi Keterangan</div>
@@ -61,19 +65,19 @@
                     </a>
                     @endif
 
-                    <div style="border-top: 1px solid #F3F4F6; margin: 4px 0;"></div>
+                    <div class="dropdown-divider"></div>
 
                     {{-- IMPOR --}}
-                    <div style="padding: 8px 14px; font-size: 11px; font-weight: 700; color: #6B7280; background: #F9FAFB; border-bottom: 1px solid #F3F4F6; letter-spacing: 0.05em;">IMPOR</div>
+                    <div class="dropdown-section-label">IMPOR</div>
                     @if(auth()->user()->hasRole('superadmin'))
-                    <button class="dropdown-item" onclick="openModal('importSdmModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <button class="dropdown-item personnel-dropdown-item" onclick="openModal('importSdmModal')">
                         <i class="ri-database-2-line" style="color: #8B5CF6; font-size: 16px;"></i>
                         <div style="text-align: left;">
                             <div style="font-weight: 600; color: #111827; font-size: 13px;">Import Data SDM</div>
                             <div style="font-size: 11px; color: #6B7280;">Upload data pokok awal (Sdm)</div>
                         </div>
                     </button>
-                    <button class="dropdown-item" onclick="openModal('importKeteranganModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <button class="dropdown-item personnel-dropdown-item" onclick="openModal('importKeteranganModal')">
                         <i class="ri-file-edit-line" style="color: #7C3AED; font-size: 16px;"></i>
                         <div style="text-align: left;">
                             <div style="font-weight: 600; color: #111827; font-size: 13px;">Import Referensi Keterangan</div>
@@ -82,7 +86,7 @@
                     </button>
                     @endif
                     @if(auth()->user()->hasRole('admin'))
-                    <button class="dropdown-item" onclick="openModal('importModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <button class="dropdown-item personnel-dropdown-item" onclick="openModal('importModal')">
                         <i class="ri-file-upload-line" style="color: #F59E0B; font-size: 16px;"></i>
                         <div style="text-align: left;">
                             <div style="font-weight: 600; color: #111827; font-size: 13px;">Impor Data Baru</div>
@@ -91,7 +95,7 @@
                     </button>
                     @endif
                     @if(!auth()->user()->hasRole('superadmin'))
-                    <button class="dropdown-item" onclick="openModal('importUpdateModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <button class="dropdown-item personnel-dropdown-item" onclick="openModal('importUpdateModal')">
                         <i class="ri-refresh-line" style="color: #3B82F6; font-size: 16px;"></i>
                         <div style="text-align: left;">
                             <div style="font-weight: 600; color: #111827; font-size: 13px;">Impor Update Data</div>
@@ -104,25 +108,26 @@
 
             {{-- [3] DROPDOWN: LAINNYA (superadmin only) --}}
             @if(auth()->user()->hasRole('superadmin'))
-            <div class="dropdown-container" id="moreActionsDropdown" style="position: relative;">
-                <button type="button" class="btn btn-success" onclick="this.parentElement.classList.toggle('open')">
-                    <span style="display: flex; align-items: center; gap: 6px;">
-                        <i class="ri-more-2-fill"></i> Lainnya
-                    </span>
-                    <i class="ri-arrow-down-s-line" style="margin-left: 4px;"></i>
+            <div class="dropdown-container personnel-dropdown" id="moreActionsDropdown">
+                <button type="button" class="btn personnel-header-btn btn-more" onclick="this.parentElement.classList.toggle('open')">
+                    <div class="btn-content">
+                        <i class="ri-more-2-fill"></i>
+                        <span>Lainnya</span>
+                        <i class="ri-arrow-down-s-line arrow-icon"></i>
+                    </div>
                 </button>
-                <div class="dropdown-menu" style="width: 220px; right: 0; left: auto;">
-                    <button class="dropdown-item" onclick="openModal('printSatkerModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                <div class="dropdown-menu personnel-dropdown-menu">
+                    <button class="dropdown-item personnel-dropdown-item" onclick="openModal('printSatkerModal')">
                         <i class="ri-printer-line" style="color: #059669; font-size: 16px;"></i>
                         <div style="font-weight: 600; color: #111827; font-size: 13px;">Cetak Satker (PDF)</div>
                     </button>
-                    <div style="border-top: 1px solid #F3F4F6; margin: 4px 0;"></div>
-                    <button class="dropdown-item" onclick="openModal('bulkDeleteModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item personnel-dropdown-item" onclick="openModal('bulkDeleteModal')">
                         <i class="ri-delete-bin-line" style="color: #EF4444; font-size: 16px;"></i>
                         <div style="font-weight: 600; color: #EF4444; font-size: 13px;">Hapus Data Satker</div>
                     </button>
-                    <div style="border-top: 1px solid #F3F4F6; margin: 4px 0;"></div>
-                    <button class="dropdown-item" onclick="openModal('bulkDeleteAllModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item personnel-dropdown-item" onclick="openModal('bulkDeleteAllModal')">
                         <i class="ri-delete-bin-2-fill" style="color: #991B1B; font-size: 16px;"></i>
                         <div style="font-weight: 700; color: #991B1B; font-size: 13px;">Kosongkan Semua Personel</div>
                     </button>
@@ -130,8 +135,11 @@
             </div>
             @else
             {{-- Admin Satker: hanya Cetak PDF --}}
-            <button class="btn btn-success" onclick="openModal('printSatkerModal')">
-                <i class="ri-printer-line"></i> Cetak
+            <button class="btn personnel-header-btn btn-more" onclick="openModal('printSatkerModal')">
+                <div class="btn-content">
+                    <i class="ri-printer-line"></i>
+                    <span>Cetak</span>
+                </div>
             </button>
             @endif
 
@@ -149,150 +157,218 @@
     });
 </script>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon icon-blue">
-            <i class="ri-group-line"></i>
-        </div>
-        <div class="stat-content">
-            <span class="stat-label">TOTAL RILL PERSONEL</span>
-            <span class="stat-number">{{ number_format($stats['total_real']) }}</span>
-            <span class="stat-helper">{{ $stats['scope_label'] }}</span>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.12); color: #2563EB;">
-            <i class="ri-shield-user-line"></i>
-        </div>
-        <div class="stat-content">
-            <span class="stat-label">PERSONEL POLRI</span>
-            <span class="stat-number">{{ number_format($stats['polri']) }}</span>
-            <span class="stat-helper">Dalam hasil filter aktif</span>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.12); color: #7C3AED;">
-            <i class="ri-user-star-line"></i>
-        </div>
-        <div class="stat-content">
-            <span class="stat-label">PERSONEL PNS / PPPK</span>
-            <span class="stat-number">{{ number_format($stats['pns']) }}</span>
-            <span class="stat-helper">Dalam hasil filter aktif</span>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon icon-green">
-            <i class="ri-checkbox-circle-line"></i>
-        </div>
-        <div class="stat-content">
-            <span class="stat-label">SUDAH ISI UKURAN</span>
-            <span class="stat-number">{{ number_format($stats['submitted']) }}</span>
-            <span class="stat-helper">Ukuran wajib lengkap</span>
-        </div>
-    </div>
-    <style>
-        .stat-card-clickable {
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            border: 1px solid transparent;
-            overflow: hidden;
-        }
-        .stat-card-clickable::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(220, 38, 38, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
-            opacity: 0;
-            transition: opacity 0.25s ease;
-        }
-        .stat-card-clickable:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px -5px rgba(220, 38, 38, 0.15), 0 8px 10px -6px rgba(220, 38, 38, 0.1);
-            border-color: rgba(220, 38, 38, 0.2);
-        }
-        .stat-card-clickable:hover::before {
-            opacity: 1;
-        }
-        .stat-card-clickable .action-btn {
-            background: rgba(220, 38, 38, 0.08);
-            color: #DC2626;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 8px 14px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.25s;
-            border: 1px solid rgba(220, 38, 38, 0.2);
-        }
-        .stat-card-clickable:hover .action-btn {
-            background: #DC2626;
-            color: white;
-            border-color: #DC2626;
-            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
-            transform: translateX(2px);
-        }
-        .stat-card-clickable .action-btn i {
-            font-size: 15px;
-            line-height: 1;
-            transition: transform 0.2s;
-        }
-        .stat-card-clickable:hover .action-btn i {
-            transform: translateX(3px);
-        }
-        .stat-card-clickable:active {
-            transform: translateY(-1px);
-        }
-        @media (max-width: 768px) {
-            .stat-card-clickable {
-                grid-column: span 2 !important; /* Biar lega dari pinggir-ke-pinggir di mobile */
-            }
-            .alert-bar {
-                flex-direction: column !important;
-                align-items: stretch !important;
-                gap: 12px !important;
-                text-align: center;
-            }
-            .alert-bar .btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-    </style>
-    <a href="{{ route('admin.personnel.index', array_merge(request()->except(['page']), ['status' => 'incomplete', 'incomplete_scope' => 'size_only'])) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center;">
-        <div class="stat-icon icon-red">
-            <i class="ri-close-circle-line"></i>
-        </div>
-        <div class="stat-content" style="flex: 1;">
-            <span class="stat-label">BELUM ISI UKURAN</span>
-            <span class="stat-number">{{ number_format($stats['pending']) }}</span>
-            <span class="stat-helper">Klik untuk lihat daftar filter aktif</span>
-        </div>
-        <div style="padding-left: 16px; margin-right: 8px;">
-            <div class="action-btn">
-                Lihat Detail <i class="ri-arrow-right-line"></i>
-            </div>
-        </div>
-    </a>
+<style>
+.compact-stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 16px 24px;
+    gap: 20px;
+    margin-bottom: 24px;
+    margin-top: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+}
 
-    @if(auth()->user()->hasRole('superadmin'))
-    <a href="{{ route('admin.personnel.index', array_merge(request()->except(['page']), ['status' => 'pending_verification'])) }}" class="stat-card stat-card-clickable" style="text-decoration: none; color: inherit; cursor: pointer; display: flex; align-items: center;">
-        <div class="stat-icon" style="background: #FEF3C7; color: #D97706;">
-            <i class="ri-time-line"></i>
+.compact-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.compact-stat-divider {
+    width: 1px;
+    height: 36px;
+    background: #e2e8f0;
+}
+
+.compact-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    font-size: 22px;
+    transition: transform 0.2s ease;
+}
+
+.compact-stat-item:hover .compact-stat-icon {
+    transform: scale(1.05);
+}
+
+.compact-stat-icon.blue { background: #eff6ff; color: #3b82f6; }
+.compact-stat-icon.indigo { background: #eef2ff; color: #6366f1; }
+.compact-stat-icon.purple { background: #f5f3ff; color: #8b5cf6; }
+.compact-stat-icon.emerald { background: #ecfdf5; color: #10b981; }
+
+.compact-stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.compact-stat-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 2px;
+}
+
+.compact-stat-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+
+.compact-actions-container {
+    display: flex; 
+    gap: 12px; 
+    flex-wrap: wrap; 
+    flex: 1; 
+    justify-content: flex-end;
+}
+
+.compact-action-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    border: 1px solid transparent;
+}
+
+.compact-action-pill i {
+    font-size: 16px;
+}
+
+.compact-action-pill i.arrow {
+    font-size: 18px;
+    margin-left: -4px;
+    transition: transform 0.2s;
+}
+
+.compact-action-pill:hover i.arrow {
+    transform: translateX(3px);
+}
+
+.compact-action-pill.red {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fee2e2;
+}
+.compact-action-pill.red:hover {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+.compact-action-pill.amber {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fef3c7;
+}
+.compact-action-pill.amber:hover {
+    background: #d97706;
+    color: white;
+    border-color: #d97706;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+}
+
+@media (max-width: 1024px) {
+    .compact-actions-container {
+        justify-content: flex-start;
+        width: 100%;
+        margin-top: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .compact-stats-bar {
+        padding: 16px;
+        gap: 16px;
+        border-radius: 16px;
+    }
+    .compact-stat-divider { display: none; }
+    .compact-stat-item { flex-basis: calc(50% - 8px); }
+    .compact-action-pill { flex: 1; justify-content: center; }
+}
+</style>
+
+<div class="compact-stats-bar">
+    <div class="compact-stat-item" title="{{ $stats['scope_label'] }}">
+        <div class="compact-stat-icon blue">
+            <i class="ri-group-fill"></i>
         </div>
-        <div class="stat-content" style="flex: 1;">
-            <span class="stat-label">MENUNGGU VERIFIKASI</span>
-            <span class="stat-number">{{ number_format($stats['pending_verification'] ?? 0) }}</span>
-            <span class="stat-helper">Klik untuk lihat usulan personel baru</span>
+        <div class="compact-stat-content">
+            <span class="compact-stat-label">Total Real</span>
+            <span class="compact-stat-value">{{ number_format($stats['total_real']) }}</span>
         </div>
-        <div style="padding-left: 16px; margin-right: 8px;">
-            <div class="action-btn" style="background: rgba(217, 119, 6, 0.08); color: #D97706; border-color: rgba(217, 119, 6, 0.18);">
-                Verifikasi <i class="ri-arrow-right-line"></i>
-            </div>
+    </div>
+    
+    <div class="compact-stat-divider"></div>
+
+    <div class="compact-stat-item" title="Dalam hasil filter aktif">
+        <div class="compact-stat-icon indigo">
+            <i class="ri-shield-user-fill"></i>
         </div>
-    </a>
-    @endif
+        <div class="compact-stat-content">
+            <span class="compact-stat-label">Polri</span>
+            <span class="compact-stat-value">{{ number_format($stats['polri']) }}</span>
+        </div>
+    </div>
+
+    <div class="compact-stat-divider"></div>
+
+    <div class="compact-stat-item" title="Dalam hasil filter aktif">
+        <div class="compact-stat-icon purple">
+            <i class="ri-star-smile-fill"></i>
+        </div>
+        <div class="compact-stat-content">
+            <span class="compact-stat-label">PNS/PPPK</span>
+            <span class="compact-stat-value">{{ number_format($stats['pns']) }}</span>
+        </div>
+    </div>
+
+    <div class="compact-stat-divider"></div>
+
+    <div class="compact-stat-item" title="Ukuran wajib lengkap">
+        <div class="compact-stat-icon emerald">
+            <i class="ri-checkbox-circle-fill"></i>
+        </div>
+        <div class="compact-stat-content">
+            <span class="compact-stat-label">Sudah Isi</span>
+            <span class="compact-stat-value">{{ number_format($stats['submitted']) }}</span>
+        </div>
+    </div>
+
+    <div class="compact-actions-container">
+        <a href="{{ route('admin.personnel.index', array_merge(request()->except(['page']), ['status' => 'incomplete', 'incomplete_scope' => 'size_only'])) }}" 
+           class="compact-action-pill red" title="Lihat Daftar Belum Isi">
+            <i class="ri-close-circle-fill"></i>
+            <span>{{ number_format($stats['pending']) }} Belum Isi</span>
+            <i class="ri-arrow-right-s-line arrow"></i>
+        </a>
+
+        @if(auth()->user()->hasRole('superadmin'))
+        <a href="{{ route('admin.personnel.index', array_merge(request()->except(['page']), ['status' => 'pending_verification'])) }}" 
+           class="compact-action-pill amber" title="Lihat Usulan Personel Baru">
+            <i class="ri-time-fill"></i>
+            <span>{{ number_format($stats['pending_verification'] ?? 0) }} Verifikasi</span>
+            <i class="ri-arrow-right-s-line arrow"></i>
+        </a>
+        @endif
+    </div>
 </div>
 
 @if(($stats['nrp_issues'] ?? 0) > 0)
@@ -318,8 +394,9 @@
             Menampilkan personel dengan status <strong>menunggu verifikasi</strong> ({{ number_format($personnels->total()) }} orang)
         </span>
     </div>
-    <a href="{{ route('admin.personnel.index') }}" class="btn" style="background: #D97706; color: white; font-size: 13px; padding: 6px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-        <i class="ri-close-line"></i> Tampilkan Semua
+    <a href="{{ route('admin.personnel.index') }}" class="compact-action-pill amber" style="margin-left: auto;">
+        <i class="ri-close-circle-fill"></i>
+        <span>Tampilkan Semua</span>
     </a>
 </div>
 @endif
@@ -336,8 +413,9 @@
             @endif
         </span>
     </div>
-    <a href="{{ route('admin.personnel.index') }}" class="btn" style="background: #DC2626; color: white; font-size: 13px; padding: 6px 16px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-        <i class="ri-close-line"></i> Tampilkan Semua
+    <a href="{{ route('admin.personnel.index') }}" class="compact-action-pill red" style="margin-left: auto;">
+        <i class="ri-close-circle-fill"></i>
+        <span>Tampilkan Semua</span>
     </a>
 </div>
 @endif
@@ -2710,6 +2788,136 @@
     .page-title { font-size: 24px; font-weight: 700; color: #111827; margin: 0; }
     .page-subtitle { color: #6B7280; font-size: 14px; margin-top: 4px; }
     .page-header-actions { display: flex; gap: 12px; }
+    .personnel-header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .personnel-header-actions .btn-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .personnel-header-btn {
+        min-height: 42px;
+        padding: 0 18px;
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.12), 0 2px 4px -2px rgba(15, 23, 42, 0.08);
+    }
+    .personnel-header-btn::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.1);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    .personnel-header-btn:hover::after {
+        opacity: 1;
+    }
+    .personnel-header-btn:hover {
+        transform: translateY(-2px);
+    }
+    .personnel-header-btn:active {
+        transform: scale(0.97);
+    }
+    .personnel-header-actions .btn-add {
+        background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+        box-shadow: 0 10px 15px -8px rgba(239, 68, 68, 0.45);
+    }
+    .personnel-header-actions .btn-export {
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        box-shadow: 0 10px 15px -8px rgba(99, 102, 241, 0.45);
+    }
+    .personnel-header-actions .btn-more {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        box-shadow: 0 10px 15px -8px rgba(16, 185, 129, 0.45);
+    }
+    .personnel-dropdown {
+        position: relative;
+    }
+    .personnel-dropdown .arrow-icon {
+        transition: transform 0.2s ease;
+    }
+    .personnel-dropdown.open .arrow-icon {
+        transform: rotate(180deg);
+    }
+    .personnel-dropdown-menu {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        left: auto;
+        min-width: 220px;
+        background: #fff;
+        border: 1px solid #F3F4F6;
+        border-radius: 14px;
+        box-shadow: 0 14px 30px -12px rgba(15, 23, 42, 0.22);
+        z-index: 60;
+        display: none;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+        padding: 8px;
+    }
+    .personnel-dropdown-menu-wide {
+        min-width: 280px;
+    }
+    .personnel-dropdown.open .personnel-dropdown-menu {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+    .dropdown-section-label {
+        padding: 8px 14px;
+        margin: 0 -8px 4px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6B7280;
+        background: #F9FAFB;
+        border-bottom: 1px solid #F3F4F6;
+        letter-spacing: 0.05em;
+    }
+    .dropdown-divider {
+        height: 1px;
+        background: #F3F4F6;
+        margin: 6px 4px;
+    }
+    .personnel-dropdown-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        margin: 0;
+        border: none;
+        border-radius: 10px;
+        background: transparent;
+        color: #4B5563;
+        text-decoration: none;
+        text-align: left;
+        transition: all 0.15s ease;
+        cursor: pointer;
+    }
+    .personnel-dropdown-item:hover {
+        background: #F9FAFB;
+        color: #111827;
+    }
+    .personnel-dropdown-item i {
+        flex-shrink: 0;
+    }
 
     /* ── Responsive Design ─────────────────────────────── */
     @media (max-width: 1024px) {
@@ -2727,9 +2935,19 @@
         .page-header-actions {
             width: 100%;
         }
-        .page-header-actions button {
+        .personnel-header-actions {
+            flex-wrap: wrap;
+        }
+        .personnel-header-actions > * {
+            flex: 1 1 calc(50% - 5px);
+        }
+        .page-header-actions > button,
+        .page-header-actions > .dropdown-container > button {
             flex: 1;
             justify-content: center;
+        }
+        .personnel-header-actions .personnel-header-btn {
+            width: 100%;
         }
 
         .header-content {
@@ -2793,6 +3011,14 @@
     @media (max-width: 640px) {
         .stats-grid {
             grid-template-columns: 1fr;
+        }
+        .personnel-header-actions > * {
+            flex-basis: 100%;
+        }
+        .personnel-dropdown-menu,
+        .personnel-dropdown-menu-wide {
+            width: 100%;
+            min-width: 0;
         }
         
         .modal-content {
