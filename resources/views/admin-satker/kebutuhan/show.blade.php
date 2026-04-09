@@ -8,7 +8,7 @@
     <div class="page-header-row">
         <div>
             <h1>Detail Pengajuan</h1>
-            <p>{{ $kebutuhan->title }}</p>
+            <p>Tahun Anggaran {{ $kebutuhan->fiscal_year }}</p>
         </div>
         <div class="page-header-actions" style="display: flex; gap: 8px;">
             <a href="{{ route('admin-satker.kebutuhan.index') }}" class="btn btn-outline btn-sm"><i class="ri-arrow-left-line"></i> Kembali</a>
@@ -35,10 +35,7 @@
     <div class="card-head"><h3>Informasi Pengajuan</h3></div>
     <div class="card-body">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            <div>
-                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px;">Judul</div>
-                <div style="font-size: 14px; font-weight: 600;">{{ $kebutuhan->title }}</div>
-            </div>
+
             <div>
                 <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px;">Tahun Anggaran</div>
                 <div style="font-size: 14px; font-weight: 600;">{{ $kebutuhan->fiscal_year }}</div>

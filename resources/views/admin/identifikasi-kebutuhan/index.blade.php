@@ -238,7 +238,7 @@
     <div class="card-body" style="padding: 14px 20px;">
         <form method="GET" action="{{ route('admin.identifikasi-kebutuhan.index') }}" class="responsive-filter" id="filterForm" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 180px;">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari judul / satker..." class="search-input" style="width: 100%;">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari Satker" class="search-input" style="width: 100%;">
             </div>
             <div class="custom-select-wrapper" style="width: 200px; z-index: 10;">
                 <div class="custom-select" onclick="toggleDropdown(this)" style="height: 38px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg);">
@@ -273,9 +273,7 @@
             <thead>
                 <tr>
                     <th width="50" style="text-align: center;">No</th>
-                    <th>Judul Pengajuan</th>
                     <th>Satker</th>
-                    <th>Pengaju</th>
                     <th style="text-align: center;">Jumlah Item</th>
                     <th>Tanggal</th>
                     <th style="text-align: center;">Aksi</th>
@@ -285,16 +283,7 @@
                 @forelse($kebutuhans as $index => $k)
                 <tr>
                     <td style="text-align: center;">{{ $kebutuhans->firstItem() + $index }}</td>
-                    <td>
-                        <a href="{{ route('admin.identifikasi-kebutuhan.show', $k) }}" style="text-decoration: none; color: inherit;">
-                            <div class="cell-name" style="color: var(--brand);">{{ $k->title }}</div>
-                        </a>
-                        @if($k->notes)
-                            <div class="cell-sub">{{ Str::limit($k->notes, 50) }}</div>
-                        @endif
-                    </td>
-                    <td><span style="font-size: 12px;">{{ $k->satker->name ?? '-' }}</span></td>
-                    <td><span style="font-size: 12px;">{{ $k->user->name ?? '-' }}</span></td>
+                    <td><span style="font-size: 12px; font-weight: 500;">{{ $k->satker->name ?? '-' }}</span></td>
                     <td style="text-align: center;"><span class="badge badge-neutral">{{ $k->items->count() }}</span></td>
                     <td style="font-size: 12px;">{{ $k->submitted_at ? $k->submitted_at->format('d/m/Y') : $k->created_at->format('d/m/Y') }}</td>
                     <td style="text-align: center;">
@@ -316,7 +305,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                    <td colspan="5" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
                         <i class="ri-file-list-3-line" style="font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.5;"></i>
                         Belum ada pengajuan kebutuhan dari satker.
                     </td>
