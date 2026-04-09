@@ -94,8 +94,14 @@ class TestimonialInsightService
 
         $latestTestimonials = Testimonial::with(['user.satker'])
             ->latest()
-            ->take(8)
+            ->take(24) // 8 batches × 3 categories
             ->get();
+
+        // Group into batches (same user + same minute = one submission)
+        $latestBatches = $latestTestimonials
+            ->groupBy(fn (Testimonial $t): string => $t->user_id . '|' . $t->created_at->format('Y-m-d H:i'))
+            ->take(8)
+            ->values();
 
         $latestPositive = Testimonial::with(['user.satker'])
             ->whereRaw('COALESCE(rating, 5) >= 4')
@@ -117,15 +123,20 @@ class TestimonialInsightService
         $dashboardQuotes = $this->buildDashboardQuotes($latestPositive, $latestNeedsAttention, $latestTestimonials);
         $dashboardBadge = $this->buildDashboardBadge($serviceScore, $totalTestimonials);
 
+        // Per-category statistics
+        $categoryStats = $this->buildCategoryStats();
+
         return [
             'attentionCount' => $attentionCount,
             'averageRating' => $averageRating,
+            'categoryStats' => $categoryStats,
             'dashboardBadge' => $dashboardBadge,
             'dashboardQuotes' => $dashboardQuotes,
             'fiveStarRate' => $fiveStarRate,
             'lastSubmittedAt' => $lastSubmittedAt,
             'latestNeedsAttention' => $latestNeedsAttention,
             'latestPositive' => $latestPositive,
+            'latestBatches' => $latestBatches,
             'latestTestimonials' => $latestTestimonials,
             'ratingBreakdown' => $ratingBreakdown,
             'recentAverageRating' => $recentAverageRating,
@@ -136,6 +147,41 @@ class TestimonialInsightService
             'topSatkers' => $topSatkers,
             'totalTestimonials' => $totalTestimonials,
         ];
+    }
+
+    /**
+     * Build per-category average ratings and counts.
+     */
+    private function buildCategoryStats(): array
+    {
+        $stats = [];
+        $icons = [
+            'tutup_kepala' => ['icon' => 'ri-shield-user-line', 'bg' => '#eff6ff', 'color' => '#2563eb'],
+            'tutup_badan' => ['icon' => 'ri-t-shirt-2-line', 'bg' => '#f0fdf4', 'color' => '#059669'],
+            'tutup_kaki' => ['icon' => 'ri-footprint-line', 'bg' => '#fff7ed', 'color' => '#d97706'],
+        ];
+
+        foreach (Testimonial::CATEGORIES as $key => $label) {
+            $query = Testimonial::where('category', $key);
+            $count = $query->count();
+            $avgRating = round(
+                (float) (Testimonial::where('category', $key)
+                    ->selectRaw('AVG(COALESCE(rating, 5)) as avg_rating')
+                    ->value('avg_rating') ?? 0),
+                1,
+            );
+
+            $stats[$key] = [
+                'label' => $label,
+                'count' => $count,
+                'average_rating' => $avgRating,
+                'icon' => $icons[$key]['icon'] ?? 'ri-question-line',
+                'bg' => $icons[$key]['bg'] ?? '#f8fafc',
+                'color' => $icons[$key]['color'] ?? '#64748b',
+            ];
+        }
+
+        return $stats;
     }
 
     private function percentage(int $count, int $total): float
@@ -247,6 +293,18 @@ class TestimonialInsightService
 
     private function buildDashboardQuotes($latestPositive, $latestNeedsAttention, $latestTestimonials)
     {
+        // Deduplicate: pick one testimonial per submission batch (same user + same minute)
+        $seenBatches = [];
+        $uniqueTestimonials = $latestTestimonials->filter(function (Testimonial $t) use (&$seenBatches): bool {
+            $key = $t->user_id . '|' . $t->created_at->format('Y-m-d H:i');
+            if (isset($seenBatches[$key])) {
+                return false;
+            }
+            $seenBatches[$key] = true;
+
+            return true;
+        });
+
         $quotes = collect();
 
         if ($latestPositive) {
@@ -267,7 +325,7 @@ class TestimonialInsightService
             ]);
         }
 
-        foreach ($latestTestimonials as $testimonial) {
+        foreach ($uniqueTestimonials as $testimonial) {
             if ($quotes->contains(fn (array $item): bool => $item['testimonial']->id === $testimonial->id)) {
                 continue;
             }
@@ -279,11 +337,11 @@ class TestimonialInsightService
                 'testimonial' => $testimonial,
             ]);
 
-            if ($quotes->count() === 2) {
+            if ($quotes->count() === 6) {
                 break;
             }
         }
 
-        return $quotes->take(2)->values();
+        return $quotes->take(6)->values();
     }
 }

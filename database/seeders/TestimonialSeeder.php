@@ -11,7 +11,7 @@ class TestimonialSeeder extends Seeder
 {
     public function run(): void
     {
-        // Get 20 personnels to create exactly 20 testimonials
+        // Get 20 personnels to create testimonials
         $personnels = User::query()
             ->role('personil')
             ->orderBy('id')
@@ -24,64 +24,82 @@ class TestimonialSeeder extends Seeder
             return;
         }
 
-        // Varied Indonesian Testimonials
-        $messages5Star = [
-            'Aplikasi ini mempermudah proses pendataan kapor di lapangan. Mantap!',
-            'Sistemnya cepat dan responsif. Sangat membantu tugas kami di satker.',
-            'Tampilan dashboard yang baru sangat informatif, transparan dan memanjakan mata.',
-            'Proses input ukuran kapor sudah jauh lebih tertata. Koordinasi dari Polda hingga Polsek makin lancar.',
-            'Apresiasi tinggi untuk tim pengembang Logistik. Sistem E-MAS KAPOR sangat revolusioner!',
-            'UI/UX sangat modern, pengisian form juga mudah dipahami oleh seluruh anggota.',
+        // Varied Indonesian Testimonials per category
+        $messagesTutupKepala = [
+            'Topi dinas sangat pas ukurannya, nyaman dipakai seharian saat upacara maupun patroli.',
+            'Kualitas tutup kepala sudah sangat baik, material tidak panas dan sirkulasi udara lancar.',
+            'Helm dan topi yang diberikan sesuai dengan standar. Mantap!',
+            'Ukuran topi sesuai form yang diisi. Tidak ada masalah.',
+            'Baret dan topi dinas cocok semua. Proses distribusi juga cepat.',
+        ];
+
+        $messagesTutupBadan = [
+            'Kemeja dinas pas di badan, jahitannya rapi dan material tidak mudah kusut.',
+            'Jaket lapangan sangat nyaman dan tahan air. Kualitas premium.',
+            'Baju PDH dan PDL lengkap dan ukurannya sesuai. Sangat puas.',
+            'Seragam OKJ agak sedikit ketat tapi secara umum ok. Mungkin perlu varian ukuran lebih banyak.',
+            'Semua item tutup badan diterima dengan baik, sesuai pesanan.',
+        ];
+
+        $messagesTutupKaki = [
+            'Sepatu dinas sangat nyaman untuk kegiatan harian, sol bantalan empuk.',
+            'Sepatu PDL kuat dan tahan lama, sudah dipakai berbulan-bulan masih bagus.',
+            'Sepatu olahraga ringan dan nyaman untuk lari dan aktivitas fisik.',
+            'Sepatu dinas agak sedikit keras di awal, tapi setelah beberapa hari sudah nyaman.',
+            'Kualitas sepatu jauh lebih baik dari tahun lalu. Terima kasih tim logistik!',
+        ];
+
+        $genericMessages = [
+            'Terima kasih atas pelayanan distribusi kapor yang sangat baik tahun ini.',
+            'Sistem E-MAS KAPOR sangat membantu. Proses pendataan kapor jadi tertata rapi.',
             'Sangat inovatif dan paperless! Berhasil memangkas waktu birokrasi yang panjang.',
-            'Akses dari HP sangat lancar, tidak perlu repot buka laptop lagi buat isi data ukuran.',
+            'Akses dari HP sangat lancar, tidak perlu repot buka laptop untuk isi data ukuran.',
             'Luar biasa! Rekap data otomatisnya sangat akurat dan terpercaya.',
-            'Birokrasi logistik jadi jauh lebih efisien. Fiturnya sangat relevan dengan kebutuhan lapangan.',
-            'Sangat memuaskan! Data selalu terupdate secara real-time.',
-            'Dengan aplikasi ini, masalah salah ukuran kaporlap hampir bisa dipastikan tidak ada lagi.',
-            'Sistem sangat stabil walau diakses bersamaan oleh ratusan personil. Hebat!',
-            'Notifikasinya sangat membantu mengingatkan personil yang lupa mengisi data.',
-            'Semua data tersusun rapi. Sangat membantu pimpinan dalam mengambil keputusan anggaran.',
+            'Sistem sangat stabil walau diakses bersamaan oleh ratusan personil.',
+            'Semua data tersusun rapi. Membantu pimpinan dalam mengambil keputusan anggaran.',
             'Pengalaman pengguna (UX) patut diacungi jempol. Kelas nasional!',
-            'Terima kasih inovasinya. Benar-benar memudahkan kami para personil di satuan tingkat bawah.',
             'Aman, cepat, dan presisi. Terbaik sejauh ini.',
-            'Desain antarmuka memukau, serasa pakai aplikasi startup modern. Maju terus Polri!',
+            'Desain antarmuka memukau, maju terus Polri!',
         ];
 
-        $messages4Star = [
-            'Secara keseluruhan sangat bagus dan inovatif. Mungkin loading sedikit lama saat koneksi internet lemah di daerah pelosok.',
-            'Sistem sudah berjalan dengan baik. Fiturnya lengkap, tinggal dibiasakan saja bagi personil yang lebih senior.',
-            'Aplikasi E-MAS KAPOR sangat bermanfaat. Akan lebih sempurna jika ada fitur dark mode untuk akses di malam hari.',
-        ];
-
-        // Clear existing to ensure exact score
+        // Clear existing
         Testimonial::truncate();
 
         $count = 0;
+        $categories = array_keys(Testimonial::CATEGORIES);
+
         foreach ($personnels as $index => $user) {
-            // Give 19 people 5 stars, and 1 person 4 stars to ensure average is 4.95 => 99% score
-            $is4Star = ($count === 10); // The 11th person gets 4 stars
-
-            $rating = $is4Star ? 4 : 5;
-            $msgArray = $is4Star ? $messages4Star : $messages5Star;
-
-            // Pick a message
-            $msgIndex = $is4Star ? array_rand($messages4Star) : ($count % count($messages5Star));
-            $message = $msgArray[$msgIndex];
+            // 1 person (index 10) gets 4-star ratings, rest get 5-star
+            $is4Star = ($index === 10);
+            $baseRating = $is4Star ? 4 : 5;
 
             $daysAgo = rand(1, 29);
             $submittedAt = Carbon::now()->subDays($daysAgo)->setTime(rand(8, 16), rand(0, 59));
 
-            Testimonial::create([
-                'user_id' => $user->id,
-                'message' => $message,
-                'rating' => $rating,
-                'created_at' => $submittedAt,
-                'updated_at' => $submittedAt,
-            ]);
+            // Pick a shared message for this batch
+            $message = $genericMessages[$index % count($genericMessages)];
 
-            $count++;
+            // Create 3 testimonials (one per category) per user
+            foreach ($categories as $catIndex => $category) {
+                // Slightly vary category rating for realism
+                $rating = $baseRating;
+                if (! $is4Star && $catIndex === 2 && $index % 5 === 0) {
+                    $rating = 4; // some 4-star for tutup_kaki to add variety
+                }
+
+                Testimonial::create([
+                    'user_id' => $user->id,
+                    'category' => $category,
+                    'message' => $message,
+                    'rating' => $rating,
+                    'created_at' => $submittedAt,
+                    'updated_at' => $submittedAt,
+                ]);
+
+                $count++;
+            }
         }
 
-        $this->command?->info("Seeded $count testimonials intentionally for a 99% score.");
+        $this->command?->info("Seeded $count testimonials (3 categories × {$personnels->count()} users).");
     }
 }

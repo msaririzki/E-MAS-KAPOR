@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Testimonial;
 use App\Services\AuditLogger;
 use App\Services\KaporRequirementService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PersonilPortalController extends Controller
@@ -97,30 +99,92 @@ class PersonilPortalController extends Controller
 
     public function showTestimoni(Request $request): View
     {
+        $userId = $request->user()->id;
+
+        // Fetch last batch of testimonials by this user (grouped by submission time)
         $recentTestimonials = Testimonial::query()
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $userId)
             ->latest()
-            ->take(3)
+            ->take(9) // 3 categories × 3 submissions
             ->get();
 
-        return view('personil.testimoni.index', compact('recentTestimonials'));
+        // Cooldown check: find latest testimonial from this user
+        $latestTestimonial = Testimonial::query()
+            ->where('user_id', $userId)
+            ->latest()
+            ->first();
+
+        $canSubmit = true;
+        $cooldownEndsAt = null;
+        $daysSinceLastSubmit = null;
+
+        if ($latestTestimonial) {
+            $cooldownEndsAt = $latestTestimonial->created_at->addDays(Testimonial::COOLDOWN_DAYS);
+            $canSubmit = now()->greaterThanOrEqualTo($cooldownEndsAt);
+
+            if (! $canSubmit) {
+                $daysSinceLastSubmit = (int) now()->diffInDays($cooldownEndsAt, false);
+            }
+        }
+
+        // Group recent testimonials by submission batch (same created_at minute)
+        $groupedTestimonials = $recentTestimonials
+            ->groupBy(fn (Testimonial $t): string => $t->created_at->format('Y-m-d H:i'));
+
+        return view('personil.testimoni.index', compact(
+            'recentTestimonials',
+            'canSubmit',
+            'cooldownEndsAt',
+            'daysSinceLastSubmit',
+            'latestTestimonial',
+            'groupedTestimonials',
+        ));
     }
 
     public function storeTestimoni(Request $request): RedirectResponse
     {
+        $userId = $request->user()->id;
+
+        // Enforce cooldown on backend
+        $latestTestimonial = Testimonial::query()
+            ->where('user_id', $userId)
+            ->latest()
+            ->first();
+
+        if ($latestTestimonial) {
+            $cooldownEndsAt = $latestTestimonial->created_at->addDays(Testimonial::COOLDOWN_DAYS);
+
+            if (now()->lessThan($cooldownEndsAt)) {
+                return redirect()->route('personil.testimoni.index')
+                    ->with('error_testimoni', 'Anda sudah memberi testimoni baru-baru ini. Silakan tunggu hingga '.$cooldownEndsAt->format('d M Y').'.') ;
+            }
+        }
+
         $validated = $request->validate([
-            'message' => 'required|string|max:2000',
-            'rating' => 'nullable|integer|min:1|max:5',
+            'rating_tutup_kepala' => 'required|integer|min:1|max:5',
+            'rating_tutup_badan' => 'required|integer|min:1|max:5',
+            'rating_tutup_kaki' => 'required|integer|min:1|max:5',
+            'message' => 'nullable|string|max:2000',
         ]);
 
-        Testimonial::create([
-            'user_id' => $request->user()->id,
-            'message' => $validated['message'],
-            'rating' => $validated['rating'] ?? 5,
-        ]);
+        $message = $validated['message'] ?? '';
+        $now = now();
+
+        DB::transaction(function () use ($userId, $validated, $message, $now): void {
+            foreach (Testimonial::CATEGORIES as $key => $label) {
+                Testimonial::create([
+                    'user_id' => $userId,
+                    'category' => $key,
+                    'message' => $message,
+                    'rating' => $validated['rating_'.$key],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+        });
 
         return redirect()->route('personil.testimoni.index')
-            ->with('success_testimoni', 'Terima kasih atas tanggapan Anda! Testimoni berhasil dikirim.');
+            ->with('success_testimoni', 'Terima kasih! Testimoni untuk ketiga kategori kapor berhasil dikirim.');
     }
 
     private function normalizeIdentityValue(string $value): string

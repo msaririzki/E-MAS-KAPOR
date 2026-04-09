@@ -230,6 +230,7 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::post('/settings/next-year', [\App\Http\Controllers\SettingsController::class, 'nextYear'])->name('settings.next-year');
 
     Route::get('/statistik', [StatisticsController::class, 'index'])->name('statistics');
+    Route::get('/testimonials', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'index'])->name('testimonials.index');
 
     Route::resource('identifikasi-items', \App\Http\Controllers\Superadmin\IdentifikasiItemController::class)
         ->parameters(['identifikasi-items' => 'identifikasi_item'])

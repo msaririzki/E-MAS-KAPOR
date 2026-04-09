@@ -350,8 +350,105 @@
         background: var(--brand-gradient); color: #fff; font-size: 42px; box-shadow: 0 20px 40px rgba(185, 28, 28, 0.3);
     }
 
+    /* Category Stats Row */
+    .category-stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    .category-stat-card {
+        position: relative;
+        background: #fff;
+        border: 1px solid #f1f5f9;
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: 0 10px 30px -5px rgba(0,0,0,0.03);
+        transition: var(--transition);
+        overflow: hidden;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .category-stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08);
+    }
+
+    .category-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+    }
+
+    .category-stat-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+    .category-stat-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-heading);
+    }
+
+    .category-stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .category-stat-body {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+
+    .category-stat-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--text-heading);
+        line-height: 1;
+    }
+
+    .category-stat-stars {
+        display: flex;
+        gap: 3px;
+        color: #f59e0b;
+        font-size: 16px;
+    }
+
+    .category-stat-count {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 10px;
+    }
+
+    .testimonial-category-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: 6px;
+    }
+
     /* Responsive adjustments */
-    @media (max-width: 1024px) { .hero-grid, .feedback-grid, .spotlight-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 1024px) { .hero-grid, .feedback-grid, .spotlight-grid, .category-stats-row { grid-template-columns: 1fr; } }
     @media (max-width: 768px) {
         .hero-panel { padding: 24px; }
         .score-badge { width: 110px; height: 110px; border-radius: 30px; }
@@ -510,6 +607,38 @@
         </div>
     </div>
 
+    {{-- Per-Category Rating Breakdown --}}
+    @if(isset($categoryStats) && count($categoryStats) > 0)
+    <div class="category-stats-row">
+        @foreach($categoryStats as $catKey => $catStat)
+            <div class="category-stat-card" style="border-top: 0;">
+                <div style="position:absolute; top:0; left:0; right:0; height:4px; background: {{ $catStat['color'] }};"></div>
+                <div class="category-stat-head">
+                    <div class="category-stat-label">
+                        <div class="category-stat-icon" style="background: {{ $catStat['bg'] }}; color: {{ $catStat['color'] }};">
+                            <i class="{{ $catStat['icon'] }}"></i>
+                        </div>
+                        {{ $catStat['label'] }}
+                    </div>
+                </div>
+                <div class="category-stat-body">
+                    <div class="category-stat-value">{{ number_format($catStat['average_rating'], 1) }}</div>
+                    <div style="margin-left: 4px;">
+                        <div class="category-stat-stars">
+                            @for($star = 1; $star <= 5; $star++)
+                                <i class="{{ $catStat['average_rating'] >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
+                            @endfor
+                        </div>
+                    </div>
+                </div>
+                <div class="category-stat-count">
+                    {{ number_format($catStat['count']) }} testimoni
+                </div>
+            </div>
+        @endforeach
+    </div>
+    @endif
+
     <div class="feedback-grid">
         <div class="card">
             <div class="card-head">
@@ -652,36 +781,63 @@
         </div>
         <div class="card-body">
             <div class="testimonial-grid">
-                @foreach($latestTestimonials as $testimonial)
+                @php
+                    $catIcons = [
+                        'tutup_kepala' => ['icon' => 'ri-shield-user-line', 'bg' => '#eff6ff', 'color' => '#2563eb'],
+                        'tutup_badan'  => ['icon' => 'ri-t-shirt-2-line', 'bg' => '#f0fdf4', 'color' => '#059669'],
+                        'tutup_kaki'   => ['icon' => 'ri-footprint-line', 'bg' => '#fff7ed', 'color' => '#d97706'],
+                    ];
+                @endphp
+                @foreach($latestBatches as $batch)
+                    @php
+                        $firstItem = $batch->first();
+                        $user = $firstItem->user;
+                        $avgRating = round($batch->avg('rating'), 1);
+                    @endphp
                     <div class="testimonial-card">
                         <div class="testimonial-head">
                             <div style="display: flex; gap: 12px;">
                                 <div class="avatar-badge">
-                                    {{ strtoupper(substr($testimonial->user->name ?? 'PN', 0, 2)) }}
+                                    {{ strtoupper(substr($user->name ?? 'PN', 0, 2)) }}
                                 </div>
                                 <div>
-                                    <div style="font-weight: 800; color: var(--text-main);">{{ $testimonial->user->name ?? 'Personel' }}</div>
+                                    <div style="font-weight: 800; color: var(--text-main);">{{ $user->name ?? 'Personel' }}</div>
                                     <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                                        {{ $testimonial->user->nrp_nip ?? '-' }}
-                                        @if($testimonial->user?->satker?->name)
-                                            • {{ $testimonial->user->satker->name }}
+                                        {{ $user->nrp_nip ?? '-' }}
+                                        @if($user->satker?->name)
+                                            • {{ $user->satker->name }}
                                         @endif
                                     </div>
                                 </div>
                             </div>
                             <div style="text-align: right;">
-                                <div style="display: inline-flex; align-items: center; gap: 2px; color: #f59e0b; font-size: 14px;">
-                                    @for($star = 1; $star <= 5; $star++)
-                                        <i class="{{ ($testimonial->rating ?? 5) >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
-                                    @endfor
-                                </div>
-                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">{{ $testimonial->created_at->format('d M Y, H:i') }}</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">{{ $firstItem->created_at->format('d M Y, H:i') }}</div>
                             </div>
                         </div>
 
-                        <div class="testimonial-message">
-                            {{ $testimonial->message }}
+                        {{-- Category ratings inline --}}
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0;">
+                            @foreach($batch as $item)
+                                @php $meta = $catIcons[$item->category] ?? null; @endphp
+                                @if($meta)
+                                    <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 10px; background: {{ $meta['bg'] }}; border: 1px solid {{ $meta['color'] }}20;">
+                                        <i class="{{ $meta['icon'] }}" style="color: {{ $meta['color'] }}; font-size: 14px;"></i>
+                                        <span style="font-size: 12px; font-weight: 700; color: {{ $meta['color'] }};">{{ \App\Models\Testimonial::CATEGORIES[$item->category] ?? $item->category }}</span>
+                                        <span style="display: inline-flex; gap: 1px; color: #f59e0b; font-size: 12px; margin-left: 2px;">
+                                            @for($star = 1; $star <= 5; $star++)
+                                                <i class="{{ ($item->rating ?? 5) >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
+                                            @endfor
+                                        </span>
+                                    </div>
+                                @endif
+                            @endforeach
                         </div>
+
+                        @if(filled($firstItem->message))
+                            <div class="testimonial-message">
+                                {{ $firstItem->message }}
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>

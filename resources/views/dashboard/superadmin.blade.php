@@ -142,6 +142,11 @@
                         <div class="sat-modern-quote">
                             <i class="ri-double-quotes-l bg-quote-icon"></i>
                             <div class="quote-text">"{{ Str::limit($quote['testimonial']->message, 120) }}"</div>
+                            @if($quote['testimonial']->category && isset(\App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category]))
+                                <div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:var(--text-muted); background:var(--bg-body); padding:3px 8px; border-radius:6px; margin-bottom:10px;">
+                                    {{ \App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category] }}
+                                </div>
+                            @endif
                             <div class="quote-author">
                                 <div class="ava" style="background: {{ $quote['background'] }}; color: {{ $quote['accent'] }};">
                                     {{ strtoupper(substr($quote['testimonial']->user->name ?? 'PN', 0, 2)) }}
@@ -165,6 +170,11 @@
                         <div class="sat-modern-quote" aria-hidden="true">
                             <i class="ri-double-quotes-l bg-quote-icon"></i>
                             <div class="quote-text">"{{ Str::limit($quote['testimonial']->message, 120) }}"</div>
+                            @if($quote['testimonial']->category && isset(\App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category]))
+                                <div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:var(--text-muted); background:var(--bg-body); padding:3px 8px; border-radius:6px; margin-bottom:10px;">
+                                    {{ \App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category] }}
+                                </div>
+                            @endif
                             <div class="quote-author">
                                 <div class="ava" style="background: {{ $quote['background'] }}; color: {{ $quote['accent'] }};">
                                     {{ strtoupper(substr($quote['testimonial']->user->name ?? 'PN', 0, 2)) }}
