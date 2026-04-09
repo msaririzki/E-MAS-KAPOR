@@ -108,7 +108,7 @@
             <thead>
                 <tr>
                     <th style="width: 60px;">NO</th>
-                    <th>NAMA ITEM & DESKRIPSI</th>
+                    <th>NAMA ITEM</th>
                     <th>KATEGORI</th>
                     <th>STATUS AKTIF</th>
                     <th style="text-align: center;">AKSI</th>
@@ -121,9 +121,6 @@
                     <td>
                         <div style="display: flex; flex-direction: column;">
                             <span style="font-weight: 600; color: #111827;">{{ $item->item_name }}</span>
-                            @if($item->description)
-                                <span style="font-size: 12px; color: #6B7280;">{{ $item->description }}</span>
-                            @endif
                         </div>
                     </td>
                     <td>
@@ -238,10 +235,6 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>DESKRIPSI (opsional)</label>
-                    <textarea name="description" class="form-input" rows="3" placeholder="Deskripsi item..."></textarea>
-                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('addItemModal')">Batal</button>
@@ -275,10 +268,6 @@
                             @endforeach
                         </select>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>DESKRIPSI</label>
-                    <textarea name="description" id="edit_description" class="form-input" rows="3"></textarea>
                 </div>
                 
                 <div style="margin-top: 16px;">
@@ -331,7 +320,6 @@
     function openEditModal(item) {
         document.getElementById('edit_item_name').value = item.item_name;
         document.getElementById('edit_category').value = item.category;
-        document.getElementById('edit_description').value = item.description || '';
         document.getElementById('edit_is_active').checked = item.is_active;
 
         document.getElementById('editForm').action = "{{ url('superadmin/identifikasi-items') }}/" + item.id;
