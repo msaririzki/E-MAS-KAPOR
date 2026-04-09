@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     @php
         $siteUrl = rtrim(config('app.url') ?: request()->getSchemeAndHttpHost(), '/');
@@ -22,11 +23,17 @@
     <link rel="icon" href="{{ asset('e-mas-kapor.png') }}" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
     @vite(['resources/css/app.css'])
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
             min-height: 100vh;
@@ -39,20 +46,23 @@
             inset: 0;
             z-index: 0;
         }
+
         .page-backdrop img {
-            width: 100%; height: 100%;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
             object-position: center 30%;
         }
+
         .page-backdrop::after {
             content: '';
             position: absolute;
             inset: 0;
             background:
                 linear-gradient(135deg,
-                    rgba(8,2,2,.45) 0%,
-                    rgba(20,6,6,.40) 50%,
-                    rgba(10,3,3,.55) 100%);
+                    rgba(8, 2, 2, .45) 0%,
+                    rgba(20, 6, 6, .40) 50%,
+                    rgba(10, 3, 3, .55) 100%);
         }
 
         /* ===== CENTERED WRAPPER ===== */
@@ -78,9 +88,9 @@
             border-radius: 28px;
             overflow: hidden;
             box-shadow:
-                0 40px 80px rgba(0,0,0,.35),
-                0 0 0 1px rgba(255,255,255,.06);
-            animation: cardPop .7s cubic-bezier(.22,1,.36,1) both;
+                0 40px 80px rgba(0, 0, 0, .35),
+                0 0 0 1px rgba(255, 255, 255, .06);
+            animation: cardPop .7s cubic-bezier(.22, 1, .36, 1) both;
         }
 
         /* ---- LEFT: DARK BRANDED PANEL ---- */
@@ -92,38 +102,45 @@
             flex-direction: column;
             justify-content: center;
             overflow: hidden;
-            background-color: #7F1D1D; /* Solid dark red (Tailwind red-900) */
+            background-color: #7F1D1D;
+            /* Solid dark red (Tailwind red-900) */
         }
 
         .card-brand-inner {
             position: relative;
             z-index: 2;
         }
+
         .brand-header {
             display: flex;
             align-items: center;
             gap: 16px;
             margin-bottom: 28px;
         }
+
         .card-logo {
-            width: 72px; height: 72px;
+            width: 72px;
+            height: 72px;
             object-fit: contain;
-            filter: drop-shadow(0 4px 16px rgba(0,0,0,.35));
+            filter: drop-shadow(0 4px 16px rgba(0, 0, 0, .35));
             animation: float 5s ease-in-out infinite;
         }
+
         .brand-header-text h3 {
             font-size: 20px;
             font-weight: 800;
             color: #fff;
             letter-spacing: 1px;
-            text-shadow: 0 2px 8px rgba(0,0,0,.4);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, .4);
         }
+
         .brand-header-text p {
             font-size: 11px;
-            color: rgba(255,255,255,.7);
+            color: rgba(255, 255, 255, .7);
             font-weight: 500;
             letter-spacing: .5px;
         }
+
         .card-brand-inner h1 {
             font-size: 34px;
             font-weight: 800;
@@ -132,13 +149,14 @@
             line-height: 1.2;
             margin-bottom: 6px;
         }
+
         .card-brand-inner .org-badge {
             display: inline-block;
             font-size: 11px;
             font-weight: 600;
-            color: rgba(255,255,255,.85);
-            background: rgba(255,255,255,.12);
-            border: 1px solid rgba(255,255,255,.15);
+            color: rgba(255, 255, 255, .85);
+            background: rgba(255, 255, 255, .12);
+            border: 1px solid rgba(255, 255, 255, .15);
             padding: 4px 14px;
             border-radius: 20px;
             letter-spacing: .5px;
@@ -148,16 +166,17 @@
 
         /* Red glowing line */
         .glow-line {
-            width: 50px; height: 3px;
+            width: 50px;
+            height: 3px;
             background: linear-gradient(90deg, #EF5350, #D32F2F);
             border-radius: 2px;
             margin-bottom: 24px;
-            box-shadow: 0 0 16px rgba(229,57,53,.5);
+            box-shadow: 0 0 16px rgba(229, 57, 53, .5);
         }
 
         .card-brand-inner .desc {
             font-size: 15px;
-            color: rgba(255,255,255,.75);
+            color: rgba(255, 255, 255, .75);
             line-height: 1.75;
             font-weight: 300;
             margin-bottom: 36px;
@@ -170,24 +189,27 @@
             flex-wrap: wrap;
             gap: 8px;
         }
+
         .pill {
             display: flex;
             align-items: center;
             gap: 6px;
             font-size: 11.5px;
             font-weight: 500;
-            color: rgba(255,255,255,.75);
-            background: rgba(255,255,255,.08);
-            border: 1px solid rgba(255,255,255,.1);
+            color: rgba(255, 255, 255, .75);
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .1);
             padding: 7px 14px;
             border-radius: 20px;
             backdrop-filter: blur(4px);
             transition: all .25s;
         }
+
         .pill:hover {
-            background: rgba(255,255,255,.14);
-            border-color: rgba(255,255,255,.2);
+            background: rgba(255, 255, 255, .14);
+            border-color: rgba(255, 255, 255, .2);
         }
+
         .pill i {
             font-size: 14px;
             color: #FF8A80;
@@ -206,12 +228,14 @@
         .form-header {
             margin-bottom: 36px;
         }
+
         .form-header h2 {
             font-size: 26px;
             font-weight: 700;
             color: #1a1a2e;
             margin-bottom: 8px;
         }
+
         .form-header p {
             font-size: 14px;
             color: #999;
@@ -220,7 +244,10 @@
         }
 
         /* Input */
-        .field { margin-bottom: 22px; }
+        .field {
+            margin-bottom: 22px;
+        }
+
         .field-label {
             display: block;
             font-size: 12.5px;
@@ -229,7 +256,11 @@
             margin-bottom: 8px;
             letter-spacing: .3px;
         }
-        .field-wrap { position: relative; }
+
+        .field-wrap {
+            position: relative;
+        }
+
         .field-input {
             width: 100%;
             padding: 13px 16px;
@@ -242,13 +273,20 @@
             outline: none;
             transition: all .25s ease;
         }
+
         .field-input:focus {
             border-color: #D32F2F;
             background: #fff;
-            box-shadow: 0 0 0 4px rgba(211,47,47,.07);
+            box-shadow: 0 0 0 4px rgba(211, 47, 47, .07);
         }
-        .field-input::placeholder { color: #ccc; }
-        .field-input.pr-icon { padding-right: 48px; }
+
+        .field-input::placeholder {
+            color: #ccc;
+        }
+
+        .field-input.pr-icon {
+            padding-right: 48px;
+        }
 
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear {
@@ -257,7 +295,8 @@
 
         .toggle-pw {
             position: absolute;
-            right: 16px; top: 50%;
+            right: 16px;
+            top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
             font-size: 18px;
@@ -266,7 +305,10 @@
             user-select: none;
             z-index: 10;
         }
-        .toggle-pw:hover { color: #D32F2F; }
+
+        .toggle-pw:hover {
+            color: #D32F2F;
+        }
 
         /* Remember */
         .remember-row {
@@ -274,6 +316,7 @@
             align-items: center;
             margin-bottom: 28px;
         }
+
         .remember-label {
             display: flex;
             align-items: center;
@@ -282,9 +325,11 @@
             color: #888;
             cursor: pointer;
         }
+
         .remember-label input[type="checkbox"] {
             accent-color: #D32F2F;
-            width: 16px; height: 16px;
+            width: 16px;
+            height: 16px;
         }
 
         /* Button */
@@ -301,16 +346,18 @@
             cursor: pointer;
             letter-spacing: .3px;
             transition: all .3s ease;
-            box-shadow: 0 4px 16px rgba(211,47,47,.3);
+            box-shadow: 0 4px 16px rgba(211, 47, 47, .3);
         }
+
         .btn-login:hover {
             background: linear-gradient(135deg, #B71C1C, #D32F2F);
             transform: translateY(-2px);
-            box-shadow: 0 10px 28px rgba(211,47,47,.4);
+            box-shadow: 0 10px 28px rgba(211, 47, 47, .4);
         }
+
         .btn-login:active {
             transform: translateY(0);
-            box-shadow: 0 4px 12px rgba(211,47,47,.25);
+            box-shadow: 0 4px 12px rgba(211, 47, 47, .25);
         }
 
         /* Help */
@@ -321,8 +368,16 @@
             color: #aaa;
             line-height: 1.6;
         }
-        .help-text a { color: #D32F2F; text-decoration: none; font-weight: 600; }
-        .help-text a:hover { text-decoration: underline; }
+
+        .help-text a {
+            color: #D32F2F;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .help-text a:hover {
+            text-decoration: underline;
+        }
 
         /* Error */
         .error-msg {
@@ -338,7 +393,11 @@
             color: #C53030;
             font-weight: 500;
         }
-        .error-msg i { font-size: 18px; color: #E53E3E; }
+
+        .error-msg i {
+            font-size: 18px;
+            color: #E53E3E;
+        }
 
         /* Form footer */
         .form-footer-text {
@@ -354,53 +413,273 @@
 
         /* ===== ANIMATIONS ===== */
         @keyframes cardPop {
-            from { opacity: 0; transform: scale(.96) translateY(30px); }
-            to   { opacity: 1; transform: scale(1) translateY(0); }
+            from {
+                opacity: 0;
+                transform: scale(.96) translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
+
         @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50%      { transform: translateY(-8px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
         }
+
         @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: .5; }
-            50%      { transform: scale(1.1); opacity: 1; }
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: .5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
         }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 1024px) {
-            .login-card-split { max-width: 860px; }
-            .card-brand { padding: 44px 36px; }
-            .card-form { width: 380px; padding: 44px 36px; }
-            .card-brand-inner h1 { font-size: 30px; }
+            .login-card-split {
+                max-width: 860px;
+            }
+
+            .card-brand {
+                padding: 44px 36px;
+            }
+
+            .card-form {
+                width: 380px;
+                padding: 44px 36px;
+            }
+
+            .card-brand-inner h1 {
+                font-size: 30px;
+            }
         }
+
         @media (max-width: 820px) {
             .login-card-split {
                 flex-direction: column;
                 max-width: 480px;
                 min-height: auto;
             }
+
             .card-brand {
                 padding: 36px 32px;
             }
-            .card-brand-inner h1 { font-size: 26px; }
-            .card-brand-inner .desc { font-size: 13px; margin-bottom: 20px; }
-            .feature-pills { display: none; }
-            .card-form { width: 100%; padding: 36px 32px; }
+
+            .card-brand-inner h1 {
+                font-size: 26px;
+            }
+
+            .card-brand-inner .desc {
+                font-size: 13px;
+                margin-bottom: 20px;
+            }
+
+            .feature-pills {
+                display: none;
+            }
+
+            .card-form {
+                width: 100%;
+                padding: 36px 32px;
+            }
 
         }
-        @media (max-width: 480px) {
-            .page-center { padding: 16px 12px; padding-top: 80px; }
-            .login-card-split { border-radius: 22px; }
-            .card-brand { padding: 28px 24px; }
-            .card-brand-inner h1 { font-size: 22px; }
-            .card-logo { width: 64px; height: 64px; margin-bottom: 18px; }
-            .glow-line { margin-bottom: 16px; }
-            .card-brand-inner .desc { font-size: 12.5px; }
-            .card-form { padding: 28px 22px; }
-            .form-header h2 { font-size: 22px; }
+
+        @media (max-width: 767px) {
+            .page-backdrop {
+                display: block;
+            }
+
+            .page-backdrop::after {
+                background: linear-gradient(135deg, rgba(8, 2, 2, .7) 0%, rgba(20, 6, 6, .6) 50%, rgba(10, 3, 3, .8) 100%);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+            }
+
+            body {
+                background: transparent;
+            }
+
+            .page-center {
+                padding: 12px 12px;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+            }
+
+            .login-card-split {
+                width: 100%;
+                max-width: 420px;
+                background: #ffffff;
+                border-radius: 16px;
+                box-shadow: 0 24px 60px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 255, 255, .1);
+                flex-direction: column;
+                gap: 0;
+                animation: cardPop .6s cubic-bezier(.22, 1, .36, 1) both;
+                overflow: hidden;
+                position: relative;
+                z-index: 2;
+            }
+
+            .card-brand {
+                display: flex;
+                padding: 40px 24px 16px 24px;
+                flex: none;
+                background: transparent;
+                min-height: auto;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .card-brand-inner {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .brand-header {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                margin-bottom: 0;
+                align-items: center;
+                text-align: center;
+                width: 100%;
+            }
+
+            .card-logo {
+                width: 76px;
+                height: 76px;
+                filter: drop-shadow(0 8px 16px rgba(127, 29, 29, .2));
+                animation: none;
+                margin: 0;
+            }
+
+            .brand-header-text h3 {
+                font-size: 22px;
+                color: #1a1a2e;
+                text-shadow: none;
+                letter-spacing: 0.5px;
+            }
+
+            .brand-header-text p {
+                font-size: 13px;
+                color: #666;
+                font-weight: 500;
+            }
+
+            .card-brand-inner h1,
+            .card-brand-inner .org-badge,
+            .glow-line,
+            .card-brand-inner .desc,
+            .feature-pills {
+                display: none;
+            }
+
+            .card-form {
+                width: 100%;
+                padding: 16px 28px 36px 28px;
+                background: transparent;
+            }
+
+            .form-header {
+                margin-bottom: 24px;
+                text-align: center;
+            }
+
+            .form-header h2 {
+                font-size: 24px;
+                margin-bottom: 8px;
+                color: #1a1a2e;
+            }
+
+            .form-header p {
+                font-size: 13px;
+                line-height: 1.6;
+                color: #666;
+            }
+
+            .field {
+                margin-bottom: 20px;
+            }
+
+            .field-label {
+                margin-bottom: 8px;
+                font-size: 13px;
+            }
+
+            .field-input {
+                padding: 14px 16px;
+                border-radius: 12px;
+                font-size: 14.5px;
+                background: #fafafa;
+                border-color: #E8E8E8;
+            }
+
+            .field-input:focus {
+                background: #fff;
+            }
+
+            .field-input.pr-icon {
+                padding-right: 46px;
+            }
+
+            .toggle-pw {
+                right: 16px;
+                font-size: 18px;
+            }
+
+            .error-msg {
+                padding: 12px 14px;
+                margin-bottom: 18px;
+                font-size: 13px;
+            }
+
+            .remember-row {
+                margin-bottom: 24px;
+            }
+
+            .remember-label {
+                font-size: 13px;
+            }
+
+            .btn-login {
+                padding: 15px;
+                font-size: 15.5px;
+                border-radius: 12px;
+            }
+
+            .help-text {
+                margin-top: 24px;
+                font-size: 12.5px;
+            }
+
+            .form-footer-text {
+                margin-top: 24px;
+                padding-top: 16px;
+                font-size: 11px;
+            }
         }
     </style>
 </head>
+
 <body>
     {{-- Full-screen background --}}
     <div class="page-backdrop">
@@ -422,10 +701,12 @@
                             <p>Biro Logistik Polda NTB</p>
                         </div>
                     </div>
-                    <h1 style="font-size: 28px; letter-spacing: 1px; line-height: 1.4;">Electronic Measurement<br>Perlengkapan Perorangan</h1>
+                    <h1 style="font-size: 28px; letter-spacing: 1px; line-height: 1.4;">Electronic
+                        Measurement<br>Perlengkapan Perorangan</h1>
                     <div class="glow-line" style="margin-top: 24px;"></div>
                     <p class="desc">
-                        Platform pencatatan dan pengelolaan data perlengkapan perorangan untuk seluruh personel Polda NTB secara terpadu dan real-time.
+                        Platform pencatatan dan pengelolaan data perlengkapan perorangan untuk seluruh personel Polda
+                        NTB secara terpadu dan real-time.
                     </p>
                     <div class="feature-pills">
                         <div class="pill"><i class="ri-shield-check-line"></i> Multi-role Access</div>
@@ -440,14 +721,15 @@
             <div class="card-form">
                 <div class="form-header">
                     <h2>Selamat Datang</h2>
-                    <p>Superadmin, Admin Satker, dan Admin Gudang login dengan Gmail. Personil login memakai NRP/NIP.</p>
+                    <p>Superadmin, Admin Satker, dan Admin Gudang login dengan Gmail. Personil login memakai NRP/NIP.
+                    </p>
                 </div>
 
                 @if($errors->any())
-                <div class="error-msg">
-                    <i class="ri-error-warning-line"></i>
-                    <span>{{ $errors->first() }}</span>
-                </div>
+                    <div class="error-msg">
+                        <i class="ri-error-warning-line"></i>
+                        <span>{{ $errors->first() }}</span>
+                    </div>
                 @endif
 
                 <form method="POST" action="{{ route('login') }}">
@@ -455,29 +737,16 @@
                     <div class="field">
                         <label class="field-label">Gmail / NRP / NIP</label>
                         <div class="field-wrap">
-                            <input
-                                type="text"
-                                name="login"
-                                class="field-input"
-                                placeholder="Masukkan Gmail atau NRP/NIP"
-                                value="{{ old('login') }}"
-                                autofocus
-                                required
-                            >
+                            <input type="text" name="login" class="field-input"
+                                placeholder="Masukkan Gmail atau NRP/NIP" value="{{ old('login') }}" autofocus required>
                         </div>
                     </div>
 
                     <div class="field">
                         <label class="field-label">Password</label>
                         <div class="field-wrap">
-                            <input
-                                type="password"
-                                name="password"
-                                id="password"
-                                class="field-input pr-icon"
-                                placeholder="••••••••"
-                                required
-                            >
+                            <input type="password" name="password" id="password" class="field-input pr-icon"
+                                placeholder="••••••••" required>
                             <i class="ri-eye-line toggle-pw" id="togglePassword"></i>
                         </div>
                     </div>
@@ -495,7 +764,8 @@
                 </form>
 
                 <div class="help-text">
-                    Tidak bisa login? Hubungi administrator Bagian Logistik atau kembali ke <a href="{{ route('home') }}">halaman informasi resmi</a>.
+                    Tidak bisa login? Hubungi administrator Bagian Logistik atau kembali ke <a
+                        href="{{ route('home') }}">halaman informasi resmi</a>.
                 </div>
 
                 <div class="form-footer-text">
@@ -522,4 +792,5 @@
         });
     </script>
 </body>
+
 </html>
