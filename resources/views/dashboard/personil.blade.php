@@ -393,7 +393,7 @@
 
             <section class="panel">
                 <div class="panel-header">
-                    <h2>Data tugas</h2>
+                    <h2>Data Personel</h2>
                     <p>Jabatan berasal dari import SDM Polda NTB. Perubahan akan dicatat di log audit.</p>
                 </div>
                 <div class="panel-body">
@@ -408,7 +408,7 @@
 
                         <div style="margin-top: 12px;">
                             <button type="button" class="button-secondary" data-open-identity style="width: auto;">
-                                <i class="ri-edit-line"></i> Edit Data Tugas
+                                <i class="ri-edit-line"></i> Edit Data Personel
                             </button>
                         </div>
                     </div>
@@ -451,7 +451,7 @@
                     <div class="note">{{ $usesBagianDropdown ? 'Simpan jabatan dan bag/fungsi dulu, lalu lanjut ke ukuran.' : 'Simpan jabatan dulu, lalu lanjut ke ukuran.' }}</div>
 
                         <div style="margin-top: 14px;">
-                            <button type="submit" class="button">Simpan Data Tugas</button>
+                            <button type="submit" class="button">Simpan</button>
                         </div>
                     </form>
                 </div>
@@ -594,7 +594,7 @@
                 <section class="panel" id="ukuran-form">
                     <div class="panel-header">
                         <h2>Ukuran kaporlap</h2>
-                        <p>Lengkapi dulu data tugas agar data ukuran aktif.</p>
+                        <p>Lengkapi dulu data personel agar data ukuran aktif.</p>
                     </div>
                 </section>
             @endif
