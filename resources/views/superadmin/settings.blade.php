@@ -418,7 +418,7 @@
         <div class="settings-info">
             <span class="settings-eyebrow">Referensi dropdown</span>
             <h3><i class="ri-list-check-3"></i> Master Bagian / Fungsi</h3>
-            <p>Kelola daftar opsi `bagian/fungsi` yang dipakai sebagai dropdown untuk satker bertipe `POLRES` atau `POLRESTA`. Untuk `POLDA`, input tetap manual.</p>
+            <p>Kelola daftar opsi `bagian/fungsi` yang dipakai sebagai dropdown pada form personel. Personel cukup memilih dari daftar ini agar input lebih konsisten.</p>
             <div class="impact-pill neutral">{{ number_format($bagianOptions->count()) }} opsi tersimpan</div>
         </div>
         <div class="settings-card transparent-card">

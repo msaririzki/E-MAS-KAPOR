@@ -3,6 +3,7 @@
 @section('title', 'Data Kaporlap Personil')
 
 @section('styles')
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
     <style>
         .alert {
             background: #fff;
@@ -169,7 +170,9 @@
             font-weight: 700;
         }
 
-        .control {
+        input.control,
+        select.control,
+        textarea.control {
             width: 100%;
             min-height: 46px;
             padding: 0 12px;
@@ -179,10 +182,65 @@
             color: var(--text-main);
         }
 
-        .control:focus {
+        input.control:focus,
+        select.control:focus,
+        textarea.control:focus {
             outline: none;
             border-color: #f87171;
             box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.12);
+        }
+
+        /* Tom Select Overrides for Premium Look */
+        .ts-wrapper {
+            margin-top: 0;
+            cursor: pointer;
+        }
+        .ts-control {
+            min-height: 46px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            color: var(--text-main);
+            box-shadow: none;
+            font-size: 14px;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+        }
+        .ts-control input {
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .ts-control.focus {
+            border-color: #f87171;
+            box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.12);
+        }
+        .ts-dropdown {
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+            margin-top: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            padding: 6px;
+        }
+        .ts-dropdown .option {
+            padding: 10px 12px;
+            border-radius: 6px;
+            color: var(--text-main);
+            transition: all 0.15s ease;
+        }
+        .ts-dropdown .option:hover,
+        .ts-dropdown .option.active {
+            background-color: var(--brand-soft) !important;
+            color: var(--brand) !important;
+            font-weight: 600;
+        }
+        .ts-wrapper.single .ts-control::after {
+            border-color: var(--text-muted) transparent transparent transparent;
+            border-width: 5px 5px 0 5px;
+            right: 16px;
         }
 
         .button,
@@ -260,9 +318,16 @@
         $gender = $personnel?->gender ?? 'L';
         $religion = strtoupper(trim((string) ($personnel?->religion ?? '')));
         $requiresJilbab = $gender === 'P' && $religion === 'ISLAM';
-        $satkerName = strtoupper((string) ($user->satker->name ?? $personnel?->satker?->name ?? ''));
-        $usesBagianDropdown = str_contains($satkerName, 'POLRES') || str_contains($satkerName, 'POLRESTA');
         $selectedBagian = old('bagian', $personnel?->bagian ?? '');
+        $bagianOptionsList = collect($bagianOptions ?? [])
+            ->filter(fn ($option) => filled($option))
+            ->values();
+
+        if (filled($selectedBagian) && ! $bagianOptionsList->contains($selectedBagian)) {
+            $bagianOptionsList = $bagianOptionsList->prepend($selectedBagian);
+        }
+
+        $usesBagianDropdown = $bagianOptionsList->isNotEmpty();
         $showIdentityForm = !$identityReady || old('mode') === 'identity' || $errors->has('jabatan') || $errors->has('bagian');
         $showSizesForm = !$hasSubmitted || old('mode') === 'sizes';
         $progressClass = !$identityReady ? 'progress-38' : ($isComplete ? 'progress-100' : ($hasSubmitted ? 'progress-82' : 'progress-64'));
@@ -362,11 +427,11 @@
                             <label class="label" for="bagian">Bag/Fungsi</label>
                             @if ($usesBagianDropdown)
                                 <select id="bagian" name="bagian" class="control">
-                                    <option value="">Pilih</option>
-                                    @if ($selectedBagian && !collect($bagianOptions)->contains($selectedBagian))
+                                    <option value="">Pilih Bagian / Fungsi</option>
+                                    @if ($selectedBagian && ! $bagianOptionsList->contains($selectedBagian))
                                         <option value="{{ $selectedBagian }}" selected>{{ $selectedBagian }}</option>
                                     @endif
-                                    @foreach ($bagianOptions as $option)
+                                    @foreach ($bagianOptionsList as $option)
                                         <option value="{{ $option }}" {{ $selectedBagian === $option ? 'selected' : '' }}>{{ $option }}
                                         </option>
                                     @endforeach
@@ -375,7 +440,7 @@
                                 <input id="bagian" type="text" name="bagian" class="control" value="{{ $selectedBagian }}"
                                     style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
                             @endif
-                            <span class="hint">Wajib diisi untuk membuka form ukuran.</span>
+                            <span class="hint">Mengikuti master yang ditetapkan superadmin. Jika opsi belum tersedia, hubungi admin.</span>
                             @error('bagian')<span class="error">{{ $message }}</span>@enderror
                         </div>
                     </div>
@@ -544,8 +609,19 @@
 @endsection
 
 @section('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Apply Tom Select to all select elements with class 'control'
+            document.querySelectorAll('select.control').forEach((el) => {
+                new TomSelect(el, {
+                    create: false,
+                    sortField: null, // preserve original order
+                    maxOptions: null, 
+                    searchField: ['text'],
+                });
+            });
+
             const openIdentityButton = document.querySelector('[data-open-identity]');
             const identityForm = document.querySelector('[data-identity-form]');
             const identitySummary = document.querySelector('[data-identity-summary]');
