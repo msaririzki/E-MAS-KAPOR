@@ -647,8 +647,17 @@
                     searchField: ['text'],
                     dropdownParent: 'body',
                     dropdownClass: 'ts-dropdown personil-floating-dropdown',
+                    controlInput: null,
+                    openOnFocus: true,
                     onDropdownOpen() {
                         positionTomSelectDropdown(this);
+                    },
+                    onInitialize() {
+                        if (this.control_input) {
+                            this.control_input.setAttribute('readonly', 'readonly');
+                            this.control_input.setAttribute('inputmode', 'none');
+                            this.control_input.setAttribute('tabindex', '-1');
+                        }
                     },
                 });
 
