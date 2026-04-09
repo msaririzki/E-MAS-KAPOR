@@ -518,27 +518,78 @@ class PersonnelController extends Controller
         abort_unless((int) $personnel->satker_id === (int) $request->user()?->satker_id, 403, 'Anda hanya dapat mengedit personel pada satker Anda sendiri.');
 
         $validated = $request->validate([
+            'nrp' => 'required|string|unique:personnels,nrp,'.$personnel->id,
+            'full_name' => 'required|string|max:255',
+            'rank_id' => 'required|exists:ranks,id',
+            'satker_id' => 'nullable',
             'jabatan' => 'nullable|string|max:255',
             'bagian' => 'nullable|string|max:255',
+            'personnel_type' => 'nullable|in:Polri,PNS',
+            'gender' => 'nullable|in:L,P',
+            'phone' => 'nullable|string|max:20',
+            'religion' => 'nullable|string|max:50',
+            'golongan' => 'nullable|string|max:50',
             'keterangan' => 'nullable|string|max:255',
+            'keterangan_2' => 'nullable|string|max:255',
+            'keterangan_3' => 'nullable|string|max:255',
+            'keterangan_4' => 'nullable|string|max:255',
+            'kapor_sizes' => 'nullable|array',
         ]);
 
-        try {
-            $personnel->fill([
-                'jabatan' => $validated['jabatan'] ?? null,
-                'bagian' => $validated['bagian'] ?? null,
-                'keterangan' => $validated['keterangan'] ?? null,
-            ]);
+        $validated['satker_id'] = (int) $request->user()->satker_id;
 
-            if (! $personnel->isDirty()) {
-                return redirect()->back()->with('info', 'Tidak ada perubahan pada field yang dapat Anda ubah.');
+        DB::beginTransaction();
+        try {
+            if (array_key_exists('kapor_sizes', $validated)) {
+                $validated['kapor_sizes'] = $this->kaporRequirementService->sanitizeSubmittedSizes(
+                    $validated['kapor_sizes'] ?? [],
+                    $validated['gender'] ?? $personnel->gender,
+                );
             }
 
-            $personnel->save();
+            $personnel->fill($validated);
 
-            return redirect()->back()->with('success', 'Data lapangan personel berhasil diperbarui.');
+            $user = $personnel->user;
+            $targetUserState = [
+                'nrp_nip' => $validated['nrp'],
+                'name' => $validated['full_name'],
+                'satker_id' => $validated['satker_id'],
+                'is_active' => (bool) $personnel->is_active,
+            ];
+
+            $userNeedsSync = ! $user
+                || $user->nrp_nip !== $targetUserState['nrp_nip']
+                || $user->name !== $targetUserState['name']
+                || (int) $user->satker_id !== (int) $targetUserState['satker_id']
+                || (bool) $user->is_active !== $targetUserState['is_active'];
+
+            if (! $personnel->isDirty() && ! $userNeedsSync) {
+                DB::rollBack();
+
+                return redirect()->back()->with('info', 'Tidak ada perubahan pada data personel.');
+            }
+
+            $user = User::createOrUpdatePersonnelAccount(
+                $user,
+                $validated['nrp'],
+                $validated['full_name'],
+                $validated['satker_id'],
+                $targetUserState['is_active'],
+            );
+
+            $personnel->forceFill([
+                'user_id' => $user->id,
+            ])->save();
+
+            DB::commit();
+
+            PersonnelImport::recalculateSatkerCount($validated['satker_id']);
+
+            return redirect()->back()->with('success', 'Data personil dan akun berhasil diperbarui.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memperbarui data lapangan: '.$e->getMessage());
+            DB::rollBack();
+
+            return redirect()->back()->with('error', 'Gagal memperbarui: '.$e->getMessage());
         }
     }
 
@@ -1248,6 +1299,39 @@ class PersonnelController extends Controller
         }
 
         $preview = $this->sdmImportRunService->refreshPreviewRows($preview);
+        $fileCount = count($importRun?->source_files ?? []);
+        $stats = $this->sdmImportRunService->buildStats($preview, $fileCount);
+
+        if ($importRun !== null) {
+            $previewPath = $this->sdmImportRunService->storePreviewPayload($importRun, $preview, $stats);
+            $errorPath = $this->sdmImportRunService->storeErrorReport($importRun, $preview);
+
+            $importRun->update([
+                'status' => 'preview_ready',
+                'summary' => $stats,
+                'preview_payload_path' => $previewPath,
+                'error_report_path' => $errorPath,
+            ]);
+
+            session([
+                'sdm_import_preview_key' => $previewPath,
+                'sdm_import_stats' => $stats,
+            ]);
+        }
+
+        if (($stats['error'] ?? 0) > 0) {
+            $message = "Masih ada {$stats['error']} baris error pada preview SDM. Perbaiki dulu sebelum konfirmasi import.";
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $message,
+                    'redirect_url' => route('admin.personnel.import-sdm-preview'),
+                    'stats' => $stats,
+                ], 422);
+            }
+
+            return redirect()->route('admin.personnel.import-sdm-preview')->with('error', $message);
+        }
 
         try {
             $importer = new PersonnelSdmImport;
@@ -1261,7 +1345,7 @@ class PersonnelController extends Controller
                 : "Berhasil mengimpor {$successCount} data personil (SDM).";
 
             if ($importRun !== null) {
-                $summary = array_merge($this->sdmImportRunService->buildStats($preview, count($importRun->source_files ?? [])), [
+                $summary = array_merge($stats, [
                     'success_count' => $successCount,
                     'error_count' => $errorCount,
                     'processing_errors' => count($results['errors'] ?? []),

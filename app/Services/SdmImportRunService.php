@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Imports\PersonnelImport;
 use App\Imports\PersonnelSdmImport;
 use App\Models\Rank;
 use App\Models\Satker;
@@ -40,6 +41,8 @@ class SdmImportRunService
                 }
             }
 
+            $preview = PersonnelImport::markCrossSheetDuplicateNrps($preview);
+            $preview = $this->refreshPreviewRows($preview);
             $stats = $this->buildStats($preview, $sourceFiles->count());
             $previewPath = $this->storePreviewPayload($run, $preview, $stats);
             $errorPath = $this->storeErrorReport($run, $preview);
@@ -76,17 +79,27 @@ class SdmImportRunService
     public function buildStats(array $preview, int $fileCount): array
     {
         $collection = collect($preview);
+        $nrps = $collection
+            ->pluck('nrp')
+            ->map(fn ($value) => trim((string) $value))
+            ->filter();
+        $duplicateGroups = $nrps->countBy()->filter(fn (int $count) => $count > 1);
+        $blankNrpCount = $collection->filter(
+            fn (array $row) => trim((string) ($row['nrp'] ?? '')) === ''
+        )->count();
 
         return [
             'ok' => $collection->where('status', 'ok')->count(),
             'corrected' => $collection->where('status', 'corrected')->count(),
             'error' => $collection->where('status', 'error')->count(),
             'total' => $collection->count(),
+            'unique_personnel_estimate' => $blankNrpCount + $nrps->unique()->count(),
             'satker_count' => $collection->pluck('satker_id')->filter()->unique()->count(),
             'file_count' => $fileCount,
             'unresolved_satker_count' => $collection->where('requires_manual_satker', true)->count(),
             'unknown_rank_count' => $collection->where('requires_manual_rank', true)->count(),
             'duplicate_count' => $collection->where('duplicate_nrp', true)->count(),
+            'duplicate_group_count' => $duplicateGroups->count(),
         ];
     }
 
@@ -203,7 +216,7 @@ class SdmImportRunService
 
             if ((bool) ($row['duplicate_nrp'] ?? false)) {
                 $status = 'error';
-                $notes[] = 'NRP/NIP duplikat dalam file';
+                $notes[] = 'NRP/NIP duplikat pada file/sheet import';
             }
 
             if ($isFatal) {

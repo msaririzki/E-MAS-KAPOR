@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Preview Import Keterangan')
-@section('breadcrumb', 'Preview Import Keterangan')
+@section('title', 'Preview Import Referensi Keterangan')
+@section('breadcrumb', 'Preview Import Referensi Keterangan')
 
 @section('styles')
 <style>
@@ -110,7 +110,7 @@
     <section class="ket-hero">
         <div class="ket-hero-top">
             <div class="ket-hero-copy">
-                <div class="ket-eyebrow"><i class="ri-file-search-line"></i> Preview Import Keterangan</div>
+                <div class="ket-eyebrow"><i class="ri-file-search-line"></i> Preview Import Referensi Keterangan</div>
                 <h1 class="ket-title">Review perubahan sebelum data diterapkan</h1>
                 <p class="ket-subtitle">
                     Sistem hanya akan mengubah kolom <strong>`keterangan_2`</strong>, <strong>`keterangan_3`</strong>, dan <strong>`keterangan_4`</strong>.

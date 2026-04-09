@@ -24,7 +24,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
         }
     }
 
-    public function test_admin_satker_can_only_edit_field_owned_by_satker_workflow(): void
+    public function test_admin_satker_can_edit_full_personnel_profile_within_own_satker_scope(): void
     {
         $satker = Satker::create([
             'name' => 'Polres Bima',
@@ -85,10 +85,17 @@ class PersonnelFieldEditPolicyTest extends TestCase
             'full_name' => 'NAMA BARU',
             'rank_id' => $otherRank->id,
             'satker_id' => $otherSatker->id,
+            'personnel_type' => 'PNS',
+            'gender' => 'P',
             'jabatan' => 'JABATAN BARU',
             'bagian' => 'BAGIAN BARU',
+            'golongan' => 'III/A',
+            'religion' => 'Hindu',
+            'phone' => '08123456789',
             'keterangan' => 'KET BARU',
             'keterangan_2' => 'KET2 BARU',
+            'keterangan_3' => 'KET3 BARU',
+            'keterangan_4' => 'KET4 BARU',
             'kapor_sizes' => ['topi' => '60'],
         ]);
 
@@ -97,22 +104,30 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $this->assertDatabaseHas('personnels', [
             'id' => $personnel->id,
-            'nrp' => '82051489',
-            'full_name' => 'EKO SUTOMO',
-            'rank_id' => $rank->id,
+            'nrp' => '99999999',
+            'full_name' => 'NAMA BARU',
+            'rank_id' => $otherRank->id,
             'satker_id' => $satker->id,
             'jabatan' => 'JABATAN BARU',
             'bagian' => 'BAGIAN BARU',
             'keterangan' => 'KET BARU',
-            'keterangan_2' => 'KET2 LAMA',
+            'keterangan_2' => 'KET2 BARU',
+            'keterangan_3' => 'KET3 BARU',
+            'keterangan_4' => 'KET4 BARU',
+            'personnel_type' => 'PNS',
+            'gender' => 'P',
+            'golongan' => 'III/A',
+            'religion' => 'Hindu',
+            'phone' => '08123456789',
         ]);
 
-        $this->assertSame(['topi' => '57'], $personnel->fresh()->kapor_sizes);
-        $this->assertSame('82051489', $user->fresh()->nrp_nip);
+        $this->assertSame(['topi' => '60'], $personnel->fresh()->kapor_sizes);
+        $this->assertSame('99999999', $user->fresh()->nrp_nip);
+        $this->assertSame('NAMA BARU', $user->fresh()->name);
         $this->assertSame($satker->id, $user->fresh()->satker_id);
     }
 
-    public function test_admin_satker_gets_info_feedback_when_only_non_editable_fields_change(): void
+    public function test_admin_satker_gets_info_feedback_when_no_personnel_data_changes(): void
     {
         $satker = Satker::create([
             'name' => 'Polres Bima',
@@ -163,15 +178,23 @@ class PersonnelFieldEditPolicyTest extends TestCase
         ]);
 
         $response = $this->actingAs($adminSatker)->put(route('admin.personnel.update', $personnel), [
+            'nrp' => '82051489',
+            'full_name' => 'EKO SUTOMO',
+            'rank_id' => $rank->id,
             'satker_id' => $otherSatker->id,
-            'keterangan_2' => 'KET2 BARU',
+            'personnel_type' => 'Polri',
+            'gender' => 'L',
             'keterangan' => 'KET LAMA',
+            'keterangan_2' => 'KET2 LAMA',
             'jabatan' => 'JABATAN LAMA',
             'bagian' => 'BAGIAN LAMA',
+            'golongan' => 'PAMEN',
+            'religion' => 'Islam',
+            'kapor_sizes' => ['topi' => '57'],
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('info', 'Tidak ada perubahan pada field yang dapat Anda ubah.');
+        $response->assertSessionHas('info', 'Tidak ada perubahan pada data personel.');
 
         $this->assertDatabaseHas('personnels', [
             'id' => $personnel->id,
@@ -241,6 +264,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $this->assertSame('BANIT RESKRIM', $personnel->jabatan);
         $this->assertSame('SAT RESKRIM', $personnel->bagian);
+        $this->assertSame($satker->id, $personnel->satker_id);
         $this->assertSame('15', $personnel->kapor_sizes['kemeja']);
         $this->assertSame('57', $personnel->kapor_sizes['topi']);
     }

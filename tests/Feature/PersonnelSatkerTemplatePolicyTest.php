@@ -7,6 +7,7 @@ use App\Imports\PersonnelUpdateImport;
 use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -183,5 +184,73 @@ class PersonnelSatkerTemplatePolicyTest extends TestCase
         ]);
 
         $response->assertForbidden();
+    }
+
+    public function test_satker_export_uses_latest_jabatan_and_bagian_filled_by_personil(): void
+    {
+        Setting::setValue('is_system_locked', 'false');
+        Setting::setValue('input_start_date', now()->subDay()->toDateString());
+        Setting::setValue('input_end_date', now()->addDay()->toDateString());
+
+        $satker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPDA',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::create([
+            'name' => 'EGAS DOSANTOS',
+            'nrp_nip' => '76100151',
+            'password' => bcrypt('76100151'),
+            'satker_id' => $satker->id,
+            'is_active' => true,
+        ]);
+        $user->assignRole('personil');
+
+        $personnel = Personnel::create([
+            'user_id' => $user->id,
+            'satker_id' => $satker->id,
+            'rank_id' => $rank->id,
+            'full_name' => 'EGAS DOSANTOS',
+            'nrp' => '76100151',
+            'golongan' => 'BINTARA',
+            'jabatan' => 'JABATAN AWAL',
+            'bagian' => 'BAGIAN AWAL',
+            'gender' => 'L',
+            'religion' => 'Katolik',
+            'kapor_sizes' => [],
+            'personnel_type' => 'Polri',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('personil.kapor.store'), [
+            'jabatan' => 'BANIT RESKRIM',
+            'bagian' => 'SAT RESKRIM',
+            'kemeja' => '15',
+            'celana' => '32',
+            'olahraga' => 'B',
+            'jaket' => 'B',
+            'topi' => '57',
+            'sabuk' => '42',
+            'sepatu_dinas' => '41',
+            'sepatu_olahraga' => '41',
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+
+        $personnel->refresh();
+
+        $sheet = new PersonnelSheetExport(collect([$personnel->fresh('rank')]), $satker->name, 'Data Polri');
+        $row = $sheet->collection()->first();
+
+        $this->assertSame('BANIT RESKRIM', $row[5]);
+        $this->assertSame('SAT RESKRIM', $row[6]);
+        $this->assertSame($satker->id, $personnel->satker_id);
     }
 }

@@ -61,42 +61,6 @@
                     </a>
                     @endif
 
-                    {{-- Dropdown Rekap Kapor --}}
-                    @if(!auth()->user()->hasRole('admin_satker'))
-                    <div style="position: relative;" id="rekapSubMenu">
-                        <button class="dropdown-item" onclick="toggleSubMenu()" style="display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <i class="ri-bar-chart-box-line" style="color: #6366F1; font-size: 16px;"></i>
-                                <div style="text-align: left;">
-                                    <div style="font-weight: 600; color: #111827; font-size: 13px;">Rekap Kapor</div>
-                                    <div style="font-size: 11px; color: #6B7280;">Export per kategori item</div>
-                                </div>
-                            </div>
-                            <i class="ri-arrow-right-s-line" style="color: #9CA3AF;"></i>
-                        </button>
-                        <div id="rekapSubMenuContent" style="display: none; padding: 8px 14px; background: #F8FAFC; border-top: 1px solid #F3F4F6; border-bottom: 1px solid #F3F4F6;">
-                            <div style="font-size: 11px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">Tutup Kepala</div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;">
-                                @foreach(['TOPI LAPANGAN','PET','BARET','PECI','JILBAB'] as $item)
-                                <button onclick="exportKapor('Tutup_Kepala', '{{ $item }}')" style="font-size: 11px; padding: 3px 10px; border-radius: 20px; background: white; border: 1px solid #E5E7EB; color: #374151; cursor: pointer;">{{ $item }}</button>
-                                @endforeach
-                            </div>
-                            <div style="font-size: 11px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">Tutup Badan</div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;">
-                                @foreach(['Kemeja','Celana','Jaket','Olahraga'] as $item)
-                                <button onclick="exportKapor('Tutup_Badan', '{{ $item }}')" style="font-size: 11px; padding: 3px 10px; border-radius: 20px; background: white; border: 1px solid #E5E7EB; color: #374151; cursor: pointer;">{{ $item }}</button>
-                                @endforeach
-                            </div>
-                            <div style="font-size: 11px; font-weight: 700; color: #9CA3AF; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em;">Tutup Kaki</div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                @foreach(['Sepatu Dinas','Sepatu Olahraga'] as $item)
-                                <button onclick="exportKapor('Tutup_Kaki', '{{ $item }}')" style="font-size: 11px; padding: 3px 10px; border-radius: 20px; background: white; border: 1px solid #E5E7EB; color: #374151; cursor: pointer;">{{ $item }}</button>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-
                     <div style="border-top: 1px solid #F3F4F6; margin: 4px 0;"></div>
 
                     {{-- IMPOR --}}
@@ -112,12 +76,12 @@
                     <button class="dropdown-item" onclick="openModal('importKeteranganModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
                         <i class="ri-file-edit-line" style="color: #7C3AED; font-size: 16px;"></i>
                         <div style="text-align: left;">
-                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Import Keterangan</div>
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Import Referensi Keterangan</div>
                             <div style="font-size: 11px; color: #6B7280;">Update `keterangan_2/3/4` berbasis ID</div>
                         </div>
                     </button>
                     @endif
-                    @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('superadmin'))
+                    @if(auth()->user()->hasRole('admin'))
                     <button class="dropdown-item" onclick="openModal('importModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
                         <i class="ri-file-upload-line" style="color: #F59E0B; font-size: 16px;"></i>
                         <div style="text-align: left;">
@@ -126,6 +90,7 @@
                         </div>
                     </button>
                     @endif
+                    @if(!auth()->user()->hasRole('superadmin'))
                     <button class="dropdown-item" onclick="openModal('importUpdateModal')" style="display: flex; align-items: center; gap: 10px; width: 100%;">
                         <i class="ri-refresh-line" style="color: #3B82F6; font-size: 16px;"></i>
                         <div style="text-align: left;">
@@ -133,6 +98,7 @@
                             <div style="font-size: 11px; color: #6B7280;">Tambah atau revisi jabatan, bag/fungsi, dan keterangan via Excel</div>
                         </div>
                     </button>
+                    @endif
                 </div>
             </div>
 
@@ -181,18 +147,6 @@
             if (dd && !dd.contains(e.target)) dd.classList.remove('open');
         });
     });
-
-    function toggleSubMenu() {
-        var sub = document.getElementById('rekapSubMenuContent');
-        if (sub) sub.style.display = sub.style.display === 'none' ? 'block' : 'none';
-    }
-
-    function exportKapor(category, item) {
-        var url = "{{ route('admin.personnel.export-rekap') }}?category=" + category + "&item=" + encodeURIComponent(item);
-        window.location.href = url;
-        var dd = document.getElementById('importExportDropdown');
-        if (dd) dd.classList.remove('open');
-    }
 </script>
 
 <div class="stats-grid">
@@ -863,7 +817,7 @@
 <div id="importKeteranganModal" class="modal">
     <div class="modal-content" style="max-width: 760px;">
         <div class="modal-header">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">Import Keterangan Personel</h3>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">Import Referensi Keterangan</h3>
             <button class="modal-close" onclick="closeModal('importKeteranganModal')">
                 <i class="ri-close-line"></i>
             </button>
@@ -881,7 +835,7 @@
                     <div style="display: flex; gap: 12px;">
                         <i class="ri-information-line" style="font-size: 24px; color: #7C3AED;"></i>
                         <div>
-                            <h4 style="font-size: 14px; font-weight: 700; color: #5B21B6; margin-bottom: 4px;">Aturan Import Keterangan</h4>
+                            <h4 style="font-size: 14px; font-weight: 700; color: #5B21B6; margin-bottom: 4px;">Aturan Import Referensi Keterangan</h4>
                             <p style="font-size: 13px; color: #6D28D9; line-height: 1.6; margin-bottom: 8px;">Matching utama menggunakan <strong>ID personel</strong>. Sistem hanya akan memperbarui <strong>`keterangan_2`</strong>, <strong>`keterangan_3`</strong>, dan <strong>`keterangan_4`</strong>.</p>
                             <p style="font-size: 13px; color: #6D28D9; line-height: 1.6; margin: 0;">Kolom lain seperti nama, satker, pangkat, jabatan, dan `keterangan_1` dipakai sebagai referensi visual pada halaman preview dan tidak akan diubah oleh proses import ini.</p>
                         </div>
@@ -1117,7 +1071,7 @@
             <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; display: flex; gap: 10px;">
                 <i class="ri-information-fill" style="color: #059669; font-size: 18px; flex-shrink: 0;"></i>
                 <div style="font-size: 13px; color: #065F46; line-height: 1.5;">
-                    File Excel yang didownload dapat diedit lalu diupload kembali melalui fitur <strong>Impor Update Data</strong> untuk memperbarui data personel.
+                    File Excel yang didownload dapat diedit sebagai bahan pembaruan data personel sesuai alur kerja yang masih aktif.
                 </div>
             </div>
 
@@ -1866,7 +1820,7 @@
             <div class="modal-body">
                 @if(auth()->user()->hasRole('admin_satker'))
                 <div style="margin-bottom: 18px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 14px 16px; color: #1D4ED8; font-size: 13px; line-height: 1.6;">
-                    Sebagai <strong>Admin Satker</strong>, Anda hanya dapat mengubah <strong>Jabatan</strong>, <strong>Bagian / Fungsi</strong>, dan <strong>Keterangan 1</strong>. Field lain mengikuti baseline pusat dan dikunci pada form ini.
+                    Sebagai <strong>Admin Satker</strong>, Anda dapat mengubah seluruh data personel pada form ini.
                 </div>
                 @endif
                 <div class="form-grid">
@@ -1958,7 +1912,7 @@
                     <div class="form-group">
                         <label>SATKER / SATWIL</label>
                         <div class="custom-select-wrapper">
-                            <div class="custom-select" onclick="toggleDropdown(this)">
+                            <div class="custom-select" @if(!auth()->user()->hasRole('admin_satker')) onclick="toggleDropdown(this)" @endif>
                                 <div class="select-trigger"><span id="edit_satker_label">{{ old('modal_type') == 'edit' && old('satker_id') ? $satkers->firstWhere('id', old('satker_id'))->name : '— Pilih Satker —' }}</span><i class="ri-arrow-down-s-line"></i></div>
                                 <div class="custom-options">
                                     <div class="select-search-container">
@@ -3086,13 +3040,6 @@
         });
     }, true); // Capture phase
 
-    function exportTutupKepala(type) {
-        // Legacy support, redirects to new route
-        _showLoader('Menghasilkan File Excel...', 'Menyiapkan data rekap kapor...');
-        const url = "{{ route('admin.personnel.export-rekap') }}?category=Tutup_Kepala&item=" + encodeURIComponent(type);
-        window.location.href = url;
-    }
-
     function toggleDropdown(el) {
         // Toggle this dropdown
         const options = el.querySelector('.custom-options');
@@ -3649,43 +3596,7 @@
     }
 
     function applyEditRoleRestrictions() {
-        const isAdminSatker = @json(auth()->user()->hasRole('admin_satker'));
-        if (!isAdminSatker) {
-            return;
-        }
-
-        const allowedNames = new Set(['_token', '_method', 'modal_type', 'id', 'jabatan', 'bagian', 'keterangan']);
-        const form = document.getElementById('editForm');
-
-        if (!form) {
-            return;
-        }
-
-        form.querySelectorAll('input, select, textarea').forEach((field) => {
-            const name = field.getAttribute('name');
-            if (!name) {
-                return;
-            }
-
-            field.disabled = !allowedNames.has(name);
-        });
-
-        form.querySelectorAll('.form-group').forEach((group) => {
-            const namedFields = Array.from(group.querySelectorAll('input[name], select[name], textarea[name]'));
-            if (namedFields.length === 0) {
-                return;
-            }
-
-            const hasAllowedField = namedFields.some((field) => allowedNames.has(field.name));
-            if (hasAllowedField) {
-                return;
-            }
-
-            group.querySelectorAll('.selection-card, .custom-select, .option, .select-trigger').forEach((element) => {
-                element.style.pointerEvents = 'none';
-                element.style.opacity = '0.6';
-            });
-        });
+        return;
     }
 
     function confirmDelete(id, name) {

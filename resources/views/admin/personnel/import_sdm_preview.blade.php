@@ -147,6 +147,7 @@
                 <h1 class="page-title">Preview Import Data SDM</h1>
                 <p class="page-subtitle">
                     Total baris: <strong>{{ $stats['total'] }}</strong>
+                    <span style="color:#6B7280;">| Estimasi personel unik: <strong>{{ $stats['unique_personnel_estimate'] ?? $stats['total'] }}</strong></span>
                     <span style="color:#6B7280;">| File: <strong>{{ $stats['file_count'] ?? 1 }}</strong></span>
                     <span style="color:#6B7280;">| Satker terdeteksi: <strong>{{ $stats['satker_count'] ?? 0 }}</strong></span>
                 </p>
@@ -156,6 +157,8 @@
                     Unresolved satker: <strong>{{ $stats['unresolved_satker_count'] ?? 0 }}</strong>
                     <span style="color:#9CA3AF;">|</span>
                     Duplicate NRP/NIP: <strong>{{ $stats['duplicate_count'] ?? 0 }}</strong>
+                    <span style="color:#9CA3AF;">|</span>
+                    Grup duplikat: <strong>{{ $stats['duplicate_group_count'] ?? 0 }}</strong>
                 </p>
                 <p style="font-size:12px; color:var(--brand); margin-top:4px;">
                     Baseline SDM: Nama, NRP/NIP, Pangkat, Jabatan, Jenis Kelamin, Agama, lalu satker ditentukan otomatis dari teks jabatan.

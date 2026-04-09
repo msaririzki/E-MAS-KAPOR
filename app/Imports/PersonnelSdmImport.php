@@ -220,6 +220,8 @@ class PersonnelSdmImport extends PersonnelImport
             &$errors,
             &$touchedSatkers
         ) {
+            $processedNrps = [];
+
             foreach ($rows as $idx => $data) {
                 $fullName = trim((string) ($data['full_name'] ?? ''));
                 $nrp = trim((string) ($data['nrp'] ?? ''));
@@ -229,10 +231,31 @@ class PersonnelSdmImport extends PersonnelImport
                 $gender = $data['gender'] ?? null;
                 $religion = trim((string) ($data['religion'] ?? ''));
                 $golongan = trim((string) ($data['golongan'] ?? ''));
+                $rowReference = trim((string) ($data['sheet_name'] ?? '')) !== ''
+                    ? ($data['sheet_name'].' / baris '.($data['row_num'] ?? $idx))
+                    : ('baris '.($data['row_num'] ?? $idx));
 
                 if ($fullName === '') {
                     $errorCount++;
-                    $errors[] = "Baris {$idx}: Nama kosong, dilewati.";
+                    $errors[] = "Baris {$rowReference}: Nama kosong, dilewati.";
+
+                    continue;
+                }
+
+                if (
+                    ($data['status'] ?? 'ok') === 'error'
+                    || (bool) ($data['fatal_error'] ?? false)
+                    || (bool) ($data['duplicate_nrp'] ?? false)
+                ) {
+                    $errorCount++;
+                    $errors[] = "Baris {$rowReference} ({$fullName}): Preview masih mengandung error dan harus diperbaiki lebih dulu.";
+
+                    continue;
+                }
+
+                if ($nrp !== '' && isset($processedNrps[$nrp])) {
+                    $errorCount++;
+                    $errors[] = "Baris {$rowReference} ({$fullName}): NRP/NIP {$nrp} muncul lebih dari sekali pada payload import.";
 
                     continue;
                 }
@@ -240,7 +263,7 @@ class PersonnelSdmImport extends PersonnelImport
                 $rank = $rankId > 0 ? $ranksById->get($rankId) : null;
                 if ($rankId > 0 && $rank === null) {
                     $errorCount++;
-                    $errors[] = "Baris {$idx} ({$fullName}): Pangkat tidak ditemukan.";
+                    $errors[] = "Baris {$rowReference} ({$fullName}): Pangkat tidak ditemukan.";
 
                     continue;
                 }
@@ -248,21 +271,21 @@ class PersonnelSdmImport extends PersonnelImport
                 $satker = $satkersById->get($satkerId);
                 if ($satker === null) {
                     $errorCount++;
-                    $errors[] = "Baris {$idx} ({$fullName}): Satker tidak ditemukan.";
+                    $errors[] = "Baris {$rowReference} ({$fullName}): Satker tidak ditemukan.";
 
                     continue;
                 }
 
                 if (! in_array($gender, ['L', 'P'], true)) {
                     $errorCount++;
-                    $errors[] = "Baris {$idx} ({$fullName}): Jenis kelamin tidak valid.";
+                    $errors[] = "Baris {$rowReference} ({$fullName}): Jenis kelamin tidak valid.";
 
                     continue;
                 }
 
                 if ($religion === '') {
                     $errorCount++;
-                    $errors[] = "Baris {$idx} ({$fullName}): Agama kosong.";
+                    $errors[] = "Baris {$rowReference} ({$fullName}): Agama kosong.";
 
                     continue;
                 }
@@ -308,7 +331,7 @@ class PersonnelSdmImport extends PersonnelImport
                         'satker_id' => $satker->id,
                         'jabatan' => $jabatan,
                         'bagian' => null,
-                    'personnel_type' => $this->resolvePersonnelTypeFromRank($rank),
+                        'personnel_type' => $this->resolvePersonnelTypeFromRank($rank),
                         'gender' => $gender,
                         'golongan' => $golongan !== '' ? $golongan : $this->deriveGolongan($rank),
                         'religion' => $religion,
@@ -339,9 +362,12 @@ class PersonnelSdmImport extends PersonnelImport
 
                     $touchedSatkers[] = $satker->id;
                     $successCount++;
+                    if ($nrp !== '') {
+                        $processedNrps[$nrp] = true;
+                    }
                 } catch (\Throwable $throwable) {
                     $errorCount++;
-                    $errors[] = "Baris {$idx} ({$fullName}): ".$throwable->getMessage();
+                    $errors[] = "Baris {$rowReference} ({$fullName}): ".$throwable->getMessage();
                 }
             }
         });

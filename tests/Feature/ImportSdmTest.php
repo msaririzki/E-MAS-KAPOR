@@ -179,7 +179,7 @@ class ImportSdmTest extends TestCase
             'sort_order' => 1,
         ]);
 
-        Satker::create([
+        $satbrimob = Satker::create([
             'name' => 'SATBRIMOB',
             'code' => 'SATBRIMOB',
             'sort_order' => 2,
@@ -213,7 +213,7 @@ class ImportSdmTest extends TestCase
         Storage::disk('local')->assertExists($run->error_report_path);
     }
 
-    public function test_sdm_import_confirm_updates_run_summary_and_keeps_error_report_downloadable(): void
+    public function test_sdm_import_confirm_can_continue_after_manual_preview_correction(): void
     {
         Storage::fake('local');
 
@@ -223,7 +223,7 @@ class ImportSdmTest extends TestCase
             'sort_order' => 1,
         ]);
 
-        Satker::create([
+        $satbrimob = Satker::create([
             'name' => 'SATBRIMOB',
             'code' => 'SATBRIMOB',
             'sort_order' => 2,
@@ -247,19 +247,19 @@ class ImportSdmTest extends TestCase
 
         $run = SdmImportRun::firstOrFail();
 
-        $this->actingAs($superAdmin)->post(route('admin.personnel.import-sdm-confirm'))
+        $this->actingAs($superAdmin)->post(route('admin.personnel.import-sdm-confirm'), [
+            'satker_overrides' => [
+                1 => $satbrimob->id,
+            ],
+        ])
             ->assertRedirect(route('admin.personnel.index'));
 
         $run->refresh();
 
-        $this->assertSame('completed_with_errors', $run->status);
-        $this->assertSame(1, $run->summary['success_count']);
-        $this->assertSame(1, $run->summary['error_count']);
-        Storage::disk('local')->assertExists($run->error_report_path);
-
-        $this->actingAs($superAdmin)
-            ->get(route('admin.personnel.import-sdm-runs.error-report', $run))
-            ->assertOk();
+        $this->assertSame('completed', $run->status);
+        $this->assertSame(2, $run->summary['success_count']);
+        $this->assertSame(0, $run->summary['error_count']);
+        $this->assertNull($run->error_report_path);
     }
 
     public function test_sdm_import_can_queue_preview_processing_when_queue_driver_is_async(): void
@@ -294,5 +294,114 @@ class ImportSdmTest extends TestCase
         Queue::assertPushed(ProcessSdmImportPreview::class, function (ProcessSdmImportPreview $job) use ($run) {
             return $job->runId === $run->id;
         });
+    }
+
+    public function test_sdm_preview_marks_cross_file_duplicate_nrps_as_errors(): void
+    {
+        Storage::fake('local');
+
+        Satker::create([
+            'name' => 'POLDA NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        Satker::create([
+            'name' => 'SATBRIMOB',
+            'code' => 'SATBRIMOB',
+            'sort_order' => 2,
+        ]);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('superadmin');
+
+        $csvOne = implode("\n", [
+            'HEADER 1',
+            'HEADER 2',
+            "1,EGAS DOSANTOS,AIPDA,'76100151,BANIT II SUBDEN IV DENGEGANA SATBRIMOB POLDA NTB,PRIA,KATOLIK",
+        ]);
+        $csvTwo = implode("\n", [
+            'HEADER 1',
+            'HEADER 2',
+            "1,EGAS DOSANTOS,AIPDA,'76100151,BANIT II SUBDEN IV DENGEGANA SATBRIMOB POLDA NTB,PRIA,KATOLIK",
+        ]);
+
+        $response = $this->actingAs($superAdmin)->post(route('admin.personnel.import-sdm'), [
+            'files' => [
+                UploadedFile::fake()->createWithContent('sdm_satu.csv', $csvOne),
+                UploadedFile::fake()->createWithContent('sdm_dua.csv', $csvTwo),
+            ],
+        ]);
+
+        $response->assertRedirect(route('admin.personnel.import-sdm-preview'));
+
+        $run = SdmImportRun::firstOrFail();
+        $run->refresh();
+
+        $this->assertSame('preview_ready', $run->status);
+        $this->assertSame(2, $run->summary['total']);
+        $this->assertSame(2, $run->summary['error']);
+        $this->assertSame(2, $run->summary['duplicate_count']);
+        $this->assertSame(1, $run->summary['duplicate_group_count']);
+        $this->assertSame(1, $run->summary['unique_personnel_estimate']);
+
+        $payload = json_decode(Storage::disk('local')->get($run->preview_payload_path), true, 512, JSON_THROW_ON_ERROR);
+        $preview = $payload['preview'] ?? [];
+
+        $this->assertCount(2, $preview);
+        $this->assertTrue($preview[0]['duplicate_nrp']);
+        $this->assertTrue($preview[1]['duplicate_nrp']);
+        $this->assertSame('error', $preview[0]['status']);
+        $this->assertSame('error', $preview[1]['status']);
+    }
+
+    public function test_sdm_confirm_is_blocked_when_preview_contains_duplicate_nrp_errors(): void
+    {
+        Storage::fake('local');
+
+        Satker::create([
+            'name' => 'POLDA NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        Satker::create([
+            'name' => 'SATBRIMOB',
+            'code' => 'SATBRIMOB',
+            'sort_order' => 2,
+        ]);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('superadmin');
+
+        $csvOne = implode("\n", [
+            'HEADER 1',
+            'HEADER 2',
+            "1,EGAS DOSANTOS,AIPDA,'76100151,BANIT II SUBDEN IV DENGEGANA SATBRIMOB POLDA NTB,PRIA,KATOLIK",
+        ]);
+        $csvTwo = implode("\n", [
+            'HEADER 1',
+            'HEADER 2',
+            "1,EGAS DOSANTOS,AIPDA,'76100151,BANIT II SUBDEN IV DENGEGANA SATBRIMOB POLDA NTB,PRIA,KATOLIK",
+        ]);
+
+        $this->actingAs($superAdmin)->post(route('admin.personnel.import-sdm'), [
+            'files' => [
+                UploadedFile::fake()->createWithContent('sdm_satu.csv', $csvOne),
+                UploadedFile::fake()->createWithContent('sdm_dua.csv', $csvTwo),
+            ],
+        ])->assertRedirect(route('admin.personnel.import-sdm-preview'));
+
+        $response = $this->actingAs($superAdmin)->post(route('admin.personnel.import-sdm-confirm'));
+
+        $response->assertRedirect(route('admin.personnel.import-sdm-preview'));
+        $response->assertSessionHas('error');
+        $this->assertSame(0, Personnel::count());
+
+        $run = SdmImportRun::firstOrFail();
+        $run->refresh();
+
+        $this->assertSame('preview_ready', $run->status);
+        $this->assertSame(2, $run->summary['error']);
     }
 }
