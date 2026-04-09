@@ -3,9 +3,9 @@
 use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PersonilPortalController;
 use App\Http\Controllers\SatkerController;
 use App\Http\Controllers\Superadmin\StatisticsController;
-use App\Models\BagianOption;
 use Illuminate\Support\Facades\Route;
 
 /* |-------------------------------------------------------------------------- | SI-KAPOR Polda NTB — Web Routes |-------------------------------------------------------------------------- */
@@ -36,80 +36,11 @@ Route::middleware(['auth', 'satker.scope'])->group(function () {
 // ── Personil Routes ──────────────────────────────────────────────────
 
 Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')->name('personil.')->group(function () {
-    Route::get('/kapor', function () {
-        $personnel = auth()->user()->personnel;
-        $kaporSizes = $personnel ? ($personnel->kapor_sizes ?? []) : [];
-        $bagianOptions = BagianOption::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->pluck('name');
-
-        return view('personil.kapor.index', compact('kaporSizes', 'bagianOptions', 'personnel'));
-    })->name('kapor.index');
-
-    Route::post('/kapor', function (\Illuminate\Http\Request $request) {
-        $personnel = auth()->user()->personnel;
-        if ($personnel) {
-            $rules = [
-                'jabatan' => 'nullable|string|max:255',
-                'bagian' => 'nullable|string|max:255',
-                'kemeja' => 'required|string',
-                'celana' => 'required|string',
-                'olahraga' => 'required|string',
-                'jaket' => 'required|string',
-                'topi' => 'required|string',
-                'sabuk' => 'required|string',
-                'sepatu_dinas' => 'required|string',
-                'sepatu_olahraga' => 'required|string',
-            ];
-            if ($personnel->gender === 'P') {
-                $rules['jilbab'] = 'required|string';
-            }
-            $validated = $request->validate($rules);
-            $sizePayload = collect($validated)
-                ->except(['jabatan', 'bagian'])
-                ->all();
-
-            // Menggabungkan dengan json format sebelumnya
-            $currentSizes = is_array($personnel->kapor_sizes) ? $personnel->kapor_sizes : [];
-            $newSizes = app(\App\Services\KaporRequirementService::class)->sanitizeSubmittedSizes(
-                array_merge($currentSizes, $sizePayload),
-                $personnel->gender,
-            );
-
-            $personnel->jabatan = $validated['jabatan'] ?? $personnel->jabatan;
-            $personnel->bagian = $validated['bagian'] ?? $personnel->bagian;
-            $personnel->kapor_sizes = $newSizes;
-            $personnel->save();
-        }
-
-        return redirect()->route('dashboard')->with('success', 'Data ukuran Anda berhasil disimpan dan disinkronkan ke sistem.');
-    })->name('kapor.store');
-
-    Route::post('/testimoni', function (\Illuminate\Http\Request $request) {
-        $validated = $request->validate([
-            'message' => 'required|string|max:2000',
-            'rating' => 'nullable|integer|min:1|max:5',
-        ]);
-
-        \App\Models\Testimonial::create([
-            'user_id' => auth()->id(),
-            'message' => $validated['message'],
-            'rating' => $validated['rating'] ?? 5,
-        ]);
-
-        return back()->with('success_testimoni', 'Terima kasih atas tanggapan Anda! Testimoni berhasil dikirim.');
-    })->name('testimoni.store');
-
-    Route::get('/kapor/riwayat', function () {
-        $user = auth()->user();
-        $personnel = $user->personnel;
-        $kaporSizes = $personnel ? ($personnel->kapor_sizes ?? []) : [];
-        $hasSubmitted = ! empty($kaporSizes) && is_array($kaporSizes) && count(array_filter($kaporSizes)) > 0;
-
-        return view('personil.kapor.history', compact('kaporSizes', 'hasSubmitted', 'personnel'));
-    })->name('kapor.history');
+    Route::get('/kapor', fn () => redirect()->route('dashboard'))->name('kapor.index');
+    Route::post('/kapor', [PersonilPortalController::class, 'storeKapor'])->name('kapor.store');
+    Route::get('/testimoni', [PersonilPortalController::class, 'showTestimoni'])->name('testimoni.index');
+    Route::post('/testimoni', [PersonilPortalController::class, 'storeTestimoni'])->name('testimoni.store');
+    Route::get('/kapor/riwayat', [PersonilPortalController::class, 'showHistory'])->name('kapor.history');
 });
 
 // ── Admin Satker Routes ──────────────────────────────────────────────

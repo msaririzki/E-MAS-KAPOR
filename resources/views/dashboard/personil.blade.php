@@ -1,639 +1,574 @@
-@extends('layouts.app')
+@extends('layouts.personil')
 
-@section('title', 'Dashboard Personil')
-@section('page-title', 'Dashboard Personil')
-@section('breadcrumb', 'Dashboard')
-@section('page-subtitle', 'Tahun Anggaran ' . $fiscalYear)
+@section('title', 'Data Kaporlap Personil')
 
 @section('styles')
-<style>
-    .form-card { padding: 20px; border: 1px solid var(--border-color); border-radius: var(--radius-lg); margin-bottom: 24px; }
-    .form-group { margin-bottom: 20px; }
-    .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-main); font-size: 13px; }
-    .form-control { width: 100%; padding: 10px 14px; background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); border-radius: var(--radius-md); font-family: inherit; transition: all 0.2s; }
-    .form-control:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1); }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-    .btn-submit { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: var(--brand); color: #fff; border: none; border-radius: var(--radius-md); font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; }
-    .btn-submit:hover { background: #B71C1C; transform: translateY(-1px); }
-    .colored-toast.swal2-icon-success { background-color: var(--success-bg) !important; color: var(--success) !important; }
-    .colored-toast .swal2-title { color: var(--success) !important; }
-    
-    /* Testimoni Rating */
-    .rating-wrapper { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 8px; }
-    .rating-wrapper input { display: none; }
-    .rating-wrapper label { cursor: pointer; color: var(--slate-300); font-size: 24px; transition: color 0.2s; }
-    .rating-wrapper label:hover, .rating-wrapper label:hover ~ label, .rating-wrapper input:checked ~ label { color: #F59E0B; }
-    
-    .btn-cancel:hover { background: var(--slate-100) !important; color: var(--danger) !important; border-color: var(--danger-border) !important; }
-
-    /* ══ Mobile Responsive — Personnel Dashboard ══ */
-    @media (max-width: 768px) {
-        /* Profile card: stack vertical */
-        .personil-profile-body {
-            flex-direction: column !important;
-            align-items: center !important;
-            text-align: center;
-            padding: 20px 16px !important;
-            gap: 16px !important;
-        }
-        .personil-profile-body > div:nth-child(2) {
-            min-width: unset !important;
-        }
-        .personil-profile-body .profile-meta {
-            justify-content: center !important;
-        }
-        .personil-profile-body .profile-avatar {
-            width: 52px !important;
-            height: 52px !important;
-            font-size: 20px !important;
-            border-radius: 14px !important;
-        }
-        .personil-profile-body .profile-name {
-            font-size: 17px !important;
+    <style>
+        .alert {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
         }
 
-        /* Status badge: full width center */
-        .personil-status-badge {
+        .profile-row,
+        .meta-row,
+        .step-row,
+        .link-row {
+            display: grid;
+            gap: 10px;
+        }
+
+        .profile-row {
+            grid-template-columns: 48px 1fr;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #fef2f2;
+            color: var(--brand);
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .meta-row,
+        .step-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .meta-item,
+        .step-item,
+        .summary-item {
+            padding: 0;
+            background: transparent;
+            border: none;
+        }
+
+        .meta-item strong,
+        .summary-item strong {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .meta-item span,
+        .summary-item span {
+            display: block;
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 999px;
+            background: var(--slate-100);
+            overflow: hidden;
+            margin-top: 14px;
+        }
+
+        .progress>span {
+            display: block;
+            height: 100%;
+            background: var(--brand);
+        }
+
+        .progress-38>span {
+            width: 38%;
+        }
+
+        .progress-64>span {
+            width: 64%;
+        }
+
+        .progress-82>span {
+            width: 82%;
+        }
+
+        .progress-100>span {
             width: 100%;
-            justify-content: center !important;
         }
 
-        /* Status cards grid: single column */
-        .personil-stats-grid {
-            grid-template-columns: 1fr !important;
-            gap: 16px !important;
-        }
-        .personil-stat-card {
-            padding: 20px 16px !important;
-        }
-        .personil-stat-card .stat-number {
-            font-size: 28px !important;
-        }
-        .personil-stat-card .stat-suffix {
-            font-size: 13px !important;
-        }
-        .personil-stat-card .stat-icon-circle {
-            width: 56px !important;
-            height: 56px !important;
-            font-size: 26px !important;
-        }
-        .personil-stat-card .stat-desc {
-            font-size: 13px !important;
+        .step-item {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
         }
 
-        /* Form card: tighter padding */
-        .form-card {
-            padding: 14px !important;
-        }
-        .form-grid {
-            grid-template-columns: 1fr !important;
-            gap: 14px !important;
+        .step-item.active {
+            color: var(--brand);
+            border-color: #fecaca;
+            background: #fef2f2;
         }
 
-        /* Card header/body padding */
-        .personil-card-header {
-            padding: 16px !important;
-        }
-        .personil-card-body {
-            padding: 16px !important;
-        }
-        .personil-card-header h3 {
-            font-size: 15px !important;
+        .step-item.done {
+            color: var(--success);
+            border-color: #bbf7d0;
+            background: #f0fdf4;
         }
 
-        /* Summary grid: 2 columns on mobile */
-        .personil-summary-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px !important;
+        .note {
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: var(--slate-50);
+            border: 1px solid var(--border-color);
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.6;
         }
 
-        /* Table: compact cells */
-        .personil-table th,
-        .personil-table td {
-            padding: 10px 12px !important;
-            font-size: 12px !important;
-        }
-        .personil-table .cell-category {
-            font-size: 10px !important;
-            padding: 3px 6px !important;
-        }
-        .personil-table .cell-size-badge {
-            min-width: 28px !important;
-            height: 28px !important;
-            font-size: 12px !important;
+        .field-grid {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
         }
 
-        /* Buttons: full-width stacked */
-        .personil-form-actions {
-            flex-direction: column !important;
-            gap: 10px !important;
-        }
-        .personil-form-actions .btn-submit,
-        .personil-form-actions .btn-cancel {
-            max-width: 100% !important;
-            width: 100% !important;
+        .summary-grid {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
-        /* Summary card header: stack if too narrow */
-        .personil-summary-header {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 12px !important;
-        }
-        .personil-summary-header .btn {
-            width: 100% !important;
-            justify-content: center !important;
+        .field {
+            padding: 0;
+            background: transparent;
+            border: none;
         }
 
-        /* Testimoni: tighter */
-        .personil-testimoni-body {
-            padding: 16px !important;
+        .label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 700;
         }
-        .personil-testimoni-body .form-group textarea {
-            font-size: 14px !important;
-        }
-        .personil-testimoni-actions {
-            text-align: center !important;
-        }
-        .personil-testimoni-actions .btn {
-            width: 100% !important;
-            justify-content: center !important;
-        }
-    }
 
-    @media (max-width: 480px) {
-        /* Even smaller screens */
-        .personil-profile-body .profile-avatar {
-            width: 44px !important;
-            height: 44px !important;
-            font-size: 17px !important;
-            border-radius: 12px !important;
+        .hint {
+            display: block;
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
         }
-        .personil-profile-body .profile-name {
-            font-size: 15px !important;
+
+        .error {
+            display: block;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--danger);
+            font-weight: 700;
         }
-        .personil-stat-card .stat-number {
-            font-size: 24px !important;
+
+        .control {
+            width: 100%;
+            min-height: 46px;
+            padding: 0 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text-main);
         }
-        .personil-stat-card .stat-icon-circle {
-            width: 48px !important;
-            height: 48px !important;
-            font-size: 22px !important;
+
+        .control:focus {
+            outline: none;
+            border-color: #f87171;
+            box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.12);
         }
-        .personil-summary-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
+
+        .button,
+        .button-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 46px;
+            padding: 0 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            border: 1px solid transparent;
+            cursor: pointer;
         }
-        .personil-status-badge {
-            padding: 8px 14px !important;
-            font-size: 12px !important;
+
+        .button {
+            width: 100%;
+            background: var(--brand);
+            color: #fff;
         }
-    }
-</style>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+        .button-secondary {
+            background: #fff;
+            border-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .alert {
+            padding: 14px 16px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .alert.success {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+            color: var(--success);
+        }
+
+        .alert.error {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: var(--danger);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .link-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        @media (min-width: 768px) {
+            .field-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
 @endsection
 
 @section('content')
-<div class="content">
+    @php
+        $sHead = range(54, 60);
+        $sShirtMale = ['14', '14,5', '15', '15,5', '16', '16,5', '17', '17,5', '18', '18,5', '19', '19,5', '20', '21', '22'];
+        $sWomen = ['K', 'SD', 'B', 'EB', 'EEB', 'EEEB', 'EEEEB'];
+        $sPantsMale = range(27, 50);
+        $sShoes = range(36, 48);
+        $sBelt = range(36, 60, 2);
+        $sJilbab = ['K', 'SD', 'B'];
+        $gender = $personnel?->gender ?? 'L';
+        $religion = strtoupper(trim((string) ($personnel?->religion ?? '')));
+        $requiresJilbab = $gender === 'P' && $religion === 'ISLAM';
+        $satkerName = strtoupper((string) ($user->satker->name ?? $personnel?->satker?->name ?? ''));
+        $usesBagianDropdown = str_contains($satkerName, 'POLRES') || str_contains($satkerName, 'POLRESTA');
+        $selectedBagian = old('bagian', $personnel?->bagian ?? '');
+        $showIdentityForm = !$identityReady || old('mode') === 'identity' || $errors->has('jabatan') || $errors->has('bagian');
+        $showSizesForm = !$hasSubmitted || old('mode') === 'sizes';
+        $progressClass = !$identityReady ? 'progress-38' : ($isComplete ? 'progress-100' : ($hasSubmitted ? 'progress-82' : 'progress-64'));
+        $summaryItems = [
+            'Kemeja' => $kaporSizes['kemeja'] ?? '-',
+            'Celana/Rok' => $kaporSizes['celana'] ?? '-',
+            'Olahraga' => $kaporSizes['olahraga'] ?? '-',
+            'Jaket' => $kaporSizes['jaket'] ?? '-',
+            'Topi/Baret' => $kaporSizes['topi'] ?? '-',
+            'Sabuk' => $kaporSizes['sabuk'] ?? '-',
+            'Sepatu Dinas' => $kaporSizes['sepatu_dinas'] ?? '-',
+            'Sepatu Olahraga' => $kaporSizes['sepatu_olahraga'] ?? '-',
+        ];
 
-{{-- Profile Summary --}}
-<div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); overflow: hidden; position: relative; margin-bottom: 24px;">
-    <div style="position: absolute; right: -50px; top: -50px; width: 150px; height: 150px; background: var(--brand); opacity: 0.1; filter: blur(40px); border-radius: 50%; pointer-events: none;"></div>
-    <div style="position: absolute; left: 20%; bottom: -40px; width: 100px; height: 100px; background: var(--accent); opacity: 0.05; filter: blur(30px); border-radius: 50%; pointer-events: none;"></div>
-
-    <div class="card-body personil-profile-body" style="display:flex; align-items:center; gap:24px; flex-wrap:wrap; padding: 24px 32px; background: var(--bg-card); position: relative; z-index: 1;">
-        <div class="profile-avatar" style="width:64px; height:64px; border-radius:16px; background:linear-gradient(135deg, var(--brand), var(--brand-light)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; font-weight:700; flex-shrink:0; box-shadow: 0 4px 12px rgba(var(--brand-rgb, 198,40,40), 0.2);">
-            {{ strtoupper(substr($user->name, 0, 2)) }}
-        </div>
-        <div style="flex:1; min-width:200px;">
-            <div class="profile-name" style="font-size:20px; font-weight:800; color: var(--text-main); letter-spacing: -0.2px;">{{ $user->name }}</div>
-            <div class="profile-meta" style="font-size:14px; color: var(--text-muted); margin-top:4px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <span style="display: inline-flex; align-items: center; gap: 4px;"><i class="ri-fingerprint-line" style="color: var(--slate-400);"></i> <strong>{{ $user->nrp_nip }}</strong></span>
-                @if($personnel)
-                    <span style="color: var(--slate-300);">•</span>
-                    <span style="display: inline-flex; align-items: center; gap: 4px;"><i class="ri-medal-2-line" style="color: var(--slate-400);"></i> {{ $personnel->rank->name ?? '' }}</span>
-                    <span style="color: var(--slate-300);">•</span>
-                    <span style="display: inline-flex; align-items: center; gap: 4px;"><i class="ri-building-4-line" style="color: var(--slate-400);"></i> {{ $personnel->satker->name ?? '' }}</span>
-                @endif
-            </div>
-        </div>
-        <div>
-            @if($hasSubmitted)
-                <span class="personil-status-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 9999px; font-size: 13px; font-weight: 700; background: var(--success-bg); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);">
-                    <i class="ri-shield-check-fill" style="font-size: 16px;"></i> Sudah Input TA {{ $fiscalYear }}
-                </span>
-            @else
-                <span class="personil-status-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 9999px; font-size: 13px; font-weight: 700; background: var(--warning-bg); color: #B45309; border: 1px solid var(--warning-border); box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);">
-                    <i class="ri-error-warning-fill" style="font-size: 16px;"></i> Belum Input TA {{ $fiscalYear }}
-                </span>
-            @endif
-        </div>
-    </div>
-</div>
-
-{{-- FORM INPUT UTAMA (PRIORITAS DEPAN) --}}
-<div id="kaporFormCard" class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; background: var(--bg-card); display: {{ $hasSubmitted ? 'none' : 'block' }};">
-    <div class="card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 20px 24px;">
-        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
-            <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(var(--brand-rgb, 198,40,40), 0.1); color: var(--brand);">
-                <i class="ri-edit-box-line" style="font-size: 18px;"></i>
-            </span>
-            Form Biodata Kelengkapan Kaporlap
-        </h3>
-        <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-muted);">Silakan lengkapi atau perbarui ukuran atribut lapangan Anda di bawah ini secara akurat.</p>
-    </div>
-    
-    <div class="card-body" style="padding: 24px;">
-        @php
-            $s_head = range(54, 60);
-            $s_shirt_m = ['14', '14,5', '15', '15,5', '16', '16,5', '17', '17,5', '18', '18,5', '19', '19,5', '20', '21', '22'];
-            $s_wom = ['K', 'SD', 'B', 'EB', 'EEB', 'EEEB', 'EEEEB'];
-            $s_pants_m = range(27, 50);
-            $s_shoes = range(36, 48);
-            $s_belt = range(36, 60, 2);
-            $s_jilbab = ['K', 'SD', 'B'];
-            
-            $gender = optional(auth()->user()->personnel)->gender ?? 'L';
-            $satkerName = strtoupper(optional(auth()->user()->satker)->name ?? optional($personnel?->satker)->name ?? '');
-            $usesBagianDropdown = str_contains($satkerName, 'POLRES') || str_contains($satkerName, 'POLRESTA');
-        @endphp
-
-        <form action="{{ route('personil.kapor.store') }}" method="POST" id="kaporForm">
-            @csrf
-
-            <div class="form-card">
-                <h4 style="margin: 0 0 16px 0; font-size: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Data Lapangan</h4>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Jabatan</label>
-                        <input type="text" name="jabatan" class="form-control" value="{{ old('jabatan', $personnel->jabatan ?? '') }}" placeholder="Contoh: BANIT, PS. KASUBSI" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Bagian / Fungsi</label>
-                        @if($usesBagianDropdown)
-                            <select name="bagian" class="form-control select-control">
-                                <option value="">— Pilih Bagian —</option>
-                                @foreach(($bagianOptions ?? collect()) as $option)
-                                    <option value="{{ $option }}" {{ old('bagian', $personnel->bagian ?? '') === $option ? 'selected' : '' }}>{{ $option }}</option>
-                                @endforeach
-                            </select>
-                        @else
-                            <input type="text" name="bagian" class="form-control" value="{{ old('bagian', $personnel->bagian ?? '') }}" placeholder="Contoh: RESKRIM, INTEL" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
-                        @endif
-                    </div>
-                </div>
-                <p style="margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.6;">Untuk `POLRES/POLRESTA`, field bagian/fungsi mengikuti master dropdown. Untuk `POLDA`, field ini tetap bisa diisi manual.</p>
-            </div>
-            
-            <div class="form-card">
-                <h4 style="margin: 0 0 16px 0; font-size: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Tutup Badan & Pakaian</h4>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Kemeja</label>
-                        <select name="kemeja" class="form-control select-control" required>
-                            <option value="">— Pilih —</option>
-                            @if($gender === 'L')
-                                @foreach($s_shirt_m as $s)
-                                    <option value="{{ $s }}" {{ old('kemeja', $kaporSizes['kemeja'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                                @endforeach
-                            @else
-                                @foreach($s_wom as $s)
-                                    <option value="{{ $s }}" {{ old('kemeja', $kaporSizes['kemeja'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                                @endforeach
-                            @endif
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Celana / Rok</label>
-                        <select name="celana" class="form-control select-control" required>
-                            <option value="">— Pilih —</option>
-                            @if($gender === 'L')
-                                @foreach($s_pants_m as $s)
-                                    <option value="{{ $s }}" {{ old('celana', $kaporSizes['celana'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                                @endforeach
-                            @else
-                                @foreach($s_wom as $s)
-                                    <option value="{{ $s }}" {{ old('celana', $kaporSizes['celana'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                                @endforeach
-                            @endif
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">T.Shirt / Kaos Olahraga</label>
-                        <select name="olahraga" class="form-control select-control" required>
-                            <option value="">— Pilih —</option>
-                            @foreach($s_wom as $s)
-                                <option value="{{ $s }}" {{ old('olahraga', $kaporSizes['olahraga'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Jaket</label>
-                        <select name="jaket" class="form-control select-control" required>
-                            <option value="">— Pilih —</option>
-                            @foreach($s_wom as $s)
-                                <option value="{{ $s }}" {{ old('jaket', $kaporSizes['jaket'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-card">
-                <h4 style="margin: 0 0 16px 0; font-size: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Perlengkapan Kepala & Sabuk</h4>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Tutup Kepala (Topi/Baret)</label>
-                        <select name="topi" class="form-control select-control" required>
-                            <option value="">— Pilih —</option>
-                            @foreach($s_head as $s)
-                                <option value="{{ $s }}" {{ old('topi', $kaporSizes['topi'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Sabuk</label>
-                        <select name="sabuk" class="form-control select-control" required>
-                            <option value="">— Pilih —</option>
-                            @foreach($s_belt as $s)
-                                <option value="{{ $s }}" {{ old('sabuk', $kaporSizes['sabuk'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @if($gender === 'P' && strtoupper(trim(optional(auth()->user()->personnel)->religion ?? '')) === 'ISLAM')
-                    <div class="form-group">
-                        <label class="form-label">Jilbab <span style="color: var(--brand); font-size: 11px; margin-left: 4px;">(Khusus Polwan)</span></label>
-                        <select name="jilbab" class="form-control select-control" required>
-                            <option value="">— Pilih —</option>
-                            @foreach($s_jilbab as $s)
-                                <option value="{{ $s }}" {{ old('jilbab', $kaporSizes['jilbab'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @endif
-                </div>
-            </div>
-
-            <div class="form-card" style="margin-bottom: 0;">
-                <h4 style="margin: 0 0 16px 0; font-size: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Tutup Kaki & Sepatu</h4>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Sepatu Dinas</label>
-                        <select name="sepatu_dinas" class="form-control select-control" required>
-                            <option value="">— Pilih —</option>
-                            @foreach($s_shoes as $s)
-                                <option value="{{ $s }}" {{ old('sepatu_dinas', $kaporSizes['sepatu_dinas'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Sepatu Olahraga</label>
-                        <select name="sepatu_olahraga" class="form-control select-control" required>
-                            <option value="">— Pilih —</option>
-                            @foreach($s_shoes as $s)
-                                <option value="{{ $s }}" {{ old('sepatu_olahraga', $kaporSizes['sepatu_olahraga'] ?? '') == $s ? 'selected' : '' }}>{{ $s }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="personil-form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
-                @if($hasSubmitted)
-                <button type="button" onclick="document.getElementById('kaporFormCard').style.display='none'; document.getElementById('kaporSummaryCard').style.display='block';" class="btn btn-cancel" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: var(--radius-md); font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
-                    <i class="ri-close-line"></i> Batal
-                </button>
-                @endif
-                <button type="submit" class="btn-submit" style="max-width: 250px;">
-                    <i class="ri-save-line"></i> Simpan Pilihan Form
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-@if($hasSubmitted)
-<div id="kaporSummaryCard" class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 24px; background: var(--bg-card);">
-    <div class="card-header personil-card-header" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-        <div>
-            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
-                <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); color: var(--success);">
-                    <i class="ri-checkbox-circle-fill" style="font-size: 18px;"></i>
-                </span>
-                Form Biodata Kelengkapan Kaporlap
-            </h3>
-            <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-muted);">Data Kaporlap Anda untuk TA {{ $fiscalYear }} telah terekam.</p>
-        </div>
-        <button type="button" onclick="document.getElementById('kaporFormCard').style.display='block'; document.getElementById('kaporSummaryCard').style.display='none';" class="btn" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 8px; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
-            <i class="ri-edit-2-line"></i> Edit Data
-        </button>
-    </div>
-    
-    <div class="card-body personil-card-body" style="padding: 24px;">
-        <div class="personil-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
-            @php
-                $summaryItems = [
-                    'Kemeja' => $kaporSizes['kemeja'] ?? '-',
-                    'Celana/Rok' => $kaporSizes['celana'] ?? '-',
-                    'Olahraga' => $kaporSizes['olahraga'] ?? '-',
-                    'Jaket' => $kaporSizes['jaket'] ?? '-',
-                    'Tutup Kepala' => $kaporSizes['topi'] ?? '-',
-                    'Sabuk' => $kaporSizes['sabuk'] ?? '-',
-                    'Jilbab' => $kaporSizes['jilbab'] ?? '-',
-                    'Sepatu Dinas' => $kaporSizes['sepatu_dinas'] ?? '-',
-                    'Sepatu Olahraga' => $kaporSizes['sepatu_olahraga'] ?? '-',
-                ];
-            @endphp
-            @foreach($summaryItems as $label => $val)
-                @if($label === 'Jilbab' && !($gender === 'P' && strtoupper(trim(optional(auth()->user()->personnel)->religion ?? '')) === 'ISLAM'))
-                    @continue
-                @endif
-                <div style="background: var(--bg-body); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
-                    <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">{{ $label }}</div>
-                    <div style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-top: 4px;">{{ $val ?: '-' }}</div>
-                </div>
-            @endforeach
-        </div>
-    </div>
-</div>
-@endif
-
-{{-- Status Cards (Dipindah ke Bawah Form) --}}
-@php
-    // Tentukan total item berdasarkan gender dan agama/hijab status
-    $personnelGender = optional($personnel)->gender ?? 'L';
-    $personnelReligion = strtoupper(trim(optional($personnel)->religion ?? ''));
-    $isIslam = in_array($personnelReligion, ['ISLAM']);
-
-    if ($personnelGender === 'L') {
-        // Laki-laki: 8 item (tanpa jilbab)
-        $totalItems = 8;
-        $isJilbabRequired = false;
-        $itemNote = '';
-    } elseif ($personnelGender === 'P' && $isIslam) {
-        // Perempuan Islam: 9 item (termasuk jilbab)
-        $totalItems = 9;
-        $isJilbabRequired = true;
-        $itemNote = '';
-    } else {
-        // Perempuan non-Islam: 8 dari 9 item (jilbab tidak diwajibkan)
-        $totalItems = 9;
-        $isJilbabRequired = false;
-        $itemNote = 'Item Jilbab tidak diwajibkan (non-Islam).';
-    }
-
-    // Hitung jumlah item yang sudah terisi
-    $filledCount = 0;
-    if (is_array($kaporSizes)) {
-        foreach ($kaporSizes as $key => $val) {
-            if (!empty($val)) {
-                // Untuk laki-laki, skip jilbab dari hitungan
-                if ($personnelGender === 'L' && $key === 'jilbab') continue;
-                $filledCount++;
-            }
+        if ($requiresJilbab) {
+            $summaryItems['Jilbab'] = $kaporSizes['jilbab'] ?? '-';
         }
-    }
+    @endphp
 
-    // Untuk perempuan non-Islam, max filled = 8 (jilbab tidak diminta)
-    $maxExpected = ($personnelGender === 'P' && !$isIslam) ? 8 : $totalItems;
-    $isComplete = $filledCount >= $maxExpected;
-@endphp
-<div class="personil-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-bottom: 24px;">
-    {{-- Card 1: Item Terisi --}}
-    <div class="card personil-stat-card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; padding: 32px 28px; background: var(--bg-card); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-md)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm)';">
-        <div style="flex: 1;">
-            <p style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 12px 0;">Item Data Terisi</p>
-            <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span class="stat-number" style="font-size: 42px; font-weight: 800; color: var(--text-main); line-height: 1;">{{ $filledCount }}</span>
-                <span class="stat-suffix" style="font-size: 16px; font-weight: 600; color: var(--text-muted);">/ {{ $totalItems }} Total Barang</span>
-            </div>
-            <p class="stat-desc" style="font-size: 14px; font-weight: 500; color: {{ ($hasSubmitted && $isComplete) ? 'var(--success)' : 'var(--slate-400)' }}; margin: 16px 0 0 0; display: flex; align-items: center; gap: 8px;">
-                <i class="ri-checkbox-circle-fill" style="font-size: 18px;"></i>
-                @if($hasSubmitted && $isComplete)
-                    Kaporlap Anda sudah direkam.
-                @elseif($hasSubmitted && !$isComplete)
-                    Kaporlap direkam, namun ada item belum terisi.
-                @else
-                    Masih ada data ukuran kosong.
-                @endif
-            </p>
-            @if(!empty($itemNote) && $filledCount < $totalItems)
-                <p style="font-size: 12px; font-weight: 500; color: var(--info); margin: 8px 0 0 0; display: flex; align-items: center; gap: 6px;">
-                    <i class="ri-information-line" style="font-size: 14px;"></i>
-                    {{ $itemNote }}
-                </p>
-            @endif
-        </div>
-        <div class="stat-icon-circle" style="width: 72px; height: 72px; border-radius: 50%; background: {{ ($hasSubmitted && $isComplete) ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)' }}; display: flex; align-items: center; justify-content: center; color: {{ ($hasSubmitted && $isComplete) ? 'var(--success)' : 'var(--warning)' }}; font-size: 32px; box-shadow: 0 4px 12px {{ ($hasSubmitted && $isComplete) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)' }};">
-            <i class="ri-{{ ($hasSubmitted && $isComplete) ? 'shopping-bag-3-fill' : 'edit-2-fill' }}"></i>
-        </div>
-    </div>
+    @if (!$personnel)
+        <div class="alert error">Data personel belum tersedia. Hubungi admin sebelum mengisi kaporlap.</div>
+    @else
+        <div class="page">
+            <section class="panel">
+                <div class="panel-body">
+                    <div class="profile-row">
+                        <div class="avatar">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
+                        <div>
+                            <h3>{{ $user->name }} • {{ $user->nrp_nip }}</h3>
+                        </div>
+                    </div>
 
-    {{-- Card 2: Tahun Anggaran --}}
-    <div class="card personil-stat-card" style="border: none; box-shadow: var(--shadow-sm); border-radius: var(--radius-lg); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; padding: 32px 28px; background: var(--bg-card); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-md)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm)';">
-        <div style="flex: 1;">
-            <p style="font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 12px 0;">Tahun Anggaran</p>
-            <div style="display: flex; align-items: baseline; gap: 8px;">
-                <span class="stat-number" style="font-size: 42px; font-weight: 800; color: var(--text-main); line-height: 1;">{{ $fiscalYear }}</span>
-            </div>
-            <p class="stat-desc" style="font-size: 14px; font-weight: 500; color: var(--info); margin: 16px 0 0 0; display: flex; align-items: center; gap: 8px;">
-                <i class="ri-time-fill" style="font-size: 18px;"></i>
-                Data input masuk ke TA saat ini.
-            </p>
-        </div>
-        <div class="stat-icon-circle" style="width: 72px; height: 72px; border-radius: 50%; background: var(--info-bg); display: flex; align-items: center; justify-content: center; color: var(--info); font-size: 32px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);">
-            <i class="ri-calendar-event-fill"></i>
-        </div>
-    </div>
-</div>
+                    <div class="meta-row" style="margin-top: 14px;">
+                        <div class="meta-item"><strong>Satker</strong><span>{{ $personnel->satker->name ?? '-' }}</span></div>
+                        <div class="meta-item"><strong>Tahun Anggaran</strong><span>{{ $fiscalYear }}</span></div>
+                    </div>
 
+                    <div class="progress {{ $progressClass }}"><span></span></div>
 
-
-{{-- FORM TESTIMONI KOTAK SARAN --}}
-<div class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg-card); position: relative;">
-    <div style="position: absolute; right: 0; top: 0; width: 200px; height: 100%; background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.03)); pointer-events: none;"></div>
-    <div class="card-header" style="background: transparent; border-bottom: 1px solid var(--border-color); padding: 20px 24px;">
-        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
-            <i class="ri-feedback-line" style="color: var(--brand); font-size: 20px;"></i>
-            Kotak Saran & Testimoni
-        </h3>
-    </div>
-    <div class="card-body personil-testimoni-body" style="padding: 24px;">
-        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Berikan masukan, kritik, atau pengalaman Anda dalam menggunakan Sistem E-Kaporlap untuk pengembangan kami ke depannya.</p>
-        
-        <form action="{{ route('personil.testimoni.store') }}" method="POST">
-            @csrf
-            <div class="form-group">
-                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
-                    Penilaian Kualitas
-                </label>
-                <div class="rating-wrapper" style="margin-top: 8px;">
-                    <input type="radio" id="star5" name="rating" value="5" checked />
-                    <label for="star5" title="Sangat Bagus"><i class="ri-star-fill"></i></label>
-                    <input type="radio" id="star4" name="rating" value="4" />
-                    <label for="star4" title="Bagus"><i class="ri-star-fill"></i></label>
-                    <input type="radio" id="star3" name="rating" value="3" />
-                    <label for="star3" title="Cukup"><i class="ri-star-fill"></i></label>
-                    <input type="radio" id="star2" name="rating" value="2" />
-                    <label for="star2" title="Buruk"><i class="ri-star-fill"></i></label>
-                    <input type="radio" id="star1" name="rating" value="1" />
-                    <label for="star1" title="Sangat Buruk"><i class="ri-star-fill"></i></label>
+                    <div class="step-row" style="margin-top: 12px;">
+                        <div class="step-item {{ $identityReady ? 'done' : 'active' }}">1. Jabatan + Bag/Fungsi</div>
+                        <div class="step-item {{ !$identityReady ? '' : ($isComplete ? 'done' : 'active') }}">2. Ukuran Kaporlap
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="form-group" style="margin-top:16px;">
-                <label class="form-label">Tulis Pesan Anda</label>
-                <textarea name="message" class="form-control" rows="4" placeholder="Ketik pandangan, harapan, atau kendala Anda di sini..." required style="resize: vertical;"></textarea>
-            </div>
-            
-            <div class="personil-testimoni-actions" style="text-align: right; margin-top: 20px;">
-                <button type="submit" class="btn" style="background: var(--bg-body); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 24px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;" onmouseover="this.style.background='var(--hover-bg)'" onmouseout="this.style.background='var(--bg-body)'">
-                    <i class="ri-send-plane-fill" style="color:var(--brand);"></i> Kirim Testimoni
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
+            </section>
 
-</div>
+            @if (session('success'))
+                <div class="alert success">{{ session('success') }}</div>
+            @endif
 
-@if(session('success'))
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        Swal.fire({
-            title: 'Berhasil!',
-            text: "{{ session('success') }}",
-            icon: 'success',
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            customClass: { popup: 'colored-toast' }
+            @if (session('error'))
+                <div class="alert error">{{ session('error') }}</div>
+            @endif
+
+            @if ($errors->any())
+                <div class="alert error">Masih ada field yang perlu diperbaiki.</div>
+            @endif
+
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Data tugas</h2>
+                    <p>Jabatan berasal dari import SDM Polda NTB. Perubahan akan dicatat di log audit.</p>
+                </div>
+                <div class="panel-body">
+                    @if ($identityReady && !$showIdentityForm)
+                    <div data-identity-summary>
+                        <div class="summary-grid">
+                            <div class="summary-item"><strong>Jabatan</strong><span>{{ $personnel->jabatan }}</span></div>
+                            <div class="summary-item"><strong>Bag/Fungsi</strong><span>{{ $personnel->bagian }}</span></div>
+                        </div>
+
+                        <div style="margin-top: 12px;">
+                            <button type="button" class="button-secondary" data-open-identity style="width: auto;">
+                                <i class="ri-edit-line"></i> Edit Data Tugas
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
+                <form action="{{ route('personil.kapor.store') }}" method="POST" class="{{ $showIdentityForm ? '' : 'hidden' }}"
+                    data-identity-form style="margin-top: 14px;">
+                    @csrf
+                    <input type="hidden" name="mode" value="identity">
+
+                    <div class="field-grid">
+                        <div class="field">
+                            <label class="label" for="jabatan">Jabatan</label>
+                            <input id="jabatan" type="text" name="jabatan" class="control"
+                                value="{{ old('jabatan', $personnel->jabatan ?? '') }}" style="text-transform: uppercase;"
+                                oninput="this.value = this.value.toUpperCase()">
+                            <span class="hint">Referensi SDM Polda NTB.</span>
+                            @error('jabatan')<span class="error">{{ $message }}</span>@enderror
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="bagian">Bag/Fungsi</label>
+                            @if ($usesBagianDropdown)
+                                <select id="bagian" name="bagian" class="control">
+                                    <option value="">Pilih</option>
+                                    @if ($selectedBagian && !collect($bagianOptions)->contains($selectedBagian))
+                                        <option value="{{ $selectedBagian }}" selected>{{ $selectedBagian }}</option>
+                                    @endif
+                                    @foreach ($bagianOptions as $option)
+                                        <option value="{{ $option }}" {{ $selectedBagian === $option ? 'selected' : '' }}>{{ $option }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <input id="bagian" type="text" name="bagian" class="control" value="{{ $selectedBagian }}"
+                                    style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                            @endif
+                            <span class="hint">Wajib diisi untuk membuka form ukuran.</span>
+                            @error('bagian')<span class="error">{{ $message }}</span>@enderror
+                        </div>
+                    </div>
+
+                    <div class="note">Simpan langkah ini dulu, lalu lanjut ke ukuran.</div>
+
+                        <div style="margin-top: 14px;">
+                            <button type="submit" class="button">Simpan Data Tugas</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            @if ($identityReady)
+                <section class="panel" id="ukuran-form">
+                    <div class="panel-header">
+                        <h2>Ukuran kaporlap</h2>
+                        <p>Isi seperlunya. Jika sudah pernah menyimpan, data lama tetap tampil sebagai nilai awal.</p>
+                    </div>
+                    <div class="panel-body">
+                        @if ($hasSubmitted && !$showSizesForm)
+                        <div data-sizes-summary>
+                            <div class="summary-grid">
+                                @foreach ($summaryItems as $label => $value)
+                                    <div class="summary-item"><strong>{{ $label }}</strong><span>{{ $value ?: '-' }}</span></div>
+                                @endforeach
+                            </div>
+
+                            <div style="margin-top: 12px;">
+                                <button type="button" class="button-secondary" data-open-sizes style="width: auto;">
+                                    <i class="ri-edit-line"></i> Edit Ukuran
+                                </button>
+                            </div>
+                        </div>
+                    @endif
+
+                    <form action="{{ route('personil.kapor.store') }}" method="POST" class="{{ $showSizesForm ? '' : 'hidden' }}"
+                        data-sizes-form style="margin-top: 14px;">
+                        @csrf
+                        <input type="hidden" name="mode" value="sizes">
+                        <input type="hidden" name="jabatan" value="{{ old('jabatan', $personnel->jabatan ?? '') }}">
+                        <input type="hidden" name="bagian" value="{{ old('bagian', $personnel->bagian ?? '') }}">
+
+                        <div class="field-grid">
+                            <div class="field">
+                                <label class="label" for="kemeja">Kemeja</label>
+                                <select id="kemeja" name="kemeja" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($gender === 'L' ? $sShirtMale : $sWomen as $size)
+                                        <option value="{{ $size }}" {{ old('kemeja', $kaporSizes['kemeja'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('kemeja')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="celana">Celana / Rok</label>
+                                <select id="celana" name="celana" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($gender === 'L' ? $sPantsMale : $sWomen as $size)
+                                        <option value="{{ $size }}" {{ old('celana', $kaporSizes['celana'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('celana')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="olahraga">Olahraga</label>
+                                <select id="olahraga" name="olahraga" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sWomen as $size)
+                                        <option value="{{ $size }}" {{ old('olahraga', $kaporSizes['olahraga'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('olahraga')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="jaket">Jaket</label>
+                                <select id="jaket" name="jaket" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sWomen as $size)
+                                        <option value="{{ $size }}" {{ old('jaket', $kaporSizes['jaket'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('jaket')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="topi">Topi / Baret</label>
+                                <select id="topi" name="topi" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sHead as $size)
+                                        <option value="{{ $size }}" {{ old('topi', $kaporSizes['topi'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('topi')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="sabuk">Sabuk</label>
+                                <select id="sabuk" name="sabuk" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sBelt as $size)
+                                        <option value="{{ $size }}" {{ old('sabuk', $kaporSizes['sabuk'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('sabuk')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            @if ($requiresJilbab)
+                                <div class="field">
+                                    <label class="label" for="jilbab">Jilbab</label>
+                                    <select id="jilbab" name="jilbab" class="control" required>
+                                        <option value="">Pilih</option>
+                                        @foreach ($sJilbab as $size)
+                                            <option value="{{ $size }}" {{ old('jilbab', $kaporSizes['jilbab'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('jilbab')<span class="error">{{ $message }}</span>@enderror
+                                </div>
+                            @endif
+                            <div class="field">
+                                <label class="label" for="sepatu_dinas">Sepatu Dinas</label>
+                                <select id="sepatu_dinas" name="sepatu_dinas" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sShoes as $size)
+                                        <option value="{{ $size }}" {{ old('sepatu_dinas', $kaporSizes['sepatu_dinas'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('sepatu_dinas')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="sepatu_olahraga">Sepatu Olahraga</label>
+                                <select id="sepatu_olahraga" name="sepatu_olahraga" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sShoes as $size)
+                                        <option value="{{ $size }}" {{ old('sepatu_olahraga', $kaporSizes['sepatu_olahraga'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('sepatu_olahraga')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                        </div>
+
+                            <div style="margin-top: 14px;">
+                                <button type="submit" class="button">Simpan Ukuran</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            @else
+                <section class="panel" id="ukuran-form">
+                    <div class="panel-header">
+                        <h2>Ukuran kaporlap</h2>
+                        <p>Lengkapi dulu data tugas agar data ukuran aktif.</p>
+                    </div>
+                </section>
+            @endif
+
+        </div>
+
+        <footer style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color); text-align: center;">
+            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+                <a href="{{ route('personil.kapor.history') }}"
+                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Riwayat Ukuran</a>
+                <span style="color: var(--slate-300);">•</span>
+                <a href="{{ route('personil.testimoni.index') }}"
+                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Halaman Testimoni</a>
+            </div>
+        </footer>
+    @endif
+@endsection
+
+@section('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const openIdentityButton = document.querySelector('[data-open-identity]');
+            const identityForm = document.querySelector('[data-identity-form]');
+            const identitySummary = document.querySelector('[data-identity-summary]');
+
+            if (openIdentityButton && identityForm) {
+                openIdentityButton.addEventListener('click', function () {
+                    identityForm.classList.remove('hidden');
+                    if (identitySummary) identitySummary.classList.add('hidden');
+                    else openIdentityButton.classList.add('hidden');
+                });
+            }
+
+            const openSizesButton = document.querySelector('[data-open-sizes]');
+            const sizesForm = document.querySelector('[data-sizes-form]');
+            const sizesSummary = document.querySelector('[data-sizes-summary]');
+
+            if (openSizesButton && sizesForm) {
+                openSizesButton.addEventListener('click', function () {
+                    sizesForm.classList.remove('hidden');
+                    if (sizesSummary) sizesSummary.classList.add('hidden');
+                    else openSizesButton.parentElement.classList.add('hidden');
+                });
+            }
         });
-    });
-</script>
-@endif
-
-@if(session('success_testimoni'))
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        Swal.fire({
-            title: 'Terkirim',
-            text: "{{ session('success_testimoni') }}",
-            icon: 'info',
-            toast: true,
-            position: 'bottom-end',
-            showConfirmButton: false,
-            timer: 4000,
-            timerProgressBar: true,
-            customClass: { popup: 'colored-toast swal2-icon-info' }
-        });
-    });
-</script>
-<style>
-    .colored-toast.swal2-icon-info { background-color: var(--info-bg) !important; color: var(--info) !important;}
-    .colored-toast.swal2-icon-info .swal2-title { color: var(--info) !important; }
-</style>
-@endif
-
+    </script>
 @endsection

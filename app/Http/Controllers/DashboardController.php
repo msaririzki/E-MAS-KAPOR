@@ -13,7 +13,6 @@ use App\Services\SatkerPersonnelCountService;
 use App\Services\TestimonialInsightService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
 {
@@ -125,8 +124,9 @@ class DashboardController extends Controller
 
         // Activity Log (Spatie)
         $activities = [];
-        if (class_exists(Activity::class)) {
-            $activities = Activity::with('causer')
+        $activityModel = '\\Spatie\\Activitylog\\Models\\Activity';
+        if (class_exists($activityModel)) {
+            $activities = $activityModel::with('causer')
                 ->latest()
                 ->limit(6)
                 ->get();
@@ -217,13 +217,18 @@ class DashboardController extends Controller
 
         $kaporSizes = [];
         $hasSubmitted = false;
+        $isComplete = false;
+        $identityReady = false;
 
         if ($personnel) {
             $kaporSizes = $personnel->kapor_sizes ?? [];
-            $hasSubmitted = ! empty($kaporSizes);
+            $hasSubmitted = ! empty(array_filter((array) $kaporSizes));
+            $isComplete = $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel);
+            $identityReady = filled(trim((string) $personnel->jabatan))
+                && filled(trim((string) $personnel->bagian));
         }
 
-        return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'fiscalYear', 'bagianOptions'));
+        return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'isComplete', 'identityReady', 'fiscalYear', 'bagianOptions'));
     }
 
     private function countPersonnelWithCompleteSizes(?int $satkerId = null): int
