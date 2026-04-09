@@ -285,7 +285,6 @@ class KebutuhanController extends Controller
 
         // We will reuse the 'print' view or a new 'pdf' view for actual PDF download
         $pdf = \PDF::loadView('admin-satker.kebutuhan.print', compact('kebutuhan', 'signatorySettings'));
-        $pdf->setPaper('a4', 'portrait');
 
         return $pdf->download($filename);
     }
