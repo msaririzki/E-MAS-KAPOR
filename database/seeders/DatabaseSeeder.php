@@ -22,12 +22,13 @@ class DatabaseSeeder extends Seeder
             KaporItemSeeder::class,
             IdentifikasiItemSeeder::class,
             SettingSeeder::class,
-            TestimonialSeeder::class,
         ];
 
         if (app()->environment(['local', 'testing'])) {
             $seeders[] = DemoUserSeeder::class;
         }
+
+        $seeders[] = TestimonialSeeder::class;
 
         $this->call($seeders);
     }
