@@ -426,7 +426,7 @@
     <form method="GET" action="{{ route('admin.personnel.index') }}" class="filter-form" id="filterForm">
         <div class="search-container" style="flex: 2;">
             <i class="ri-search-line"></i>
-            <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari berdasarkan nama, NRP/NIP, atau golongan..." oninput="debounceSearch()">
+            <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari berdasarkan nama, NRP/NIP, atau golongan..." oninput="debounceSearch()" onkeydown="handleSearchKeydown(event)">
             @if(request('search'))
                 <button type="button" class="clear-search" onclick="document.getElementById('searchInput').value=''; document.getElementById('filterForm').submit();" style="background: none; border: none; color: #D1D5DB; cursor: pointer; padding: 4px; display: flex; align-items: center; margin-left: 8px;">
                     <i class="ri-close-circle-fill" style="font-size: 18px;"></i>
@@ -453,6 +453,7 @@
                 <input type="hidden" name="rank_id" value="{{ request('rank_id') }}">
             </div>
 
+            @unless(auth()->user()->hasRole('admin_satker'))
             <div class="custom-select-wrapper" style="flex: 1;">
                 <div class="custom-select" onclick="toggleDropdown(this)">
                     <div class="select-trigger">
@@ -473,6 +474,7 @@
                 </div>
                 <input type="hidden" name="satker_id" value="{{ request('satker_id') }}">
             </div>
+            @endunless
 
             <div class="custom-select-wrapper" style="flex: 1;">
                 <div class="custom-select" onclick="toggleDropdown(this)">
@@ -4233,9 +4235,29 @@
     let searchTimeout;
     function debounceSearch() {
         clearTimeout(searchTimeout);
+        const searchInput = document.getElementById('searchInput');
+
+        if (!searchInput) {
+            return;
+        }
+
         searchTimeout = setTimeout(() => {
+            if (/\s$/.test(searchInput.value)) {
+                return;
+            }
+
             document.getElementById('filterForm').submit();
         }, 500);
+    }
+
+    function handleSearchKeydown(event) {
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        event.preventDefault();
+        clearTimeout(searchTimeout);
+        document.getElementById('filterForm').submit();
     }
 
     function updateSort(sort, direction) {

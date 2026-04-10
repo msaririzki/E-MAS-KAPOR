@@ -67,7 +67,7 @@ class PersonnelController extends Controller
             $query->where('rank_id', $request->rank_id);
         }
 
-        if ($request->filled('satker_id')) {
+        if ($request->filled('satker_id') && ! $request->user()?->hasRole('admin_satker')) {
             $query->where('satker_id', $request->satker_id);
         }
 
@@ -214,9 +214,11 @@ class PersonnelController extends Controller
 
     private function hasActivePersonnelFilters(Request $request): bool
     {
+        $satkerFilterActive = $request->filled('satker_id') && ! $request->user()?->hasRole('admin_satker');
+
         return $request->filled('search')
             || $request->filled('rank_id')
-            || $request->filled('satker_id')
+            || $satkerFilterActive
             || $request->filled('keterangan')
             || $request->filled('bagian')
             || $request->get('status') === 'pending_verification'
@@ -233,7 +235,7 @@ class PersonnelController extends Controller
 
         $labels = [];
 
-        if ($request->filled('satker_id')) {
+        if ($request->filled('satker_id') && ! $request->user()?->hasRole('admin_satker')) {
             $satker = Satker::find($request->input('satker_id'));
             if ($satker) {
                 $labels[] = 'Satker: '.$satker->name;

@@ -72,37 +72,75 @@
     </div>
 </div>
 
-<form method="GET" action="{{ route('admin-satker.reports') }}" class="no-print" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-bottom: 20px; background: #fff; border: 1px solid var(--slate-200); border-radius: 10px; padding: 16px;">
-    <div style="flex: 1 1 240px;">
-        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Cari Personel</label>
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama, NRP/NIP, jabatan, bag/fungsi" class="form-input" style="width: 100%;">
-    </div>
-    <div style="flex: 0 1 180px;">
-        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Status Ukuran</label>
-        <select name="status" class="form-input" style="width: 100%; appearance: auto;">
-            <option value="">Semua Status</option>
-            <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>Sudah Lengkap</option>
-            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Belum Lengkap</option>
-        </select>
-    </div>
-    <div style="flex: 0 1 220px;">
-        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Bag / Fungsi</label>
-        <select name="bagian" class="form-input" style="width: 100%; appearance: auto;">
-            <option value="">Semua Bag / Fungsi</option>
-            @foreach($bagians as $bagian)
-                <option value="{{ $bagian }}" {{ request('bagian') === $bagian ? 'selected' : '' }}>{{ $bagian }}</option>
-            @endforeach
-        </select>
-    </div>
-    <div style="display: flex; gap: 8px; align-items: center;">
-        <button type="submit" class="btn btn-primary">
-            <i class="ri-filter-3-line"></i> Terapkan
-        </button>
-        <a href="{{ route('admin-satker.reports') }}" class="btn btn-outline">
-            <i class="ri-refresh-line"></i> Reset
-        </a>
-    </div>
-</form>
+@php
+    $statusLabel = match (request('status')) {
+        'submitted' => 'Sudah Lengkap',
+        'pending' => 'Belum Lengkap',
+        default => 'Semua Status',
+    };
+@endphp
+<div class="filter-bar no-print monitor-filter-bar">
+    <form method="GET" action="{{ route('admin-satker.reports') }}" class="filter-form monitor-filter-form" id="reportFilterForm">
+        <div class="search-container monitor-search-container" style="flex: 2;">
+            <i class="ri-search-line"></i>
+            <input type="text" name="search" id="reportSearchInput" value="{{ request('search') }}" placeholder="Cari berdasarkan nama, NRP/NIP, jabatan, atau bag/fungsi..." oninput="debounceReportSearch()" onkeydown="handleReportSearchKeydown(event)">
+            @if(request('search'))
+                <button type="button" class="clear-search" onclick="document.getElementById('reportSearchInput').value=''; document.getElementById('reportFilterForm').submit();" style="background: none; border: none; color: #D1D5DB; cursor: pointer; padding: 4px; display: flex; align-items: center; margin-left: 8px;">
+                    <i class="ri-close-circle-fill" style="font-size: 18px;"></i>
+                </button>
+            @endif
+        </div>
+
+        <div class="filter-group monitor-filter-group">
+            <div class="custom-select-wrapper" style="flex: 0 1 210px;">
+                <div class="custom-select" onclick="toggleReportDropdown(this, event)">
+                    <div class="select-trigger">
+                        <span>{{ $statusLabel }}</span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="options-scroll">
+                            <div class="option {{ !request('status') ? 'selected' : '' }}" onclick="selectReportOption(this, 'status', '', 'Semua Status')">Semua Status</div>
+                            <div class="option {{ request('status') === 'submitted' ? 'selected' : '' }}" onclick="selectReportOption(this, 'status', 'submitted', 'Sudah Lengkap')">Sudah Lengkap</div>
+                            <div class="option {{ request('status') === 'pending' ? 'selected' : '' }}" onclick="selectReportOption(this, 'status', 'pending', 'Belum Lengkap')">Belum Lengkap</div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="status" value="{{ request('status') }}">
+            </div>
+
+            <div class="custom-select-wrapper" style="flex: 1; min-width: 220px;">
+                <div class="custom-select" onclick="toggleReportDropdown(this, event)">
+                    <div class="select-trigger">
+                        <span>{{ request('bagian') ?: 'Semua Bag/Fungsi' }}</span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="select-search-container">
+                            <input type="text" class="select-search-input" placeholder="Cari Bag/Fungsi..." onclick="event.stopPropagation()" onkeyup="filterReportOptions(this)">
+                        </div>
+                        <div class="options-scroll">
+                            <div class="option {{ !request('bagian') ? 'selected' : '' }}" data-label="SEMUA BAG/FUNGSI" onclick="selectReportOption(this, 'bagian', '', 'Semua Bag/Fungsi')">Semua Bag/Fungsi</div>
+                            @foreach($bagians as $bagian)
+                                <div class="option {{ request('bagian') === $bagian ? 'selected' : '' }}" data-label="{{ $bagian }}" onclick="selectReportOption(this, 'bagian', '{{ $bagian }}', '{{ $bagian }}')">{{ $bagian }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="bagian" value="{{ request('bagian') }}">
+            </div>
+        </div>
+
+        <div class="monitor-filter-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="ri-filter-3-line"></i> Terapkan
+            </button>
+            <a href="{{ route('admin-satker.reports') }}" class="btn btn-outline">
+                <i class="ri-refresh-line"></i> Reset
+            </a>
+        </div>
+    </form>
+</div>
 
 {{-- Main Data Table --}}
 <div class="card">
@@ -225,6 +263,250 @@
 
 @section('styles')
 <style>
+.monitor-filter-bar {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.monitor-filter-form {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.monitor-filter-group {
+    display: flex;
+    gap: 12px;
+    flex: 1;
+    flex-wrap: wrap;
+}
+
+.monitor-filter-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.monitor-search-container {
+    flex: 1;
+    min-width: 260px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 0 16px;
+    height: 46px;
+    transition: all 0.2s ease;
+}
+
+.monitor-search-container:focus-within {
+    border-color: #B91C1C;
+    box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.05);
+}
+
+.monitor-search-container i.ri-search-line {
+    color: #64748B;
+    font-size: 20px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.monitor-search-container input {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: #1E293B;
+    padding: 0;
+}
+
+.monitor-search-container input::placeholder {
+    color: #94A3B8;
+    font-weight: 400;
+}
+
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    height: 48px;
+    display: flex;
+    align-items: center;
+}
+
+.custom-select:hover {
+    border-color: #D1D5DB;
+}
+
+.custom-select.active {
+    border-color: #B91C1C;
+    box-shadow: 0 0 0 4px #FEF2F2;
+    background: #fff;
+}
+
+.select-trigger {
+    width: 100%;
+    padding: 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    color: #374151;
+    font-size: 14px;
+}
+
+.select-trigger i {
+    color: #9CA3AF;
+    font-size: 20px;
+    transition: transform 0.2s ease;
+}
+
+.custom-select.active .select-trigger {
+    color: #111827;
+}
+
+.custom-select.active .select-trigger i {
+    transform: rotate(180deg);
+    color: #B91C1C;
+}
+
+.custom-options {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #F3F4F6;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-select.active .custom-options {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.select-search-container {
+    padding: 8px;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+    border-bottom: 1px solid #F3F4F6;
+    margin-bottom: 4px;
+}
+
+.select-search-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    background-color: #F9FAFB;
+    transition: all 0.2s;
+}
+
+.select-search-input:focus {
+    border-color: #B91C1C;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.1);
+}
+
+.options-scroll {
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.options-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.options-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.options-scroll::-webkit-scrollbar-thumb {
+    background-color: #E5E7EB;
+    border-radius: 10px;
+}
+
+.options-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: #D1D5DB;
+}
+
+.option {
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 14px;
+    color: #4B5563;
+    border-radius: 8px;
+    margin-bottom: 2px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.option:last-child {
+    margin-bottom: 0;
+}
+
+.option:hover {
+    background-color: #F9FAFB;
+    color: #111827;
+}
+
+.option.selected {
+    background-color: #FEF2F2;
+    color: #B91C1C;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .monitor-filter-form {
+        align-items: stretch;
+    }
+
+    .monitor-filter-group,
+    .monitor-filter-actions {
+        width: 100%;
+    }
+
+    .monitor-filter-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
 @media print {
     /* 1. GLOBAL UI HIDING - Menghilangkan elemen navigasi & UI web */
     nav, aside, header, footer, 
@@ -370,4 +652,101 @@
     }
 }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    document.addEventListener('click', function (event) {
+        if (! event.target.closest('.monitor-filter-bar .custom-select')) {
+            closeReportDropdowns();
+        }
+    });
+
+    document.addEventListener('scroll', function (event) {
+        if (event.target.classList && (event.target.classList.contains('options-scroll') || event.target.closest('.options-scroll'))) {
+            return;
+        }
+
+        closeReportDropdowns();
+    }, true);
+
+    function closeReportDropdowns() {
+        document.querySelectorAll('.monitor-filter-bar .custom-options').forEach(function (options) {
+            options.style.display = 'none';
+        });
+
+        document.querySelectorAll('.monitor-filter-bar .custom-select').forEach(function (select) {
+            select.classList.remove('active');
+        });
+    }
+
+    function toggleReportDropdown(element, event) {
+        const options = element.querySelector('.custom-options');
+        const isOpen = element.classList.contains('active');
+
+        closeReportDropdowns();
+
+        if (! isOpen) {
+            options.style.display = 'block';
+            element.classList.add('active');
+        }
+
+        event.stopPropagation();
+    }
+
+    function filterReportOptions(input) {
+        const filter = input.value.toLowerCase();
+        const options = input.closest('.custom-options').querySelectorAll('.option');
+
+        options.forEach(function (option) {
+            const text = (option.dataset.label || option.textContent || '').toLowerCase();
+            option.style.display = text.includes(filter) ? 'flex' : 'none';
+        });
+    }
+
+    function selectReportOption(element, inputName, value, label) {
+        const wrapper = element.closest('.custom-select-wrapper');
+        const trigger = wrapper.querySelector('.select-trigger span');
+        const input = wrapper.querySelector('input[type="hidden"]');
+
+        trigger.innerText = label;
+        input.value = value;
+
+        wrapper.querySelectorAll('.option').forEach(function (option) {
+            option.classList.remove('selected');
+        });
+
+        element.classList.add('selected');
+        document.getElementById('reportFilterForm').submit();
+    }
+
+    let reportSearchTimeout;
+
+    function debounceReportSearch() {
+        clearTimeout(reportSearchTimeout);
+
+        const searchInput = document.getElementById('reportSearchInput');
+        if (! searchInput) {
+            return;
+        }
+
+        reportSearchTimeout = setTimeout(function () {
+            if (/\s$/.test(searchInput.value)) {
+                return;
+            }
+
+            document.getElementById('reportFilterForm').submit();
+        }, 500);
+    }
+
+    function handleReportSearchKeydown(event) {
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        event.preventDefault();
+        clearTimeout(reportSearchTimeout);
+        document.getElementById('reportFilterForm').submit();
+    }
+</script>
 @endsection
