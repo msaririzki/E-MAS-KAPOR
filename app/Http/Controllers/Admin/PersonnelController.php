@@ -379,6 +379,10 @@ class PersonnelController extends Controller
             'kapor_sizes' => 'nullable|array',
         ]);
 
+        if (!auth()->user()?->hasRole('superadmin')) {
+            unset($validated['keterangan_2'], $validated['keterangan_3'], $validated['keterangan_4']);
+        }
+
         if ($isAdminSatker) {
             $validated['satker_id'] = (int) $request->user()->satker_id;
         }
@@ -637,6 +641,10 @@ class PersonnelController extends Controller
             'keterangan_4' => 'nullable|string|max:255',
             'kapor_sizes' => 'nullable|array',
         ]);
+
+        if (!auth()->user()?->hasRole('superadmin')) {
+            unset($validated['keterangan_2'], $validated['keterangan_3'], $validated['keterangan_4']);
+        }
 
         $validated['satker_id'] = (int) $request->user()->satker_id;
         $duplicateIdentity = $this->findDuplicatePersonnelIdentity($validated['nrp'], $personnel, $personnel->user);

@@ -1540,7 +1540,15 @@
                             <input type="hidden" name="bagian" id="add_bagian_select" value="{{ old('modal_type') == 'add' ? old('bagian') : '' }}" disabled>
                         </div>
                     </div>
-                    @foreach(['keterangan' => 'KETERANGAN 1', 'keterangan_2' => 'KETERANGAN 2', 'keterangan_3' => 'KETERANGAN 3', 'keterangan_4' => 'KETERANGAN 4'] as $ketField => $ketLabel)
+                    @php
+                        $addKetFields = ['keterangan' => 'KETERANGAN 1'];
+                        if(auth()->user()->hasRole('superadmin')) {
+                            $addKetFields['keterangan_2'] = 'KETERANGAN 2';
+                            $addKetFields['keterangan_3'] = 'KETERANGAN 3';
+                            $addKetFields['keterangan_4'] = 'KETERANGAN 4';
+                        }
+                    @endphp
+                    @foreach($addKetFields as $ketField => $ketLabel)
                     <div class="form-group">
                         <label>{{ $ketLabel }}</label>
                         <div class="custom-select-wrapper">
@@ -2068,7 +2076,15 @@
                             <input type="hidden" name="bagian" id="edit_bagian_select" value="{{ old('modal_type') == 'edit' ? old('bagian') : '' }}" disabled>
                         </div>
                     </div>
-                    @foreach(['keterangan' => 'KETERANGAN 1', 'keterangan_2' => 'KETERANGAN 2', 'keterangan_3' => 'KETERANGAN 3', 'keterangan_4' => 'KETERANGAN 4'] as $ketField => $ketLabel)
+                    @php
+                        $editKetFields = ['keterangan' => 'KETERANGAN 1'];
+                        if(auth()->user()->hasRole('superadmin')) {
+                            $editKetFields['keterangan_2'] = 'KETERANGAN 2';
+                            $editKetFields['keterangan_3'] = 'KETERANGAN 3';
+                            $editKetFields['keterangan_4'] = 'KETERANGAN 4';
+                        }
+                    @endphp
+                    @foreach($editKetFields as $ketField => $ketLabel)
                     <div class="form-group">
                         <label>{{ $ketLabel }}</label>
                         <div class="custom-select-wrapper">
@@ -3580,9 +3596,11 @@
         
         let ketArr = [];
         if (p.keterangan) ketArr.push(p.keterangan);
+        @if(auth()->user()->hasRole('superadmin'))
         if (p.keterangan_2) ketArr.push(p.keterangan_2);
         if (p.keterangan_3) ketArr.push(p.keterangan_3);
         if (p.keterangan_4) ketArr.push(p.keterangan_4);
+        @endif
         document.getElementById('detail_keterangan').innerText = ketArr.length > 0 ? ketArr.join(' / ') : '—';
         
         document.getElementById('detail_golongan').innerText = p.golongan || '—';
@@ -3774,6 +3792,14 @@
         document.getElementById('edit_rank_label').innerText = p.rank ? p.rank.name : '— Pilih Pangkat —';
         
         // Set Satker
+        if(document.getElementById('edit_keterangan')) document.getElementById('edit_keterangan').value = p.keterangan || '';
+        if(document.getElementById('edit_keterangan_label')) document.getElementById('edit_keterangan_label').innerText = p.keterangan || '- Pilih KETERANGAN 1 -';
+        if(document.getElementById('edit_keterangan_2')) document.getElementById('edit_keterangan_2').value = p.keterangan_2 || '';
+        if(document.getElementById('edit_keterangan_2_label')) document.getElementById('edit_keterangan_2_label').innerText = p.keterangan_2 || '- Pilih KETERANGAN 2 -';
+        if(document.getElementById('edit_keterangan_3')) document.getElementById('edit_keterangan_3').value = p.keterangan_3 || '';
+        if(document.getElementById('edit_keterangan_3_label')) document.getElementById('edit_keterangan_3_label').innerText = p.keterangan_3 || '- Pilih KETERANGAN 3 -';
+        if(document.getElementById('edit_keterangan_4')) document.getElementById('edit_keterangan_4').value = p.keterangan_4 || '';
+        if(document.getElementById('edit_keterangan_4_label')) document.getElementById('edit_keterangan_4_label').innerText = p.keterangan_4 || '- Pilih KETERANGAN 4 -';
         document.getElementById('edit_satker_id').value = p.satker_id;
         const satkerName = p.satker ? p.satker.name : '';
         document.getElementById('edit_satker_label').innerText = satkerName || '— Pilih Satker —';
