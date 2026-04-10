@@ -97,40 +97,64 @@
     {{-- ═══ Kepuasan & Testimoni (Horizontal Modern) ═══ --}}
     <div class="satisfaction-horizontal-wrapper">
         <div class="sat-main-stats">
-            <div class="sat-score-circle">
-                <span class="score-val count-up" data-val="{{ $testimonialInsights['serviceScore'] }}">0</span>
-                <span class="score-lbl">Skor</span>
-            </div>
-            <div class="sat-rating-info">
-                <div class="sat-badge" style="background: {{ $testimonialInsights['dashboardBadge']['background'] }}; color: {{ $testimonialInsights['dashboardBadge']['color'] }};">
-                    <i class="{{ $testimonialInsights['dashboardBadge']['icon'] }}"></i> {{ $testimonialInsights['dashboardBadge']['label'] }}
+            <div class="sat-overview-row">
+                <div class="sat-score-circle">
+                    <span class="score-val count-up" data-val="{{ $testimonialInsights['serviceScore'] }}">0</span>
+                    <span class="score-lbl">Skor</span>
                 </div>
-                <div class="sat-stars-row">
-                    <h2><span class="count-up" data-val="{{ $testimonialInsights['averageRating'] }}" data-decimals="1">0.0</span><small>/5</small></h2>
-                    <div class="stars">
-                        @for($star = 1; $star <= 5; $star++)
-                            <i class="{{ $testimonialInsights['averageRating'] >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
-                        @endfor
+                <div class="sat-rating-info">
+                    <div class="sat-stars-row">
+                        <h2><span class="count-up" data-val="{{ $testimonialInsights['averageRating'] }}" data-decimals="1">0.0</span><small>/5</small></h2>
+                        <div class="stars">
+                            @for($star = 1; $star <= 5; $star++)
+                                <i class="{{ $testimonialInsights['averageRating'] >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
+                            @endfor
+                        </div>
                     </div>
-                </div>
-                <p>Dari <b class="count-up" data-val="{{ $testimonialInsights['totalTestimonials'] }}">0</b> ulasan masuk</p>
-                <div class="sat-mini-metrics">
-                    <div class="metric-item"><strong><span class="count-up" data-val="{{ $testimonialInsights['fiveStarRate'] }}" data-decimals="1">0.0</span>%</strong> Bintang 5</div>
-                    <div class="metric-item"><strong><span class="count-up" data-val="{{ $testimonialInsights['recentTestimonialsCount'] }}">0</span></strong> ulasan baru bulan ini</div>
+                    <div class="sat-total-reviews"><strong class="count-up" data-val="{{ $testimonialInsights['totalTestimonials'] }}">0</strong> ulasan masuk</div>
                 </div>
             </div>
-            
-            <!-- Graphic breakdown of stars -->
-            <div class="sat-rating-breakdown">
-                @foreach($testimonialInsights['ratingBreakdown'] as $breakdown)
-                <div class="breakdown-row">
-                    <div class="star-lbl">{{ $breakdown['stars'] }} <i class="ri-star-fill"></i></div>
-                    <div class="bar-track">
-                        <div class="bar-fill" data-width="{{ $breakdown['percentage'] }}" style="width: 0%;"></div>
-                    </div>
-                    <div class="count-lbl">{{ $breakdown['count'] }}</div>
+
+            @if(!empty($testimonialInsights['categoryStats']))
+                <div class="sat-category-grid">
+                    @foreach($testimonialInsights['categoryStats'] as $catStat)
+                        <div class="sat-category-card">
+                            <div class="sat-category-card-top">
+                                <div class="sat-category-icon" style="background: {{ $catStat['bg'] }}; color: {{ $catStat['color'] }};">
+                                    <i class="{{ $catStat['icon'] }}"></i>
+                                </div>
+                                <div class="sat-category-label">{{ $catStat['label'] }}</div>
+                            </div>
+                            <div class="sat-category-rating">
+                                <span class="count-up" data-val="{{ $catStat['average_rating'] }}" data-decimals="1">0.0</span>
+                                <small>/5</small>
+                            </div>
+                            <div class="sat-category-stars">
+                                @for($star = 1; $star <= 5; $star++)
+                                    <i class="{{ $catStat['average_rating'] >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
+                                @endfor
+                            </div>
+                            <div class="sat-category-count">
+                                <strong class="count-up" data-val="{{ $catStat['count'] }}">0</strong> testimoni
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
-                @endforeach
+            @endif
+
+            <div class="sat-rating-breakdown-wrap">
+                <div class="sat-rating-breakdown-title">Distribusi rating</div>
+                <div class="sat-rating-breakdown">
+                    @foreach($testimonialInsights['ratingBreakdown'] as $breakdown)
+                    <div class="breakdown-row">
+                        <div class="star-lbl">{{ $breakdown['stars'] }} <i class="ri-star-fill"></i></div>
+                        <div class="bar-track">
+                            <div class="bar-fill" data-width="{{ $breakdown['percentage'] }}" style="width: 0%;"></div>
+                        </div>
+                        <div class="count-lbl">{{ $breakdown['count'] }}</div>
+                    </div>
+                    @endforeach
+                </div>
             </div>
         </div>
 
@@ -141,12 +165,18 @@
                     @foreach($testimonialInsights['dashboardQuotes'] as $quote)
                         <div class="sat-modern-quote">
                             <i class="ri-double-quotes-l bg-quote-icon"></i>
-                            <div class="quote-text">"{{ Str::limit($quote['testimonial']->message, 120) }}"</div>
-                            @if($quote['testimonial']->category && isset(\App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category]))
-                                <div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:var(--text-muted); background:var(--bg-body); padding:3px 8px; border-radius:6px; margin-bottom:10px;">
-                                    {{ \App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category] }}
+                            <div class="quote-top-row">
+                                <div class="quote-status-badge" style="background: {{ $testimonialInsights['dashboardBadge']['background'] }}; color: {{ $testimonialInsights['dashboardBadge']['color'] }};">
+                                    <i class="{{ $testimonialInsights['dashboardBadge']['icon'] }}"></i>
+                                    {{ $testimonialInsights['dashboardBadge']['label'] }}
                                 </div>
-                            @endif
+                                @if($quote['testimonial']->category && isset(\App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category]))
+                                    <div class="quote-category-badge">
+                                        {{ \App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category] }}
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="quote-text">"{{ Str::limit($quote['testimonial']->message, 120) }}"</div>
                             <div class="quote-author">
                                 <div class="ava" style="background: {{ $quote['background'] }}; color: {{ $quote['accent'] }};">
                                     {{ strtoupper(substr($quote['testimonial']->user->name ?? 'PN', 0, 2)) }}
@@ -169,12 +199,18 @@
                     @foreach($testimonialInsights['dashboardQuotes'] as $quote)
                         <div class="sat-modern-quote" aria-hidden="true">
                             <i class="ri-double-quotes-l bg-quote-icon"></i>
-                            <div class="quote-text">"{{ Str::limit($quote['testimonial']->message, 120) }}"</div>
-                            @if($quote['testimonial']->category && isset(\App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category]))
-                                <div style="display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:var(--text-muted); background:var(--bg-body); padding:3px 8px; border-radius:6px; margin-bottom:10px;">
-                                    {{ \App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category] }}
+                            <div class="quote-top-row">
+                                <div class="quote-status-badge" style="background: {{ $testimonialInsights['dashboardBadge']['background'] }}; color: {{ $testimonialInsights['dashboardBadge']['color'] }};">
+                                    <i class="{{ $testimonialInsights['dashboardBadge']['icon'] }}"></i>
+                                    {{ $testimonialInsights['dashboardBadge']['label'] }}
                                 </div>
-                            @endif
+                                @if($quote['testimonial']->category && isset(\App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category]))
+                                    <div class="quote-category-badge">
+                                        {{ \App\Models\Testimonial::CATEGORIES[$quote['testimonial']->category] }}
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="quote-text">"{{ Str::limit($quote['testimonial']->message, 120) }}"</div>
                             <div class="quote-author">
                                 <div class="ava" style="background: {{ $quote['background'] }}; color: {{ $quote['accent'] }};">
                                     {{ strtoupper(substr($quote['testimonial']->user->name ?? 'PN', 0, 2)) }}
@@ -619,14 +655,21 @@
         position: relative;
         z-index: 1;
         display: flex;
-        gap: 20px;
-        align-items: center;
+        flex-direction: column;
+        gap: 14px;
         background: #fff;
-        padding: 20px;
+        padding: 16px;
         border-radius: 16px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.02);
         border: 1px solid rgba(0,0,0,0.04);
-        min-width: 280px;
+        min-width: 370px;
+        max-width: 455px;
+    }
+    .sat-overview-row {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        width: 100%;
     }
     @keyframes scorePopIn {
         0% { opacity: 0; transform: scale(0.6) rotate(-5deg); filter: blur(5px); }
@@ -649,25 +692,109 @@
     }
     .sat-score-circle .score-val { font-size: 28px; font-weight: 900; line-height: 1; margin-bottom:2px; }
     .sat-score-circle .score-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
-    .sat-rating-info .sat-badge {
-        display: inline-flex; align-items: center; gap: 4px;
-        padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-bottom: 8px;
-    }
     .sat-stars-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
     .sat-stars-row h2 { font-size: 24px; font-weight: 800; margin: 0; color: var(--text-main); }
     .sat-stars-row h2 small { font-size: 14px; color: var(--text-muted); font-weight: 600; }
     .sat-stars-row .stars { color: #f59e0b; font-size: 16px; }
-    .sat-rating-info p { font-size: 12px; color: var(--text-muted); margin: 0 0 10px 0; }
-    .sat-mini-metrics { display: flex; gap: 12px; }
-    .sat-mini-metrics .metric-item { font-size: 11px; color: var(--text-muted); background: var(--bg-body); padding: 4px 8px; border-radius: 6px; border:1px solid var(--border-color); }
-    .sat-mini-metrics .metric-item strong { color: var(--text-main); font-size: 12px; }
-    .sat-rating-breakdown {
-        flex: 1; margin-left:16px; min-width:140px; padding-left:16px; border-left:1px dashed var(--border-color); display:flex; flex-direction:column; gap:4px;
+    .sat-total-reviews {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
     }
-    .breakdown-row { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; color:var(--text-muted); }
+    .sat-total-reviews strong {
+        color: var(--text-main);
+        font-size: 15px;
+        font-weight: 800;
+    }
+    .sat-category-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        width: 100%;
+    }
+    .sat-category-card {
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), #fff);
+        min-width: 0;
+        animation: statCardLift 0.55s ease both;
+    }
+    .sat-category-card:nth-child(2) { animation-delay: 0.08s; }
+    .sat-category-card:nth-child(3) { animation-delay: 0.16s; }
+    .sat-category-card-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .sat-category-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 14px;
+    }
+    .sat-category-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1.35;
+    }
+    .sat-category-rating {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--text-main);
+        margin-bottom: 4px;
+    }
+    .sat-category-rating small {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+    .sat-category-stars {
+        display: flex;
+        gap: 2px;
+        color: #f59e0b;
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+    .sat-category-count {
+        font-size: 10px;
+        color: var(--text-muted);
+    }
+    .sat-category-count strong {
+        color: var(--text-main);
+        font-size: 12px;
+    }
+    .sat-rating-breakdown-wrap {
+        width: 100%;
+        padding-top: 10px;
+        border-top: 1px dashed var(--border-color);
+    }
+    .sat-rating-breakdown-title {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+    .sat-rating-breakdown {
+        display:flex;
+        flex-direction:column;
+        gap:3px;
+    }
+    .breakdown-row { display:flex; align-items:center; gap:8px; font-size:10px; font-weight:700; color:var(--text-muted); }
     .breakdown-row .star-lbl { width:24px; display:flex; justify-content:space-between; align-items:center; }
     .breakdown-row .star-lbl i { color:#f59e0b; font-size:10px; }
-    .breakdown-row .bar-track { flex:1; height:6px; background:var(--bg-body); border-radius:3px; overflow:hidden; }
+    .breakdown-row .bar-track { flex:1; height:5px; background:var(--bg-body); border-radius:3px; overflow:hidden; }
     .breakdown-row .bar-fill { height:100%; background:#f59e0b; border-radius:3px; }
     .breakdown-row .count-lbl { width:16px; text-align:right; }
 
@@ -698,41 +825,89 @@
         overflow: hidden;
         display: flex;
         align-items: center;
+        min-height: 220px;
         mask-image: linear-gradient(to right, transparent, black 2%, black 98%, transparent);
         -webkit-mask-image: linear-gradient(to right, transparent, black 2%, black 98%, transparent);
     }
     .quotes-track {
         display: flex;
-        gap: 20px;
+        gap: 14px;
         align-items: center;
-        animation: marquee 40s linear infinite;
+        animation: marquee 34s linear infinite;
         width: max-content;
-        padding: 10px 0;
+        padding: 4px 0;
     }
     .quotes-track:hover { animation-play-state: paused; }
     @keyframes marquee {
         0% { transform: translateX(0); }
         100% { transform: translateX(calc(-50% - 8px)); }
     }
+    @keyframes statCardLift {
+        0% { opacity: 0; transform: translateY(14px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
     .sat-modern-quote {
-        width: 290px;
+        width: 250px;
         background: #fff;
-        border-radius: 18px;
-        padding: 24px 24px 20px 24px;
+        border-radius: 16px;
+        padding: 14px 16px 14px 16px;
         position: relative;
         box-shadow: 0 4px 20px rgba(0,0,0,0.03);
         border: 1px solid rgba(0,0,0,0.04);
         transition: transform 0.3s, box-shadow 0.3s;
+        animation: statCardLift 0.5s ease both;
     }
     .sat-modern-quote:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
-    .bg-quote-icon { position: absolute; top: 12px; right: 20px; font-size: 64px; color: rgba(15,23,42,0.02); line-height: 1; font-family: Georgia, serif; }
-    .quote-text { font-size: 13.5px; font-style: italic; color: #475569; line-height: 1.6; margin-bottom: 16px; position: relative; z-index: 1; font-weight: 500; }
-    .quote-author { display: flex; align-items: center; gap: 14px; }
-    .quote-author .ava { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; border: 1px solid rgba(0,0,0,0.05); }
+    .bg-quote-icon { position: absolute; top: 4px; right: 14px; font-size: 52px; color: rgba(15,23,42,0.02); line-height: 1; font-family: Georgia, serif; }
+    .quote-top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
+        position: relative;
+        z-index: 1;
+    }
+    .quote-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+    .quote-text {
+        font-size: 12px;
+        font-style: italic;
+        color: #475569;
+        line-height: 1.55;
+        margin-bottom: 12px;
+        position: relative;
+        z-index: 1;
+        font-weight: 500;
+        min-height: 56px;
+    }
+    .quote-category-badge {
+        display:inline-flex;
+        align-items:center;
+        gap:4px;
+        font-size:10px;
+        font-weight:700;
+        color:var(--text-muted);
+        background:var(--bg-body);
+        padding:3px 8px;
+        border-radius:6px;
+        margin-bottom:0;
+        white-space: nowrap;
+    }
+    .quote-author { display: flex; align-items: center; gap: 10px; }
+    .quote-author .ava { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; border: 1px solid rgba(0,0,0,0.05); }
     .quote-author .auth-info { flex: 1; min-width: 0; }
-    .auth-info .name { font-size: 13.5px; font-weight: 800; color: #0f172a; margin-bottom: 3px; letter-spacing: -0.2px;}
-    .auth-info .star-rating-full { color: #f59e0b; font-size: 16px; display: flex; gap: 3px; margin-top: 8px; filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.2)); }
-    .auth-info .satker { font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
+    .auth-info .name { font-size: 12px; font-weight: 800; color: #0f172a; margin-bottom: 2px; letter-spacing: 0;}
+    .auth-info .star-rating-full { color: #f59e0b; font-size: 13px; display: flex; gap: 2px; margin-top: 6px; filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.2)); }
+    .auth-info .satker { font-size: 10px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;}
     .empty-quotes {
         width: 100%; height: 100%;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -742,6 +917,8 @@
     
     @media (max-width: 1200px) {
         .satisfaction-horizontal-wrapper { grid-template-columns: 1fr; }
+        .sat-main-stats { max-width: none; min-width: 0; }
+        .sat-quotes-marquee { min-height: 0; }
         .sat-quotes-marquee { overflow-x: auto; mask-image: none; -webkit-mask-image: none; display: block; }
         .quotes-track { animation: none; padding: 10px 4px; }
         .sat-modern-quote { flex-shrink: 0; }
@@ -750,29 +927,27 @@
     @media (max-width: 768px) {
         .satisfaction-horizontal-wrapper { padding: 16px; border-radius: 16px; }
         .sat-main-stats { 
-            flex-direction: column; 
             align-items: center; 
             text-align: center; 
             gap: 16px; 
             padding: 16px 12px; 
             min-width: 0; 
         }
+        .sat-overview-row {
+            flex-direction: column;
+            gap: 16px;
+        }
         .sat-score-circle { margin: 0 auto; width: 64px; height: 64px; }
         .sat-score-circle .score-val { font-size: 24px; }
         
         .sat-rating-info { width: 100%; display: flex; flex-direction: column; align-items: center; }
         .sat-stars-row { justify-content: center; }
-        .sat-mini-metrics { flex-direction: column; gap: 8px; width: 100%; }
-        .sat-mini-metrics .metric-item { width: 100%; }
+        .sat-total-reviews { text-align: center; }
+        .sat-category-grid { grid-template-columns: 1fr; }
+        .sat-category-card { text-align: left; }
+        .quote-top-row { flex-wrap: wrap; }
 
-        .sat-rating-breakdown {
-            margin-left: 0; 
-            padding-left: 0; 
-            border-left: none; 
-            border-top: 1px dashed var(--border-color); 
-            padding-top: 16px; 
-            width: 100%; 
-        }
+        .sat-rating-breakdown-wrap { width: 100%; }
 
         #chartWrapper { min-width: 100% !important; }
         .card { min-width: 0; }
