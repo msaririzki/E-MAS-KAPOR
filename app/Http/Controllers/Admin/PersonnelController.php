@@ -289,23 +289,12 @@ class PersonnelController extends Controller
         }
 
         $nrp = trim((string) $validated['nrp']);
-        $existingPersonnel = Personnel::where('nrp', $nrp)->first();
-        $existingUser = User::where('nrp_nip', $nrp)->first();
+        $duplicateIdentity = $this->findDuplicatePersonnelIdentity($nrp);
 
-        if ($existingPersonnel !== null) {
-            if ((int) $existingPersonnel->satker_id === (int) $validated['satker_id']) {
-                return redirect()->back()->withInput()->with('error', 'NRP/NIP tersebut sudah terdaftar pada satker ini.');
-            }
-
-            return redirect()->back()->withInput()->with('error', 'NRP/NIP tersebut sudah terdaftar pada satker lain. Silakan koordinasikan dengan superadmin.');
-        }
-
-        if ($existingUser !== null) {
-            if ((int) $existingUser->satker_id === (int) $validated['satker_id']) {
-                return redirect()->back()->withInput()->with('error', 'NRP/NIP tersebut sudah terdaftar pada satker ini.');
-            }
-
-            return redirect()->back()->withInput()->with('error', 'NRP/NIP tersebut sudah terdaftar pada satker lain. Silakan koordinasikan dengan superadmin.');
+        if ($duplicateIdentity !== null) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $this->buildDuplicatePersonnelIdentityMessage($nrp, $duplicateIdentity, (int) $validated['satker_id']));
         }
 
         $requestMode = Setting::getValue('personnel_request_mode', 'auto');
@@ -436,7 +425,7 @@ class PersonnelController extends Controller
         }
 
         $validated = $request->validate([
-            'nrp' => 'required|string|unique:personnels,nrp,'.$personnel->id,
+            'nrp' => 'required|string',
             'full_name' => 'required|string|max:255',
             'rank_id' => 'required|exists:ranks,id',
             'satker_id' => 'required|exists:satkers,id',
@@ -456,6 +445,13 @@ class PersonnelController extends Controller
         ]);
 
         $oldSatkerId = $personnel->satker_id;
+        $duplicateIdentity = $this->findDuplicatePersonnelIdentity($validated['nrp'], $personnel, $personnel->user);
+
+        if ($duplicateIdentity !== null) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $this->buildDuplicatePersonnelIdentityMessage($validated['nrp'], $duplicateIdentity, (int) $validated['satker_id']));
+        }
 
         DB::beginTransaction();
         try {
@@ -525,7 +521,7 @@ class PersonnelController extends Controller
         $this->abortIfAdminSatkerWriteLocked($request);
 
         $validated = $request->validate([
-            'nrp' => 'required|string|unique:personnels,nrp,'.$personnel->id,
+            'nrp' => 'required|string',
             'full_name' => 'required|string|max:255',
             'rank_id' => 'required|exists:ranks,id',
             'satker_id' => 'nullable',
@@ -544,6 +540,13 @@ class PersonnelController extends Controller
         ]);
 
         $validated['satker_id'] = (int) $request->user()->satker_id;
+        $duplicateIdentity = $this->findDuplicatePersonnelIdentity($validated['nrp'], $personnel, $personnel->user);
+
+        if ($duplicateIdentity !== null) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $this->buildDuplicatePersonnelIdentityMessage($validated['nrp'], $duplicateIdentity, (int) $validated['satker_id']));
+        }
 
         DB::beginTransaction();
         try {
@@ -1789,6 +1792,57 @@ class PersonnelController extends Controller
     private function ensureSuperadmin(): void
     {
         abort_unless(auth()->user()?->hasRole('superadmin'), 403, 'Hanya Superadmin yang dapat mengakses fitur ini.');
+    }
+
+    private function findDuplicatePersonnelIdentity(string $nrpNip, ?Personnel $ignorePersonnel = null, ?User $ignoreUser = null): ?array
+    {
+        $personnel = Personnel::query()
+            ->with(['satker', 'user'])
+            ->where('nrp', $nrpNip)
+            ->when($ignorePersonnel?->exists, fn ($query) => $query->whereKeyNot($ignorePersonnel->id))
+            ->first();
+
+        if ($personnel !== null) {
+            return [
+                'name' => $this->normalizeIdentityName($personnel->full_name ?: $personnel->user?->name),
+                'satker_id' => (int) $personnel->satker_id,
+                'satker_name' => $personnel->satker?->name ?? 'Tanpa Satker',
+            ];
+        }
+
+        $user = User::query()
+            ->with('satker')
+            ->where('nrp_nip', $nrpNip)
+            ->when($ignoreUser?->exists, fn ($query) => $query->whereKeyNot($ignoreUser->id))
+            ->first();
+
+        if ($user !== null) {
+            return [
+                'name' => $this->normalizeIdentityName($user->name),
+                'satker_id' => (int) $user->satker_id,
+                'satker_name' => $user->satker?->name ?? 'Tanpa Satker',
+            ];
+        }
+
+        return null;
+    }
+
+    private function buildDuplicatePersonnelIdentityMessage(string $nrpNip, array $duplicateIdentity, int $requestedSatkerId): string
+    {
+        $message = "NRP/NIP {$nrpNip} sudah terdaftar atas nama {$duplicateIdentity['name']} pada satker {$duplicateIdentity['satker_name']}.";
+
+        if ((int) ($duplicateIdentity['satker_id'] ?? 0) !== $requestedSatkerId) {
+            $message .= ' Silakan koordinasikan dengan superadmin.';
+        }
+
+        return $message;
+    }
+
+    private function normalizeIdentityName(?string $name): string
+    {
+        $normalized = trim((string) $name);
+
+        return $normalized !== '' ? $normalized : 'Tanpa Nama';
     }
 
     private function abortIfAdminSatkerWriteLocked(?Request $request = null): void

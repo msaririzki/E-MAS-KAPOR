@@ -179,10 +179,232 @@ class PersonnelRequestModeTest extends TestCase
         ]);
 
         $response->assertRedirect(route('admin.personnel.index'));
-        $response->assertSessionHas('error', 'NRP/NIP tersebut sudah terdaftar pada satker lain. Silakan koordinasikan dengan superadmin.');
+        $response->assertSessionHas(
+            'error',
+            'NRP/NIP 76100153 sudah terdaftar atas nama PERSONIL LAMA pada satker POLRES DOMPU. Silakan koordinasikan dengan superadmin.'
+        );
 
         $this->assertDatabaseMissing('personnels', [
             'full_name' => 'PERSONIL BARU',
+        ]);
+    }
+
+    public function test_admin_satker_cannot_add_duplicate_nrp_when_login_user_already_exists_without_personnel_record(): void
+    {
+        Setting::setValue('personnel_request_mode', 'auto');
+
+        $satker = Satker::create([
+            'name' => 'POLRES BIMA',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPDA',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $adminSatker = User::factory()->create([
+            'satker_id' => $satker->id,
+        ]);
+        $adminSatker->assignRole('admin_satker');
+
+        $existingUser = User::factory()->create([
+            'name' => 'AKUN PERSONIL LAMA',
+            'nrp_nip' => '76100156',
+            'satker_id' => $satker->id,
+        ]);
+        $existingUser->assignRole('personil');
+
+        $response = $this->actingAs($adminSatker)
+            ->from(route('admin.personnel.index'))
+            ->post(route('admin.personnel.store'), [
+                'nrp' => '76100156',
+                'full_name' => 'PERSONIL BARU',
+                'rank_id' => $rank->id,
+                'satker_id' => $satker->id,
+                'personnel_type' => 'Polri',
+                'gender' => 'L',
+                'religion' => 'Islam',
+                'golongan' => 'BINTARA',
+            ]);
+
+        $response->assertRedirect(route('admin.personnel.index'));
+        $response->assertSessionHas(
+            'error',
+            'NRP/NIP 76100156 sudah terdaftar atas nama AKUN PERSONIL LAMA pada satker POLRES BIMA.'
+        );
+
+        $this->assertDatabaseMissing('personnels', [
+            'full_name' => 'PERSONIL BARU',
+        ]);
+    }
+
+    public function test_admin_satker_cannot_update_personnel_to_duplicate_nrp_from_other_satker(): void
+    {
+        Setting::setValue('personnel_request_mode', 'auto');
+
+        $satkerA = Satker::create([
+            'name' => 'POLRES BIMA',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $satkerB = Satker::create([
+            'name' => 'POLRES DOMPU',
+            'code' => 'POLRES-DOMPU',
+            'sort_order' => 2,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPDA',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $adminSatker = User::factory()->create([
+            'satker_id' => $satkerA->id,
+        ]);
+        $adminSatker->assignRole('admin_satker');
+
+        $currentUser = User::factory()->create([
+            'name' => 'PERSONIL SATKER A',
+            'nrp_nip' => '76100157',
+            'satker_id' => $satkerA->id,
+        ]);
+        $currentUser->assignRole('personil');
+
+        $personnelToEdit = Personnel::create([
+            'user_id' => $currentUser->id,
+            'nrp' => '76100157',
+            'full_name' => 'PERSONIL SATKER A',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'golongan' => 'BINTARA',
+            'satker_id' => $satkerA->id,
+            'religion' => 'Islam',
+            'is_active' => true,
+            'verification_status' => 'approved',
+        ]);
+
+        $otherUser = User::factory()->create([
+            'name' => 'PERSONIL SATKER B',
+            'nrp_nip' => '76100158',
+            'satker_id' => $satkerB->id,
+        ]);
+        $otherUser->assignRole('personil');
+
+        Personnel::create([
+            'user_id' => $otherUser->id,
+            'nrp' => '76100158',
+            'full_name' => 'PERSONIL SATKER B',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'golongan' => 'BINTARA',
+            'satker_id' => $satkerB->id,
+            'religion' => 'Islam',
+            'is_active' => true,
+            'verification_status' => 'approved',
+        ]);
+
+        $response = $this->actingAs($adminSatker)
+            ->from(route('admin.personnel.index'))
+            ->put(route('admin.personnel.update', $personnelToEdit), [
+                'nrp' => '76100158',
+                'full_name' => 'PERSONIL SATKER A',
+                'rank_id' => $rank->id,
+                'satker_id' => $satkerA->id,
+                'personnel_type' => 'Polri',
+                'gender' => 'L',
+                'religion' => 'Islam',
+                'golongan' => 'BINTARA',
+            ]);
+
+        $response->assertRedirect(route('admin.personnel.index'));
+        $response->assertSessionHas(
+            'error',
+            'NRP/NIP 76100158 sudah terdaftar atas nama PERSONIL SATKER B pada satker POLRES DOMPU. Silakan koordinasikan dengan superadmin.'
+        );
+
+        $this->assertDatabaseHas('personnels', [
+            'id' => $personnelToEdit->id,
+            'nrp' => '76100157',
+        ]);
+    }
+
+    public function test_superadmin_cannot_update_personnel_to_duplicate_nrp_when_login_user_already_exists(): void
+    {
+        Setting::setValue('personnel_request_mode', 'auto');
+
+        $satker = Satker::create([
+            'name' => 'POLRES BIMA',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPDA',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $superadmin = User::factory()->create();
+        $superadmin->assignRole('superadmin');
+
+        $currentUser = User::factory()->create([
+            'name' => 'PERSONIL EDIT',
+            'nrp_nip' => '76100159',
+            'satker_id' => $satker->id,
+        ]);
+        $currentUser->assignRole('personil');
+
+        $personnelToEdit = Personnel::create([
+            'user_id' => $currentUser->id,
+            'nrp' => '76100159',
+            'full_name' => 'PERSONIL EDIT',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'golongan' => 'BINTARA',
+            'satker_id' => $satker->id,
+            'religion' => 'Islam',
+            'is_active' => true,
+            'verification_status' => 'approved',
+        ]);
+
+        $existingUser = User::factory()->create([
+            'name' => 'AKUN CADANGAN',
+            'nrp_nip' => '76100160',
+            'satker_id' => $satker->id,
+        ]);
+        $existingUser->assignRole('personil');
+
+        $response = $this->actingAs($superadmin)
+            ->from(route('admin.personnel.index'))
+            ->put(route('admin.personnel.update', $personnelToEdit), [
+                'nrp' => '76100160',
+                'full_name' => 'PERSONIL EDIT',
+                'rank_id' => $rank->id,
+                'satker_id' => $satker->id,
+                'personnel_type' => 'Polri',
+                'gender' => 'L',
+                'religion' => 'Islam',
+                'golongan' => 'BINTARA',
+                'is_active' => 1,
+            ]);
+
+        $response->assertRedirect(route('admin.personnel.index'));
+        $response->assertSessionHas(
+            'error',
+            'NRP/NIP 76100160 sudah terdaftar atas nama AKUN CADANGAN pada satker POLRES BIMA.'
+        );
+
+        $this->assertDatabaseHas('personnels', [
+            'id' => $personnelToEdit->id,
+            'nrp' => '76100159',
         ]);
     }
 
