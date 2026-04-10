@@ -259,6 +259,26 @@
     </div>
 </div>
 
+{{-- Tanda Tangan / Signatory --}}
+@php
+    $ttdLocation  = $signatorySettings['location'] ?? 'Mataram';
+    $ttdOrgName   = strtoupper($signatorySettings['organization_name'] ?? '');
+    $ttdJabatan   = strtoupper($signatorySettings['signatory_title'] ?? 'KEPALA..........................');
+    $ttdNama      = strtoupper($signatorySettings['signatory_name'] ?? '..........................................');
+    $ttdNrp       = $signatorySettings['signatory_nrp'] ?? '.............................';
+@endphp
+<div class="signatory-section" style="margin-top: 40px; display: flex; justify-content: flex-end;">
+    <div style="width: 320px; text-align: center; font-size: 13px; line-height: 1.6;">
+        <div>{{ $ttdLocation }}, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</div>
+        @if($ttdOrgName)
+        <div style="margin-bottom: 4px;">{{ $ttdOrgName }}</div>
+        @endif
+        <div style="margin-bottom: 70px;">{{ $ttdJabatan }}</div>
+        <div style="font-weight: 700;">{{ $ttdNama }}</div>
+        <div style="font-size: 12px;">NRP/NIP. {{ $ttdNrp }}</div>
+    </div>
+</div>
+
 @endsection
 
 @section('styles')

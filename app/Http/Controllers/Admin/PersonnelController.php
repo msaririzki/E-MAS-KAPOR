@@ -999,7 +999,9 @@ class PersonnelController extends Controller
 
         $personnelIds = $this->resolvePersonnelExportIds($request, $satkerIds);
 
-        return Excel::download(new PersonnelExport($satkerIds, $satkerName, $personnelIds), $fileName);
+        $signatorySettings = app(ExportSignatorySettingService::class)->resolveForUser($user);
+
+        return Excel::download(new PersonnelExport($satkerIds, $satkerName, $personnelIds, $signatorySettings), $fileName);
     }
 
     /**

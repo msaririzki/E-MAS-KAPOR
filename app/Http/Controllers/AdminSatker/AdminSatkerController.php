@@ -171,7 +171,9 @@ class AdminSatkerController extends Controller
 
         $bagians = $this->resolveAvailableBagians($satkerId);
 
-        return view('admin-satker.reports', compact('stats', 'satker', 'fiscalYear', 'personnels', 'jsonMapping', 'bagians'));
+        $signatorySettings = app(ExportSignatorySettingService::class)->resolveForUser($user);
+
+        return view('admin-satker.reports', compact('stats', 'satker', 'fiscalYear', 'personnels', 'jsonMapping', 'bagians', 'signatorySettings'));
     }
 
     private function resolveAvailableBagians(int $satkerId): Collection

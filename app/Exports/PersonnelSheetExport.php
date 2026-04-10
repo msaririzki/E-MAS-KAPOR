@@ -35,6 +35,9 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
 
     protected string $sheetTitle;
 
+    /** @var array<string, string> */
+    protected array $signatorySettings;
+
     /**
      * JSON key → short label used in the PDF/print view.
      */
@@ -50,11 +53,12 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
         'jilbab',
     ];
 
-    public function __construct(Collection $personnels, string $satkerName, string $sheetTitle)
+    public function __construct(Collection $personnels, string $satkerName, string $sheetTitle, array $signatorySettings = [])
     {
         $this->personnels = $personnels;
         $this->satkerName = $satkerName;
         $this->sheetTitle = $sheetTitle;
+        $this->signatorySettings = $signatorySettings;
     }
 
     public function title(): string
@@ -274,7 +278,69 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
 
                 // ── Freeze pane below headers ──
                 $sheet->freezePane('A11');
+
+                // ── Signatory / Tanda Tangan ──
+                if (! empty($this->signatorySettings)) {
+                    $this->renderSignatory($sheet, $lastDataRow);
+                }
             },
         ];
+    }
+
+    /**
+     * Render signatory block below the data table in the Excel sheet.
+     */
+    private function renderSignatory(Worksheet $sheet, int $lastDataRow): void
+    {
+        $location = $this->signatorySettings['location'] ?? 'Mataram';
+        $orgName = strtoupper($this->signatorySettings['organization_name'] ?? '');
+        $jabatan = strtoupper($this->signatorySettings['signatory_title'] ?? 'KEPALA..........................');
+        $nama = strtoupper($this->signatorySettings['signatory_name'] ?? '..........................................');
+        $nrp = $this->signatorySettings['signatory_nrp'] ?? '.............................';
+
+        // Start 2 rows below the last data row
+        $startRow = $lastDataRow + 2;
+
+        // Signatory is placed in columns N–R (right side of the table)
+        $sigCol = 'N'; // Start column
+        $endCol = 'R'; // End column for merge
+
+        // Row 1: Location & Date
+        $dateStr = $location.', '.now()->translatedFormat('d F Y');
+        $sheet->setCellValue($sigCol.$startRow, $dateStr);
+        $sheet->mergeCells("{$sigCol}{$startRow}:{$endCol}{$startRow}");
+        $sheet->getStyle("{$sigCol}{$startRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Row 2: Organization Name (if set)
+        $currentRow = $startRow + 1;
+        if ($orgName !== '') {
+            $sheet->setCellValue($sigCol.$currentRow, $orgName);
+            $sheet->mergeCells("{$sigCol}{$currentRow}:{$endCol}{$currentRow}");
+            $sheet->getStyle("{$sigCol}{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $currentRow++;
+        }
+
+        // Row 3: Jabatan
+        $sheet->setCellValue($sigCol.$currentRow, $jabatan);
+        $sheet->mergeCells("{$sigCol}{$currentRow}:{$endCol}{$currentRow}");
+        $sheet->getStyle("{$sigCol}{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Skip rows for signature space
+        $currentRow += 4;
+
+        // Row 7: Nama (bold + underline)
+        $sheet->setCellValue($sigCol.$currentRow, $nama);
+        $sheet->mergeCells("{$sigCol}{$currentRow}:{$endCol}{$currentRow}");
+        $sheet->getStyle("{$sigCol}{$currentRow}")->applyFromArray([
+            'font' => ['bold' => true, 'underline' => true],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+
+        // Row 8: NRP/NIP
+        $currentRow++;
+        $sheet->setCellValue($sigCol.$currentRow, 'NRP/NIP. '.$nrp);
+        $sheet->mergeCells("{$sigCol}{$currentRow}:{$endCol}{$currentRow}");
+        $sheet->getStyle("{$sigCol}{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("{$sigCol}{$currentRow}")->getFont()->setSize(10);
     }
 }
