@@ -43,7 +43,7 @@ class PersonnelController extends Controller
     {
         $sort = $request->get('sort', 'latest');
         $direction = $request->get('direction', 'desc');
-        $query = Personnel::with(['rank', 'satker'])->forCurrentSatker();
+        $query = Personnel::with(['rank', 'satker', 'user'])->forCurrentSatker();
 
         // Filters
         if ($request->filled('search')) {
@@ -274,7 +274,7 @@ class PersonnelController extends Controller
             'bagian' => 'nullable|string|max:255',
             'personnel_type' => 'required|in:Polri,PNS',
             'gender' => 'required|in:L,P',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'string', 'max:20', 'regex:/^(?:0|62)\d{8,15}$/'],
             'religion' => 'nullable|string|max:50',
             'golongan' => 'nullable|string|max:50',
             'keterangan' => 'nullable|string|max:255',
@@ -287,6 +287,8 @@ class PersonnelController extends Controller
         if ($isAdminSatker) {
             $validated['satker_id'] = (int) $request->user()->satker_id;
         }
+
+        $validated['phone'] = User::normalizePhone($validated['phone'] ?? null);
 
         $nrp = trim((string) $validated['nrp']);
         $duplicateIdentity = $this->findDuplicatePersonnelIdentity($nrp);
@@ -318,6 +320,8 @@ class PersonnelController extends Controller
                 $validated['full_name'],
                 $validated['satker_id'],
                 ! $requiresVerification,
+                $validated['phone'] ?? null,
+                true,
             );
 
             // 2. Create Personnel Record
@@ -435,7 +439,7 @@ class PersonnelController extends Controller
             'bagian' => 'nullable|string|max:255',
             'personnel_type' => 'nullable|in:Polri,PNS',
             'gender' => 'nullable|in:L,P',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'string', 'max:20', 'regex:/^(?:0|62)\d{8,15}$/'],
             'religion' => 'nullable|string|max:50',
             'golongan' => 'nullable|string|max:50',
             'keterangan' => 'nullable|string|max:255',
@@ -447,6 +451,7 @@ class PersonnelController extends Controller
         ]);
 
         $oldSatkerId = $personnel->satker_id;
+        $validated['phone'] = User::normalizePhone($validated['phone'] ?? null);
         $duplicateIdentity = $this->findDuplicatePersonnelIdentity($validated['nrp'], $personnel, $personnel->user);
 
         if ($duplicateIdentity !== null) {
@@ -474,13 +479,15 @@ class PersonnelController extends Controller
                 'name' => $validated['full_name'],
                 'satker_id' => $validated['satker_id'],
                 'is_active' => (bool) ($validated['is_active'] ?? $personnel->is_active),
+                'phone' => $validated['phone'] ?? null,
             ];
 
             $userNeedsSync = ! $user
                 || $user->nrp_nip !== $targetUserState['nrp_nip']
                 || $user->name !== $targetUserState['name']
                 || (int) $user->satker_id !== (int) $targetUserState['satker_id']
-                || (bool) $user->is_active !== $targetUserState['is_active'];
+                || (bool) $user->is_active !== $targetUserState['is_active']
+                || $user->phone !== $targetUserState['phone'];
 
             if (! $personnel->isDirty() && ! $userNeedsSync) {
                 DB::rollBack();
@@ -494,6 +501,8 @@ class PersonnelController extends Controller
                 $validated['full_name'],
                 $validated['satker_id'],
                 $targetUserState['is_active'],
+                $validated['phone'] ?? null,
+                true,
             );
 
             // Update Personnel
@@ -533,7 +542,7 @@ class PersonnelController extends Controller
             'bagian' => 'nullable|string|max:255',
             'personnel_type' => 'nullable|in:Polri,PNS',
             'gender' => 'nullable|in:L,P',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'string', 'max:20', 'regex:/^(?:0|62)\d{8,15}$/'],
             'religion' => 'nullable|string|max:50',
             'golongan' => 'nullable|string|max:50',
             'keterangan' => 'nullable|string|max:255',
@@ -544,6 +553,7 @@ class PersonnelController extends Controller
         ]);
 
         $validated['satker_id'] = (int) $request->user()->satker_id;
+        $validated['phone'] = User::normalizePhone($validated['phone'] ?? null);
         $duplicateIdentity = $this->findDuplicatePersonnelIdentity($validated['nrp'], $personnel, $personnel->user);
 
         if ($duplicateIdentity !== null) {
@@ -571,13 +581,15 @@ class PersonnelController extends Controller
                 'name' => $validated['full_name'],
                 'satker_id' => $validated['satker_id'],
                 'is_active' => (bool) $personnel->is_active,
+                'phone' => $validated['phone'] ?? null,
             ];
 
             $userNeedsSync = ! $user
                 || $user->nrp_nip !== $targetUserState['nrp_nip']
                 || $user->name !== $targetUserState['name']
                 || (int) $user->satker_id !== (int) $targetUserState['satker_id']
-                || (bool) $user->is_active !== $targetUserState['is_active'];
+                || (bool) $user->is_active !== $targetUserState['is_active']
+                || $user->phone !== $targetUserState['phone'];
 
             if (! $personnel->isDirty() && ! $userNeedsSync) {
                 DB::rollBack();
@@ -591,6 +603,8 @@ class PersonnelController extends Controller
                 $validated['full_name'],
                 $validated['satker_id'],
                 $targetUserState['is_active'],
+                $validated['phone'] ?? null,
+                true,
             );
 
             $personnel->forceFill([

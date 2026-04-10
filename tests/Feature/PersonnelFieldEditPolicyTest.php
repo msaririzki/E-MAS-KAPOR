@@ -119,13 +119,14 @@ class PersonnelFieldEditPolicyTest extends TestCase
             'gender' => 'P',
             'golongan' => 'III/A',
             'religion' => 'Hindu',
-            'phone' => '08123456789',
+            'phone' => '628123456789',
         ]);
 
         $this->assertSame(['topi' => '60'], $personnel->fresh()->kapor_sizes);
         $this->assertSame('99999999', $user->fresh()->nrp_nip);
         $this->assertSame('NAMA BARU', $user->fresh()->name);
         $this->assertSame($satker->id, $user->fresh()->satker_id);
+        $this->assertSame('628123456789', $user->fresh()->phone);
     }
 
     public function test_admin_satker_gets_info_feedback_when_no_personnel_data_changes(): void
@@ -248,6 +249,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response = $this->actingAs($user)->post(route('personil.kapor.store'), [
             'jabatan' => 'BANIT RESKRIM',
             'bagian' => 'SAT RESKRIM',
+            'phone' => '08123456789',
             'kemeja' => '15',
             'celana' => '32',
             'olahraga' => 'B',
@@ -265,9 +267,11 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $this->assertSame('BANIT RESKRIM', $personnel->jabatan);
         $this->assertSame('SAT RESKRIM', $personnel->bagian);
+        $this->assertSame('628123456789', $personnel->phone);
         $this->assertSame($satker->id, $personnel->satker_id);
         $this->assertSame('15', $personnel->kapor_sizes['kemeja']);
         $this->assertSame('57', $personnel->kapor_sizes['topi']);
+        $this->assertSame('628123456789', $user->fresh()->phone);
     }
 
     public function test_personil_can_save_identity_first_and_generate_audit_log(): void
@@ -315,6 +319,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
             'mode' => 'identity',
             'jabatan' => 'BANIT SAMAPTA',
             'bagian' => 'SIAGA',
+            'phone' => '628123456789',
         ]);
 
         $response->assertRedirect(route('dashboard').'#ukuran-form');
@@ -324,6 +329,8 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $this->assertSame('BANIT SAMAPTA', $personnel->jabatan);
         $this->assertSame('SIAGA', $personnel->bagian);
+        $this->assertSame('628123456789', $personnel->phone);
+        $this->assertSame('628123456789', $user->fresh()->phone);
 
         $auditLog = AuditLog::query()->latest()->first();
 
@@ -331,8 +338,8 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $this->assertSame('Edit Referensi SDM Personil', $auditLog->action);
         $this->assertSame('Data Personil', $auditLog->category);
         $this->assertSame($personnel->id, $auditLog->auditable_id);
-        $this->assertSame(['jabatan' => 'JABATAN SDM', 'bagian' => null], $auditLog->old_values);
-        $this->assertSame(['jabatan' => 'BANIT SAMAPTA', 'bagian' => 'SIAGA'], $auditLog->new_values);
+        $this->assertSame(['jabatan' => 'JABATAN SDM', 'bagian' => null, 'phone' => null], $auditLog->old_values);
+        $this->assertSame(['jabatan' => 'BANIT SAMAPTA', 'bagian' => 'SIAGA', 'phone' => '628123456789'], $auditLog->new_values);
     }
 
     public function test_personil_non_polres_can_update_jabatan_and_sizes_without_bagian(): void
@@ -378,6 +385,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('personil.kapor.store'), [
             'jabatan' => 'BANUM URMINTU SUBBAGRENMIN DITLANTAS',
+            'phone' => '08123456789',
             'kemeja' => '15',
             'celana' => '32',
             'olahraga' => 'B',
@@ -395,8 +403,10 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $this->assertSame('BANUM URMINTU SUBBAGRENMIN DITLANTAS', $personnel->jabatan);
         $this->assertSame('BAGIAN SDM', $personnel->bagian);
+        $this->assertSame('628123456789', $personnel->phone);
         $this->assertSame('15', $personnel->kapor_sizes['kemeja']);
         $this->assertSame('57', $personnel->kapor_sizes['topi']);
+        $this->assertSame('628123456789', $user->fresh()->phone);
     }
 
     public function test_personil_dashboard_hides_bagian_field_for_non_polres_satker(): void
@@ -491,6 +501,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
             ->post(route('personil.kapor.store'), [
                 'jabatan' => 'BANIT RESKRIM',
                 'bagian' => 'SAT RESKRIM',
+                'phone' => '08123456789',
                 'kemeja' => '15',
                 'celana' => '32',
                 'olahraga' => 'B',
@@ -572,7 +583,8 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $response->assertOk();
         $response->assertSeeText('Data Kaporlap Personil');
-        $response->assertSeeText('Data tugas');
+        $response->assertSeeText('Data Personel');
+        $response->assertSeeText('Nomor WhatsApp');
         $response->assertSeeText('Ukuran kaporlap');
     }
 }

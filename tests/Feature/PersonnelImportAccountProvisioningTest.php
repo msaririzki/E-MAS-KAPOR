@@ -95,6 +95,61 @@ class PersonnelImportAccountProvisioningTest extends TestCase
         $this->assertNull($personnel->nrp);
     }
 
+    public function test_import_preserves_existing_user_phone_on_personnel_record(): void
+    {
+        $satker = $this->createSatker();
+        $rank = $this->createRank();
+
+        $user = User::create([
+            'name' => 'Lalu Muhamad Zainul',
+            'nrp_nip' => '198501012010011001',
+            'phone' => '628123456789',
+            'password' => bcrypt('198501012010011001'),
+            'satker_id' => $satker->id,
+            'is_active' => true,
+        ]);
+        $user->assignRole('personil');
+
+        $personnel = Personnel::create([
+            'user_id' => $user->id,
+            'nrp' => '198501012010011001',
+            'full_name' => 'Lalu Muhamad Zainul',
+            'rank_id' => $rank->id,
+            'satker_id' => $satker->id,
+            'phone' => null,
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'jabatan' => 'Ba Urmin',
+            'bagian' => 'Logistik',
+            'is_active' => true,
+        ]);
+
+        $import = new PersonnelImport($satker->id);
+        $result = $import->saveFromPreviewData([
+            [
+                'nrp' => '198501012010011001',
+                'full_name' => 'Lalu Muhamad Zainul',
+                'rank_id' => $rank->id,
+                'gender' => 'L',
+                'jabatan' => 'Ba Urmin',
+                'bagian' => 'Logistik',
+                'golongan' => '',
+                'keterangan' => '',
+                'keterangan_2' => '',
+                'keterangan_3' => '',
+                'keterangan_4' => '',
+                'sizes' => [],
+                'duplicate_nrp' => false,
+                'db_duplicate' => null,
+            ],
+        ], $satker->id);
+
+        $this->assertSame(1, $result['success_count']);
+        $this->assertSame(0, $result['error_count']);
+        $this->assertSame('628123456789', $personnel->fresh()->phone);
+        $this->assertSame('628123456789', $user->fresh()->phone);
+    }
+
     private function createSatker(): Satker
     {
         return Satker::create([

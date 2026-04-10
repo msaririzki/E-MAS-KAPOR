@@ -343,6 +343,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                                 true,
                             );
                             $updateData['user_id'] = $user->id;
+                            $updateData['phone'] = $user->phone;
                         }
 
                         $hasNrpIssue = ! empty($data['db_duplicate']) || ! empty($data['duplicate_nrp']);
@@ -379,6 +380,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         'rank_id' => $data['rank_id'] ?? null,
                         'full_name' => $data['full_name'],
                         'nrp' => $nrp,
+                        'phone' => $user?->phone,
                         'jabatan' => $data['jabatan'] ?: null,
                         'bagian' => $data['bagian'] ?: null,
                         'golongan' => $data['golongan'] ?: null,

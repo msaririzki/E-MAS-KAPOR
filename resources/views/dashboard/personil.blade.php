@@ -134,6 +134,12 @@
             margin-top: 14px;
         }
 
+        .identity-grid {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
         .summary-grid {
             display: grid;
             gap: 12px;
@@ -305,6 +311,10 @@
             .field-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
+
+            .identity-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
         }
     </style>
 @endsection
@@ -331,8 +341,9 @@
         }
 
         $usesBagianDropdown = $requiresBagian ?? false;
-        $identityStepLabel = $usesBagianDropdown ? '1. Jabatan + Bag/Fungsi' : '1. Jabatan';
-        $showIdentityForm = !$identityReady || old('mode') === 'identity' || $errors->has('jabatan') || $errors->has('bagian');
+        $currentPhone = old('phone', $contactPhone ?? $personnel?->phone ?? $user->phone ?? '');
+        $identityStepLabel = $usesBagianDropdown ? '1. Jabatan + Bag/Fungsi + No. WA' : '1. Jabatan + No. WA';
+        $showIdentityForm = !$identityReady || old('mode') === 'identity' || $errors->has('jabatan') || $errors->has('bagian') || $errors->has('phone');
         $showSizesForm = !$hasSubmitted || old('mode') === 'sizes';
         $progressClass = !$identityReady ? 'progress-38' : ($isComplete ? 'progress-100' : ($hasSubmitted ? 'progress-82' : 'progress-64'));
         $summaryItems = [
@@ -404,6 +415,7 @@
                             @if ($usesBagianDropdown)
                                 <div class="summary-item"><strong>Bag/Fungsi</strong><span>{{ $personnel->bagian }}</span></div>
                             @endif
+                            <div class="summary-item"><strong>No. WhatsApp</strong><span>{{ $currentPhone ?: '-' }}</span></div>
                         </div>
 
                         <div style="margin-top: 12px;">
@@ -419,7 +431,7 @@
                     @csrf
                     <input type="hidden" name="mode" value="identity">
 
-                    <div class="field-grid">
+                    <div class="identity-grid">
                         <div class="field">
                             <label class="label" for="jabatan">Jabatan</label>
                             <input id="jabatan" type="text" name="jabatan" class="control"
@@ -446,9 +458,18 @@
                                 @error('bagian')<span class="error">{{ $message }}</span>@enderror
                             </div>
                         @endif
+
+                        <div class="field">
+                            <label class="label" for="phone">Nomor WhatsApp</label>
+                            <input id="phone" type="text" name="phone" class="control" inputmode="numeric" autocomplete="tel"
+                                placeholder="Contoh: 08123456789" value="{{ $currentPhone }}"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <span class="hint">Nomor ini dipakai admin untuk kontak cepat dan pengumuman WhatsApp.</span>
+                            @error('phone')<span class="error">{{ $message }}</span>@enderror
+                        </div>
                     </div>
 
-                    <div class="note">{{ $usesBagianDropdown ? 'Simpan jabatan dan bag/fungsi dulu, lalu lanjut ke ukuran.' : 'Simpan jabatan dulu, lalu lanjut ke ukuran.' }}</div>
+                    <div class="note">{{ $usesBagianDropdown ? 'Simpan jabatan, bag/fungsi, dan nomor WhatsApp dulu, lalu lanjut ke ukuran.' : 'Simpan jabatan dan nomor WhatsApp dulu, lalu lanjut ke ukuran.' }}</div>
 
                         <div style="margin-top: 14px;">
                             <button type="submit" class="button">Simpan</button>
@@ -485,6 +506,7 @@
                         @csrf
                         <input type="hidden" name="mode" value="sizes">
                         <input type="hidden" name="jabatan" value="{{ old('jabatan', $personnel->jabatan ?? '') }}">
+                        <input type="hidden" name="phone" value="{{ $currentPhone }}">
                         @if ($usesBagianDropdown)
                             <input type="hidden" name="bagian" value="{{ old('bagian', $personnel->bagian ?? '') }}">
                         @endif

@@ -108,15 +108,48 @@ class User extends Authenticatable
         return $this->usesEmailLogin() ? 'Gmail' : 'NRP/NIP';
     }
 
-    // ── Scopes ────────────────────────────────────────────────
-
-    public static function createOrUpdatePersonnelAccount(?self $user, string $identifier, string $name, ?int $satkerId, bool $isActive = true): self
+    public static function normalizePhone(?string $phone): ?string
     {
-        return static::createOrUpdatePersonnelAccountWithOptions($user, $identifier, $name, $satkerId, $isActive);
+        $normalized = preg_replace('/\D+/', '', trim((string) $phone)) ?? '';
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (str_starts_with($normalized, '620')) {
+            $normalized = '62'.substr($normalized, 3);
+        } elseif (str_starts_with($normalized, '0')) {
+            $normalized = '62'.substr($normalized, 1);
+        } elseif (str_starts_with($normalized, '8')) {
+            $normalized = '62'.$normalized;
+        }
+
+        return $normalized;
     }
 
-    public static function createOrUpdatePersonnelImportAccount(?self $user, string $identifier, string $name, ?int $satkerId, bool $isActive = true): self
-    {
+    // ── Scopes ────────────────────────────────────────────────
+
+    public static function createOrUpdatePersonnelAccount(
+        ?self $user,
+        string $identifier,
+        string $name,
+        ?int $satkerId,
+        bool $isActive = true,
+        ?string $phone = null,
+        bool $syncPhone = false,
+    ): self {
+        return static::createOrUpdatePersonnelAccountWithOptions($user, $identifier, $name, $satkerId, $isActive, null, $phone, $syncPhone);
+    }
+
+    public static function createOrUpdatePersonnelImportAccount(
+        ?self $user,
+        string $identifier,
+        string $name,
+        ?int $satkerId,
+        bool $isActive = true,
+        ?string $phone = null,
+        bool $syncPhone = false,
+    ): self {
         return static::createOrUpdatePersonnelAccountWithOptions(
             $user,
             $identifier,
@@ -124,6 +157,8 @@ class User extends Authenticatable
             $satkerId,
             $isActive,
             static::IMPORT_PASSWORD_ROUNDS,
+            $phone,
+            $syncPhone,
         );
     }
 
@@ -134,6 +169,8 @@ class User extends Authenticatable
         ?int $satkerId,
         bool $isActive = true,
         ?int $passwordRounds = null,
+        ?string $phone = null,
+        bool $syncPhone = false,
     ): self {
         $conflictingUser = static::query()
             ->where('nrp_nip', $identifier)
@@ -148,13 +185,19 @@ class User extends Authenticatable
 
         $identifierChanged = ! $user->exists || $user->nrp_nip !== $identifier;
 
-        $user->fill([
+        $attributes = [
             'nrp_nip' => $identifier,
             'name' => $name,
             'email' => null,
             'satker_id' => $satkerId,
             'is_active' => $isActive,
-        ]);
+        ];
+
+        if ($syncPhone) {
+            $attributes['phone'] = static::normalizePhone($phone);
+        }
+
+        $user->fill($attributes);
 
         if ($identifierChanged) {
             $user->password = $passwordRounds === null

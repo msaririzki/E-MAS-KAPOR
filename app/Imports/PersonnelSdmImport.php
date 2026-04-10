@@ -329,6 +329,7 @@ class PersonnelSdmImport extends PersonnelImport
                         'full_name' => $fullName,
                         'rank_id' => $rank?->id,
                         'satker_id' => $satker->id,
+                        'phone' => $user->phone,
                         'jabatan' => $jabatan,
                         'bagian' => null,
                         'personnel_type' => $this->resolvePersonnelTypeFromRank($rank),

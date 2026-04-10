@@ -232,6 +232,7 @@ class PersonnelSatkerTemplatePolicyTest extends TestCase
         $response = $this->actingAs($user)->post(route('personil.kapor.store'), [
             'jabatan' => 'BANIT RESKRIM',
             'bagian' => 'SAT RESKRIM',
+            'phone' => '08123456789',
             'kemeja' => '15',
             'celana' => '32',
             'olahraga' => 'B',
@@ -252,5 +253,7 @@ class PersonnelSatkerTemplatePolicyTest extends TestCase
         $this->assertSame('BANIT RESKRIM', $row[5]);
         $this->assertSame('SAT RESKRIM', $row[6]);
         $this->assertSame($satker->id, $personnel->satker_id);
+        $this->assertSame('628123456789', $personnel->fresh()->phone);
+        $this->assertSame('628123456789', $user->fresh()->phone);
     }
 }

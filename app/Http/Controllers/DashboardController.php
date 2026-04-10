@@ -220,17 +220,20 @@ class DashboardController extends Controller
         $isComplete = false;
         $identityReady = false;
         $requiresBagian = false;
+        $contactPhone = User::normalizePhone($user->phone);
 
         if ($personnel) {
             $kaporSizes = $personnel->kapor_sizes ?? [];
             $hasSubmitted = ! empty(array_filter((array) $kaporSizes));
             $isComplete = $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel);
             $requiresBagian = ($personnel->satker ?? $user->satker)?->recipientScope() === 'polres';
+            $contactPhone = User::normalizePhone($personnel->phone ?: $user->phone);
             $identityReady = filled(trim((string) $personnel->jabatan))
-                && (! $requiresBagian || filled(trim((string) $personnel->bagian)));
+                && (! $requiresBagian || filled(trim((string) $personnel->bagian)))
+                && filled(trim((string) $contactPhone));
         }
 
-        return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'isComplete', 'identityReady', 'requiresBagian', 'fiscalYear', 'bagianOptions'));
+        return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'isComplete', 'identityReady', 'requiresBagian', 'fiscalYear', 'bagianOptions', 'contactPhone'));
     }
 
     private function countPersonnelWithCompleteSizes(?int $satkerId = null): int

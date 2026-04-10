@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Testimonial;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\KaporRequirementService;
 use Illuminate\Http\RedirectResponse;
@@ -27,6 +28,7 @@ class PersonilPortalController extends Controller
 
         $rules = [
             'jabatan' => 'required|string|max:255',
+            'phone' => ['required', 'string', 'max:20', 'regex:/^(?:0|62)\d{8,15}$/'],
         ];
 
         if ($requiresBagian) {
@@ -51,10 +53,12 @@ class PersonilPortalController extends Controller
         }
 
         $validated = $request->validate($rules);
+        $normalizedPhone = User::normalizePhone($validated['phone'] ?? null);
 
         $previousIdentity = [
             'jabatan' => $personnel->jabatan,
             'bagian' => $personnel->bagian,
+            'phone' => User::normalizePhone($personnel->phone ?: $request->user()?->phone),
         ];
 
         $nextIdentity = [
@@ -62,10 +66,12 @@ class PersonilPortalController extends Controller
             'bagian' => $requiresBagian
                 ? $this->normalizeIdentityValue($validated['bagian'])
                 : $personnel->bagian,
+            'phone' => $normalizedPhone,
         ];
 
         $personnel->jabatan = $nextIdentity['jabatan'];
         $personnel->bagian = $nextIdentity['bagian'];
+        $personnel->phone = $nextIdentity['phone'];
 
         if ($mode === 'sizes') {
             $sizePayload = collect($validated)
@@ -79,15 +85,24 @@ class PersonilPortalController extends Controller
             );
         }
 
-        $personnel->save();
+        DB::transaction(function () use ($request, $personnel): void {
+            $personnel->save();
+
+            $user = $request->user();
+            if ($user !== null) {
+                $user->forceFill([
+                    'phone' => $personnel->phone,
+                ])->save();
+            }
+        });
 
         $this->logIdentityChanges($personnel, $previousIdentity, $nextIdentity);
 
         if ($mode === 'identity') {
             return redirect()->to(route('dashboard').'#ukuran-form')
                 ->with('success', $requiresBagian
-                    ? 'Data jabatan dan bag/fungsi tersimpan. Lanjutkan ke form ukuran kaporlap.'
-                    : 'Data jabatan tersimpan. Lanjutkan ke form ukuran kaporlap.');
+                    ? 'Data jabatan, bag/fungsi, dan nomor WhatsApp tersimpan. Lanjutkan ke form ukuran kaporlap.'
+                    : 'Data jabatan dan nomor WhatsApp tersimpan. Lanjutkan ke form ukuran kaporlap.');
         }
 
         return redirect()->route('dashboard')
@@ -212,7 +227,7 @@ class PersonilPortalController extends Controller
             $previousIdentity,
             $nextIdentity,
             'success',
-            'Personil memperbarui jabatan atau bag/fungsi yang berasal dari import SDM Polda NTB.',
+            'Personil memperbarui jabatan, bag/fungsi, atau nomor WhatsApp pada profil tahun berjalan.',
         );
     }
 }

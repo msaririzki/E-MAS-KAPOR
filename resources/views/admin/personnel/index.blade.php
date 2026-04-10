@@ -1843,6 +1843,11 @@
                 <div>
                     <label style="font-weight: 800; color: #000; font-size: 14px; display: block; margin-bottom: 2px;">NO HP</label>
                     <div id="detail_phone" style="font-size: 14px; font-weight: 500; color: #4B5563;"></div>
+                    <a id="detail_phone_link" href="#" target="_blank" rel="noopener noreferrer"
+                        style="display: none; margin-top: 8px; align-items: center; gap: 6px; width: fit-content; padding: 8px 12px; border-radius: 999px; background: #ECFDF5; color: #047857; font-size: 12px; font-weight: 700; text-decoration: none; border: 1px solid #A7F3D0;">
+                        <i class="ri-whatsapp-line"></i>
+                        Chat via WhatsApp
+                    </a>
                 </div>
             </div>
 
@@ -3548,6 +3553,8 @@
     }
 
     function openDetailModal(p) {
+        const phone = p.phone || (p.user ? p.user.phone : '');
+
         document.getElementById('detail_name').innerText = p.full_name;
         document.getElementById('detail_nrp').innerText = (p.nrp || '—');
         document.getElementById('detail_rank').innerText = p.rank ? p.rank.name : '—';
@@ -3565,7 +3572,17 @@
         document.getElementById('detail_golongan').innerText = p.golongan || '—';
         document.getElementById('detail_religion').innerText = p.religion || '—';
         document.getElementById('detail_gender').innerText = p.gender || '—';
-        document.getElementById('detail_phone').innerText = p.phone || '—';
+        document.getElementById('detail_phone').innerText = phone || '—';
+
+        const phoneLink = document.getElementById('detail_phone_link');
+        const waLink = buildWhatsappLink(phone);
+        if (waLink) {
+            phoneLink.href = waLink;
+            phoneLink.style.display = 'inline-flex';
+        } else {
+            phoneLink.href = '#';
+            phoneLink.style.display = 'none';
+        }
         
         // Type Badge Style
         const typeEl = document.getElementById('detail_type');
@@ -3687,6 +3704,38 @@
     function requiresJilbab(gender, religion) {
         return String(gender || '').trim().toUpperCase() === 'P'
             && String(religion || '').trim().toUpperCase() === 'ISLAM';
+    }
+
+    function normalizeWhatsappPhone(phone) {
+        const digits = String(phone || '').replace(/\D/g, '');
+
+        if (!digits) {
+            return '';
+        }
+
+        if (digits.startsWith('620')) {
+            return `62${digits.slice(3)}`;
+        }
+
+        if (digits.startsWith('0')) {
+            return `62${digits.slice(1)}`;
+        }
+
+        if (digits.startsWith('8')) {
+            return `62${digits}`;
+        }
+
+        return digits;
+    }
+
+    function buildWhatsappLink(phone) {
+        const normalized = normalizeWhatsappPhone(phone);
+
+        if (!normalized) {
+            return '';
+        }
+
+        return `https://wa.me/${normalized}`;
     }
 
     function resetJilbabField(modal) {

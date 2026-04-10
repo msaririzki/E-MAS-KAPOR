@@ -1259,6 +1259,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'full_name' => $fullName,
                             'rank_id' => $rank ? $rank->id : null,
                             'satker_id' => $satker->id,
+                            'phone' => $user?->phone,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
                             'personnel_type' => $personnelType,
@@ -1280,6 +1281,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                         $updateData = [
                             'full_name' => $fullName,
                             'satker_id' => $satker->id,
+                            'phone' => $personnel->user?->phone ?? $personnel->phone,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
                             'personnel_type' => self::resolvePersonnelType($rank, $golongan),
@@ -1308,6 +1310,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             );
                             $personnel->forceFill([
                                 'user_id' => $user->id,
+                                'phone' => $user->phone,
                             ])->save();
                             $existingUsers->put($nrp, $user);
                         } elseif ($personnel->user) {
@@ -1316,6 +1319,10 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                                 'satker_id' => $satker->id,
                                 'is_active' => (bool) $personnel->is_active,
                             ]);
+
+                            $personnel->forceFill([
+                                'phone' => $personnel->user->phone,
+                            ])->save();
                         }
                     }
 
@@ -1533,6 +1540,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'full_name' => $fullName,
                             'rank_id' => $rank->id,
                             'satker_id' => $satker->id,
+                            'phone' => $user->phone,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
                             'personnel_type' => self::resolvePersonnelType($rank, $golongan),
@@ -1546,6 +1554,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                             'full_name' => $fullName,
                             'rank_id' => $rank->id,
                             'satker_id' => $satker->id,
+                            'phone' => $personnel->user?->phone ?? $personnel->phone,
                             'jabatan' => $jabatan,
                             'bagian' => $bagian,
                             'personnel_type' => self::resolvePersonnelType($rank, $golongan),
@@ -1563,6 +1572,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
                         );
                         $personnel->forceFill([
                             'user_id' => $user->id,
+                            'phone' => $user->phone,
                         ])->save();
                     }
 
