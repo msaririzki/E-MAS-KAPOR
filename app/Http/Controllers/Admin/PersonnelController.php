@@ -294,7 +294,9 @@ class PersonnelController extends Controller
         if ($duplicateIdentity !== null) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', $this->buildDuplicatePersonnelIdentityMessage($nrp, $duplicateIdentity, (int) $validated['satker_id']));
+                ->withErrors([
+                    'nrp' => $this->buildDuplicatePersonnelIdentityMessage($nrp, $duplicateIdentity, (int) $validated['satker_id']),
+                ]);
         }
 
         $requestMode = Setting::getValue('personnel_request_mode', 'auto');
@@ -450,7 +452,9 @@ class PersonnelController extends Controller
         if ($duplicateIdentity !== null) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', $this->buildDuplicatePersonnelIdentityMessage($validated['nrp'], $duplicateIdentity, (int) $validated['satker_id']));
+                ->withErrors([
+                    'nrp' => $this->buildDuplicatePersonnelIdentityMessage($validated['nrp'], $duplicateIdentity, (int) $validated['satker_id']),
+                ]);
         }
 
         DB::beginTransaction();
@@ -545,7 +549,9 @@ class PersonnelController extends Controller
         if ($duplicateIdentity !== null) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', $this->buildDuplicatePersonnelIdentityMessage($validated['nrp'], $duplicateIdentity, (int) $validated['satker_id']));
+                ->withErrors([
+                    'nrp' => $this->buildDuplicatePersonnelIdentityMessage($validated['nrp'], $duplicateIdentity, (int) $validated['satker_id']),
+                ]);
         }
 
         DB::beginTransaction();

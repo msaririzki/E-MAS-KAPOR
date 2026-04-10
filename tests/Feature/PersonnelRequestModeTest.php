@@ -179,10 +179,9 @@ class PersonnelRequestModeTest extends TestCase
         ]);
 
         $response->assertRedirect(route('admin.personnel.index'));
-        $response->assertSessionHas(
-            'error',
-            'NRP/NIP 76100153 sudah terdaftar atas nama PERSONIL LAMA pada satker POLRES DOMPU. Silakan koordinasikan dengan superadmin.'
-        );
+        $response->assertSessionHasErrors([
+            'nrp' => 'NRP/NIP 76100153 sudah terdaftar atas nama PERSONIL LAMA pada satker POLRES DOMPU. Silakan koordinasikan dengan superadmin.',
+        ]);
 
         $this->assertDatabaseMissing('personnels', [
             'full_name' => 'PERSONIL BARU',
@@ -231,10 +230,9 @@ class PersonnelRequestModeTest extends TestCase
             ]);
 
         $response->assertRedirect(route('admin.personnel.index'));
-        $response->assertSessionHas(
-            'error',
-            'NRP/NIP 76100156 sudah terdaftar atas nama AKUN PERSONIL LAMA pada satker POLRES BIMA.'
-        );
+        $response->assertSessionHasErrors([
+            'nrp' => 'NRP/NIP 76100156 sudah terdaftar atas nama AKUN PERSONIL LAMA pada satker POLRES BIMA.',
+        ]);
 
         $this->assertDatabaseMissing('personnels', [
             'full_name' => 'PERSONIL BARU',
@@ -324,10 +322,9 @@ class PersonnelRequestModeTest extends TestCase
             ]);
 
         $response->assertRedirect(route('admin.personnel.index'));
-        $response->assertSessionHas(
-            'error',
-            'NRP/NIP 76100158 sudah terdaftar atas nama PERSONIL SATKER B pada satker POLRES DOMPU. Silakan koordinasikan dengan superadmin.'
-        );
+        $response->assertSessionHasErrors([
+            'nrp' => 'NRP/NIP 76100158 sudah terdaftar atas nama PERSONIL SATKER B pada satker POLRES DOMPU. Silakan koordinasikan dengan superadmin.',
+        ]);
 
         $this->assertDatabaseHas('personnels', [
             'id' => $personnelToEdit->id,
@@ -397,10 +394,9 @@ class PersonnelRequestModeTest extends TestCase
             ]);
 
         $response->assertRedirect(route('admin.personnel.index'));
-        $response->assertSessionHas(
-            'error',
-            'NRP/NIP 76100160 sudah terdaftar atas nama AKUN CADANGAN pada satker POLRES BIMA.'
-        );
+        $response->assertSessionHasErrors([
+            'nrp' => 'NRP/NIP 76100160 sudah terdaftar atas nama AKUN CADANGAN pada satker POLRES BIMA.',
+        ]);
 
         $this->assertDatabaseHas('personnels', [
             'id' => $personnelToEdit->id,

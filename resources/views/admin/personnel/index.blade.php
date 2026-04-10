@@ -1370,6 +1370,12 @@
                     Sebagai <strong>Admin Satker</strong>, Anda hanya dapat menambahkan personel untuk satker Anda sendiri. Jika mode verifikasi aktif, data baru akan masuk sebagai <strong>usulan</strong> dan menunggu verifikasi superadmin.
                 </div>
                 @endif
+                @if(old('modal_type') == 'add' && $errors->has('nrp'))
+                <div style="margin-bottom: 18px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 14px; color: #B91C1C; font-size: 13px; line-height: 1.6;">
+                    <strong style="display:block; margin-bottom: 4px;">NRP/NIP tidak bisa digunakan</strong>
+                    {{ $errors->first('nrp') }}
+                </div>
+                @endif
                 <div class="form-grid">
                     <!-- Row 1 -->
                     <div class="form-group">
@@ -1899,6 +1905,12 @@
                 @if(auth()->user()->hasRole('admin_satker'))
                 <div style="margin-bottom: 18px; background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 14px 16px; color: #1D4ED8; font-size: 13px; line-height: 1.6;">
                     Sebagai <strong>Admin Satker</strong>, Anda dapat mengubah seluruh data personel pada form ini.
+                </div>
+                @endif
+                @if(old('modal_type') == 'edit' && $errors->has('nrp'))
+                <div style="margin-bottom: 18px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 14px; color: #B91C1C; font-size: 13px; line-height: 1.6;">
+                    <strong style="display:block; margin-bottom: 4px;">NRP/NIP tidak bisa digunakan</strong>
+                    {{ $errors->first('nrp') }}
                 </div>
                 @endif
                 <div class="form-grid">
@@ -3860,7 +3872,7 @@
     @if(session('error')) showToast("{{ session('error') }}", 'error'); @endif
     @if(session('warning')) showToast("{{ session('warning') }}", 'warning'); @endif
     @if($errors->has('nrp')) 
-        showToast("NRP/NIP sudah terdaftar dalam sistem.", 'error'); 
+        showToast(@json($errors->first('nrp')), 'error'); 
     @elseif($errors->any()) 
         showToast("Terjadi kesalahan input data.", 'error'); 
     @endif
@@ -4259,7 +4271,7 @@
         filterMeasurements(initialAddGender, 'addPersonnelModal');
         syncJilbabVisibility('addPersonnelModal');
 
-        @if($errors->any())
+        @if($errors->any() || ($errors->has('nrp') && old('modal_type')))
             @if(old('modal_type') == 'add')
                 openModal('addPersonnelModal');
                 // Re-initialize visibility if Satker was selected
