@@ -171,13 +171,31 @@ class TestimonialInsightService
                 1,
             );
 
+            $ratingCounts = Testimonial::where('category', $key)
+                ->selectRaw('COALESCE(rating, 5) as normalized_rating, COUNT(*) as total')
+                ->groupBy('normalized_rating')
+                ->pluck('total', 'normalized_rating');
+
+            $ratingBreakdown = collect(range(5, 1))
+                ->map(function (int $stars) use ($ratingCounts, $count): array {
+                    $starCount = (int) ($ratingCounts[$stars] ?? 0);
+
+                    return [
+                        'stars' => $stars,
+                        'count' => $starCount,
+                        'percentage' => $this->percentage($starCount, $count),
+                    ];
+                })->toArray();
+
             $stats[$key] = [
                 'label' => $label,
                 'count' => $count,
                 'average_rating' => $avgRating,
+                'score' => $count > 0 ? (int) round(($avgRating / 5) * 100) : 0,
                 'icon' => $icons[$key]['icon'] ?? 'ri-question-line',
                 'bg' => $icons[$key]['bg'] ?? '#f8fafc',
                 'color' => $icons[$key]['color'] ?? '#64748b',
+                'ratingBreakdown' => $ratingBreakdown,
             ];
         }
 

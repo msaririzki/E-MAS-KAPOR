@@ -645,28 +645,34 @@
                 <h3><i class="ri-bar-chart-horizontal-line" style="margin-right: 8px; color: var(--brand);"></i>Distribusi Rating</h3>
             </div>
             <div class="card-body">
-                <div class="breakdown-list">
-                    @foreach($ratingBreakdown as $bucket)
-                        <div class="breakdown-item">
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                <div style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text-main);">
-                                    <span>{{ $bucket['stars'] }} Bintang</span>
-                                    <span style="display: inline-flex; gap: 2px; color: #f59e0b;">
-                                        @for($star = 1; $star <= $bucket['stars']; $star++)
-                                            <i class="ri-star-fill"></i>
-                                        @endfor
-                                    </span>
-                                </div>
-                                <div style="font-size: 13px; color: var(--text-muted);">
-                                    {{ number_format($bucket['count']) }} masukan
-                                    <strong style="color: var(--text-main); margin-left: 6px;">{{ number_format($bucket['percentage'], 1) }}%</strong>
-                                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 24px;">
+                    @if(isset($categoryStats))
+                        @foreach($categoryStats as $catKey => $catStat)
+                        <div>
+                            <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-color);">
+                                <i class="{{ $catStat['icon'] }}" style="color: {{ $catStat['color'] }}; margin-right: 4px;"></i> {{ $catStat['label'] }}
                             </div>
-                            <div class="bar-track">
-                                <div class="bar-fill" style="width: {{ $bucket['percentage'] }}%;"></div>
+                            <div class="breakdown-list">
+                                @foreach($catStat['ratingBreakdown'] as $bucket)
+                                    <div class="breakdown-item" style="margin-bottom: 12px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                            <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--text-main);">
+                                                <span>{{ $bucket['stars'] }} <i class="ri-star-fill" style="color: #f59e0b;"></i></span>
+                                            </div>
+                                            <div style="font-size: 12px; color: var(--text-muted);">
+                                                {{ number_format($bucket['count']) }} masukan
+                                                <strong style="color: var(--text-main); margin-left: 6px;">{{ number_format($bucket['percentage'], 1) }}%</strong>
+                                            </div>
+                                        </div>
+                                        <div class="bar-track" style="height: 8px; margin-top: 6px;">
+                                            <div class="bar-fill" style="width: {{ $bucket['percentage'] }}%;"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
-                    @endforeach
+                        @endforeach
+                    @endif
                 </div>
 
                 <div class="sentiment-row">

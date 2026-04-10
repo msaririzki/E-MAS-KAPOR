@@ -426,7 +426,7 @@
     <form method="GET" action="{{ route('admin.personnel.index') }}" class="filter-form" id="filterForm">
         <div class="search-container" style="flex: 2;">
             <i class="ri-search-line"></i>
-            <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari berdasarkan nama, NRP/NIP, atau golongan..." oninput="debounceSearch()">
+            <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari berdasarkan nama, NRP/NIP, atau golongan..." oninput="debounceSearch()" onkeydown="handleSearchKeydown(event)">
             @if(request('search'))
                 <button type="button" class="clear-search" onclick="document.getElementById('searchInput').value=''; document.getElementById('filterForm').submit();" style="background: none; border: none; color: #D1D5DB; cursor: pointer; padding: 4px; display: flex; align-items: center; margin-left: 8px;">
                     <i class="ri-close-circle-fill" style="font-size: 18px;"></i>
@@ -453,6 +453,7 @@
                 <input type="hidden" name="rank_id" value="{{ request('rank_id') }}">
             </div>
 
+            @unless(auth()->user()->hasRole('admin_satker'))
             <div class="custom-select-wrapper" style="flex: 1;">
                 <div class="custom-select" onclick="toggleDropdown(this)">
                     <div class="select-trigger">
@@ -472,6 +473,28 @@
                     </div>
                 </div>
                 <input type="hidden" name="satker_id" value="{{ request('satker_id') }}">
+            </div>
+            @endunless
+
+            <div class="custom-select-wrapper" style="flex: 1;">
+                <div class="custom-select" onclick="toggleDropdown(this)">
+                    <div class="select-trigger">
+                        <span>{{ request('bagian') ?: 'Semua Bag/Fungsi' }}</span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="select-search-container">
+                            <input type="text" class="select-search-input" placeholder="Cari Bag/Fungsi..." onclick="event.stopPropagation()" onkeyup="filterSatkerOptions(this)">
+                        </div>
+                        <div class="options-scroll">
+                            <div class="option {{ !request('bagian') ? 'selected' : '' }}" data-label="SEMUA BAG/FUNGSI" onclick="selectOptionSearch(this, 'bagian', '', 'SEMUA BAG/FUNGSI')">SEMUA BAG/FUNGSI</div>
+                            @foreach($bagians as $bagian)
+                                <div class="option {{ request('bagian') == $bagian ? 'selected' : '' }}" data-label="{{ $bagian }}" onclick="selectOptionSearch(this, 'bagian', '{{ $bagian }}', '{{ $bagian }}')">{{ $bagian }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="bagian" value="{{ request('bagian') }}">
             </div>
 
             {{-- ── FILTER UKURAN (hanya muncul saat status=incomplete) ── --}}
@@ -1517,7 +1540,15 @@
                             <input type="hidden" name="bagian" id="add_bagian_select" value="{{ old('modal_type') == 'add' ? old('bagian') : '' }}" disabled>
                         </div>
                     </div>
-                    @foreach(['keterangan' => 'KETERANGAN 1', 'keterangan_2' => 'KETERANGAN 2', 'keterangan_3' => 'KETERANGAN 3', 'keterangan_4' => 'KETERANGAN 4'] as $ketField => $ketLabel)
+                    @php
+                        $addKetFields = ['keterangan' => 'KETERANGAN 1'];
+                        if(auth()->user()->hasRole('superadmin')) {
+                            $addKetFields['keterangan_2'] = 'KETERANGAN 2';
+                            $addKetFields['keterangan_3'] = 'KETERANGAN 3';
+                            $addKetFields['keterangan_4'] = 'KETERANGAN 4';
+                        }
+                    @endphp
+                    @foreach($addKetFields as $ketField => $ketLabel)
                     <div class="form-group">
                         <label>{{ $ketLabel }}</label>
                         <div class="custom-select-wrapper">
@@ -2050,7 +2081,15 @@
                             <input type="hidden" name="bagian" id="edit_bagian_select" value="{{ old('modal_type') == 'edit' ? old('bagian') : '' }}" disabled>
                         </div>
                     </div>
-                    @foreach(['keterangan' => 'KETERANGAN 1', 'keterangan_2' => 'KETERANGAN 2', 'keterangan_3' => 'KETERANGAN 3', 'keterangan_4' => 'KETERANGAN 4'] as $ketField => $ketLabel)
+                    @php
+                        $editKetFields = ['keterangan' => 'KETERANGAN 1'];
+                        if(auth()->user()->hasRole('superadmin')) {
+                            $editKetFields['keterangan_2'] = 'KETERANGAN 2';
+                            $editKetFields['keterangan_3'] = 'KETERANGAN 3';
+                            $editKetFields['keterangan_4'] = 'KETERANGAN 4';
+                        }
+                    @endphp
+                    @foreach($editKetFields as $ketField => $ketLabel)
                     <div class="form-group">
                         <label>{{ $ketLabel }}</label>
                         <div class="custom-select-wrapper">
@@ -3564,9 +3603,11 @@
         
         let ketArr = [];
         if (p.keterangan) ketArr.push(p.keterangan);
+        @if(auth()->user()->hasRole('superadmin'))
         if (p.keterangan_2) ketArr.push(p.keterangan_2);
         if (p.keterangan_3) ketArr.push(p.keterangan_3);
         if (p.keterangan_4) ketArr.push(p.keterangan_4);
+        @endif
         document.getElementById('detail_keterangan').innerText = ketArr.length > 0 ? ketArr.join(' / ') : '—';
         
         document.getElementById('detail_golongan').innerText = p.golongan || '—';
@@ -3799,7 +3840,6 @@
         document.getElementById('edit_rank_id').value = p.rank_id;
         document.getElementById('edit_rank_label').innerText = p.rank ? p.rank.name : '— Pilih Pangkat —';
         
-        // Set Satker
         document.getElementById('edit_satker_id').value = p.satker_id;
         const satkerName = p.satker ? p.satker.name : '';
         document.getElementById('edit_satker_label').innerText = satkerName || '— Pilih Satker —';
@@ -3808,14 +3848,15 @@
         updateBagianVisibility(satkerName, 'edit', p.bagian);
         
         document.getElementById('edit_jabatan').value = p.jabatan || '';
-        document.getElementById('edit_keterangan').value = p.keterangan || '';
-        document.getElementById('edit_keterangan_label').innerText = p.keterangan || '— Pilih KETERANGAN 1 —';
-        document.getElementById('edit_keterangan_2').value = p.keterangan_2 || '';
-        document.getElementById('edit_keterangan_2_label').innerText = p.keterangan_2 || '— Pilih KETERANGAN 2 —';
-        document.getElementById('edit_keterangan_3').value = p.keterangan_3 || '';
-        document.getElementById('edit_keterangan_3_label').innerText = p.keterangan_3 || '— Pilih KETERANGAN 3 —';
-        document.getElementById('edit_keterangan_4').value = p.keterangan_4 || '';
-        document.getElementById('edit_keterangan_4_label').innerText = p.keterangan_4 || '— Pilih KETERANGAN 4 —';
+        
+        if(document.getElementById('edit_keterangan')) document.getElementById('edit_keterangan').value = p.keterangan || '';
+        if(document.getElementById('edit_keterangan_label')) document.getElementById('edit_keterangan_label').innerText = p.keterangan || '— Pilih KETERANGAN 1 —';
+        if(document.getElementById('edit_keterangan_2')) document.getElementById('edit_keterangan_2').value = p.keterangan_2 || '';
+        if(document.getElementById('edit_keterangan_2_label')) document.getElementById('edit_keterangan_2_label').innerText = p.keterangan_2 || '— Pilih KETERANGAN 2 —';
+        if(document.getElementById('edit_keterangan_3')) document.getElementById('edit_keterangan_3').value = p.keterangan_3 || '';
+        if(document.getElementById('edit_keterangan_3_label')) document.getElementById('edit_keterangan_3_label').innerText = p.keterangan_3 || '— Pilih KETERANGAN 3 —';
+        if(document.getElementById('edit_keterangan_4')) document.getElementById('edit_keterangan_4').value = p.keterangan_4 || '';
+        if(document.getElementById('edit_keterangan_4_label')) document.getElementById('edit_keterangan_4_label').innerText = p.keterangan_4 || '— Pilih KETERANGAN 4 —';
         
         document.getElementById('edit_phone').value = p.phone || '';
         document.getElementById('edit_golongan').value = p.golongan || '';
@@ -4261,9 +4302,29 @@
     let searchTimeout;
     function debounceSearch() {
         clearTimeout(searchTimeout);
+        const searchInput = document.getElementById('searchInput');
+
+        if (!searchInput) {
+            return;
+        }
+
         searchTimeout = setTimeout(() => {
+            if (/\s$/.test(searchInput.value)) {
+                return;
+            }
+
             document.getElementById('filterForm').submit();
         }, 500);
+    }
+
+    function handleSearchKeydown(event) {
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        event.preventDefault();
+        clearTimeout(searchTimeout);
+        document.getElementById('filterForm').submit();
     }
 
     function updateSort(sort, direction) {

@@ -16,16 +16,20 @@ class PersonnelExport implements WithMultipleSheets
 {
     protected ?array $satkerIds;
 
+    protected ?array $personnelIds;
+
     protected string $satkerName;
 
     /**
      * @param  array|null  $satkerIds  Array of satker IDs to filter, null = semua.
+     * @param  array|null  $personnelIds  Array of personnel IDs to filter, null = tanpa filter personel spesifik.
      * @param  string  $satkerName  Nama untuk header.
      */
-    public function __construct(?array $satkerIds = null, string $satkerName = 'SEMUA SATKER')
+    public function __construct(?array $satkerIds = null, string $satkerName = 'SEMUA SATKER', ?array $personnelIds = null)
     {
         $this->satkerIds = $satkerIds;
         $this->satkerName = $satkerName;
+        $this->personnelIds = $personnelIds;
     }
 
     public function sheets(): array
@@ -41,6 +45,10 @@ class PersonnelExport implements WithMultipleSheets
 
         if (! empty($this->satkerIds)) {
             $query->whereIn('satker_id', $this->satkerIds);
+        }
+
+        if ($this->personnelIds !== null) {
+            $query->whereIn('personnels.id', $this->personnelIds);
         }
 
         $all = $query->get();

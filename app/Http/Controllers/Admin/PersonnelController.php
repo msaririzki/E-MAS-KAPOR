@@ -25,8 +25,10 @@ use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
 use App\Services\SdmImportRunService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -65,12 +67,16 @@ class PersonnelController extends Controller
             $query->where('rank_id', $request->rank_id);
         }
 
-        if ($request->filled('satker_id')) {
+        if ($request->filled('satker_id') && ! $request->user()?->hasRole('admin_satker')) {
             $query->where('satker_id', $request->satker_id);
         }
 
         if ($request->filled('keterangan')) {
             $query->where('keterangan', $request->keterangan);
+        }
+
+        if ($request->filled('bagian')) {
+            $query->whereRaw('UPPER(bagian) = ?', [Str::upper(trim((string) $request->bagian))]);
         }
 
         if ($request->get('status') === 'pending_verification') {
@@ -198,11 +204,7 @@ class PersonnelController extends Controller
 
         $ranks = Rank::orderBy('sort_order')->get();
         $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
-        $bagians = BagianOption::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->pluck('name');
+        $bagians = $this->resolveAvailableBagians($request);
         $printSignatoryDefaults = app(ExportSignatorySettingService::class)->resolveForUser($request->user());
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
 
@@ -212,10 +214,13 @@ class PersonnelController extends Controller
 
     private function hasActivePersonnelFilters(Request $request): bool
     {
+        $satkerFilterActive = $request->filled('satker_id') && ! $request->user()?->hasRole('admin_satker');
+
         return $request->filled('search')
             || $request->filled('rank_id')
-            || $request->filled('satker_id')
+            || $satkerFilterActive
             || $request->filled('keterangan')
+            || $request->filled('bagian')
             || $request->get('status') === 'pending_verification'
             || $request->get('status') === 'incomplete'
             || $request->filled('missing_size')
@@ -230,7 +235,7 @@ class PersonnelController extends Controller
 
         $labels = [];
 
-        if ($request->filled('satker_id')) {
+        if ($request->filled('satker_id') && ! $request->user()?->hasRole('admin_satker')) {
             $satker = Satker::find($request->input('satker_id'));
             if ($satker) {
                 $labels[] = 'Satker: '.$satker->name;
@@ -242,6 +247,10 @@ class PersonnelController extends Controller
             if ($rank) {
                 $labels[] = 'Pangkat: '.$rank->name;
             }
+        }
+
+        if ($request->filled('bagian')) {
+            $labels[] = 'Bag/Fungsi: '.$request->input('bagian');
         }
 
         if ($request->filled('search')) {
@@ -257,6 +266,92 @@ class PersonnelController extends Controller
         }
 
         return $labels !== [] ? implode(' • ', $labels) : 'Berdasarkan filter aktif';
+    }
+
+    private function resolveAvailableBagians(Request $request)
+    {
+        $masterBagians = BagianOption::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name');
+
+        $personnelBagiansQuery = Personnel::query()
+            ->forCurrentSatker()
+            ->whereNotNull('bagian')
+            ->where('bagian', '!=', '');
+
+        if ($request->filled('satker_id') && ! $request->user()?->hasRole('admin_satker')) {
+            $personnelBagiansQuery->where('satker_id', $request->integer('satker_id'));
+        }
+
+        $personnelBagians = $personnelBagiansQuery
+            ->distinct()
+            ->orderBy('bagian')
+            ->pluck('bagian');
+
+        return $masterBagians
+            ->merge($personnelBagians)
+            ->map(fn ($bagian) => strtoupper(trim((string) $bagian)))
+            ->filter()
+            ->unique()
+            ->values();
+    }
+
+    private function applyPersonnelLookupFilters(Builder $query, Request $request): void
+    {
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+
+            $query->where(function (Builder $builder) use ($search) {
+                $builder->where('full_name', 'LIKE', "%{$search}%")
+                    ->orWhere('nrp', 'LIKE', "%{$search}%")
+                    ->orWhere('jabatan', 'LIKE', "%{$search}%")
+                    ->orWhere('bagian', 'LIKE', "%{$search}%")
+                    ->orWhereHas('rank', fn (Builder $rankQuery) => $rankQuery->where('name', 'LIKE', "%{$search}%"));
+            });
+        }
+
+        if ($request->filled('bagian')) {
+            $query->whereRaw('UPPER(bagian) = ?', [Str::upper(trim((string) $request->input('bagian')))]);
+        }
+    }
+
+    private function filterPersonnelsByCompletion(Collection $personnels, ?string $status): Collection
+    {
+        return match ($status) {
+            'pending' => $personnels
+                ->filter(fn (Personnel $personnel) => ! $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
+                ->values(),
+            'submitted' => $personnels
+                ->filter(fn (Personnel $personnel) => $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
+                ->values(),
+            default => $personnels->values(),
+        };
+    }
+
+    private function resolvePersonnelExportIds(Request $request, ?array $satkerIds): ?array
+    {
+        $status = $request->input('status');
+        $hasExportFilters = $request->filled('search')
+            || $request->filled('bagian')
+            || in_array($status, ['pending', 'submitted'], true);
+
+        if (! $hasExportFilters) {
+            return null;
+        }
+
+        $query = Personnel::query()->with('rank');
+
+        if ($satkerIds !== null) {
+            $query->whereIn('satker_id', $satkerIds);
+        }
+
+        $this->applyPersonnelLookupFilters($query, $request);
+
+        return $this->filterPersonnelsByCompletion($query->get(), $status)
+            ->pluck('id')
+            ->all();
     }
 
     public function store(Request $request)
@@ -283,6 +378,10 @@ class PersonnelController extends Controller
             'keterangan_4' => 'nullable|string|max:255',
             'kapor_sizes' => 'nullable|array',
         ]);
+
+        if (!auth()->user()?->hasRole('superadmin')) {
+            unset($validated['keterangan_2'], $validated['keterangan_3'], $validated['keterangan_4']);
+        }
 
         if ($isAdminSatker) {
             $validated['satker_id'] = (int) $request->user()->satker_id;
@@ -551,6 +650,10 @@ class PersonnelController extends Controller
             'keterangan_4' => 'nullable|string|max:255',
             'kapor_sizes' => 'nullable|array',
         ]);
+
+        if (!auth()->user()?->hasRole('superadmin')) {
+            unset($validated['keterangan_2'], $validated['keterangan_3'], $validated['keterangan_4']);
+        }
 
         $validated['satker_id'] = (int) $request->user()->satker_id;
         $validated['phone'] = User::normalizePhone($validated['phone'] ?? null);
@@ -894,7 +997,9 @@ class PersonnelController extends Controller
             "Export: {$satkerName}"
         );
 
-        return Excel::download(new PersonnelExport($satkerIds, $satkerName), $fileName);
+        $personnelIds = $this->resolvePersonnelExportIds($request, $satkerIds);
+
+        return Excel::download(new PersonnelExport($satkerIds, $satkerName, $personnelIds), $fileName);
     }
 
     /**
@@ -1663,18 +1768,23 @@ class PersonnelController extends Controller
         $request->validate([
             'satker_id' => 'required|exists:satkers,id',
             'fiscal_year' => 'nullable|string',
+            'search' => 'nullable|string',
+            'bagian' => 'nullable|string|max:255',
+            'status' => 'nullable|in:pending,submitted',
         ]);
 
         $satker = Satker::findOrFail($request->satker_id);
         $fiscalYear = $request->get('fiscal_year', Setting::getValue('fiscal_year', date('Y')));
 
-        $personnels = Personnel::with(['rank', 'submissions' => function ($q) use ($fiscalYear) {
+        $query = Personnel::with(['rank', 'submissions' => function ($q) use ($fiscalYear) {
             $q->where('fiscal_year', $fiscalYear)->with('kaporSize', 'kaporItem');
         }])
             ->where('satker_id', $satker->id)
-            ->where('is_active', true)
-            ->orderBy('id')
-            ->get();
+            ->where('is_active', true);
+
+        $this->applyPersonnelLookupFilters($query, $request);
+
+        $personnels = $this->filterPersonnelsByCompletion($query->get(), $request->input('status'));
 
         // Sort: berdasarkan rank sort_order lalu nama
         $personnels = $personnels->sort(function ($a, $b) {

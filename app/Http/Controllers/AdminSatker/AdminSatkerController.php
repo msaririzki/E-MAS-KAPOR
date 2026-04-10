@@ -3,15 +3,23 @@
 namespace App\Http\Controllers\AdminSatker;
 
 use App\Http\Controllers\Controller;
+use App\Models\BagianOption;
 use App\Models\Personnel;
 use App\Models\Satker;
 use App\Models\Setting;
 use App\Services\AuditLogger;
 use App\Services\ExportSignatorySettingService;
+use App\Services\KaporRequirementService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class AdminSatkerController extends Controller
 {
+    public function __construct(
+        private readonly KaporRequirementService $kaporRequirementService,
+    ) {}
+
     /**
      * Monitoring — Progres pengisian kapor semua personil di satker.
      */
@@ -84,10 +92,33 @@ class AdminSatkerController extends Controller
         $satker = Satker::find($satkerId);
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
 
+        $personnelsQuery = Personnel::with(['rank'])
+            ->where('satker_id', $satkerId);
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+
+            $personnelsQuery->where(function ($query) use ($search) {
+                $query->where('full_name', 'LIKE', "%{$search}%")
+                    ->orWhere('nrp', 'LIKE', "%{$search}%")
+                    ->orWhere('jabatan', 'LIKE', "%{$search}%")
+                    ->orWhere('bagian', 'LIKE', "%{$search}%")
+                    ->orWhereHas('rank', fn ($rankQuery) => $rankQuery->where('name', 'LIKE', "%{$search}%"));
+            });
+        }
+
+        if ($request->filled('bagian')) {
+            $personnelsQuery->whereRaw('UPPER(bagian) = ?', [Str::upper(trim((string) $request->input('bagian')))]);
+        }
+
         // Get all personnel sorted by rank then name
-        $personnels = Personnel::with(['rank'])
-            ->where('satker_id', $satkerId)
+        $personnels = $personnelsQuery
             ->get()
+            ->map(function (Personnel $personnel) {
+                $personnel->is_size_complete = $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel);
+
+                return $personnel;
+            })
             ->sort(function ($a, $b) {
                 $rankA = $a->rank->sort_order ?? 999;
                 $rankB = $b->rank->sort_order ?? 999;
@@ -96,11 +127,21 @@ class AdminSatkerController extends Controller
             })
             ->values();
 
+        if ($request->get('status') === 'pending') {
+            $personnels = $personnels
+                ->filter(fn (Personnel $personnel) => ! ($personnel->is_size_complete ?? false))
+                ->values();
+        } elseif ($request->get('status') === 'submitted') {
+            $personnels = $personnels
+                ->filter(fn (Personnel $personnel) => (bool) ($personnel->is_size_complete ?? false))
+                ->values();
+        }
+
         // Summary stats
         $total = $personnels->count();
         $pria = $personnels->where('gender', 'L')->count();
         $wanita = $personnels->where('gender', 'P')->count();
-        $submitted = $personnels->filter(fn ($p) => $p->kapor_sizes && $p->rank_id && $p->nrp)->count();
+        $submitted = $personnels->filter(fn (Personnel $personnel) => (bool) ($personnel->is_size_complete ?? false))->count();
         $pending = $total - $submitted;
         $fillRate = $total > 0 ? round(($submitted / $total) * 100, 1) : 0;
 
@@ -128,7 +169,31 @@ class AdminSatkerController extends Controller
             'jilbab' => 'Jilbab',
         ];
 
-        return view('admin-satker.reports', compact('stats', 'satker', 'fiscalYear', 'personnels', 'jsonMapping'));
+        $bagians = $this->resolveAvailableBagians($satkerId);
+
+        return view('admin-satker.reports', compact('stats', 'satker', 'fiscalYear', 'personnels', 'jsonMapping', 'bagians'));
+    }
+
+    private function resolveAvailableBagians(int $satkerId): Collection
+    {
+        return BagianOption::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name')
+            ->merge(
+                Personnel::query()
+                    ->where('satker_id', $satkerId)
+                    ->whereNotNull('bagian')
+                    ->where('bagian', '!=', '')
+                    ->distinct()
+                    ->orderBy('bagian')
+                    ->pluck('bagian')
+            )
+            ->map(fn ($bagian) => strtoupper(trim((string) $bagian)))
+            ->filter()
+            ->unique()
+            ->values();
     }
 
     /**

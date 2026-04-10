@@ -97,39 +97,27 @@
     {{-- ═══ Kepuasan & Testimoni (Horizontal Modern) ═══ --}}
     <div class="satisfaction-horizontal-wrapper">
         <div class="sat-main-stats">
-            <div class="sat-overview-row">
-                <div class="sat-score-circle">
-                    <span class="score-val count-up" data-val="{{ $testimonialInsights['serviceScore'] }}">0</span>
-                    <span class="score-lbl">Skor</span>
-                </div>
-                <div class="sat-rating-info">
-                    <div class="sat-stars-row">
-                        <h2><span class="count-up" data-val="{{ $testimonialInsights['averageRating'] }}" data-decimals="1">0.0</span><small>/5</small></h2>
-                        <div class="stars">
-                            @for($star = 1; $star <= 5; $star++)
-                                <i class="{{ $testimonialInsights['averageRating'] >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
-                            @endfor
-                        </div>
-                    </div>
-                    <div class="sat-total-reviews"><strong class="count-up" data-val="{{ $testimonialInsights['totalTestimonials'] }}">0</strong> ulasan masuk</div>
-                </div>
-            </div>
-
             @if(!empty($testimonialInsights['categoryStats']))
-                <div class="sat-category-grid">
+                <div class="sat-category-grid" style="margin-top: 0;">
                     @foreach($testimonialInsights['categoryStats'] as $catStat)
-                        <div class="sat-category-card">
-                            <div class="sat-category-card-top">
+                        <div class="sat-category-card" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+                            <div class="sat-category-card-top" style="justify-content: center; margin-bottom: 12px; width: 100%;">
                                 <div class="sat-category-icon" style="background: {{ $catStat['bg'] }}; color: {{ $catStat['color'] }};">
                                     <i class="{{ $catStat['icon'] }}"></i>
                                 </div>
                                 <div class="sat-category-label">{{ $catStat['label'] }}</div>
                             </div>
-                            <div class="sat-category-rating">
+                            
+                            <div class="sat-score-circle" style="width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 12px; animation: none; box-shadow: 0 4px 10px rgba(198, 40, 40, 0.15);">
+                                <span class="score-val count-up" data-val="{{ $catStat['score'] }}" style="font-size: 24px; margin-bottom: 0;">0</span>
+                                <span class="score-lbl" style="font-size: 9px; margin-top:2px;">Skor</span>
+                            </div>
+
+                            <div class="sat-category-rating" style="justify-content: center;">
                                 <span class="count-up" data-val="{{ $catStat['average_rating'] }}" data-decimals="1">0.0</span>
                                 <small>/5</small>
                             </div>
-                            <div class="sat-category-stars">
+                            <div class="sat-category-stars" style="justify-content: center;">
                                 @for($star = 1; $star <= 5; $star++)
                                     <i class="{{ $catStat['average_rating'] >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
                                 @endfor
@@ -141,25 +129,10 @@
                     @endforeach
                 </div>
             @endif
-
-            <div class="sat-rating-breakdown-wrap">
-                <div class="sat-rating-breakdown-title">Distribusi rating</div>
-                <div class="sat-rating-breakdown">
-                    @foreach($testimonialInsights['ratingBreakdown'] as $breakdown)
-                    <div class="breakdown-row">
-                        <div class="star-lbl">{{ $breakdown['stars'] }} <i class="ri-star-fill"></i></div>
-                        <div class="bar-track">
-                            <div class="bar-fill" data-width="{{ $breakdown['percentage'] }}" style="width: 0%;"></div>
-                        </div>
-                        <div class="count-lbl">{{ $breakdown['count'] }}</div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
         </div>
-
         
-        <div class="sat-quotes-marquee">
+        <div class="sat-right-panel" style="display: flex; flex-direction: column; width: 100%; min-width: 0; justify-content: space-between;">
+            <div class="sat-quotes-marquee" style="min-height: auto; align-items: flex-start; padding-top: 16px;">
             @if($testimonialInsights['dashboardQuotes']->isNotEmpty())
                 <div class="quotes-track">
                     @foreach($testimonialInsights['dashboardQuotes'] as $quote)
@@ -238,6 +211,28 @@
             @endif
         </div>
     </div>
+        
+    <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; width: 100%; margin-top: 4px;">
+        @if(!empty($testimonialInsights['categoryStats']))
+            @foreach($testimonialInsights['categoryStats'] as $catStat)
+            <div class="sat-rating-breakdown-wrap" style="padding: 12px 16px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); border-top: none;">
+                <div class="sat-rating-breakdown-title" style="border:none; margin-bottom: 8px; text-transform: uppercase;">Distribusi {{ $catStat['label'] }}</div>
+                <div class="sat-rating-breakdown">
+                    @foreach($catStat['ratingBreakdown'] as $breakdown)
+                    <div class="breakdown-row">
+                        <div class="star-lbl">{{ $breakdown['stars'] }} <i class="ri-star-fill"></i></div>
+                        <div class="bar-track">
+                            <div class="bar-fill" data-width="{{ $breakdown['percentage'] }}" style="width: 0%;"></div>
+                        </div>
+                        <div class="count-lbl">{{ $breakdown['count'] }}</div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endforeach
+        @endif
+    </div>
+</div>
     {{-- ═══ Chart Progres per Satker (Full Width) ═══ --}}
     <div class="card" style="margin-bottom:24px;">
                 <div class="card-head">
