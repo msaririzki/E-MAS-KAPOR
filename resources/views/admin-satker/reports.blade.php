@@ -72,6 +72,38 @@
     </div>
 </div>
 
+<form method="GET" action="{{ route('admin-satker.reports') }}" class="no-print" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-bottom: 20px; background: #fff; border: 1px solid var(--slate-200); border-radius: 10px; padding: 16px;">
+    <div style="flex: 1 1 240px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Cari Personel</label>
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Nama, NRP/NIP, jabatan, bag/fungsi" class="form-input" style="width: 100%;">
+    </div>
+    <div style="flex: 0 1 180px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Status Ukuran</label>
+        <select name="status" class="form-input" style="width: 100%; appearance: auto;">
+            <option value="">Semua Status</option>
+            <option value="submitted" {{ request('status') === 'submitted' ? 'selected' : '' }}>Sudah Lengkap</option>
+            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Belum Lengkap</option>
+        </select>
+    </div>
+    <div style="flex: 0 1 220px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;">Bag / Fungsi</label>
+        <select name="bagian" class="form-input" style="width: 100%; appearance: auto;">
+            <option value="">Semua Bag / Fungsi</option>
+            @foreach($bagians as $bagian)
+                <option value="{{ $bagian }}" {{ request('bagian') === $bagian ? 'selected' : '' }}>{{ $bagian }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <button type="submit" class="btn btn-primary">
+            <i class="ri-filter-3-line"></i> Terapkan
+        </button>
+        <a href="{{ route('admin-satker.reports') }}" class="btn btn-outline">
+            <i class="ri-refresh-line"></i> Reset
+        </a>
+    </div>
+</form>
+
 {{-- Main Data Table --}}
 <div class="card">
     <div class="card-header no-print" style="padding: 14px 20px; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between;">
@@ -125,7 +157,7 @@
                             return ($v !== '' && $v !== '-' && $v !== '0') ? $v : '-';
                         };
                         $displayNrp = $p->nrp ?: '-';
-                        $hasData = !empty($kaporSizes);
+                        $hasData = (bool) ($p->is_size_complete ?? false);
                     @endphp
                     <tr style="{{ !$hasData ? 'background: #FFFBEB;' : '' }}">
                         <td style="text-align: center; font-size: 12px; color: #94A3B8;">{{ $no++ }}</td>

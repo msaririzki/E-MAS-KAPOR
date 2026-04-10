@@ -474,6 +474,27 @@
                 <input type="hidden" name="satker_id" value="{{ request('satker_id') }}">
             </div>
 
+            <div class="custom-select-wrapper" style="flex: 1;">
+                <div class="custom-select" onclick="toggleDropdown(this)">
+                    <div class="select-trigger">
+                        <span>{{ request('bagian') ?: 'Semua Bag/Fungsi' }}</span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="select-search-container">
+                            <input type="text" class="select-search-input" placeholder="Cari Bag/Fungsi..." onclick="event.stopPropagation()" onkeyup="filterSatkerOptions(this)">
+                        </div>
+                        <div class="options-scroll">
+                            <div class="option {{ !request('bagian') ? 'selected' : '' }}" data-label="SEMUA BAG/FUNGSI" onclick="selectOptionSearch(this, 'bagian', '', 'SEMUA BAG/FUNGSI')">SEMUA BAG/FUNGSI</div>
+                            @foreach($bagians as $bagian)
+                                <div class="option {{ request('bagian') == $bagian ? 'selected' : '' }}" data-label="{{ $bagian }}" onclick="selectOptionSearch(this, 'bagian', '{{ $bagian }}', '{{ $bagian }}')">{{ $bagian }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="bagian" value="{{ request('bagian') }}">
+            </div>
+
             {{-- ── FILTER UKURAN (hanya muncul saat status=incomplete) ── --}}
             @if(request('status') === 'incomplete')
             <div class="custom-select-wrapper" style="flex: 1; min-width: 160px;">

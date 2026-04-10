@@ -73,6 +73,10 @@ class PersonnelController extends Controller
             $query->where('keterangan', $request->keterangan);
         }
 
+        if ($request->filled('bagian')) {
+            $query->whereRaw('UPPER(bagian) = ?', [Str::upper(trim((string) $request->bagian))]);
+        }
+
         if ($request->get('status') === 'pending_verification') {
             $query->where('verification_status', 'pending_verification');
         }
@@ -198,11 +202,7 @@ class PersonnelController extends Controller
 
         $ranks = Rank::orderBy('sort_order')->get();
         $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
-        $bagians = BagianOption::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->pluck('name');
+        $bagians = $this->resolveAvailableBagians($request);
         $printSignatoryDefaults = app(ExportSignatorySettingService::class)->resolveForUser($request->user());
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
 
@@ -216,6 +216,7 @@ class PersonnelController extends Controller
             || $request->filled('rank_id')
             || $request->filled('satker_id')
             || $request->filled('keterangan')
+            || $request->filled('bagian')
             || $request->get('status') === 'pending_verification'
             || $request->get('status') === 'incomplete'
             || $request->filled('missing_size')
@@ -244,6 +245,10 @@ class PersonnelController extends Controller
             }
         }
 
+        if ($request->filled('bagian')) {
+            $labels[] = 'Bag/Fungsi: '.$request->input('bagian');
+        }
+
         if ($request->filled('search')) {
             $labels[] = 'Pencarian aktif';
         }
@@ -257,6 +262,36 @@ class PersonnelController extends Controller
         }
 
         return $labels !== [] ? implode(' • ', $labels) : 'Berdasarkan filter aktif';
+    }
+
+    private function resolveAvailableBagians(Request $request)
+    {
+        $masterBagians = BagianOption::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name');
+
+        $personnelBagiansQuery = Personnel::query()
+            ->forCurrentSatker()
+            ->whereNotNull('bagian')
+            ->where('bagian', '!=', '');
+
+        if ($request->filled('satker_id') && ! $request->user()?->hasRole('admin_satker')) {
+            $personnelBagiansQuery->where('satker_id', $request->integer('satker_id'));
+        }
+
+        $personnelBagians = $personnelBagiansQuery
+            ->distinct()
+            ->orderBy('bagian')
+            ->pluck('bagian');
+
+        return $masterBagians
+            ->merge($personnelBagians)
+            ->map(fn ($bagian) => strtoupper(trim((string) $bagian)))
+            ->filter()
+            ->unique()
+            ->values();
     }
 
     public function store(Request $request)
