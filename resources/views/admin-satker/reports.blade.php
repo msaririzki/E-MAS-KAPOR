@@ -81,7 +81,7 @@
 @endphp
 <div class="filter-bar no-print monitor-filter-bar">
     <form method="GET" action="{{ route('admin-satker.reports') }}" class="filter-form monitor-filter-form" id="reportFilterForm">
-        <div class="search-container monitor-search-container" style="flex: 2;">
+        <div class="search-container monitor-search-container" style="flex: 1;">
             <i class="ri-search-line"></i>
             <input type="text" name="search" id="reportSearchInput" value="{{ request('search') }}" placeholder="Cari berdasarkan nama, NRP/NIP, jabatan, atau bag/fungsi..." oninput="debounceReportSearch()" onkeydown="handleReportSearchKeydown(event)">
             @if(request('search'))
@@ -92,7 +92,7 @@
         </div>
 
         <div class="filter-group monitor-filter-group">
-            <div class="custom-select-wrapper" style="flex: 0 1 210px;">
+            <div class="custom-select-wrapper" style="width: 180px; flex-shrink: 0;">
                 <div class="custom-select" onclick="toggleReportDropdown(this, event)">
                     <div class="select-trigger">
                         <span>{{ $statusLabel }}</span>
@@ -109,7 +109,7 @@
                 <input type="hidden" name="status" value="{{ request('status') }}">
             </div>
 
-            <div class="custom-select-wrapper" style="flex: 1; min-width: 220px;">
+            <div class="custom-select-wrapper" style="width: 220px; flex-shrink: 0;">
                 <div class="custom-select" onclick="toggleReportDropdown(this, event)">
                     <div class="select-trigger">
                         <span>{{ request('bagian') ?: 'Semua Bag/Fungsi' }}</span>
@@ -131,7 +131,7 @@
             </div>
         </div>
 
-        <div class="monitor-filter-actions">
+        <div class="monitor-filter-actions" style="flex-shrink: 0;">
             <button type="submit" class="btn btn-primary">
                 <i class="ri-filter-3-line"></i> Terapkan
             </button>
@@ -275,14 +275,14 @@
     display: flex;
     gap: 16px;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .monitor-filter-group {
     display: flex;
     gap: 12px;
-    flex: 1;
-    flex-wrap: wrap;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
 }
 
 .monitor-filter-actions {
@@ -491,12 +491,27 @@
     font-weight: 600;
 }
 
+@media (max-width: 1024px) {
+    .monitor-filter-form {
+        flex-wrap: wrap;
+    }
+}
+
 @media (max-width: 768px) {
     .monitor-filter-form {
         align-items: stretch;
+        flex-direction: column;
     }
 
-    .monitor-filter-group,
+    .monitor-filter-group {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .monitor-filter-group .custom-select-wrapper {
+        width: 100% !important;
+    }
+
     .monitor-filter-actions {
         width: 100%;
     }
