@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Exports\PersonnelExport;
 use App\Models\BagianOption;
 use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -124,6 +126,92 @@ class PersonnelBagianFilterTest extends TestCase
         $response->assertDontSeeText('RESKRIM LENGKAP');
         $response->assertDontSeeText('LANTAS BELUM LENGKAP');
         $response->assertSeeText('Belum Lengkap');
+    }
+
+    public function test_admin_satker_reports_export_link_preserves_active_filters(): void
+    {
+        $satker = Satker::create([
+            'name' => 'POLRES BIMA',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $adminSatker = User::factory()->create([
+            'satker_id' => $satker->id,
+        ]);
+        $adminSatker->assignRole('admin_satker');
+
+        $response = $this->actingAs($adminSatker)->get(route('admin-satker.reports', [
+            'search' => 'EGAS',
+            'status' => 'pending',
+            'bagian' => 'SAT RESKRIM',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('search=EGAS', false);
+        $response->assertSee('status=pending', false);
+        $response->assertSee('bagian=SAT%20RESKRIM', false);
+    }
+
+    public function test_admin_satker_export_personnel_applies_report_filters(): void
+    {
+        Excel::fake();
+
+        $satker = Satker::create([
+            'name' => 'POLRES BIMA',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPDA',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $adminSatker = User::factory()->create([
+            'satker_id' => $satker->id,
+        ]);
+        $adminSatker->assignRole('admin_satker');
+
+        $completeSizes = [
+            'topi' => '56',
+            'kemeja' => 'M',
+            'celana' => '32',
+            'olahraga' => 'M',
+            'sepatu_dinas' => '42',
+            'sepatu_olahraga' => '42',
+            'jaket' => 'M',
+            'sabuk' => '95',
+        ];
+
+        $this->createPersonnel($satker, $rank, '76100166', 'RESKRIM LENGKAP', 'Sat Reskrim', $completeSizes);
+        $this->createPersonnel($satker, $rank, '76100167', 'RESKRIM BELUM LENGKAP', 'SAT RESKRIM', [
+            'topi' => '56',
+        ]);
+        $this->createPersonnel($satker, $rank, '76100168', 'LANTAS BELUM LENGKAP', 'SAT LANTAS', [
+            'topi' => '56',
+        ]);
+
+        $response = $this->actingAs($adminSatker)->get(route('admin.personnel.export-personnel', [
+            'bagian' => 'SAT RESKRIM',
+            'status' => 'pending',
+        ]));
+
+        $response->assertOk();
+
+        Excel::assertDownloaded('Data_Personel_POLRES BIMA_'.date('Ymd').'.xlsx', function (PersonnelExport $export) {
+            $sheets = collect($export->sheets());
+            $rows = $sheets
+                ->flatMap(fn ($sheet) => $sheet->collection()->all())
+                ->values();
+
+            $names = $rows->pluck(1);
+
+            return $names->contains('RESKRIM BELUM LENGKAP')
+                && ! $names->contains('RESKRIM LENGKAP')
+                && ! $names->contains('LANTAS BELUM LENGKAP');
+        });
     }
 
     private function createPersonnel(

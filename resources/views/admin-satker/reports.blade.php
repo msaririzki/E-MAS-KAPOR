@@ -27,7 +27,7 @@
             <button onclick="window.print()" class="btn btn-outline">
                 <i class="ri-printer-line"></i> Cetak
             </button>
-            <a href="{{ route('admin.personnel.export-personnel') }}" class="btn btn-success">
+            <a href="{{ route('admin.personnel.export-personnel', request()->only(['search', 'status', 'bagian'])) }}" class="btn btn-success">
                 <i class="ri-file-excel-2-line"></i> Export Excel
             </a>
         </div>
