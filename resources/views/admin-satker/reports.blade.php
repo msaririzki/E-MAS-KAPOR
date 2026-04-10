@@ -218,7 +218,7 @@
                         <td style="text-align: center; font-size: 11px;">{{ $getSz('sabuk') }}</td>
                         <td style="text-align: center; font-size: 11px;">{{ $getSz('jilbab') }}</td>
 
-                        <td style="font-size: 11px; color: #64748B;">{{ $p->keterangan ?: '-' }}</td>
+                        <td style="font-size: 11px; color: #64748B;"></td>
                     </tr>
                     @empty
                     <tr>
