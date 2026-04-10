@@ -3791,15 +3791,6 @@
         document.getElementById('edit_rank_id').value = p.rank_id;
         document.getElementById('edit_rank_label').innerText = p.rank ? p.rank.name : '— Pilih Pangkat —';
         
-        // Set Satker
-        if(document.getElementById('edit_keterangan')) document.getElementById('edit_keterangan').value = p.keterangan || '';
-        if(document.getElementById('edit_keterangan_label')) document.getElementById('edit_keterangan_label').innerText = p.keterangan || '- Pilih KETERANGAN 1 -';
-        if(document.getElementById('edit_keterangan_2')) document.getElementById('edit_keterangan_2').value = p.keterangan_2 || '';
-        if(document.getElementById('edit_keterangan_2_label')) document.getElementById('edit_keterangan_2_label').innerText = p.keterangan_2 || '- Pilih KETERANGAN 2 -';
-        if(document.getElementById('edit_keterangan_3')) document.getElementById('edit_keterangan_3').value = p.keterangan_3 || '';
-        if(document.getElementById('edit_keterangan_3_label')) document.getElementById('edit_keterangan_3_label').innerText = p.keterangan_3 || '- Pilih KETERANGAN 3 -';
-        if(document.getElementById('edit_keterangan_4')) document.getElementById('edit_keterangan_4').value = p.keterangan_4 || '';
-        if(document.getElementById('edit_keterangan_4_label')) document.getElementById('edit_keterangan_4_label').innerText = p.keterangan_4 || '- Pilih KETERANGAN 4 -';
         document.getElementById('edit_satker_id').value = p.satker_id;
         const satkerName = p.satker ? p.satker.name : '';
         document.getElementById('edit_satker_label').innerText = satkerName || '— Pilih Satker —';
@@ -3808,14 +3799,15 @@
         updateBagianVisibility(satkerName, 'edit', p.bagian);
         
         document.getElementById('edit_jabatan').value = p.jabatan || '';
-        document.getElementById('edit_keterangan').value = p.keterangan || '';
-        document.getElementById('edit_keterangan_label').innerText = p.keterangan || '— Pilih KETERANGAN 1 —';
-        document.getElementById('edit_keterangan_2').value = p.keterangan_2 || '';
-        document.getElementById('edit_keterangan_2_label').innerText = p.keterangan_2 || '— Pilih KETERANGAN 2 —';
-        document.getElementById('edit_keterangan_3').value = p.keterangan_3 || '';
-        document.getElementById('edit_keterangan_3_label').innerText = p.keterangan_3 || '— Pilih KETERANGAN 3 —';
-        document.getElementById('edit_keterangan_4').value = p.keterangan_4 || '';
-        document.getElementById('edit_keterangan_4_label').innerText = p.keterangan_4 || '— Pilih KETERANGAN 4 —';
+        
+        if(document.getElementById('edit_keterangan')) document.getElementById('edit_keterangan').value = p.keterangan || '';
+        if(document.getElementById('edit_keterangan_label')) document.getElementById('edit_keterangan_label').innerText = p.keterangan || '— Pilih KETERANGAN 1 —';
+        if(document.getElementById('edit_keterangan_2')) document.getElementById('edit_keterangan_2').value = p.keterangan_2 || '';
+        if(document.getElementById('edit_keterangan_2_label')) document.getElementById('edit_keterangan_2_label').innerText = p.keterangan_2 || '— Pilih KETERANGAN 2 —';
+        if(document.getElementById('edit_keterangan_3')) document.getElementById('edit_keterangan_3').value = p.keterangan_3 || '';
+        if(document.getElementById('edit_keterangan_3_label')) document.getElementById('edit_keterangan_3_label').innerText = p.keterangan_3 || '— Pilih KETERANGAN 3 —';
+        if(document.getElementById('edit_keterangan_4')) document.getElementById('edit_keterangan_4').value = p.keterangan_4 || '';
+        if(document.getElementById('edit_keterangan_4_label')) document.getElementById('edit_keterangan_4_label').innerText = p.keterangan_4 || '— Pilih KETERANGAN 4 —';
         
         document.getElementById('edit_phone').value = p.phone || '';
         document.getElementById('edit_golongan').value = p.golongan || '';
