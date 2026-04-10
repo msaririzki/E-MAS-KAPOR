@@ -236,16 +236,27 @@
 {{-- Filters --}}
 <div class="card" style="margin-bottom: 16px;">
     <div class="card-body" style="padding: 14px 20px;">
-        <form method="GET" action="{{ route('admin.identifikasi-kebutuhan.index') }}" class="responsive-filter" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <form method="GET" action="{{ route('admin.identifikasi-kebutuhan.index') }}" class="responsive-filter" id="filterForm" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 180px;">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari judul / satker..." class="search-input" style="width: 100%;">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari Satker" class="search-input" style="width: 100%;">
             </div>
-            <select name="satker_id" style="padding: 7px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 13px; font-family: inherit; background: var(--input-bg); color: var(--text-main); min-width: 160px;">
-                <option value="">Semua Satker</option>
-                @foreach($satkers as $satker)
-                    <option value="{{ $satker->id }}" {{ request('satker_id') == $satker->id ? 'selected' : '' }}>{{ $satker->name }}</option>
-                @endforeach
-            </select>
+            <div class="custom-select-wrapper" style="width: 200px; z-index: 10;">
+                <div class="custom-select" onclick="toggleDropdown(this)" style="height: 38px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg);">
+                    <div class="select-trigger" style="padding: 0 12px; color: var(--text-main);">
+                        <span>{{ request('satker_id') ? $satkers->firstWhere('id', request('satker_id'))->name ?? 'Semua Satker' : 'Semua Satker' }}</span>
+                        <i class="ri-arrow-down-s-line" style="font-size: 16px;"></i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="options-scroll">
+                            <div class="option {{ !request('satker_id') ? 'selected' : '' }}" onclick="selectOptionSearch(this, 'satker_id', '', 'Semua Satker')">Semua Satker</div>
+                            @foreach($satkers as $satker)
+                                <div class="option {{ request('satker_id') == $satker->id ? 'selected' : '' }}" onclick="selectOptionSearch(this, 'satker_id', '{{ $satker->id }}', '{{ $satker->name }}')">{{ $satker->name }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="satker_id" value="{{ request('satker_id') }}">
+            </div>
             <button type="submit" class="btn btn-primary btn-sm"><i class="ri-search-line"></i> Filter</button>
             @if(request()->hasAny(['search', 'satker_id']))
                 <a href="{{ route('admin.identifikasi-kebutuhan.index') }}" class="btn btn-ghost btn-sm"><i class="ri-refresh-line"></i> Reset</a>
@@ -262,9 +273,7 @@
             <thead>
                 <tr>
                     <th width="50" style="text-align: center;">No</th>
-                    <th>Judul Pengajuan</th>
                     <th>Satker</th>
-                    <th>Pengaju</th>
                     <th style="text-align: center;">Jumlah Item</th>
                     <th>Tanggal</th>
                     <th style="text-align: center;">Aksi</th>
@@ -274,16 +283,7 @@
                 @forelse($kebutuhans as $index => $k)
                 <tr>
                     <td style="text-align: center;">{{ $kebutuhans->firstItem() + $index }}</td>
-                    <td>
-                        <a href="{{ route('admin.identifikasi-kebutuhan.show', $k) }}" style="text-decoration: none; color: inherit;">
-                            <div class="cell-name" style="color: var(--brand);">{{ $k->title }}</div>
-                        </a>
-                        @if($k->notes)
-                            <div class="cell-sub">{{ Str::limit($k->notes, 50) }}</div>
-                        @endif
-                    </td>
-                    <td><span style="font-size: 12px;">{{ $k->satker->name ?? '-' }}</span></td>
-                    <td><span style="font-size: 12px;">{{ $k->user->name ?? '-' }}</span></td>
+                    <td><span style="font-size: 12px; font-weight: 500;">{{ $k->satker->name ?? '-' }}</span></td>
                     <td style="text-align: center;"><span class="badge badge-neutral">{{ $k->items->count() }}</span></td>
                     <td style="font-size: 12px;">{{ $k->submitted_at ? $k->submitted_at->format('d/m/Y') : $k->created_at->format('d/m/Y') }}</td>
                     <td style="text-align: center;">
@@ -305,7 +305,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                    <td colspan="5" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
                         <i class="ri-file-list-3-line" style="font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.5;"></i>
                         Belum ada pengajuan kebutuhan dari satker.
                     </td>
@@ -383,6 +383,40 @@
 
     // Close on Escape key
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetailModal(); });
+
+    // ── Dropdown Logic ──
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-select')) {
+            document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
+            document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+        }
+    });
+
+    function toggleDropdown(el) {
+        const options = el.querySelector('.custom-options');
+        const isOpen = options.style.display === 'block';
+
+        document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
+        document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+
+        if (!isOpen) {
+            options.style.display = 'block';
+            el.classList.add('active');
+        } 
+        
+        event.stopPropagation();
+    }
+
+    function selectOptionSearch(el, inputName, value, label) {
+        const wrapper = el.closest('.custom-select-wrapper');
+        const trigger = wrapper.querySelector('.select-trigger span');
+        const input = wrapper.querySelector('input[type="hidden"]');
+        
+        trigger.innerText = label;
+        input.value = value;
+        
+        document.getElementById('filterForm').submit();
+    }
 
     // ── Delete confirmation ──
     document.addEventListener('DOMContentLoaded', function () {
@@ -464,5 +498,95 @@
         border: 1px solid #E5E7EB !important;
     }
     .modern-swal-btn.btn-secondary:hover { background-color: #E5E7EB !important; }
+
+    /* ── Custom Select UI ───────────────────── */
+    .custom-select-wrapper { position: relative; width: 100%; }
+    
+    .custom-select {
+        background: #fff;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+        display: flex; align-items: center;
+    }
+    .custom-select:hover { border-color: #D1D5DB; }
+    
+    .custom-select.active {
+        border-color: #B91C1C;
+        box-shadow: 0 0 0 4px #FEF2F2;
+        background: #fff;
+    }
+
+    .select-trigger {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 500;
+        color: #374151;
+        font-size: 14px;
+        padding: 0 16px;
+    }
+    .select-trigger i { 
+        color: #9CA3AF; 
+        font-size: 20px; 
+        transition: transform 0.2s ease; 
+    }
+    .custom-select.active .select-trigger { color: #111827; }
+    .custom-select.active .select-trigger i { 
+        transform: rotate(180deg); 
+        color: #B91C1C; 
+    }
+
+    .custom-options {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0; right: 0;
+        background: #fff;
+        border: 1px solid #F3F4F6;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
+        z-index: 2000;
+        display: none;
+        padding: 8px;
+        text-align: left;
+    }
+    
+    .options-scroll {
+        max-height: 240px;
+        overflow-y: auto;
+        padding-right: 2px;
+    }
+    
+    .options-scroll::-webkit-scrollbar { width: 4px; }
+    .options-scroll::-webkit-scrollbar-track { background: transparent; }
+    .options-scroll::-webkit-scrollbar-thumb { background-color: #E5E7EB; border-radius: 10px; }
+    .options-scroll::-webkit-scrollbar-thumb:hover { background-color: #D1D5DB; }
+    
+    .option {
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: all 0.1s;
+        font-size: 13px;
+        color: #4B5563;
+        border-radius: 8px;
+        margin-bottom: 2px;
+        font-weight: 500;
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .option:last-child { margin-bottom: 0; }
+    
+    .option:hover {
+        background-color: #F9FAFB;
+        color: #111827;
+    }
+    
+    .option.selected {
+        background-color: #FEF2F2;
+        color: #B91C1C;
+        font-weight: 600;
+    }
 </style>
 @endsection

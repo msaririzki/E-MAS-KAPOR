@@ -13,7 +13,6 @@ class IdentifikasiItemController extends Controller
         'Tutup_Kepala' => 'Tutup Kepala',
         'Tutup_Badan' => 'Tutup Badan',
         'Tutup_Kaki' => 'Tutup Kaki',
-        'Atribut' => 'Atribut',
         'Lainnya' => 'Lainnya',
     ];
 
@@ -62,8 +61,7 @@ class IdentifikasiItemController extends Controller
     {
         $validated = $request->validate([
             'item_name' => 'required|string|max:255',
-            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut,Lainnya',
-            'description' => 'nullable|string|max:2000',
+            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Lainnya',
         ], [
             'item_name.required' => 'Nama item wajib diisi.',
             'category.required' => 'Kategori wajib dipilih.',
@@ -91,8 +89,7 @@ class IdentifikasiItemController extends Controller
     {
         $validated = $request->validate([
             'item_name' => 'required|string|max:255',
-            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut,Lainnya',
-            'description' => 'nullable|string|max:2000',
+            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Lainnya',
             'is_active' => 'boolean',
         ]);
 

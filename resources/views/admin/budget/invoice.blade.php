@@ -17,7 +17,7 @@
             <p style="color: #6B7280; font-size: 13px;">{{ $budgetPackage->name }} — {{ $budgetPackage->budgetYear->name }}</p>
         </div>
         <div style="display: flex; gap: 8px;">
-            <a href="{{ route('admin.budget.recap', $budgetPackage) }}" class="btn btn-outline">
+            <a href="{{ route('admin.budget.show-package', $budgetPackage) }}" class="btn btn-outline">
                 <i class="ri-arrow-left-line"></i> Kembali
             </a>
             <button class="btn btn-primary" onclick="window.print()">

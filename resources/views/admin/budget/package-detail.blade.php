@@ -111,7 +111,7 @@
 
 
 {{-- ── PERINGATAN UKURAN BELUM DIISI ── --}}
-@if(!empty($sizeWarnings))
+@if(false)
 <div class="size-warning-banner" id="size-warning-panel">
     <div class="swb-header">
         <div class="swb-header-left" onclick="toggleWarningPanel()" style="flex:1; cursor:pointer;">
@@ -275,15 +275,6 @@
                 </div>
                 <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
             </button>
-
-            <a href="{{ route('admin.budget.recap', $budgetPackage) }}" class="export-btn export-blue">
-                <div class="export-icon"><i class="ri-user-shared-line"></i></div>
-                <div class="export-info">
-                    <h4>Analisis Duplikasi</h4>
-                    <p>Cek personil ganda.</p>
-                </div>
-                <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
-            </a>
 
             <a href="{{ route('admin.budget.invoice', $budgetPackage) }}" class="export-btn export-orange">
                 <div class="export-icon"><i class="ri-file-text-line"></i></div>

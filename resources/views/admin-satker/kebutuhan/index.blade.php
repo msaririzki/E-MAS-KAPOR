@@ -75,7 +75,6 @@
             <thead>
                 <tr>
                     <th width="50" style="text-align: center;">No</th>
-                    <th>Judul</th>
                     <th style="text-align: center;">Jumlah Item</th>
                     <th>Tahun</th>
                     <th>Tanggal Pengajuan</th>
@@ -86,14 +85,6 @@
                 @forelse($kebutuhans as $index => $k)
                 <tr>
                     <td style="text-align: center;">{{ $kebutuhans->firstItem() + $index }}</td>
-                    <td>
-                        <a href="{{ route('admin-satker.kebutuhan.show', $k) }}" style="text-decoration: none; color: inherit;">
-                            <div class="cell-name" style="color: var(--brand);">{{ $k->title }}</div>
-                        </a>
-                        @if($k->notes)
-                            <div class="cell-sub">{{ Str::limit($k->notes, 50) }}</div>
-                        @endif
-                    </td>
                     <td style="text-align: center;"><span class="badge badge-neutral">{{ $k->items->count() }} item</span></td>
                     <td>{{ $k->fiscal_year }}</td>
                     <td style="font-size: 12px;">{{ $k->submitted_at ? $k->submitted_at->format('d/m/Y H:i') : $k->created_at->format('d/m/Y H:i') }}</td>
@@ -110,7 +101,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                    <td colspan="5" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
                         <i class="ri-file-list-3-line" style="font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.5;"></i>
                         @if($hasSubmissionThisYear)
                             Tidak ada pengajuan yang ditampilkan.

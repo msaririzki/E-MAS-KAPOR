@@ -113,20 +113,26 @@
 </head>
 <body>
     <div class="print-container clearfix">
-        <div class="kop-surat">
+        <div class="kop-surat" style="width: 305px; text-align: center; margin-bottom: 30px;">
             <?php
                 $path = public_path('kop suratt.png');
                 $type = pathinfo($path, PATHINFO_EXTENSION);
-                $data = file_get_contents($path);
-                $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                if (file_exists($path)) {
+                    $data = file_get_contents($path);
+                    $base64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                } else {
+                    $base64 = '';
+                }
             ?>
-            <img src="{{ $base64 }}" alt="Logo Polri" class="kop-logo">
-            <div class="kop-text">
+            @if($base64)
+            <img src="{{ $base64 }}" alt="Logo Polri" class="kop-logo" style="height: 50px; margin-bottom: 4px;">
+            @endif
+            <div class="kop-text" style="font-size: 13px; font-weight: bold; line-height: 1.2; font-family: Arial, Helvetica, sans-serif;">
                 KEPOLISIAN NEGARA REPUBLIK INDONESIA<br>
                 DAERAH NUSA TENGGARA BARAT<br>
                 {{ strtoupper($kebutuhan->satker->name ?? '') }}
             </div>
-            <div class="kop-line-1"></div>
+            <div class="kop-line-1" style="border-bottom: 2px solid #000; margin-top: 4px; width: 100%;"></div>
         </div>
 
         <div class="doc-title">

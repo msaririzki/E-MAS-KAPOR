@@ -3074,7 +3074,6 @@
     @media (max-width: 640px) {
         .modal-content {
             width: 95%; /* Use almost full width on mobile */
-            max-height: 90vh; /* slightly taller on mobile */
         }
         .form-grid {
             grid-template-columns: 1fr !important; /* Stack columns */
