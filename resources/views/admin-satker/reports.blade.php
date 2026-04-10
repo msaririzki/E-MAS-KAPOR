@@ -166,23 +166,23 @@
                         <th rowspan="3" style="min-width: 90px;">JABATAN</th>
                         <th rowspan="3" style="min-width: 80px;">BAG / FUNGSI</th>
                         <th rowspan="3" style="width: 35px; text-align: center;">JK</th>
-                        <th colspan="9" style="text-align: center; background: #FEF2F2; color: #991B1B;">U K U R A N</th>
+                        <th colspan="9" style="text-align: center; background: #F1F5F9; color: #334155;">U K U R A N</th>
                         <th rowspan="3" style="min-width: 70px;">KET</th>
                     </tr>
                     <tr>
-                        <th rowspan="2" style="width: 55px; text-align: center; background: #FFF7ED; font-size: 10px;">TUTUP KEPALA</th>
-                        <th colspan="3" style="text-align: center; background: #FFF7ED; font-size: 10px;">TUTUP BADAN</th>
-                        <th colspan="2" style="text-align: center; background: #FFF7ED; font-size: 10px;">TUTUP KAKI</th>
-                        <th rowspan="2" style="width: 50px; text-align: center; background: #FFF7ED; font-size: 10px;">JAKET</th>
-                        <th rowspan="2" style="width: 50px; text-align: center; background: #FFF7ED; font-size: 10px;">SABUK</th>
-                        <th rowspan="2" style="width: 50px; text-align: center; background: #FFF7ED; font-size: 10px;">JILBAB</th>
+                        <th rowspan="2" style="width: 55px; text-align: center; background: #F8FAFC; font-size: 10px;">TUTUP KEPALA</th>
+                        <th colspan="3" style="text-align: center; background: #F8FAFC; font-size: 10px;">TUTUP BADAN</th>
+                        <th colspan="2" style="text-align: center; background: #F8FAFC; font-size: 10px;">TUTUP KAKI</th>
+                        <th rowspan="2" style="width: 50px; text-align: center; background: #F8FAFC; font-size: 10px;">JAKET</th>
+                        <th rowspan="2" style="width: 50px; text-align: center; background: #F8FAFC; font-size: 10px;">SABUK</th>
+                        <th rowspan="2" style="width: 50px; text-align: center; background: #F8FAFC; font-size: 10px;">JILBAB</th>
                     </tr>
                     <tr>
-                        <th style="width: 55px; text-align: center; background: #FFFBEB; font-size: 10px;">KEMEJA</th>
-                        <th style="width: 55px; text-align: center; background: #FFFBEB; font-size: 10px;">CELANA/ ROK</th>
-                        <th style="width: 55px; text-align: center; background: #FFFBEB; font-size: 10px;">T-SHIRT OLHRG</th>
-                        <th style="width: 55px; text-align: center; background: #FFFBEB; font-size: 10px;">DINAS</th>
-                        <th style="width: 55px; text-align: center; background: #FFFBEB; font-size: 10px;">OLHRG</th>
+                        <th style="width: 55px; text-align: center; background: #F1F5F9; font-size: 10px;">KEMEJA</th>
+                        <th style="width: 55px; text-align: center; background: #F1F5F9; font-size: 10px;">CELANA/ ROK</th>
+                        <th style="width: 55px; text-align: center; background: #F1F5F9; font-size: 10px;">T-SHIRT OLHRG</th>
+                        <th style="width: 55px; text-align: center; background: #F1F5F9; font-size: 10px;">DINAS</th>
+                        <th style="width: 55px; text-align: center; background: #F1F5F9; font-size: 10px;">OLHRG</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -197,7 +197,7 @@
                         $displayNrp = $p->nrp ?: '-';
                         $hasData = (bool) ($p->is_size_complete ?? false);
                     @endphp
-                    <tr style="{{ !$hasData ? 'background: #FFFBEB;' : '' }}">
+                    <tr style="{{ !$hasData ? 'background: #F4F4F5;' : '' }}">
                         <td style="text-align: center; font-size: 12px; color: #94A3B8;">{{ $no++ }}</td>
                         <td style="font-weight: 600; font-size: 12px; color: #1E293B;">{{ strtoupper($p->full_name) }}</td>
                         <td style="font-size: 12px;">{{ strtoupper($p->rank->name ?? '-') }}</td>
@@ -205,7 +205,7 @@
                         <td class="nrp-cell" style="font-size: 11px; font-family: 'Courier New', monospace; color: #475569;">{{ $displayNrp }}</td>
                         <td style="font-size: 12px;">{{ strtoupper($p->jabatan ?: '-') }}</td>
                         <td style="font-size: 12px;">{{ strtoupper($p->bagian ?: '-') }}</td>
-                        <td style="text-align: center; font-weight: 700; font-size: 12px; color: {{ $p->gender === 'L' ? '#3B82F6' : '#EC4899' }};">{{ $p->gender === 'L' ? 'P' : ($p->gender === 'P' ? 'W' : '-') }}</td>
+                        <td style="text-align: center; font-weight: 700; font-size: 12px; color: #334155;">{{ $p->gender === 'L' ? 'P' : ($p->gender === 'P' ? 'W' : '-') }}</td>
 
                         {{-- 9 Kolom Ukuran --}}
                         <td style="text-align: center; font-size: 11px;">{{ $getSz('topi') }}</td>
@@ -250,8 +250,8 @@
 <div class="legend no-print" style="margin-top: 12px; padding: 12px 16px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; display: flex; align-items: center; gap: 20px; font-size: 12px; color: #64748B;">
     <span style="font-weight: 700; color: #334155;">Keterangan:</span>
     <div style="display: flex; align-items: center; gap: 6px;">
-        <div style="width: 14px; height: 14px; border-radius: 3px; background: #FFFBEB; border: 1px solid #FDE68A;"></div>
-        <span>Baris kuning = data ukuran belum diisi</span>
+        <div style="width: 14px; height: 14px; border-radius: 3px; background: #F4F4F5; border: 1px solid #D4D4D8;"></div>
+        <span>Baris abu-abu = data ukuran belum diisi</span>
     </div>
     <div style="display: flex; align-items: center; gap: 6px;">
         <span style="font-family: 'Courier New', monospace; font-weight: 700;">P</span> = Pria &nbsp;
@@ -644,8 +644,8 @@
         font-weight: bold !important;
     }
 
-    tr[style*="background: #FFFBEB"] {
-        background-color: #ffffca !important;
+    tr[style*="background: #F4F4F5"] {
+        background-color: #f4f4f5 !important;
     }
 
     /* Spefisikasi Cell NRP agar lebih terlihat proporsional */
