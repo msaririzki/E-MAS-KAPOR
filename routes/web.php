@@ -49,6 +49,7 @@ Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope
     Route::get('/monitor', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'monitor'])->name('monitor');
     Route::get('/reports', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'reports'])->name('reports');
     Route::get('/settings', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'settings'])->name('settings');
+    Route::put('/settings/signatory', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'updateSignatorySettings'])->name('settings.signatory.update');
 
     // Identifikasi Kebutuhan (Admin Satker)
     Route::get('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'index'])->name('kebutuhan.index');
