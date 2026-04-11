@@ -315,6 +315,27 @@
             gap: 8px;
         }
 
+        .dismiss-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .dismiss-btn {
+            width: 30px;
+            height: 30px;
+            border: 0;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.08);
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+
         .status-banner strong,
         .review-card strong {
             font-size: 14px;
@@ -340,26 +361,136 @@
         }
 
         .review-card {
-            padding: 18px;
             border: 1px solid var(--border-color);
             border-radius: 16px;
             background: #fff;
             box-shadow: var(--shadow-sm);
+            overflow: hidden;
         }
 
         .review-card.info {
             border-color: #bfdbfe;
-            background: linear-gradient(180deg, #ffffff, #eff6ff);
+            background: #eff6ff;
         }
 
         .review-card.warning {
             border-color: #fde68a;
-            background: linear-gradient(180deg, #ffffff, #fffbeb);
+            background: #fffbeb;
         }
 
         .review-card.success {
             border-color: #bbf7d0;
-            background: linear-gradient(180deg, #ffffff, #f0fdf4);
+            background: #f0fdf4;
+        }
+
+        .review-card-body {
+            display: grid;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .review-card-head {
+            display: grid;
+            gap: 10px;
+        }
+
+        .review-card-copy {
+            color: var(--text-muted);
+        }
+
+        .review-card-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .review-card.info .review-card-head {
+            color: var(--info);
+        }
+
+        .review-card.warning .review-card-head {
+            color: var(--warning);
+        }
+
+        .review-card.success .review-card-head {
+            color: var(--success);
+        }
+
+        .review-eligible {
+            display: grid;
+            gap: 8px;
+        }
+
+        .review-eligible strong {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .review-inline-count {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .item-chip-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .item-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 30px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: var(--slate-50);
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .review-action-row {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .review-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 42px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1px solid currentColor;
+            background: transparent;
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .review-card.info .review-cta {
+            background: #eff6ff;
+            border-color: #93c5fd;
+            color: #1d4ed8;
+        }
+
+        .review-card.warning .review-cta {
+            background: #fffbeb;
+            border-color: #fcd34d;
+            color: #b45309;
+        }
+
+        .review-card.success .review-cta {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #15803d;
         }
 
         .hidden {
@@ -380,7 +511,13 @@
             .identity-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
             }
+
+            .review-card-head {
+                grid-template-columns: 1fr auto;
+                align-items: start;
+            }
         }
+
     </style>
 @endsection
 
@@ -426,12 +563,66 @@
         if ($requiresJilbab) {
             $summaryItems['Jilbab'] = $kaporSizes['jilbab'] ?? '-';
         }
+
+        $showReviewHero = $reviewPeriodStatus['is_open'] ?? false;
     @endphp
 
     @if (!$personnel)
         <div class="alert error">Data personel belum tersedia. Hubungi admin sebelum mengisi kaporlap.</div>
     @else
         <div class="page">
+            @if ($showReviewHero)
+                <section class="review-card {{ $reviewPrompt['tone'] }}" data-dismissible data-dismiss-key="personil-dashboard-review-hero">
+                    <div class="review-card-body">
+                        <div class="review-card-head">
+                            <div>
+                                <div class="review-card-title-row">
+                                    <strong>{{ $reviewPrompt['title'] }}</strong>
+                                    <div class="status-meta">
+                                        <i class="ri-calendar-check-line"></i>
+                                        Review: {{ $reviewPeriodStatus['period_label'] }}
+                                    </div>
+                                </div>
+                                <p class="review-card-copy">{{ $reviewPrompt['message'] }}</p>
+                            </div>
+                            <button type="button" class="dismiss-btn" data-dismiss-trigger aria-label="Sembunyikan kartu review">
+                                <i class="ri-close-line"></i>
+                            </button>
+                        </div>
+                        <div class="review-eligible">
+                            <strong>Item Eligible <span class="review-inline-count">({{ $eligibleItems }})</span></strong>
+                            <div class="item-chip-row">
+                                @forelse ($eligibleReviewItems as $itemName)
+                                    <span class="item-chip">{{ $itemName }}</span>
+                                @empty
+                                    <span class="note" style="margin-top: 0;">Belum ada item review untuk akun Anda.</span>
+                                @endforelse
+                            </div>
+                        </div>
+                        <div class="review-action-row">
+                            <a href="{{ route('personil.testimoni.index') }}" class="review-cta">
+                                {{ $reviewPrompt['action_label'] }}
+                                <i class="ri-arrow-right-up-line"></i>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+            @else
+                <div class="alert {{ $inputPeriodStatus['tone'] }} status-banner" data-dismissible data-dismiss-key="personil-dashboard-input-status">
+                    <div class="dismiss-row">
+                        <strong>{{ $inputPeriodStatus['title'] }}</strong>
+                        <button type="button" class="dismiss-btn" data-dismiss-trigger aria-label="Sembunyikan status input">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+                    <span>{{ $inputPeriodStatus['message'] }}</span>
+                    <div class="status-meta">
+                        <i class="ri-calendar-line"></i>
+                        Periode aktif: {{ $inputPeriodStatus['period_label'] }}
+                    </div>
+                </div>
+            @endif
+
             <section class="panel">
                 <div class="panel-body">
                     <div class="profile-row">
@@ -463,15 +654,6 @@
             @if (session('error'))
                 <div class="alert error">{{ session('error') }}</div>
             @endif
-
-            <div class="alert {{ $inputPeriodStatus['tone'] }} status-banner">
-                <strong>{{ $inputPeriodStatus['title'] }}</strong>
-                <span>{{ $inputPeriodStatus['message'] }}</span>
-                <div class="status-meta">
-                    <i class="ri-calendar-line"></i>
-                    Periode aktif: {{ $inputPeriodStatus['period_label'] }}
-                </div>
-            </div>
 
             @if ($errors->any())
                 <div class="alert error">Masih ada field yang perlu diperbaiki.</div>
@@ -717,29 +899,6 @@
                 </section>
             @endif
 
-            <section class="review-card {{ $reviewPrompt['tone'] }}">
-                <strong>{{ $reviewPrompt['title'] }}</strong>
-                <p>{{ $reviewPrompt['message'] }}</p>
-                <div class="link-row" style="margin-top: 14px;">
-                    @if (($reviewPrompt['action'] ?? 'testimoni') === 'testimoni')
-                        <a href="{{ route('personil.testimoni.index') }}" class="button-secondary" style="width: auto; text-decoration: none;">
-                            <i class="ri-chat-3-line"></i>
-                            {{ $reviewPrompt['action_label'] }}
-                        </a>
-                    @else
-                        <a href="#ukuran-form" class="button-secondary" style="width: auto; text-decoration: none;">
-                            <i class="ri-ruler-line"></i>
-                            {{ $reviewPrompt['action_label'] }}
-                        </a>
-                    @endif
-
-                    <a href="{{ route('personil.kapor.history') }}" class="button-secondary" style="width: auto; text-decoration: none;">
-                        <i class="ri-file-list-3-line"></i>
-                        Riwayat Ukuran
-                    </a>
-                </div>
-            </section>
-
         </div>
 
         <footer style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color); text-align: center;">
@@ -748,7 +907,7 @@
                     style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Riwayat Ukuran</a>
                 <span style="color: var(--slate-300);">•</span>
                 <a href="{{ route('personil.testimoni.index') }}"
-                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Review / Testimoni</a>
+                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Review Item</a>
             </div>
         </footer>
     @endif
@@ -829,6 +988,12 @@
                     else openSizesButton.parentElement.classList.add('hidden');
                 });
             }
+
+            document.querySelectorAll('[data-dismissible]').forEach((element) => {
+                element.querySelector('[data-dismiss-trigger]')?.addEventListener('click', () => {
+                    element.style.display = 'none';
+                });
+            });
         });
     </script>
 @endsection

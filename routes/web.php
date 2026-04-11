@@ -35,11 +35,11 @@ Route::middleware(['auth', 'satker.scope'])->group(function () {
 
 // ── Personil Routes ──────────────────────────────────────────────────
 
-Route::middleware(['auth', 'role:personil', 'system.lock'])->prefix('personil')->name('personil.')->group(function () {
+Route::middleware(['auth', 'role:personil'])->prefix('personil')->name('personil.')->group(function () {
     Route::get('/kapor', fn () => redirect()->route('dashboard'))->name('kapor.index');
-    Route::post('/kapor', [PersonilPortalController::class, 'storeKapor'])->name('kapor.store');
+    Route::post('/kapor', [PersonilPortalController::class, 'storeKapor'])->middleware('system.lock')->name('kapor.store');
     Route::get('/testimoni', [PersonilPortalController::class, 'showTestimoni'])->name('testimoni.index');
-    Route::post('/testimoni', [PersonilPortalController::class, 'storeTestimoni'])->name('testimoni.store');
+    Route::post('/testimoni', [PersonilPortalController::class, 'storeTestimoni'])->middleware('review.period')->name('testimoni.store');
     Route::get('/kapor/riwayat', [PersonilPortalController::class, 'showHistory'])->name('kapor.history');
 });
 

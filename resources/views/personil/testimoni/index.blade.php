@@ -1,586 +1,896 @@
 @extends('layouts.personil')
 
-@section('title', 'Testimoni Personil')
+@section('title', 'Review Item Kapor')
+
+@section('content')
+    <div class="page review-page">
+        @if (session('success_testimoni'))
+            <div class="toast-success" id="reviewToast" role="status" aria-live="polite">
+                <div class="toast-success-body">
+                    <i class="ri-checkbox-circle-fill"></i>
+                    <span>{{ session('success_testimoni') }}</span>
+                </div>
+                <button type="button" class="toast-close" data-close-toast aria-label="Tutup notifikasi">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+        @endif
+
+        <div class="alert {{ $reviewPeriodStatus['tone'] }} status-banner" data-dismissible data-dismiss-key="personil-review-period-banner">
+            <div class="dismiss-head">
+                <strong>{{ $reviewPeriodStatus['title'] }}</strong>
+                <button type="button" class="dismiss-btn" data-dismiss-trigger aria-label="Sembunyikan banner review">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <span>{{ $reviewPeriodStatus['message'] }}</span>
+            <div class="status-meta">
+                <i class="ri-calendar-line"></i>
+                Periode review: {{ $reviewPeriodStatus['period_label'] }}
+            </div>
+        </div>
+
+        <section class="panel hero-panel">
+            <div class="panel-body hero-body">
+                <div>
+                    <div class="eyebrow">Portal Review Personil</div>
+                    <h1>Review Item Kapor</h1>
+                    <p>Laporkan item yang belum diterima atau beri penilaian untuk item kapor yang sudah Anda terima pada T.A. {{ $fiscalYear }}.</p>
+                </div>
+            </div>
+        </section>
+
+        @if (session('error_testimoni') || session('error'))
+            <div class="alert error">
+                <i class="ri-error-warning-fill"></i>
+                <span>{{ session('error_testimoni') ?? session('error') }}</span>
+            </div>
+        @endif
+
+        <section class="panel">
+            <div class="panel-body toolbar-stack">
+                <div class="compact-summary">
+                    <strong>{{ $allocationCards->count() }} item eligible untuk Anda</strong>
+                    <span>Daftar item di bawah ini berasal dari snapshot paket pengadaan yang sudah difinalkan untuk akun Anda.</span>
+                    <div class="eligible-chip-row">
+                        @forelse ($allocationCards as $card)
+                            <span class="eligible-chip">{{ $card['item_name'] }}</span>
+                        @empty
+                            <span class="eligible-chip muted">Belum ada item review</span>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="toolbar-row">
+                    <label class="search-box compact-search" for="reviewSearch">
+                        <i class="ri-search-line"></i>
+                        <input type="search" id="reviewSearch" placeholder="Cari item...">
+                    </label>
+                </div>
+
+                <div class="tab-row mobile-tabs">
+                    <button type="button" class="tab-btn active" data-tab="pending">Perlu Ditinjau</button>
+                    <button type="button" class="tab-btn" data-tab="reviewed">Sudah Direview</button>
+                    <button type="button" class="tab-btn" data-tab="history">Riwayat Lain</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab-panel active" data-panel="pending">
+            @if ($pendingCards->isEmpty())
+                <section class="panel">
+                    <div class="panel-body empty-state">
+                        <i class="ri-inbox-archive-line"></i>
+                        <strong>Tidak ada item yang menunggu respons</strong>
+                        <span>Jika ada item kapor baru yang difinalkan untuk Anda, item tersebut akan muncul di sini.</span>
+                    </div>
+                </section>
+            @endif
+
+            <div class="review-list">
+                @foreach ($pendingCards as $card)
+                    @include('personil.testimoni.partials.review-card', ['card' => $card, 'reviewPeriodStatus' => $reviewPeriodStatus])
+                @endforeach
+            </div>
+        </section>
+
+        <section class="tab-panel" data-panel="reviewed">
+            @if ($reviewedCards->isEmpty())
+                <section class="panel">
+                    <div class="panel-body empty-state">
+                        <i class="ri-chat-check-line"></i>
+                        <strong>Belum ada review atau laporan penerimaan</strong>
+                        <span>Item yang sudah Anda respons akan tampil di sini untuk memudahkan update selama periode review masih terbuka.</span>
+                    </div>
+                </section>
+            @endif
+
+            <div class="review-list">
+                @foreach ($reviewedCards as $card)
+                    @include('personil.testimoni.partials.review-card', ['card' => $card, 'reviewPeriodStatus' => $reviewPeriodStatus])
+                @endforeach
+            </div>
+        </section>
+
+        <section class="tab-panel" data-panel="history">
+            @if ($orphanReviews->isEmpty())
+                <section class="panel">
+                    <div class="panel-body empty-state compact">
+                        <i class="ri-file-list-3-line"></i>
+                        <strong>Tidak ada riwayat tambahan</strong>
+                        <span>Semua review tahun ini masih terhubung dengan daftar item alokasi aktif Anda.</span>
+                    </div>
+                </section>
+            @else
+                <div class="review-list">
+                    @foreach ($orphanReviews as $review)
+                        <section class="panel review-card-item" data-searchable="{{ strtolower(($review->kaporItem?->item_name ?? 'item').' '.($review->kaporItem?->category ?? '').' '.($review->allocation?->budget_package_name_snapshot ?? '')) }}">
+                            <div class="panel-body orphan-review-body">
+                                <div class="review-head">
+                                    <div>
+                                        <strong class="review-item-name">{{ $review->item_name_snapshot }}</strong>
+                                        <div class="review-meta">{{ $review->category_label }} • {{ $review->package_name_snapshot ?? 'Snapshot lama' }}</div>
+                                    </div>
+                                    <span class="status-badge {{ $review->response_status === \App\Models\ItemReview::STATUS_NOT_RECEIVED ? 'warning' : 'success' }}">{{ $review->response_label }}</span>
+                                </div>
+                                <p class="review-copy">{{ $review->display_message }}</p>
+                            </div>
+                        </section>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+
+        <footer class="personil-footer-links">
+            <a href="{{ route('dashboard') }}">Data Kapor</a>
+            <span>•</span>
+            <a href="{{ route('personil.kapor.history') }}">Riwayat Ukuran</a>
+            <span>•</span>
+            <a href="{{ route('personil.testimoni.index') }}">Review Item</a>
+        </footer>
+    </div>
+@endsection
 
 @section('styles')
     <style>
-        .alert-success {
-            padding: 16px 18px;
-            border-radius: 12px;
+        .review-page {
+            gap: 16px;
+        }
+
+        .hero-panel {
+            background: #ffffff;
+            border-color: var(--border-color);
+        }
+
+        .hero-body {
+            display: grid;
+            gap: 16px;
+        }
+
+        .eyebrow {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--brand);
+        }
+
+        .hero-body h1 {
+            margin: 8px 0 0;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-body p {
+            margin: 10px 0 0;
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        .tab-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 42px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            color: var(--text-main);
             font-size: 13px;
             font-weight: 700;
-            color: var(--success);
+        }
+
+        .alert {
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            background: #fff;
+            display: grid;
+            gap: 10px;
+        }
+
+        .dismiss-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .dismiss-btn,
+        .toast-close {
+            width: 30px;
+            height: 30px;
+            border: 0;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.08);
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+
+        .toast-success {
+            position: fixed;
+            top: 18px;
+            right: 16px;
+            z-index: 60;
+            width: min(420px, calc(100vw - 32px));
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px;
+            border-radius: 14px;
             border: 1px solid #bbf7d0;
             background: #f0fdf4;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            color: #166534;
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
         }
 
-        .alert-error {
-            padding: 16px 18px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--danger);
-            border: 1px solid #fecaca;
-            background: #fef2f2;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .toast-success.hide {
+            opacity: 0;
+            transform: translateY(-8px);
+            pointer-events: none;
+            transition: opacity 0.18s ease, transform 0.18s ease;
         }
 
-        .alert-info {
-            padding: 16px 18px;
-            border-radius: 12px;
+        .toast-success-body {
+            display: flex;
+            gap: 10px;
+            line-height: 1.6;
             font-size: 13px;
             font-weight: 700;
-            color: #1d4ed8;
-            border: 1px solid #bfdbfe;
+            flex: 1;
+        }
+
+        .alert.success {
+            border-color: #bbf7d0;
+            background: #f0fdf4;
+            color: var(--success);
+        }
+
+        .alert.info {
+            border-color: #bfdbfe;
             background: #eff6ff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .field {
-            margin-top: 14px;
-            padding: 0;
-            background: transparent;
-            border: none;
-        }
-
-        .label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .control {
-            width: 100%;
-            min-height: 46px;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            background: #fff;
-        }
-
-        .control:focus {
-            outline: none;
-            border-color: var(--brand);
-            box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.08);
-        }
-
-        textarea.control {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .error {
-            display: block;
-            margin-top: 8px;
-            font-size: 12px;
-            color: var(--danger);
-            font-weight: 700;
-        }
-
-        /* ── Rating Category Row ── */
-        .category-ratings {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            overflow: hidden;
-            background: #fff;
-        }
-
-        .category-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 16px;
-            gap: 12px;
-            border-bottom: 1px solid var(--border-color);
-            transition: background 0.15s;
-        }
-
-        .category-row:last-child {
-            border-bottom: none;
-        }
-
-        .category-row:hover {
-            background: var(--slate-50);
-        }
-
-        .category-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text-main);
-            min-width: 0;
-        }
-
-        .category-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        .category-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-
-        .rating-desc-inline {
-            font-size: 12px;
-            font-weight: 700;
-            color: #f59e0b;
-            min-width: 78px;
-            text-align: right;
-        }
-
-        /* ── Star Rating ── */
-        .rating {
-            display: flex;
-            flex-direction: row-reverse;
-            justify-content: flex-end;
-            gap: 4px;
-        }
-
-        .rating input {
-            display: none;
-        }
-
-        .rating label {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            color: var(--slate-300);
-            background: var(--slate-50);
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .rating label:hover,
-        .rating label:hover~label,
-        .rating input:checked~label {
-            color: #f59e0b;
-            background: #fff7ed;
-        }
-
-        /* ── Submit Button ── */
-        .button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            min-height: 48px;
-            padding: 0 20px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            border: none;
-            background: var(--brand);
-            color: #fff;
-            cursor: pointer;
-            transition: all 0.2s;
-            gap: 8px;
-        }
-
-        .button:hover {
-            background: var(--brand-light);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(198, 40, 40, 0.2);
-        }
-
-        /* ── Cooldown State ── */
-        .cooldown-banner {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding: 32px 20px;
-            gap: 12px;
-        }
-
-        .cooldown-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            background: var(--info-soft);
             color: var(--info);
         }
 
-        .cooldown-title {
+        .alert.warning {
+            border-color: #fde68a;
+            background: #fffbeb;
+            color: var(--warning);
+        }
+
+        .alert.error {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: var(--danger);
+        }
+
+        .status-banner strong,
+        .summary-item strong {
+            display: block;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .status-banner span,
+        .summary-item span,
+        .review-copy,
+        .review-meta,
+        .helper-copy {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .status-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.78);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .summary-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .compact-summary {
+            display: grid;
+            gap: 6px;
+        }
+
+        .compact-summary strong {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .compact-summary span {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .eligible-chip-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .eligible-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: var(--slate-50);
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .eligible-chip.muted {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .summary-item span {
+            display: block;
+            margin-top: 6px;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .note {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: var(--slate-50);
+            border: 1px solid var(--border-color);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .toolbar-stack {
+            display: grid;
+            gap: 10px;
+        }
+
+        .toolbar-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 46px;
+            padding: 0 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .compact-search {
+            width: 100%;
+        }
+
+        .search-box input {
+            width: 100%;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .tab-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            scrollbar-width: none;
+        }
+
+        .tab-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-btn.active {
+            background: #111827;
+            border-color: #111827;
+            color: #fff;
+        }
+
+        .tab-panel {
+            display: none;
+            gap: 16px;
+        }
+
+        .tab-panel.active {
+            display: grid;
+        }
+
+        .review-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            display: grid;
+            gap: 10px;
+            color: var(--text-muted);
+            justify-items: center;
+            padding: 12px 0;
+        }
+
+        .empty-state i {
+            font-size: 28px;
+            color: var(--slate-400);
+        }
+
+        .orphan-review-body {
+            display: grid;
+            gap: 12px;
+        }
+
+        .review-head {
+            display: grid;
+            gap: 8px;
+        }
+
+        .review-item-name {
+            display: block;
             font-size: 15px;
             font-weight: 800;
             color: var(--text-main);
         }
 
-        .cooldown-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.6;
-            max-width: 400px;
+        .review-card-body,
+        .review-form,
+        .review-fieldset,
+        .field-group {
+            display: grid;
+            gap: 10px;
         }
 
-        .cooldown-date {
+        .review-card-item .panel-body {
+            padding: 14px 16px 16px;
+        }
+
+        .review-fieldset {
+            border: 0;
+            padding: 0;
+            margin: 0;
+            min-width: 0;
+        }
+
+        .review-form-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .field-control {
+            width: 100%;
+            min-height: 42px;
+            padding: 0 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text-main);
+            font-size: 13px;
+        }
+
+        .field-textarea {
+            padding: 10px;
+            min-height: 92px;
+            resize: vertical;
+        }
+
+        .field-control:focus {
+            outline: none;
+            border-color: #f87171;
+            box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.12);
+        }
+
+        .review-fieldset[disabled] .field-control {
+            background: var(--slate-100);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .status-choice-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .status-choice {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 800;
-            color: var(--info);
-            background: var(--info-soft);
-            border: 1px solid rgba(37, 99, 235, 0.15);
-        }
-
-        /* ── History Cards ── */
-        .history-batch {
+            justify-content: center;
+            min-height: 40px;
+            padding: 0 12px;
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            overflow: hidden;
+            border-radius: 999px;
             background: #fff;
+            cursor: pointer;
+            transition: 0.18s ease;
+            width: auto;
+            flex: 0 0 auto;
         }
 
-        .history-batch+.history-batch {
-            margin-top: 12px;
+        .status-choice input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
         }
 
-        .batch-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            background: var(--slate-50);
-            border-bottom: 1px solid var(--border-color);
+        .status-choice.active {
+            border-color: var(--brand);
+            background: var(--brand);
+            color: #fff;
+        }
+
+        .status-choice-title {
             font-size: 12px;
-            font-weight: 700;
-            color: var(--text-muted);
+            font-weight: 800;
+            color: inherit;
         }
 
-        .batch-ratings {
-            display: flex;
-            flex-direction: column;
+        .review-fieldset[disabled] .status-choice {
+            background: #7f1d1d;
+            border-color: #7f1d1d;
+            color: #fee2e2;
+            cursor: not-allowed;
         }
 
-        .batch-rating-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 13px;
+        .review-fieldset[disabled] .status-choice.active {
+            background: #991b1b;
+            border-color: #991b1b;
+            color: #fff;
         }
 
-        .batch-rating-row:last-child {
-            border-bottom: none;
-        }
-
-        .batch-cat-label {
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        .batch-stars {
-            display: flex;
+        .star-picker {
+            display: inline-flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
             gap: 2px;
+        }
+
+        .star-picker input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .star-picker label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--slate-300);
+            font-size: 26px;
+            transition: 0.16s ease;
+            line-height: 1;
+        }
+
+        .star-picker label i {
+            pointer-events: none;
+        }
+
+        .star-picker input:checked ~ label,
+        .star-picker label:hover,
+        .star-picker label:hover ~ label {
             color: #f59e0b;
-            font-size: 14px;
         }
 
-        .batch-message {
-            padding: 12px 16px;
-            border-top: 1px solid var(--border-color);
-            font-size: 13px;
+        .review-fieldset[disabled] .star-picker label {
+            cursor: not-allowed;
+        }
+
+        .star-helper {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .review-actions {
+            display: grid;
+            gap: 8px;
+        }
+
+        .submit-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 0 14px;
+            border: 0;
+            border-radius: 12px;
+            background: var(--brand);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .submit-button:disabled {
+            background: var(--slate-300);
+            cursor: not-allowed;
+        }
+
+        .submit-button.hidden {
+            display: none;
+        }
+
+        .edit-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: #fff;
             color: var(--text-main);
-            background: var(--slate-50);
-            line-height: 1.6;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
         }
 
-        @media (max-width: 480px) {
-            .category-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: fit-content;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .status-badge.success {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+
+        .status-badge.warning {
+            background: var(--warning-soft);
+            color: var(--warning);
+        }
+
+        .status-badge.info {
+            background: var(--info-soft);
+            color: var(--info);
+        }
+
+        .personil-footer-links {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        @media (min-width: 768px) {
+            .hero-body {
+                grid-template-columns: 1fr;
             }
 
-            .category-right {
-                width: 100%;
-                justify-content: space-between;
+            .review-form-grid,
+            .review-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                align-items: end;
             }
 
-            .rating-desc-inline {
-                min-width: auto;
+            .review-actions .helper-copy {
+                align-self: center;
+            }
+
+            .tab-row {
+                overflow: visible;
+            }
+
+            .review-head {
+                grid-template-columns: 1fr auto;
+                align-items: start;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .toolbar-row {
+                justify-content: flex-start;
+            }
+
+            .review-head {
+                grid-template-columns: 1fr;
+            }
+
+            .status-choice-grid {
+                gap: 6px;
+            }
+
+            .status-choice {
+                min-height: 38px;
+                padding: 0 11px;
+            }
+
+            .toast-success {
+                top: 14px;
+                right: 12px;
+                width: min(420px, calc(100vw - 24px));
             }
         }
     </style>
 @endsection
 
-@section('content')
-    <div class="page">
-        @if (session('success_testimoni'))
-            <div class="alert-success">
-                <i class="ri-checkbox-circle-fill" style="font-size: 18px;"></i>
-                {{ session('success_testimoni') }}
-            </div>
-        @endif
-
-        @if (session('error_testimoni'))
-            <div class="alert-error">
-                <i class="ri-error-warning-fill" style="font-size: 18px;"></i>
-                {{ session('error_testimoni') }}
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="alert-error">
-                <i class="ri-error-warning-fill" style="font-size: 18px;"></i>
-                {{ session('error') }}
-            </div>
-        @endif
-
-        @if (!($inputPeriodStatus['is_open'] ?? true))
-            <div class="alert-info">
-                <i class="ri-calendar-event-line" style="font-size: 18px;"></i>
-                {{ $inputPeriodStatus['title'] }}. {{ $inputPeriodStatus['message'] }} Periode yang berlaku: {{ $inputPeriodStatus['period_label'] }}.
-            </div>
-        @endif
-
-        <section class="panel">
-            <div class="panel-header">
-                <h2>Testimoni Kapor</h2>
-                <p>Beri penilaian Anda untuk setiap bagian kaporlap yang diterima.</p>
-            </div>
-            <div class="panel-body">
-                @if ($canSubmitNow)
-                    <form action="{{ route('personil.testimoni.store') }}" method="POST">
-                        @csrf
-
-                        <div class="field">
-                            <label class="label">Penilaian per Kategori</label>
-
-                            <div class="category-ratings">
-                                @php
-                                    $categories = [
-                                        'tutup_kepala' => [
-                                            'label' => 'Tutup Kepala',
-                                            'icon' => 'ri-shield-user-line',
-                                            'bg' => '#eff6ff',
-                                            'color' => '#2563eb',
-                                        ],
-                                        'tutup_badan' => [
-                                            'label' => 'Tutup Badan',
-                                            'icon' => 'ri-t-shirt-2-line',
-                                            'bg' => '#f0fdf4',
-                                            'color' => '#059669',
-                                        ],
-                                        'tutup_kaki' => [
-                                            'label' => 'Tutup Kaki',
-                                            'icon' => 'ri-footprint-line',
-                                            'bg' => '#fff7ed',
-                                            'color' => '#d97706',
-                                        ],
-                                    ];
-                                @endphp
-
-                                @foreach ($categories as $key => $cat)
-                                    <div class="category-row">
-                                        <div class="category-label">
-                                            <div class="category-icon"
-                                                style="background: {{ $cat['bg'] }}; color: {{ $cat['color'] }};">
-                                                <i class="{{ $cat['icon'] }}"></i>
-                                            </div>
-                                            <span>{{ $cat['label'] }}</span>
-                                        </div>
-                                        <div class="category-right">
-                                            <div class="rating" data-category="{{ $key }}">
-                                                @for ($star = 5; $star >= 1; $star--)
-                                                    <input type="radio" id="rating-{{ $key }}-{{ $star }}"
-                                                        name="rating_{{ $key }}" value="{{ $star }}"
-                                                        {{ (int) old('rating_' . $key, 5) === $star ? 'checked' : '' }}>
-                                                    <label for="rating-{{ $key }}-{{ $star }}"
-                                                        data-value="{{ $star }}">
-                                                        <i class="ri-star-fill"></i>
-                                                    </label>
-                                                @endfor
-                                            </div>
-                                            <div class="rating-desc-inline" id="desc-{{ $key }}">Sangat Bagus</div>
-                                        </div>
-                                    </div>
-                                    @error('rating_' . $key)
-                                        <div style="padding: 4px 16px;">
-                                            <span class="error">{{ $message }}</span>
-                                        </div>
-                                    @enderror
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <div class="field">
-                            <label class="label" for="message">Pesan / Saran <span
-                                    style="font-weight: 500; color: var(--text-muted);">(opsional)</span></label>
-                            <textarea id="message" name="message" class="control"
-                                placeholder="Ceritakan pengalaman Anda tentang kaporlap yang diterima...">{{ old('message') }}</textarea>
-                            @error('message')
-                                <span class="error">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div style="margin-top: 18px;">
-                            <button type="submit" class="button">
-                                <i class="ri-send-plane-fill"></i>
-                                Kirim Testimoni
-                            </button>
-                        </div>
-                    </form>
-                @elseif (!$canSubmit)
-                    <div class="cooldown-banner">
-                        <div class="cooldown-icon">
-                            <i class="ri-time-line"></i>
-                        </div>
-                        <div class="cooldown-title">Testimoni sudah dikirim</div>
-                        <div class="cooldown-desc">
-                            Anda sudah mengirim testimoni pada
-                            <strong>{{ $latestTestimonial->created_at->format('d M Y, H:i') }}</strong>.
-                            Untuk menjaga kualitas umpan balik, testimoni berikutnya dapat dikirim setelah:
-                        </div>
-                        <div class="cooldown-date">
-                            <i class="ri-calendar-check-line"></i>
-                            {{ $cooldownEndsAt->format('d M Y') }}
-                            @if ($daysSinceLastSubmit !== null)
-                                ({{ $daysSinceLastSubmit + 1 }} hari lagi)
-                            @endif
-                        </div>
-                    </div>
-                @else
-                    <div class="cooldown-banner">
-                        <div class="cooldown-icon">
-                            <i class="ri-lock-line"></i>
-                        </div>
-                        <div class="cooldown-title">Pengiriman testimoni sedang nonaktif</div>
-                        <div class="cooldown-desc">
-                            Anda masih bisa melihat riwayat testimoni sebelumnya, tetapi pengiriman testimoni baru akan dibuka kembali mengikuti status periode input yang aktif.
-                        </div>
-                        <div class="cooldown-date">
-                            <i class="ri-calendar-check-line"></i>
-                            {{ $inputPeriodStatus['period_label'] }}
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </section>
-
-        @if ($groupedTestimonials->isNotEmpty())
-            <section class="panel">
-                <div class="panel-header">
-                    <h2>Riwayat Testimoni</h2>
-                    <p>Testimoni yang pernah Anda kirim sebelumnya.</p>
-                </div>
-                <div class="panel-body">
-                    @foreach ($groupedTestimonials as $timestamp => $batch)
-                        <div class="history-batch">
-                            <div class="batch-header">
-                                <span>{{ \Carbon\Carbon::parse($timestamp)->format('d M Y, H:i') }}</span>
-                            </div>
-                            <div class="batch-ratings">
-                                @foreach ($batch as $testimonial)
-                                    <div class="batch-rating-row">
-                                        <span class="batch-cat-label">{{ $testimonial->category_label }}</span>
-                                        <div class="batch-stars">
-                                            @for ($star = 1; $star <= 5; $star++)
-                                                <i
-                                                    class="{{ ($testimonial->rating ?? 5) >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
-                                            @endfor
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                            @if (filled($batch->first()->message))
-                                <div class="batch-message">
-                                    <i class="ri-chat-quote-line"
-                                        style="color: var(--text-muted); margin-right: 4px;"></i>
-                                    {{ $batch->first()->message }}
-                                </div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        <footer style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color); text-align: center;">
-            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
-                <a href="{{ route('dashboard') }}"
-                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Kembali ke Data</a>
-                <span style="color: var(--slate-300);">•</span>
-                <a href="{{ route('personil.kapor.history') }}"
-                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Riwayat Ukuran</a>
-            </div>
-        </footer>
-    </div>
-@endsection
-
 @section('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const texts = {
-                '5': 'Sangat Bagus',
-                '4': 'Bagus',
-                '3': 'Biasa',
-                '2': 'Buruk',
-                '1': 'Sangat Buruk'
-            };
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
+            const panels = Array.from(document.querySelectorAll('.tab-panel'));
+            const searchInput = document.getElementById('reviewSearch');
 
-            document.querySelectorAll('.rating').forEach(ratingGroup => {
-                const category = ratingGroup.dataset.category;
-                const descEl = document.getElementById('desc-' + category);
-                const inputs = ratingGroup.querySelectorAll('input[type="radio"]');
-                const labels = ratingGroup.querySelectorAll('label');
+            tabButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach((tab) => tab.classList.remove('active'));
+                    panels.forEach((panel) => panel.classList.remove('active'));
 
-                function updateDesc(val) {
-                    if (descEl && texts[val]) {
-                        descEl.textContent = texts[val];
-                    }
-                }
-
-                // Initialize description
-                const checked = ratingGroup.querySelector('input:checked');
-                if (checked) updateDesc(checked.value);
-
-                inputs.forEach(input => {
-                    input.addEventListener('change', (e) => updateDesc(e.target.value));
-                });
-
-                labels.forEach(label => {
-                    label.addEventListener('mouseenter', () => updateDesc(label.dataset.value));
-                    label.addEventListener('mouseleave', () => {
-                        const checked = ratingGroup.querySelector('input:checked');
-                        if (checked) updateDesc(checked.value);
-                    });
+                    button.classList.add('active');
+                    document.querySelector(`[data-panel="${button.dataset.tab}"]`)?.classList.add('active');
+                    applySearch();
                 });
             });
+
+            document.querySelectorAll('.review-card-item').forEach((card) => {
+                card.querySelectorAll('[data-response-input]').forEach((input) => {
+                    input.addEventListener('change', () => toggleRatingField(card));
+                });
+
+                const editToggle = card.querySelector('[data-edit-toggle]');
+                if (editToggle) {
+                    editToggle.addEventListener('click', () => toggleEditMode(card));
+                }
+
+                toggleRatingField(card);
+            });
+
+            document.querySelectorAll('[data-dismissible]').forEach((element) => {
+                element.querySelector('[data-dismiss-trigger]')?.addEventListener('click', () => {
+                    element.style.display = 'none';
+                });
+            });
+
+            const toast = document.getElementById('reviewToast');
+            if (toast) {
+                const hideToast = () => {
+                    toast.classList.add('hide');
+                    window.setTimeout(() => toast.remove(), 180);
+                };
+
+                toast.querySelector('[data-close-toast]')?.addEventListener('click', hideToast);
+                window.setTimeout(hideToast, 4200);
+            }
+
+            searchInput?.addEventListener('input', applySearch);
+
+            function applySearch() {
+                const activePanel = document.querySelector('.tab-panel.active');
+                const term = (searchInput?.value || '').trim().toLowerCase();
+
+                activePanel?.querySelectorAll('.review-card-item').forEach((card) => {
+                    const haystack = String(card.dataset.searchable || '').toLowerCase();
+                    card.style.display = haystack.includes(term) ? '' : 'none';
+                });
+            }
+
+            function toggleRatingField(card) {
+                const ratingWrap = card?.querySelector('[data-rating-wrap]');
+                const checkedResponse = card?.querySelector('[data-response-input]:checked');
+                const needsRating = checkedResponse?.value === '{{ \App\Models\ItemReview::STATUS_REVIEWED }}';
+
+                if (!ratingWrap) {
+                    return;
+                }
+
+                ratingWrap.style.display = needsRating ? '' : 'none';
+
+                card.querySelectorAll('.status-choice').forEach((choice) => {
+                    const input = choice.querySelector('[data-response-input]');
+                    choice.classList.toggle('active', Boolean(input?.checked));
+                });
+
+                card.querySelectorAll('[data-rating-input]').forEach((input) => {
+                    input.required = needsRating;
+                });
+            }
+
+            function toggleEditMode(card) {
+                const fieldset = card.querySelector('.review-fieldset');
+                const editToggle = card.querySelector('[data-edit-toggle]');
+                const submitButton = card.querySelector('.submit-button');
+                const isEditing = card.dataset.editing === 'true';
+
+                if (!fieldset || !editToggle || !submitButton) {
+                    return;
+                }
+
+                if (isEditing) {
+                    card.dataset.editing = 'false';
+                    fieldset.disabled = true;
+                    card.querySelector('form')?.reset();
+                    editToggle.innerHTML = '<i class="ri-edit-line"></i> Edit';
+                    submitButton.classList.add('hidden');
+                    toggleRatingField(card);
+
+                    return;
+                }
+
+                card.dataset.editing = 'true';
+                fieldset.disabled = false;
+                editToggle.innerHTML = '<i class="ri-close-line"></i> Batal';
+                submitButton.classList.remove('hidden');
+                toggleRatingField(card);
+            }
         });
     </script>
 @endsection

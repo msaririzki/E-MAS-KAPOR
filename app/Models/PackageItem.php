@@ -46,6 +46,11 @@ class PackageItem extends Model
         return $this->hasMany(PackageItemRecipient::class);
     }
 
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(PersonnelItemAllocation::class);
+    }
+
     // ── Accessors ─────────────────────────────────────────────
 
     /**

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Middleware\SystemLock;
-use App\Models\Testimonial;
+use App\Models\ItemReview;
+use App\Models\PersonnelItemAllocation;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\KaporRequirementService;
+use App\Support\PeriodGate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -122,97 +124,128 @@ class PersonilPortalController extends Controller
 
     public function showTestimoni(Request $request): View
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $fiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $reviewPeriodStatus = PeriodGate::resolveReviewStatus();
 
-        // Fetch last batch of testimonials by this user (grouped by submission time)
-        $recentTestimonials = Testimonial::query()
-            ->where('user_id', $userId)
-            ->latest()
-            ->take(9) // 3 categories × 3 submissions
+        $allocations = PersonnelItemAllocation::query()
+            ->with(['kaporItem:id,item_name,category', 'budgetPackage:id,name'])
+            ->where('user_id', $user->id)
+            ->where('fiscal_year', $fiscalYear)
+            ->orderByDesc('allocated_at')
+            ->orderByDesc('id')
             ->get();
 
-        // Cooldown check: find latest testimonial from this user
-        $latestTestimonial = Testimonial::query()
-            ->where('user_id', $userId)
-            ->latest()
-            ->first();
+        $existingReviews = ItemReview::query()
+            ->with(['kaporItem:id,item_name,category', 'allocation:id,kapor_item_id,budget_package_name_snapshot'])
+            ->where('user_id', $user->id)
+            ->where('fiscal_year', $fiscalYear)
+            ->orderByDesc('updated_at')
+            ->get()
+            ->keyBy('kapor_item_id');
 
-        $canSubmit = true;
-        $cooldownEndsAt = null;
-        $daysSinceLastSubmit = null;
-        $inputPeriodStatus = SystemLock::resolveStatus();
+        $allocationCards = $allocations
+            ->groupBy('kapor_item_id')
+            ->map(function ($group) use ($existingReviews) {
+                /** @var \App\Models\PersonnelItemAllocation $allocation */
+                $allocation = $group->sortByDesc('allocated_at')->first();
+                $review = $existingReviews->get($allocation->kapor_item_id);
 
-        if ($latestTestimonial) {
-            $cooldownEndsAt = $latestTestimonial->created_at->addDays(Testimonial::COOLDOWN_DAYS);
-            $canSubmit = now()->greaterThanOrEqualTo($cooldownEndsAt);
+                return [
+                    'allocation' => $allocation,
+                    'review' => $review,
+                    'item_name' => $allocation->kapor_item_name_snapshot,
+                    'item_category' => $allocation->item_category_snapshot,
+                    'package_name' => $allocation->budget_package_name_snapshot,
+                    'status' => $review?->response_status,
+                    'is_reviewed' => $review !== null,
+                    'updated_at' => $review?->updated_at,
+                ];
+            })
+            ->values();
 
-            if (! $canSubmit) {
-                $daysSinceLastSubmit = (int) now()->diffInDays($cooldownEndsAt, false);
-            }
-        }
-
-        // Group recent testimonials by submission batch (same created_at minute)
-        $groupedTestimonials = $recentTestimonials
-            ->groupBy(fn (Testimonial $t): string => $t->created_at->format('Y-m-d H:i'));
-
-        $canSubmitNow = $canSubmit && ($inputPeriodStatus['is_open'] ?? true);
+        $pendingCards = $allocationCards->where('is_reviewed', false)->values();
+        $reviewedCards = $allocationCards->where('is_reviewed', true)->values();
+        $orphanReviews = $existingReviews
+            ->reject(fn (ItemReview $review) => $allocationCards->contains(fn (array $card): bool => (int) $card['allocation']->kapor_item_id === (int) $review->kapor_item_id))
+            ->values();
 
         return view('personil.testimoni.index', compact(
-            'recentTestimonials',
-            'canSubmit',
-            'canSubmitNow',
-            'cooldownEndsAt',
-            'daysSinceLastSubmit',
-            'latestTestimonial',
-            'groupedTestimonials',
-            'inputPeriodStatus',
+            'fiscalYear',
+            'reviewPeriodStatus',
+            'allocationCards',
+            'pendingCards',
+            'reviewedCards',
+            'orphanReviews',
         ));
     }
 
     public function storeTestimoni(Request $request): RedirectResponse
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $fiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
 
-        // Enforce cooldown on backend
-        $latestTestimonial = Testimonial::query()
-            ->where('user_id', $userId)
-            ->latest()
+        $allocation = PersonnelItemAllocation::query()
+            ->whereKey($request->input('allocation_id'))
+            ->where('user_id', $user->id)
+            ->where('fiscal_year', $fiscalYear)
             ->first();
 
-        if ($latestTestimonial) {
-            $cooldownEndsAt = $latestTestimonial->created_at->addDays(Testimonial::COOLDOWN_DAYS);
-
-            if (now()->lessThan($cooldownEndsAt)) {
-                return redirect()->route('personil.testimoni.index')
-                    ->with('error_testimoni', 'Anda sudah memberi testimoni baru-baru ini. Silakan tunggu hingga '.$cooldownEndsAt->format('d M Y').'.');
-            }
+        if ($allocation === null) {
+            return redirect()->route('personil.testimoni.index')
+                ->with('error_testimoni', 'Item review yang dipilih tidak ditemukan atau sudah tidak tersedia untuk akun Anda.');
         }
 
         $validated = $request->validate([
-            'rating_tutup_kepala' => 'required|integer|min:1|max:5',
-            'rating_tutup_badan' => 'required|integer|min:1|max:5',
-            'rating_tutup_kaki' => 'required|integer|min:1|max:5',
+            'allocation_id' => 'required|integer',
+            'response_status' => 'required|in:'.implode(',', array_keys(ItemReview::RESPONSE_STATUSES)),
+            'rating' => 'nullable|integer|min:1|max:5',
             'message' => 'nullable|string|max:2000',
         ]);
 
-        $message = $validated['message'] ?? '';
-        $now = now();
+        if ($validated['response_status'] === ItemReview::STATUS_REVIEWED && ! isset($validated['rating'])) {
+            return redirect()->route('personil.testimoni.index')
+                ->with('error_testimoni', 'Rating wajib diisi jika Anda memilih status sudah menerima item.');
+        }
 
-        DB::transaction(function () use ($userId, $validated, $message, $now): void {
-            foreach (Testimonial::CATEGORIES as $key => $label) {
-                Testimonial::create([
-                    'user_id' => $userId,
-                    'category' => $key,
-                    'message' => $message,
-                    'rating' => $validated['rating_'.$key],
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]);
-            }
-        });
+        $review = ItemReview::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'kapor_item_id' => $allocation->kapor_item_id,
+                'fiscal_year' => $fiscalYear,
+            ],
+            [
+                'personnel_item_allocation_id' => $allocation->id,
+                'personnel_id' => $allocation->personnel_id,
+                'response_status' => $validated['response_status'],
+                'rating' => $validated['response_status'] === ItemReview::STATUS_REVIEWED
+                    ? (int) $validated['rating']
+                    : null,
+                'comment' => filled($validated['message'] ?? null) ? trim((string) $validated['message']) : null,
+                'submitted_at' => now(),
+            ],
+        );
+
+        AuditLogger::log(
+            $review->wasRecentlyCreated ? 'Kirim Review Item Kapor' : 'Perbarui Review Item Kapor',
+            'Review Kapor',
+            $review,
+            null,
+            [
+                'kapor_item' => $allocation->kapor_item_name_snapshot,
+                'response_status' => $review->response_status,
+                'rating' => $review->rating,
+            ],
+            'success',
+            $review->response_status === ItemReview::STATUS_NOT_RECEIVED
+                ? 'Personil melaporkan item kapor belum diterima.'
+                : 'Personil mengirim atau memperbarui review item kapor.',
+        );
 
         return redirect()->route('personil.testimoni.index')
-            ->with('success_testimoni', 'Terima kasih! Testimoni untuk ketiga kategori kapor berhasil dikirim.');
+            ->with('success_testimoni', $review->response_status === ItemReview::STATUS_NOT_RECEIVED
+                ? 'Laporan item belum diterima berhasil disimpan. Admin dapat menindaklanjuti status penerimaan item tersebut.'
+                : 'Review item kapor berhasil disimpan. Anda masih bisa memperbaruinya selama periode review masih berjalan.');
     }
 
     private function normalizeIdentityValue(string $value): string

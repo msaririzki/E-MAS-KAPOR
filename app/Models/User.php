@@ -88,6 +88,16 @@ class User extends Authenticatable
         return $this->hasMany(Testimonial::class);
     }
 
+    public function itemAllocations(): HasMany
+    {
+        return $this->hasMany(PersonnelItemAllocation::class);
+    }
+
+    public function itemReviews(): HasMany
+    {
+        return $this->hasMany(ItemReview::class);
+    }
+
     public function isPersonnel(): bool
     {
         return $this->hasRole('personil');

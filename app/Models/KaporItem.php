@@ -69,6 +69,16 @@ class KaporItem extends Model
         return $this->hasMany(KebutuhanItem::class);
     }
 
+    public function itemAllocations(): HasMany
+    {
+        return $this->hasMany(PersonnelItemAllocation::class);
+    }
+
+    public function itemReviews(): HasMany
+    {
+        return $this->hasMany(ItemReview::class);
+    }
+
     // ── Scopes ────────────────────────────────────────────────
 
     public function scopeActive($query)

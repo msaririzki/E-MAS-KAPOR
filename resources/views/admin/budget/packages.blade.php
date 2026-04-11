@@ -150,6 +150,9 @@
                         <option value="finalized">Final</option>
                         <option value="archived">Arsip</option>
                     </select>
+                    <div style="margin-top: 8px; font-size: 12px; color: #6B7280; line-height: 1.5;">
+                        Saat paket disimpan sebagai <strong>Final</strong>, sistem akan membentuk atau memperbarui snapshot item review untuk personil yang termasuk dalam nominatif paket tersebut.
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">

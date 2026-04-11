@@ -3,32 +3,68 @@
 namespace App\Http\Controllers\Superadmin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Testimonial;
+use App\Models\ItemReview;
 use Illuminate\Http\Request;
 
 class TestimonialController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Testimonial::with(['user.satker']);
+        $query = ItemReview::with(['user.satker', 'kaporItem', 'allocation']);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('message', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($q2) use ($search) {
-                      $q2->where('name', 'like', "%{$search}%")
-                         ->orWhere('nrp_nip', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('user.satker', function ($q2) use ($search) {
-                      $q2->where('name', 'like', "%{$search}%")
-                         ->orWhere('code', 'like', "%{$search}%");
-                  });
+                $q->where('comment', 'like', "%{$search}%")
+                    ->orWhereHas('kaporItem', function ($q2) use ($search) {
+                        $q2->where('item_name', 'like', "%{$search}%")
+                            ->orWhere('category', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('user', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%")
+                            ->orWhere('nrp_nip', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('user.satker', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%")
+                            ->orWhere('code', 'like', "%{$search}%");
+                    });
             });
         }
 
         if ($request->filled('category')) {
-            $query->where('category', $request->category);
+            $category = $request->category;
+
+            if (in_array($category, ['kepala', 'badan', 'kaki', 'lainnya'])) {
+                $categorySql = "CASE
+                    WHEN UPPER(COALESCE(personnel_item_allocations.item_category_snapshot, kapor_items.category, '')) LIKE '%KEPALA%'
+                        OR UPPER(COALESCE(personnel_item_allocations.item_category_snapshot, kapor_items.category, '')) LIKE '%TOPI%'
+                        OR UPPER(COALESCE(personnel_item_allocations.item_category_snapshot, kapor_items.category, '')) LIKE '%BARET%'
+                        THEN 'kepala'
+                    WHEN UPPER(COALESCE(personnel_item_allocations.item_category_snapshot, kapor_items.category, '')) LIKE '%KAKI%'
+                        OR UPPER(COALESCE(personnel_item_allocations.item_category_snapshot, kapor_items.category, '')) LIKE '%SEPATU%'
+                        THEN 'kaki'
+                    WHEN UPPER(COALESCE(personnel_item_allocations.item_category_snapshot, kapor_items.category, '')) LIKE '%BADAN%'
+                        OR UPPER(COALESCE(personnel_item_allocations.item_category_snapshot, kapor_items.category, '')) LIKE '%PAKAIAN%'
+                        OR UPPER(COALESCE(personnel_item_allocations.item_category_snapshot, kapor_items.category, '')) LIKE '%BAJU%'
+                        OR UPPER(COALESCE(personnel_item_allocations.item_category_snapshot, kapor_items.category, '')) LIKE '%KAOS%'
+                        THEN 'badan'
+                    ELSE 'lainnya'
+                END";
+
+                $query->leftJoin('personnel_item_allocations', 'personnel_item_allocations.id', '=', 'item_reviews.personnel_item_allocation_id')
+                    ->leftJoin('kapor_items', 'kapor_items.id', '=', 'item_reviews.kapor_item_id')
+                    ->whereRaw("($categorySql) = ?", [$category])
+                    ->select('item_reviews.*');
+            } else {
+                $query->where(function ($q) use ($category) {
+                    $q->whereHas('kaporItem', fn($kaporQuery) => $kaporQuery->where('category', 'like', "%{$category}%"))
+                        ->orWhereHas('allocation', fn($allocQuery) => $allocQuery->where('item_category_snapshot', 'like', "%{$category}%"));
+                });
+            }
+        }
+
+        if ($request->filled('response_status')) {
+            $query->where('response_status', $request->response_status);
         }
 
         if ($request->filled('rating')) {

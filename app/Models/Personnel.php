@@ -76,6 +76,16 @@ class Personnel extends Model
         return $this->hasMany(KaporSubmission::class);
     }
 
+    public function itemAllocations(): HasMany
+    {
+        return $this->hasMany(PersonnelItemAllocation::class);
+    }
+
+    public function itemReviews(): HasMany
+    {
+        return $this->hasMany(ItemReview::class);
+    }
+
     public function getWhatsappLinkAttribute(): ?string
     {
         return User::buildWhatsappLink($this->phone ?: $this->user?->phone);

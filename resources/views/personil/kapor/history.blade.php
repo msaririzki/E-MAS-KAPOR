@@ -132,7 +132,7 @@
                     style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Kembali ke Data</a>
                 <span style="color: var(--slate-300);">•</span>
                 <a href="{{ route('personil.testimoni.index') }}"
-                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Halaman Testimoni</a>
+                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Halaman Review</a>
             </div>
         </footer>
     </div>

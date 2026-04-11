@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Middleware\SystemLock;
 use App\Models\BagianOption;
+use App\Models\ItemReview;
 use App\Models\KaporItem;
 use App\Models\Personnel;
+use App\Models\PersonnelItemAllocation;
 use App\Models\Satker;
 use App\Models\Setting;
-use App\Models\Testimonial;
 use App\Models\User;
 use App\Services\KaporRequirementService;
 use App\Services\SatkerPersonnelCountService;
 use App\Services\TestimonialInsightService;
-use Carbon\Carbon;
+use App\Support\PeriodGate;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -64,19 +64,7 @@ class DashboardController extends Controller
         $fillRate = $totalPersonnel > 0 ? round(($submittedCount / $totalPersonnel) * 100, 1) : 0;
 
         // Cek status kunci sistem (Manual & Tanggal)
-        $isLocked = Setting::getValue('is_system_locked', 'false') === 'true';
-        if (! $isLocked) {
-            try {
-                $startDate = Carbon::parse(Setting::getValue('input_start_date', date('Y-02-01')))->startOfDay();
-                $endDate = Carbon::parse(Setting::getValue('input_end_date', date('Y-08-31')))->endOfDay();
-                $now = now();
-                if ($now->lessThan($startDate) || $now->greaterThan($endDate)) {
-                    $isLocked = true;
-                }
-            } catch (\Exception $e) {
-                // Ignore parse errors
-            }
-        }
+        $isLocked = ! (PeriodGate::resolveInputStatus()['is_open'] ?? true);
 
         $stats = [
             'total_users' => User::count(),
@@ -211,7 +199,8 @@ class DashboardController extends Controller
     {
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
         $personnel = $user->personnel;
-        $inputPeriodStatus = SystemLock::resolveStatus();
+        $inputPeriodStatus = PeriodGate::resolveInputStatus();
+        $reviewPeriodStatus = PeriodGate::resolveReviewStatus();
         $bagianOptions = BagianOption::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
@@ -224,17 +213,28 @@ class DashboardController extends Controller
         $identityReady = false;
         $requiresBagian = false;
         $contactPhone = User::normalizePhone($user->phone);
-        $latestTestimonial = Testimonial::query()
+        $latestReview = ItemReview::query()
             ->where('user_id', $user->id)
+            ->where('fiscal_year', (int) $fiscalYear)
             ->latest()
             ->first();
-        $testimonialCooldownEndsAt = null;
-        $canSubmitTestimonial = true;
-
-        if ($latestTestimonial !== null) {
-            $testimonialCooldownEndsAt = $latestTestimonial->created_at->copy()->addDays(Testimonial::COOLDOWN_DAYS);
-            $canSubmitTestimonial = now()->greaterThanOrEqualTo($testimonialCooldownEndsAt);
-        }
+        $eligibleItems = PersonnelItemAllocation::query()
+            ->where('user_id', $user->id)
+            ->where('fiscal_year', (int) $fiscalYear)
+            ->distinct()
+            ->count('kapor_item_id');
+        $eligibleReviewItems = PersonnelItemAllocation::query()
+            ->where('user_id', $user->id)
+            ->where('fiscal_year', (int) $fiscalYear)
+            ->orderBy('kapor_item_name_snapshot')
+            ->pluck('kapor_item_name_snapshot')
+            ->unique()
+            ->values();
+        $reviewedItems = ItemReview::query()
+            ->where('user_id', $user->id)
+            ->where('fiscal_year', (int) $fiscalYear)
+            ->count();
+        $pendingReviewItems = max($eligibleItems - $reviewedItems, 0);
 
         if ($personnel) {
             $kaporSizes = $personnel->kapor_sizes ?? [];
@@ -248,34 +248,42 @@ class DashboardController extends Controller
         }
 
         $reviewPrompt = [
-            'title' => 'Bagikan Pengalaman Kapor',
-            'message' => 'Masukan Anda membantu admin mengevaluasi kualitas item kapor yang diterima di lapangan.',
-            'action_label' => 'Buka Halaman Testimoni',
+            'title' => 'Belum Ada Item Review',
+            'message' => 'Daftar item review akan muncul setelah ada paket pengadaan finalized yang menempatkan item kapor untuk akun Anda.',
+            'action_label' => 'Lihat Halaman Review',
             'action' => 'testimoni',
             'tone' => 'info',
         ];
 
-        if (! ($inputPeriodStatus['is_open'] ?? true)) {
+        if ($eligibleItems === 0) {
             $reviewPrompt = [
-                'title' => 'Review Sementara Mode Baca Saja',
-                'message' => 'Halaman testimoni tetap bisa dibuka untuk melihat riwayat, tetapi pengiriman masukan baru mengikuti status periode input yang sedang berlaku.',
-                'action_label' => 'Lihat Halaman Testimoni',
+                'title' => 'Belum Ada Item Review',
+                'message' => 'Daftar item review akan muncul setelah ada paket pengadaan finalized yang menempatkan item kapor untuk akun Anda.',
+                'action_label' => 'Lihat Halaman Review',
                 'action' => 'testimoni',
                 'tone' => 'info',
             ];
-        } elseif (! $isComplete) {
+        } elseif (! ($reviewPeriodStatus['is_open'] ?? true)) {
             $reviewPrompt = [
-                'title' => 'Lengkapi Data Kaporelap Dulu',
-                'message' => 'Selesaikan data ukuran lebih dulu. Setelah itu Anda bisa mengirim testimoni untuk membantu evaluasi kualitas layanan.',
-                'action_label' => 'Lengkapi Ukuran',
-                'action' => 'ukuran',
+                'title' => 'Review Sementara Mode Baca Saja',
+                'message' => 'Halaman review tetap bisa dibuka untuk melihat item dan riwayat respons, tetapi pengiriman baru mengikuti status periode review yang sedang berlaku.',
+                'action_label' => 'Lihat Halaman Review',
+                'action' => 'testimoni',
+                'tone' => 'info',
+            ];
+        } elseif ($pendingReviewItems > 0) {
+            $reviewPrompt = [
+                'title' => 'Ada '.$pendingReviewItems.' Item Menunggu Respons',
+                'message' => 'Anda dapat memberi review item yang sudah diterima atau melaporkan item yang belum sampai agar admin bisa memantau distribusi.',
+                'action_label' => 'Buka Halaman Review',
+                'action' => 'testimoni',
                 'tone' => 'warning',
             ];
-        } elseif (! $canSubmitTestimonial && $testimonialCooldownEndsAt !== null) {
+        } else {
             $reviewPrompt = [
-                'title' => 'Testimoni Terakhir Sudah Terkirim',
-                'message' => 'Anda bisa mengirim testimoni lagi mulai '.$testimonialCooldownEndsAt->translatedFormat('d M Y').'. Jika ingin melihat riwayat masukan sebelumnya, buka halaman testimoni.',
-                'action_label' => 'Lihat Halaman Testimoni',
+                'title' => 'Semua Item Sudah Direspons',
+                'message' => 'Anda sudah merespons semua item review yang saat ini tersedia. Jika ada perubahan pengalaman, Anda masih bisa memperbarui review selama periode review belum ditutup.',
+                'action_label' => 'Kelola Review',
                 'action' => 'testimoni',
                 'tone' => 'success',
             ];
@@ -293,9 +301,12 @@ class DashboardController extends Controller
             'bagianOptions',
             'contactPhone',
             'inputPeriodStatus',
-            'latestTestimonial',
-            'testimonialCooldownEndsAt',
-            'canSubmitTestimonial',
+            'reviewPeriodStatus',
+            'latestReview',
+            'eligibleItems',
+            'eligibleReviewItems',
+            'reviewedItems',
+            'pendingReviewItems',
             'reviewPrompt',
         ));
     }

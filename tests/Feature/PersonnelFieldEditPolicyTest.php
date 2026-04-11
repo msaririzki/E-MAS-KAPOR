@@ -3,11 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\AuditLog;
+use App\Models\BudgetPackage;
+use App\Models\BudgetYear;
+use App\Models\ItemReview;
+use App\Models\KaporItem;
+use App\Models\PackageItem;
 use App\Models\Personnel;
+use App\Models\PersonnelItemAllocation;
 use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\Setting;
-use App\Models\Testimonial;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -547,6 +552,8 @@ class PersonnelFieldEditPolicyTest extends TestCase
         Setting::setValue('is_system_locked', 'false');
         Setting::setValue('input_start_date', now()->subDay()->toDateString());
         Setting::setValue('input_end_date', now()->addDays(7)->toDateString());
+        Setting::setValue('review_start_date', now()->subDay()->toDateString());
+        Setting::setValue('review_end_date', now()->addDays(7)->toDateString());
 
         $satker = Satker::create([
             'name' => 'Polres Bima',
@@ -593,19 +600,23 @@ class PersonnelFieldEditPolicyTest extends TestCase
             ],
         ]);
 
+        $this->createItemAllocation($user, $satker, 'BARET LAPANGAN');
+
         $response = $this->actingAs($user)->get(route('dashboard'));
 
         $response->assertOk();
-        $response->assertSeeText('Periode Input Sedang Berjalan');
-        $response->assertSeeText('Bagikan Pengalaman Kapor');
-        $response->assertSeeText('Buka Halaman Testimoni');
+        $response->assertSeeText('Ada 1 Item Menunggu Respons');
+        $response->assertSeeText('Buka Halaman Review');
+        $response->assertDontSeeText('Periode Input Sedang Berjalan');
     }
 
-    public function test_personil_dashboard_shows_testimonial_cooldown_message_when_recent_feedback_exists(): void
+    public function test_personil_dashboard_shows_review_completion_message_when_item_response_exists(): void
     {
         Setting::setValue('is_system_locked', 'false');
         Setting::setValue('input_start_date', now()->subDay()->toDateString());
         Setting::setValue('input_end_date', now()->addDays(7)->toDateString());
+        Setting::setValue('review_start_date', now()->subDay()->toDateString());
+        Setting::setValue('review_end_date', now()->addDays(7)->toDateString());
 
         $satker = Satker::create([
             'name' => 'Polres Bima',
@@ -626,7 +637,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
         ]);
         $user->assignRole('personil');
 
-        Personnel::create([
+        $personnel = Personnel::create([
             'user_id' => $user->id,
             'nrp' => '76100172',
             'full_name' => 'BAYU SAPUTRA',
@@ -652,25 +663,84 @@ class PersonnelFieldEditPolicyTest extends TestCase
             ],
         ]);
 
-        Testimonial::create([
+        $allocation = $this->createItemAllocation($user, $satker, 'BARET LAPANGAN', $personnel);
+
+        ItemReview::create([
+            'personnel_item_allocation_id' => $allocation->id,
             'user_id' => $user->id,
-            'category' => 'tutup_kepala',
-            'message' => 'Nyaman dipakai.',
+            'personnel_id' => $personnel->id,
+            'kapor_item_id' => $allocation->kapor_item_id,
+            'fiscal_year' => (int) Setting::getValue('fiscal_year', date('Y')),
+            'response_status' => ItemReview::STATUS_REVIEWED,
             'rating' => 5,
+            'comment' => 'Nyaman dipakai.',
+            'submitted_at' => now(),
         ]);
 
         $response = $this->actingAs($user)->get(route('dashboard'));
 
         $response->assertOk();
-        $response->assertSeeText('Testimoni Terakhir Sudah Terkirim');
-        $response->assertSeeText('Lihat Halaman Testimoni');
+        $response->assertSeeText('Semua Item Sudah Direspons');
+        $response->assertSeeText('Kelola Review');
     }
 
-    public function test_personil_testimoni_page_shows_read_only_notice_when_input_period_is_closed(): void
+    public function test_personil_dashboard_prioritizes_input_period_card_when_review_period_is_not_open(): void
     {
         Setting::setValue('is_system_locked', 'false');
-        Setting::setValue('input_start_date', now()->subMonths(2)->toDateString());
-        Setting::setValue('input_end_date', now()->subDay()->toDateString());
+        Setting::setValue('input_start_date', now()->subDay()->toDateString());
+        Setting::setValue('input_end_date', now()->addDays(7)->toDateString());
+        Setting::setValue('review_start_date', now()->addDays(14)->toDateString());
+        Setting::setValue('review_end_date', now()->addDays(30)->toDateString());
+
+        $satker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'BAYU SAPUTRA',
+            'nrp_nip' => '76100176',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        Personnel::create([
+            'user_id' => $user->id,
+            'nrp' => '76100176',
+            'full_name' => 'BAYU SAPUTRA',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'satker_id' => $satker->id,
+            'jabatan' => 'BANIT OPERASI',
+            'phone' => '08123456789',
+            'is_active' => true,
+            'kapor_sizes' => [
+                'topi' => '57',
+                'kemeja' => '15',
+                'celana' => '32',
+                'olahraga' => 'B',
+                'jaket' => 'B',
+                'sepatu_dinas' => '41',
+                'sepatu_olahraga' => '41',
+                'sabuk' => '42',
+            ],
+        ]);
+
+        $this->createItemAllocation($user, $satker, 'BARET LAPANGAN');
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSeeText('Periode Input Sedang Berjalan');
+        $response->assertDontSeeText('Ada 1 Item Menunggu Respons');
+    }
+
+    public function test_personil_testimoni_page_shows_read_only_notice_when_review_period_is_closed(): void
+    {
+        Setting::setValue('is_system_locked', 'false');
+        Setting::setValue('review_start_date', now()->subMonths(2)->toDateString());
+        Setting::setValue('review_end_date', now()->subDay()->toDateString());
 
         $satker = Satker::create([
             'name' => 'Polres Bima',
@@ -685,11 +755,112 @@ class PersonnelFieldEditPolicyTest extends TestCase
         ]);
         $user->assignRole('personil');
 
+        $this->createItemAllocation($user, $satker, 'SEPATU DINAS');
+
         $response = $this->actingAs($user)->get(route('personil.testimoni.index'));
 
         $response->assertOk();
-        $response->assertSeeText('Periode Input Sudah Ditutup');
-        $response->assertSeeText('Pengiriman testimoni sedang nonaktif');
+        $response->assertSeeText('Periode Review Sudah Ditutup');
+        $response->assertSeeText('Form tampil dalam mode baca saja');
+    }
+
+    public function test_personil_can_store_and_update_item_review_in_same_fiscal_year(): void
+    {
+        Setting::setValue('review_start_date', now()->subDay()->toDateString());
+        Setting::setValue('review_end_date', now()->addDays(7)->toDateString());
+
+        $satker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'BAYU SAPUTRA',
+            'nrp_nip' => '76100174',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        $personnel = Personnel::create([
+            'user_id' => $user->id,
+            'nrp' => '76100174',
+            'full_name' => 'BAYU SAPUTRA',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'satker_id' => $satker->id,
+            'is_active' => true,
+        ]);
+
+        $allocation = $this->createItemAllocation($user, $satker, 'BARET LAPANGAN', $personnel);
+
+        $this->actingAs($user)
+            ->post(route('personil.testimoni.store'), [
+                'allocation_id' => $allocation->id,
+                'response_status' => ItemReview::STATUS_NOT_RECEIVED,
+                'message' => 'Belum saya terima sampai sekarang.',
+            ])
+            ->assertRedirect(route('personil.testimoni.index'))
+            ->assertSessionHas('success_testimoni');
+
+        $this->assertDatabaseHas('item_reviews', [
+            'user_id' => $user->id,
+            'kapor_item_id' => $allocation->kapor_item_id,
+            'response_status' => ItemReview::STATUS_NOT_RECEIVED,
+            'rating' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('personil.testimoni.store'), [
+                'allocation_id' => $allocation->id,
+                'response_status' => ItemReview::STATUS_REVIEWED,
+                'rating' => 4,
+                'message' => 'Item sudah diterima dan kondisinya baik.',
+            ])
+            ->assertRedirect(route('personil.testimoni.index'))
+            ->assertSessionHas('success_testimoni');
+
+        $this->assertDatabaseHas('item_reviews', [
+            'user_id' => $user->id,
+            'kapor_item_id' => $allocation->kapor_item_id,
+            'response_status' => ItemReview::STATUS_REVIEWED,
+            'rating' => 4,
+        ]);
+
+        $this->assertSame(1, ItemReview::count());
+    }
+
+    public function test_personil_review_submit_is_blocked_outside_review_period(): void
+    {
+        Setting::setValue('review_start_date', now()->subMonths(2)->toDateString());
+        Setting::setValue('review_end_date', now()->subDay()->toDateString());
+
+        $satker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'BAYU SAPUTRA',
+            'nrp_nip' => '76100175',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        $allocation = $this->createItemAllocation($user, $satker, 'BARET LAPANGAN');
+
+        $this->actingAs($user)
+            ->post(route('personil.testimoni.store'), [
+                'allocation_id' => $allocation->id,
+                'response_status' => ItemReview::STATUS_REVIEWED,
+                'rating' => 5,
+                'message' => 'Siap.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseCount('item_reviews', 0);
     }
 
     public function test_personil_dashboard_renders_mobile_first_form_flow(): void
@@ -736,5 +907,55 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response->assertSeeText('Data Personel');
         $response->assertSeeText('No. HP (WhatsApp)');
         $response->assertSeeText('Ukuran kaporlap');
+    }
+
+    private function createItemAllocation(User $user, Satker $satker, string $itemName, ?Personnel $personnel = null): PersonnelItemAllocation
+    {
+        $budgetYear = BudgetYear::create([
+            'year' => (int) Setting::getValue('fiscal_year', date('Y')),
+            'name' => 'Tahun Anggaran '.Setting::getValue('fiscal_year', date('Y')),
+            'is_active' => true,
+        ]);
+
+        $package = BudgetPackage::create([
+            'budget_year_id' => $budgetYear->id,
+            'name' => 'Paket Review '.$itemName,
+            'status' => 'finalized',
+            'total_budget' => 0,
+        ]);
+
+        $kaporItem = KaporItem::create([
+            'category' => 'Tutup_Kepala',
+            'item_name' => $itemName,
+            'price' => 100000,
+            'unit' => 'PCS',
+            'is_active' => true,
+            'for_identifikasi' => true,
+        ]);
+
+        $packageItem = PackageItem::create([
+            'budget_package_id' => $package->id,
+            'kapor_item_id' => $kaporItem->id,
+            'calculated_qty' => 1,
+            'calculated_total' => 100000,
+        ]);
+
+        return PersonnelItemAllocation::create([
+            'budget_package_id' => $package->id,
+            'package_item_id' => $packageItem->id,
+            'kapor_item_id' => $kaporItem->id,
+            'user_id' => $user->id,
+            'personnel_id' => $personnel?->id,
+            'satker_id' => $satker->id,
+            'fiscal_year' => (int) Setting::getValue('fiscal_year', date('Y')),
+            'allocation_status' => 'eligible',
+            'allocated_at' => now(),
+            'nrp_snapshot' => $user->nrp_nip,
+            'full_name_snapshot' => $personnel?->full_name ?? $user->name,
+            'satker_name_snapshot' => $satker->name,
+            'kapor_item_name_snapshot' => $itemName,
+            'item_category_snapshot' => 'Tutup Kepala',
+            'budget_package_name_snapshot' => $package->name,
+        ]);
     }
 }

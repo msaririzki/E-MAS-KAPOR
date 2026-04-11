@@ -7,18 +7,28 @@
 @php
     $today = now()->toDateString();
     $isWithinInputPeriod = $today >= $settings['input_start_date'] && $today <= $settings['input_end_date'];
+    $isWithinReviewPeriod = $today >= $settings['review_start_date'] && $today <= $settings['review_end_date'];
     $systemStatusLabel = $settings['is_system_locked']
         ? 'Terkunci paksa'
         : ($isWithinInputPeriod ? 'Periode input aktif' : 'Di luar periode input');
     $systemStatusClass = $settings['is_system_locked']
         ? 'danger'
         : ($isWithinInputPeriod ? 'success' : 'warning');
+    $reviewStatusLabel = $settings['is_review_locked']
+        ? 'Review ditutup paksa'
+        : ($isWithinReviewPeriod ? 'Periode review aktif' : 'Di luar periode review');
+    $reviewStatusClass = $settings['is_review_locked']
+        ? 'danger'
+        : ($isWithinReviewPeriod ? 'success' : 'warning');
     $personnelRequestModeLabel = $settings['personnel_request_mode'] === 'auto'
         ? 'Langsung aktif'
         : 'Perlu verifikasi superadmin';
     $periodSummary = \Illuminate\Support\Carbon::parse($settings['input_start_date'])->translatedFormat('d M Y')
         .' - '.
         \Illuminate\Support\Carbon::parse($settings['input_end_date'])->translatedFormat('d M Y');
+    $reviewPeriodSummary = \Illuminate\Support\Carbon::parse($settings['review_start_date'])->translatedFormat('d M Y')
+        .' - '.
+        \Illuminate\Support\Carbon::parse($settings['review_end_date'])->translatedFormat('d M Y');
 @endphp
 <div class="page-header">
     <div class="page-header-row">
@@ -52,25 +62,39 @@
 @endif
 
 <div class="settings-container">
-    <div class="settings-overview">
-        <div class="overview-card">
-            <span class="overview-label">Tahun Anggaran Aktif</span>
-            <strong>TA {{ $settings['fiscal_year'] }}</strong>
+    <div class="settings-overview-list">
+        <div class="overview-row compact">
+            <div class="overview-main">
+                <span class="overview-label">Tahun Anggaran Aktif</span>
+                <strong>TA {{ $settings['fiscal_year'] }}</strong>
+            </div>
             <span class="overview-note">Dipakai pada dashboard, rekap, dan pengolahan data berjalan.</span>
         </div>
-        <div class="overview-card">
-            <span class="overview-label">Status Sistem</span>
-            <strong>{{ $systemStatusLabel }}</strong>
-            <span class="status-pill {{ $systemStatusClass }}">{{ $settings['is_system_locked'] ? 'Input ditutup' : 'Mengikuti jadwal' }}</span>
+        <div class="overview-row compact">
+            <div class="overview-main">
+                <span class="overview-label">Status Sistem Input</span>
+                <strong>{{ $systemStatusLabel }}</strong>
+            </div>
+            <div class="overview-side">
+                <span class="status-pill {{ $systemStatusClass }}">{{ $settings['is_system_locked'] ? 'Input ditutup' : 'Mengikuti jadwal' }}</span>
+                <span class="overview-note">Periode input: {{ $periodSummary }}</span>
+            </div>
         </div>
-        <div class="overview-card">
-            <span class="overview-label">Periode Input Aktif</span>
-            <strong>{{ $periodSummary }}</strong>
-            <span class="overview-note">Di luar rentang ini, input personel otomatis ditutup.</span>
+        <div class="overview-row compact">
+            <div class="overview-main">
+                <span class="overview-label">Status Review Item</span>
+                <strong>{{ $reviewStatusLabel }}</strong>
+            </div>
+            <div class="overview-side">
+                <span class="status-pill {{ $reviewStatusClass }}">{{ $reviewStatusLabel }}</span>
+                <span class="overview-note">Periode review: {{ $reviewPeriodSummary }}</span>
+            </div>
         </div>
-        <div class="overview-card">
-            <span class="overview-label">Mode Tambah Personel</span>
-            <strong>{{ $personnelRequestModeLabel }}</strong>
+        <div class="overview-row compact">
+            <div class="overview-main">
+                <span class="overview-label">Mode Tambah Personel</span>
+                <strong>{{ $personnelRequestModeLabel }}</strong>
+            </div>
             <span class="overview-note">Mengatur usulan personel baru dari admin satker.</span>
         </div>
     </div>
@@ -96,7 +120,7 @@
                     <ul class="guide-list">
                         <li>Ubah Tahun Anggaran aktif hanya saat Anda memang memindahkan siklus kerja.</li>
                         <li>`Kunci Sistem Paksa` dipakai untuk kondisi darurat, misalnya ingin menutup akses input segera.</li>
-                        <li>Jika kunci paksa mati, sistem akan membuka atau menutup input berdasarkan periode tanggal di bawah.</li>
+                        <li>Review item kapor memakai periode terpisah agar evaluasi penerimaan barang bisa dibuka di akhir tahun anggaran.</li>
                     </ul>
                 </div>
                 
@@ -133,6 +157,17 @@
                     </div>
                     <label class="modern-toggle">
                         <input type="checkbox" name="is_system_locked" value="1" {{ $settings['is_system_locked'] ? 'checked' : '' }}>
+                        <div class="toggle-slider"></div>
+                    </label>
+                </div>
+
+                <div class="modern-toggle-group" style="padding-bottom: 12px; border-bottom: none; margin-top: -6px;">
+                    <div class="toggle-info">
+                        <strong>Tutup Review Paksa</strong>
+                        <span>Jika diaktifkan, review item kapor langsung ditutup walaupun periode review masih berjalan.</span>
+                    </div>
+                    <label class="modern-toggle">
+                        <input type="checkbox" name="is_review_locked" value="1" {{ $settings['is_review_locked'] ? 'checked' : '' }}>
                         <div class="toggle-slider"></div>
                     </label>
                 </div>
@@ -178,6 +213,49 @@
                         </div>
                     </div>
                     <p class="help-text">Jika tanggal hari ini berada di luar rentang ini, form pengisian personel tidak bisa dipakai kecuali Anda membuka kembali periodenya.</p>
+                </div>
+
+                <div class="status-banner {{ $reviewStatusClass }}" style="margin-top: 16px;">
+                    <i class="{{ $settings['is_review_locked'] ? 'ri-lock-line' : 'ri-chat-check-line' }}"></i>
+                    <div>
+                        <strong>Status review saat ini: {{ $reviewStatusLabel }}</strong>
+                        <span>
+                            @if($settings['is_review_locked'])
+                                Review item sedang ditutup manual oleh superadmin.
+                            @elseif($isWithinReviewPeriod)
+                                Hari ini berada di dalam masa review item kapor.
+                            @else
+                                Hari ini berada di luar masa review item kapor sehingga form review hanya bisa dibuka dalam mode baca saja.
+                            @endif
+                        </span>
+                    </div>
+                </div>
+
+                <div class="period-card" style="margin-top: 16px;">
+                    <div class="period-card-head">
+                        <div>
+                            <strong>Masa Review Item Kapor</strong>
+                            <span>Tentukan kapan personil dapat melaporkan item belum diterima atau memperbarui review item yang sudah diterima.</span>
+                        </div>
+                        <span class="compact-pill">{{ $reviewPeriodSummary }}</span>
+                    </div>
+                    <div class="period-grid">
+                        <div>
+                            <label>Tanggal Mulai Review</label>
+                            <div class="input-with-icon">
+                                <i class="ri-calendar-event-line"></i>
+                                <input type="date" name="review_start_date" class="modern-input" value="{{ $settings['review_start_date'] }}" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label>Tanggal Review Ditutup</label>
+                            <div class="input-with-icon">
+                                <i class="ri-calendar-close-line"></i>
+                                <input type="date" name="review_end_date" class="modern-input" value="{{ $settings['review_end_date'] }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="help-text">Gunakan periode ini untuk membuka evaluasi penerimaan dan kualitas item kapor setelah proses pengadaan atau distribusi berjalan.</p>
                 </div>
 
                 <div class="settings-action-bar">
@@ -702,21 +780,33 @@
         margin: 0 auto;
         padding-bottom: 60px;
     }
-    .settings-overview {
+    .settings-overview-list {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 16px;
+        gap: 10px;
         margin-bottom: 8px;
     }
-    .overview-card {
-        background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-body) 100%);
+    .overview-row {
+        background: var(--bg-card);
         border: 1px solid var(--border-color);
         border-radius: 14px;
-        padding: 18px;
+        padding: 14px 16px;
         display: flex;
-        flex-direction: column;
-        gap: 8px;
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+    }
+    .overview-main {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+    }
+    .overview-side {
+        display: grid;
+        gap: 6px;
+        justify-items: end;
+        text-align: right;
+        flex-shrink: 0;
     }
     .overview-label {
         font-size: 11px;
@@ -725,8 +815,8 @@
         text-transform: uppercase;
         color: var(--text-muted);
     }
-    .overview-card strong {
-        font-size: 18px;
+    .overview-row strong {
+        font-size: 16px;
         color: var(--text-main);
         line-height: 1.3;
     }
@@ -743,6 +833,8 @@
     }
     @media (max-width: 900px) {
         .settings-section { grid-template-columns: 1fr; gap: 20px; padding: 30px 0; }
+        .overview-row { flex-direction: column; align-items: flex-start; }
+        .overview-side { justify-items: start; text-align: left; }
     }
     .settings-divider {
         border: none;
@@ -1346,10 +1438,9 @@
     .alert-close:hover { opacity: 1; transform: scale(1.1); }
     
     @media (max-width: 900px) {
-        .settings-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .settings-overview-list { gap: 10px; }
     }
     @media (max-width: 640px) {
-        .settings-overview,
         .theme-grid,
         .period-grid { grid-template-columns: 1fr; }
         .period-card-head,

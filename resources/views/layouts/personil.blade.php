@@ -322,7 +322,7 @@
                 <a href="{{ route('personil.testimoni.index') }}"
                     class="personil-nav-link {{ request()->routeIs('personil.testimoni.*') ? 'active' : '' }}">
                     <i class="ri-feedback-line"></i>
-                    Testimoni
+                    Review
                 </a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

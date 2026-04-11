@@ -6,15 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\BudgetPackage;
 use App\Models\BudgetYear;
 use App\Models\Personnel;
+use App\Models\PersonnelItemAllocation;
 use App\Models\Setting;
 use App\Services\KaporRequirementService;
+use App\Services\PersonnelItemAllocationSnapshotService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class BudgetController extends Controller
 {
     public function __construct(
-        private readonly KaporRequirementService $kaporRequirementService
+        private readonly KaporRequirementService $kaporRequirementService, private readonly PersonnelItemAllocationSnapshotService $personnelItemAllocationSnapshotService
     ) {}
 
     public function index()
@@ -109,15 +111,34 @@ class BudgetController extends Controller
     {
         $this->ensureBudgetManager();
 
+        $previousStatus = $budgetPackage->status;
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'status' => 'nullable|in:draft,finalized,archived',
         ]);
 
-        $budgetPackage->update($validated);
+        DB::transaction(function () use ($budgetPackage, $validated, $previousStatus): void {
+            $budgetPackage->update($validated);
 
-        return redirect()->back()->with('success', 'Paket berhasil diperbarui');
+            if ($budgetPackage->status === 'finalized') {
+                $this->syncPackageCalculatedFields($budgetPackage);
+                $this->personnelItemAllocationSnapshotService->regenerateForBudgetPackage($budgetPackage->fresh());
+
+                return;
+            }
+
+            if ($previousStatus === 'finalized' && $budgetPackage->status !== 'finalized') {
+                PersonnelItemAllocation::query()
+                    ->where('budget_package_id', $budgetPackage->id)
+                    ->delete();
+            }
+        });
+
+        return redirect()->back()->with('success', $budgetPackage->status === 'finalized'
+            ? 'Paket berhasil difinalkan dan snapshot alokasi review item telah diperbarui.'
+            : 'Paket berhasil diperbarui');
     }
 
     public function destroyPackage(BudgetPackage $budgetPackage)
@@ -138,35 +159,8 @@ class BudgetController extends Controller
             'items.recipients.satker',
         ]);
 
-        DB::transaction(function () use ($budgetPackage) {
-            foreach ($budgetPackage->items as $item) {
-                $totalQty = 0;
-
-                foreach ($item->recipients as $recipient) {
-                    $query = Personnel::where('satker_id', $recipient->satker_id)
-                        ->where('is_active', true);
-
-                    $this->kaporRequirementService->applyRecipientFilters(
-                        $query,
-                        $recipient->recipient_filters ?? [],
-                        $recipient->satker
-                    );
-
-                    $count = $query->count();
-                    $recipient->update(['matched_count' => $count]);
-                    $totalQty += $count;
-                }
-
-                $price = (float) ($item->custom_price ?? $item->kaporItem->price ?? 0);
-                $item->update([
-                    'calculated_qty' => $totalQty,
-                    'calculated_total' => $totalQty * $price,
-                ]);
-            }
-
-            $budgetPackage->update([
-                'total_budget' => $budgetPackage->items()->sum('calculated_total'),
-            ]);
+        DB::transaction(function () use ($budgetPackage): void {
+            $this->syncPackageCalculatedFields($budgetPackage);
         });
 
         $budgetPackage->refresh()->load([
@@ -186,35 +180,12 @@ class BudgetController extends Controller
 
         $budgetPackage->load(['items.kaporItem', 'items.recipients.satker']);
 
-        DB::transaction(function () use ($budgetPackage) {
-            foreach ($budgetPackage->items as $item) {
-                $totalQty = 0;
+        DB::transaction(function () use ($budgetPackage): void {
+            $this->syncPackageCalculatedFields($budgetPackage);
 
-                foreach ($item->recipients as $recipient) {
-                    $query = Personnel::where('satker_id', $recipient->satker_id)
-                        ->where('is_active', true);
-
-                    $this->kaporRequirementService->applyRecipientFilters(
-                        $query,
-                        $recipient->recipient_filters ?? [],
-                        $recipient->satker
-                    );
-
-                    $count = $query->count();
-                    $recipient->update(['matched_count' => $count]);
-                    $totalQty += $count;
-                }
-
-                $price = (float) ($item->custom_price ?? $item->kaporItem->price ?? 0);
-                $item->update([
-                    'calculated_qty' => $totalQty,
-                    'calculated_total' => $totalQty * $price,
-                ]);
+            if ($budgetPackage->status === 'finalized') {
+                $this->personnelItemAllocationSnapshotService->regenerateForBudgetPackage($budgetPackage->fresh());
             }
-
-            $budgetPackage->update([
-                'total_budget' => $budgetPackage->items()->sum('calculated_total'),
-            ]);
         });
 
         return redirect()
@@ -225,5 +196,39 @@ class BudgetController extends Controller
     private function ensureBudgetManager(): void
     {
         abort_unless(auth()->user()?->hasAnyRole(['superadmin', 'admin']), 403, 'Hanya admin pengelola anggaran yang dapat melakukan aksi ini.');
+    }
+
+    private function syncPackageCalculatedFields(BudgetPackage $budgetPackage): void
+    {
+        $budgetPackage->load(['items.kaporItem', 'items.recipients.satker']);
+
+        foreach ($budgetPackage->items as $item) {
+            $totalQty = 0;
+
+            foreach ($item->recipients as $recipient) {
+                $query = Personnel::where('satker_id', $recipient->satker_id)
+                    ->where('is_active', true);
+
+                $this->kaporRequirementService->applyRecipientFilters(
+                    $query,
+                    $recipient->recipient_filters ?? [],
+                    $recipient->satker
+                );
+
+                $count = $query->count();
+                $recipient->update(['matched_count' => $count]);
+                $totalQty += $count;
+            }
+
+            $price = (float) ($item->custom_price ?? $item->kaporItem->price ?? 0);
+            $item->update([
+                'calculated_qty' => $totalQty,
+                'calculated_total' => $totalQty * $price,
+            ]);
+        }
+
+        $budgetPackage->update([
+            'total_budget' => $budgetPackage->items()->sum('calculated_total'),
+        ]);
     }
 }
