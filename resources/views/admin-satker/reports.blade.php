@@ -558,9 +558,16 @@
         overflow: hidden !important;
     }
 
-    /* Memaksa semua font menjadi warna hitam murni di cetakan */
+    /* Paksa output monokrom: teks, border, icon jadi hitam dan latar jadi putih */
     * {
         color: #000000 !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+        fill: #000000 !important;
+        stroke: #000000 !important;
     }
 
     /* 2. LAYOUT RESET - Gunakan seluruh lebar kertas */
@@ -570,8 +577,8 @@
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+        -webkit-print-color-adjust: economy !important;
+        print-color-adjust: economy !important;
     }
 
     .main {
@@ -627,6 +634,7 @@
         min-width: auto !important;
         border-collapse: collapse !important;
         border: 1.5px solid #000 !important;
+        background: #fff !important;
         font-family: Arial, sans-serif !important;
         font-size: 6.5pt !important; /* Font diperkecil lagi agar pasti muat */
         color: #000 !important;
@@ -642,6 +650,7 @@
         width: auto !important;      /* TImpa inline width */
         min-width: 0 !important;     /* TImpa inline min-width */
         max-width: none !important;
+        background: #fff !important;
     }
 
     /* Kolom Nama Lengkap (kolom ke-2) tetap rata kiri */
@@ -651,21 +660,29 @@
     }
 
     thead th {
-        background-color: #d1d5db !important;
+        background-color: #ffffff !important;
         font-weight: bold !important;
         text-align: center !important;
         text-transform: uppercase !important;
         color: #000 !important;
     }
 
-    /* Row Backgrounds */
+    /* Semua baris tetap putih agar PDF tidak memuat warna lain */
     tr[style*="background: #F1F5F9"] {
-        background-color: #e5e7eb !important;
+        background-color: #ffffff !important;
         font-weight: bold !important;
+        border-top: 2px solid #000 !important;
     }
 
     tr[style*="background: #F4F4F5"] {
-        background-color: #f4f4f5 !important;
+        background-color: #ffffff !important;
+    }
+
+    tr[style*="background: #F1F5F9"] td,
+    tr[style*="background: #F4F4F5"] td,
+    tr[style*="background: #F1F5F9"] th,
+    tr[style*="background: #F4F4F5"] th {
+        background-color: #ffffff !important;
     }
 
     /* Spefisikasi Cell NRP agar lebih terlihat proporsional */
