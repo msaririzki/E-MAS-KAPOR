@@ -41,6 +41,8 @@ class TestimonialInsightService
 
     public function getStatistics(array $filters = []): array
     {
+        $fiscalYear = $filters['year'] ?? \App\Models\Setting::getValue('fiscal_year', date('Y'));
+
         $distributionFilters = [
             'group' => $filters['distribution_group'] ?? 'all',
             'rating' => $filters['distribution_rating'] ?? null,
@@ -48,16 +50,19 @@ class TestimonialInsightService
         ];
 
         $reviewQuery = ItemReview::query()
-            ->where('response_status', ItemReview::STATUS_REVIEWED)
-            ->whereNotNull('rating');
+            ->where('item_reviews.fiscal_year', $fiscalYear)
+            ->where('item_reviews.response_status', ItemReview::STATUS_REVIEWED)
+            ->whereNotNull('item_reviews.rating');
 
-        $totalTestimonials = ItemReview::count();
+        $baseQuery = ItemReview::where('item_reviews.fiscal_year', $fiscalYear);
+
+        $totalTestimonials = (clone $baseQuery)->count();
         $totalReviewed = (clone $reviewQuery)->count();
-        $notReceivedCount = ItemReview::query()->where('response_status', ItemReview::STATUS_NOT_RECEIVED)->count();
+        $notReceivedCount = (clone $baseQuery)->where('response_status', ItemReview::STATUS_NOT_RECEIVED)->count();
         $averageRating = round((float) ((clone $reviewQuery)->avg('rating') ?? 0), 1);
 
         $recentWindowStart = now()->subDays(30);
-        $recentTestimonialsCount = ItemReview::query()->where('created_at', '>=', $recentWindowStart)->count();
+        $recentTestimonialsCount = (clone $baseQuery)->where('created_at', '>=', $recentWindowStart)->count();
         $recentAverageRating = round(
             (float) ((clone $reviewQuery)->where('created_at', '>=', $recentWindowStart)->avg('rating') ?? 0),
             1,
@@ -111,7 +116,7 @@ class TestimonialInsightService
         $serviceScore = $totalReviewed > 0 ? (int) round(($averageRating / 5) * 100) : 0;
         $fiveStarRate = $this->percentage((int) ($ratingCounts[5] ?? 0), $totalReviewed);
 
-        $topSatkers = ItemReview::query()
+        $topSatkers = (clone $baseQuery)
             ->leftJoin('personnel_item_allocations', 'personnel_item_allocations.id', '=', 'item_reviews.personnel_item_allocation_id')
             ->leftJoin('users', 'users.id', '=', 'item_reviews.user_id')
             ->leftJoin('satkers', 'satkers.id', '=', 'users.satker_id')
@@ -124,7 +129,7 @@ class TestimonialInsightService
             ->limit(5)
             ->get();
 
-        $latestTestimonials = ItemReview::with(['user.satker', 'kaporItem', 'allocation'])
+        $latestTestimonials = (clone $baseQuery)->with(['user.satker', 'kaporItem', 'allocation'])
             ->latest()
             ->take(18)
             ->get();
@@ -134,13 +139,13 @@ class TestimonialInsightService
             ->take(8)
             ->values();
 
-        $latestPositive = ItemReview::with(['user.satker', 'kaporItem', 'allocation'])
+        $latestPositive = (clone $baseQuery)->with(['user.satker', 'kaporItem', 'allocation'])
             ->where('response_status', ItemReview::STATUS_REVIEWED)
             ->where('rating', '>=', 4)
             ->latest()
             ->first();
 
-        $latestNeedsAttention = ItemReview::with(['user.satker', 'kaporItem', 'allocation'])
+        $latestNeedsAttention = (clone $baseQuery)->with(['user.satker', 'kaporItem', 'allocation'])
             ->where(function ($query): void {
                 $query->where('response_status', ItemReview::STATUS_NOT_RECEIVED)
                     ->orWhere(function ($ratingQuery): void {
@@ -151,14 +156,20 @@ class TestimonialInsightService
             ->latest()
             ->first();
 
-        $lastSubmittedAt = ItemReview::latest('submitted_at')->first()?->submitted_at;
+        $lastSubmittedAt = (clone $baseQuery)->latest('submitted_at')->first()?->submitted_at;
         $serviceInsight = $this->buildServiceInsight($averageRating, $totalTestimonials, $recentTestimonialsCount, $attentionCount, $notReceivedCount);
         $dashboardQuotes = $this->buildDashboardQuotes($latestPositive, $latestNeedsAttention, $latestTestimonials);
         $dashboardBadge = $this->buildDashboardBadge($serviceScore, $totalTestimonials, $notReceivedCount);
-        $categoryStats = $this->buildCategoryStats();
-        $distributionStats = $this->buildDistributionStats($distributionFilters);
+        $categoryStats = $this->buildCategoryStats($fiscalYear);
+        $distributionStats = $this->buildDistributionStats($distributionFilters, $fiscalYear);
+
+        $activeYear = \App\Models\Setting::getValue('active_year', date('Y'));
+        $availableYears = ItemReview::distinct()->pluck('fiscal_year')->push($activeYear)->unique()->sortDesc();
 
         return [
+            'fiscal_year' => $fiscalYear,
+            'active_year' => $activeYear,
+            'availableYears' => $availableYears,
             'attentionCount' => $attentionCount,
             'averageRating' => $averageRating,
             'categoryStats' => $categoryStats,
@@ -182,7 +193,7 @@ class TestimonialInsightService
             'serviceScore' => $serviceScore,
             'topSatkers' => $topSatkers,
             'totalTestimonials' => $totalTestimonials,
-            'comparisonStats' => $this->buildComparisonStats($distributionFilters['compare_items']),
+            'comparisonStats' => $this->buildComparisonStats($distributionFilters['compare_items'], $fiscalYear),
             'availableItems' => \App\Models\KaporItem::active()
                 ->orderBy('item_name')
                 ->get(['id', 'item_name', 'category'])
@@ -202,15 +213,15 @@ class TestimonialInsightService
         ];
     }
 
-    private function buildCategoryStats(): array
+    private function buildCategoryStats(string $fiscalYear): array
     {
         return $this->buildDistributionStats([
             'group' => 'all',
             'rating' => null,
-        ]);
+        ], $fiscalYear);
     }
 
-    private function buildDistributionStats(array $filters): array
+    private function buildDistributionStats(array $filters, string $fiscalYear): array
     {
         $selectedGroup = $filters['group'] ?? 'all';
         $selectedRating = $filters['rating'] ?? null;
@@ -222,10 +233,8 @@ class TestimonialInsightService
                 continue;
             }
 
-
-
-            $baseQuery = $this->baseGroupedReviewQuery($key);
-            $summaryQuery = $this->baseGroupedReviewQuery($key);
+            $baseQuery = $this->baseGroupedReviewQuery($key, $fiscalYear);
+            $summaryQuery = $this->baseGroupedReviewQuery($key, $fiscalYear);
             if ($selectedRating !== null) {
                 $summaryQuery->where('item_reviews.rating', (int) $selectedRating);
             }
@@ -233,7 +242,7 @@ class TestimonialInsightService
             $count = (clone $summaryQuery)->count();
             $averageRating = round((float) ((clone $summaryQuery)->avg('item_reviews.rating') ?? 0), 1);
 
-            $ratingCountQuery = $this->baseGroupedReviewQuery($key);
+            $ratingCountQuery = $this->baseGroupedReviewQuery($key, $fiscalYear);
             if ($selectedRating !== null) {
                 $ratingCountQuery->where('item_reviews.rating', (int) $selectedRating);
             }
@@ -282,11 +291,12 @@ class TestimonialInsightService
         return $stats;
     }
 
-    private function baseGroupedReviewQuery(string $groupKey): Builder
+    private function baseGroupedReviewQuery(string $groupKey, string $fiscalYear): Builder
     {
         $query = ItemReview::query()
             ->leftJoin('personnel_item_allocations', 'personnel_item_allocations.id', '=', 'item_reviews.personnel_item_allocation_id')
             ->leftJoin('kapor_items', 'kapor_items.id', '=', 'item_reviews.kapor_item_id')
+            ->where('item_reviews.fiscal_year', $fiscalYear)
             ->where('item_reviews.response_status', ItemReview::STATUS_REVIEWED)
             ->whereNotNull('item_reviews.rating');
 
@@ -471,11 +481,12 @@ class TestimonialInsightService
         return $quotes;
     }
 
-    private function buildComparisonStats(array $itemIds): array
+    private function buildComparisonStats(array $itemIds, string $fiscalYear): array
     {
         if (empty($itemIds)) {
             // Default to top 3 items by review count if none selected
             $itemIds = ItemReview::query()
+                ->where('fiscal_year', $fiscalYear)
                 ->selectRaw('kapor_item_id, COUNT(*) as count')
                 ->whereNotNull('kapor_item_id')
                 ->groupBy('kapor_item_id')
@@ -495,12 +506,14 @@ class TestimonialInsightService
                 continue;
 
             $reviewQuery = ItemReview::query()
+                ->where('fiscal_year', $fiscalYear)
                 ->where('kapor_item_id', $id)
                 ->where('response_status', ItemReview::STATUS_REVIEWED)
                 ->whereNotNull('rating');
 
             $totalReviewed = (clone $reviewQuery)->count();
             $notReceivedCount = ItemReview::query()
+                ->where('fiscal_year', $fiscalYear)
                 ->where('kapor_item_id', $id)
                 ->where('response_status', ItemReview::STATUS_NOT_RECEIVED)
                 ->count();

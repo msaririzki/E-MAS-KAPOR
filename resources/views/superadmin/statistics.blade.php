@@ -734,14 +734,26 @@
 @section('content')
     <div class="admin-stats-wrapper">
         <div class="page-header">
-
-
-            <div class="page-header-row">
+            <div class="page-header-row" style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h1>Statistik Review Item</h1>
                     <p>Panel evaluasi kualitas layanan E-MAS KAPOR berdasarkan masukan personel yang login menggunakan
-                        NRP/NIP.
-                    </p>
+                        NRP/NIP.</p>
+                </div>
+
+                {{-- Filter Tahun Anggaran --}}
+                <div
+                    style="display:flex;align-items:center;gap:10px;background:#fff;padding:8px 16px;border-radius:14px;border:1px solid #E2E8F0;box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-family: 'Outfit', sans-serif;">
+                    <i class="ri-calendar-line" style="color:#B91C1C; font-size: 18px;"></i>
+                    <select
+                        onchange="const url = new URL(window.location.href); url.searchParams.set('year', this.value); window.location.href = url.href;"
+                        style="border:none;outline:none;font-size:14px;font-weight:700;color:#1e293b;cursor:pointer;background:transparent;">
+                        @foreach($availableYears as $year)
+                            <option value="{{ $year }}" {{ $fiscal_year == $year ? 'selected' : '' }}>
+                                TA {{ $year }} {{ (string) $year === (string) $active_year ? '(Aktif)' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
         </div>
@@ -968,45 +980,46 @@
                 </div>
 
 
-            <div class="card">
-                <div class="card-head">
-                    <h3><i class="ri-building-line" style="margin-right: 8px; color: var(--brand);"></i>Satker Paling Aktif Memberi
-                        Masukan</h3>
-                </div>
-                <div class="card-body">
-                    <div class="satker-list">
-                        @forelse($topSatkers as $index => $satker)
-                            <div class="satker-item">
-                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                    <div style="display: flex; align-items: center; gap: 12px;">
-                                        <div
-                                            style="width: 36px; height: 36px; border-radius: 12px; background: var(--bg-body); color: var(--brand); display: flex; align-items: center; justify-content: center; font-weight: 800;">
-                                            {{ $index + 1 }}
-                                        </div>
-                                        <div>
-                                            <div style="font-weight: 700; color: var(--text-main);">{{ $satker->satker_name }}</div>
-                                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                                                {{ number_format($satker->total_feedback) }} testimoni
+                <div class="card">
+                    <div class="card-head">
+                        <h3><i class="ri-building-line" style="margin-right: 8px; color: var(--brand);"></i>Satker Paling Aktif
+                            Memberi
+                            Masukan</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="satker-list">
+                            @forelse($topSatkers as $index => $satker)
+                                <div class="satker-item">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <div
+                                                style="width: 36px; height: 36px; border-radius: 12px; background: var(--bg-body); color: var(--brand); display: flex; align-items: center; justify-content: center; font-weight: 800;">
+                                                {{ $index + 1 }}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 700; color: var(--text-main);">{{ $satker->satker_name }}</div>
+                                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                                                    {{ number_format($satker->total_feedback) }} testimoni
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <div style="font-size: 18px; font-weight: 800; color: var(--text-main);">
-                                            {{ number_format((float) $satker->average_rating, 1) }}
+                                        <div style="text-align: right;">
+                                            <div style="font-size: 18px; font-weight: 800; color: var(--text-main);">
+                                                {{ number_format((float) $satker->average_rating, 1) }}
+                                            </div>
+                                            <div style="font-size: 12px; color: #f59e0b;">rata-rata bintang</div>
                                         </div>
-                                        <div style="font-size: 12px; color: #f59e0b;">rata-rata bintang</div>
                                     </div>
                                 </div>
-                            </div>
-                        @empty
-                            <div
-                                style="padding: 24px; text-align: center; color: var(--text-muted); background: var(--bg-body); border-radius: 16px; border: 1px dashed var(--border-color);">
-                                Belum ada satker yang tercatat mengirim masukan.
-                            </div>
-                        @endforelse
+                            @empty
+                                <div
+                                    style="padding: 24px; text-align: center; color: var(--text-muted); background: var(--bg-body); border-radius: 16px; border: 1px dashed var(--border-color);">
+                                    Belum ada satker yang tercatat mengirim masukan.
+                                </div>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
-            </div>
             </div>
 
 
@@ -1069,7 +1082,9 @@
                                                 <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">
                                                     {{ $bucket['stars'] }} <i class="ri-star-fill" style="color: #f59e0b;"></i>
                                                 </div>
-                                                <div style="font-size: 11px; color: var(--text-muted);">{{ $bucket['percentage'] }}%</div>
+                                                <div style="font-size: 11px; color: var(--text-muted);">
+                                                    {{ number_format($bucket['count']) }} masukan ({{ $bucket['percentage'] }}%)
+                                                </div>
                                             </div>
                                             <div class="bar-track" style="height: 6px; margin-top: 4px;">
                                                 <div class="bar-fill" style="width: {{ $bucket['percentage'] }}%;"></div>

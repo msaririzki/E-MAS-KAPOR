@@ -22,7 +22,8 @@ class DashboardController extends Controller
         private readonly KaporRequirementService $kaporRequirementService,
         private readonly SatkerPersonnelCountService $satkerPersonnelCountService,
         private readonly TestimonialInsightService $testimonialInsightService,
-    ) {}
+    ) {
+    }
 
     /**
      * Route to the appropriate dashboard based on user role.
@@ -64,7 +65,7 @@ class DashboardController extends Controller
         $fillRate = $totalPersonnel > 0 ? round(($submittedCount / $totalPersonnel) * 100, 1) : 0;
 
         // Cek status kunci sistem (Manual & Tanggal)
-        $isLocked = ! (PeriodGate::resolveInputStatus()['is_open'] ?? true);
+        $isLocked = !(PeriodGate::resolveInputStatus()['is_open'] ?? true);
 
         $stats = [
             'total_users' => User::count(),
@@ -108,7 +109,7 @@ class DashboardController extends Controller
             ->select(['id', 'full_name', 'nrp', 'satker_id', 'gender', 'kapor_sizes', 'keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'])
             ->inRandomOrder()
             ->get()
-            ->filter(fn (Personnel $personnel) => ! $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
+            ->filter(fn(Personnel $personnel) => !$this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
             ->take(5)
             ->values();
 
@@ -122,7 +123,7 @@ class DashboardController extends Controller
                 ->get();
         }
 
-        $testimonialInsights = $this->testimonialInsightService->getStatistics();
+        $testimonialInsights = $this->testimonialInsightService->getStatistics(['year' => $fiscalYear]);
 
         return view('dashboard.superadmin', compact(
             'stats',
@@ -188,7 +189,7 @@ class DashboardController extends Controller
             ->where('satker_id', $satkerId)
             ->select(['id', 'user_id', 'rank_id', 'satker_id', 'full_name', 'nrp', 'gender', 'kapor_sizes', 'keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'])
             ->get()
-            ->filter(fn (Personnel $personnel) => ! $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
+            ->filter(fn(Personnel $personnel) => !$this->kaporRequirementService->personnelHasAllRequiredSizes($personnel))
             ->take(20)
             ->values();
 
@@ -238,12 +239,12 @@ class DashboardController extends Controller
 
         if ($personnel) {
             $kaporSizes = $personnel->kapor_sizes ?? [];
-            $hasSubmitted = ! empty(array_filter((array) $kaporSizes));
+            $hasSubmitted = !empty(array_filter((array) $kaporSizes));
             $isComplete = $this->kaporRequirementService->personnelHasAllRequiredSizes($personnel);
             $requiresBagian = ($personnel->satker ?? $user->satker)?->recipientScope() === 'polres';
             $contactPhone = User::normalizePhone($personnel->phone ?: $user->phone);
             $identityReady = filled(trim((string) $personnel->jabatan))
-                && (! $requiresBagian || filled(trim((string) $personnel->bagian)))
+                && (!$requiresBagian || filled(trim((string) $personnel->bagian)))
                 && filled(trim((string) $contactPhone));
         }
 
@@ -263,7 +264,7 @@ class DashboardController extends Controller
                 'action' => 'testimoni',
                 'tone' => 'info',
             ];
-        } elseif (! ($reviewPeriodStatus['is_open'] ?? true)) {
+        } elseif (!($reviewPeriodStatus['is_open'] ?? true)) {
             $reviewPrompt = [
                 'title' => 'Review Sementara Mode Baca Saja',
                 'message' => 'Halaman review tetap bisa dibuka untuk melihat item dan riwayat respons, tetapi pengiriman baru mengikuti status periode review yang sedang berlaku.',
@@ -273,7 +274,7 @@ class DashboardController extends Controller
             ];
         } elseif ($pendingReviewItems > 0) {
             $reviewPrompt = [
-                'title' => 'Ada '.$pendingReviewItems.' Item Menunggu Respons',
+                'title' => 'Ada ' . $pendingReviewItems . ' Item Menunggu Respons',
                 'message' => 'Anda dapat memberi review item yang sudah diterima atau melaporkan item yang belum sampai agar admin bisa memantau distribusi.',
                 'action_label' => 'Buka Halaman Review',
                 'action' => 'testimoni',

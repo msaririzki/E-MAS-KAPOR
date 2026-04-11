@@ -16,7 +16,8 @@
             </div>
         @endif
 
-        <div class="alert {{ $reviewPeriodStatus['tone'] }} status-banner" data-dismissible data-dismiss-key="personil-review-period-banner">
+        <div class="alert {{ $reviewPeriodStatus['tone'] }} status-banner" data-dismissible
+            data-dismiss-key="personil-review-period-banner">
             <div class="dismiss-head">
                 <strong>{{ $reviewPeriodStatus['title'] }}</strong>
                 <button type="button" class="dismiss-btn" data-dismiss-trigger aria-label="Sembunyikan banner review">
@@ -32,10 +33,27 @@
 
         <section class="panel hero-panel">
             <div class="panel-body hero-body">
-                <div>
-                    <div class="eyebrow">Portal Review Personil</div>
-                    <h1>Review Item Kapor</h1>
-                    <p>Laporkan item yang belum diterima atau beri penilaian untuk item kapor yang sudah Anda terima pada T.A. {{ $fiscalYear }}.</p>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+                    <div>
+                        <div class="eyebrow">Portal Review Personil</div>
+                        <h1>Review Item Kapor</h1>
+                        <p>Laporkan item yang belum diterima atau beri penilaian untuk item kapor yang sudah Anda terima
+                            pada T.A. {{ $fiscalYear }}.</p>
+                    </div>
+
+                    {{-- Filter Tahun --}}
+                    <div class="year-filter-wrapper"
+                        style="background: var(--slate-50); padding: 6px 14px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px;">
+                        <i class="ri-calendar-line" style="color: var(--brand); font-size: 16px;"></i>
+                        <select onchange="window.location.href='?year='+this.value"
+                            style="border: none; background: transparent; font-size: 13px; font-weight: 700; color: var(--text-main); outline: none; cursor: pointer;">
+                            @foreach($availableYears as $year)
+                                <option value="{{ $year }}" {{ $fiscalYear == $year ? 'selected' : '' }}>
+                                    TA {{ $year }} {{ $year == $activeYear ? '(Aktif)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
         </section>
@@ -51,7 +69,8 @@
             <div class="panel-body toolbar-stack">
                 <div class="compact-summary">
                     <strong>{{ $allocationCards->count() }} item eligible untuk Anda</strong>
-                    <span>Daftar item di bawah ini berasal dari snapshot paket pengadaan yang sudah difinalkan untuk akun Anda.</span>
+                    <span>Daftar item di bawah ini berasal dari snapshot paket pengadaan yang sudah difinalkan untuk akun
+                        Anda.</span>
                     <div class="eligible-chip-row">
                         @forelse ($allocationCards as $card)
                             <span class="eligible-chip">{{ $card['item_name'] }}</span>
@@ -100,7 +119,8 @@
                     <div class="panel-body empty-state">
                         <i class="ri-chat-check-line"></i>
                         <strong>Belum ada review atau laporan penerimaan</strong>
-                        <span>Item yang sudah Anda respons akan tampil di sini untuk memudahkan update selama periode review masih terbuka.</span>
+                        <span>Item yang sudah Anda respons akan tampil di sini untuk memudahkan update selama periode review
+                            masih terbuka.</span>
                     </div>
                 </section>
             @endif
@@ -124,14 +144,18 @@
             @else
                 <div class="review-list">
                     @foreach ($orphanReviews as $review)
-                        <section class="panel review-card-item" data-searchable="{{ strtolower(($review->kaporItem?->item_name ?? 'item').' '.($review->kaporItem?->category ?? '').' '.($review->allocation?->budget_package_name_snapshot ?? '')) }}">
+                        <section class="panel review-card-item"
+                            data-searchable="{{ strtolower(($review->kaporItem?->item_name ?? 'item') . ' ' . ($review->kaporItem?->category ?? '') . ' ' . ($review->allocation?->budget_package_name_snapshot ?? '')) }}">
                             <div class="panel-body orphan-review-body">
                                 <div class="review-head">
                                     <div>
                                         <strong class="review-item-name">{{ $review->item_name_snapshot }}</strong>
-                                        <div class="review-meta">{{ $review->category_label }} • {{ $review->package_name_snapshot ?? 'Snapshot lama' }}</div>
+                                        <div class="review-meta">{{ $review->category_label }} •
+                                            {{ $review->package_name_snapshot ?? 'Snapshot lama' }}
+                                        </div>
                                     </div>
-                                    <span class="status-badge {{ $review->response_status === \App\Models\ItemReview::STATUS_NOT_RECEIVED ? 'warning' : 'success' }}">{{ $review->response_label }}</span>
+                                    <span
+                                        class="status-badge {{ $review->response_status === \App\Models\ItemReview::STATUS_NOT_RECEIVED ? 'warning' : 'success' }}">{{ $review->response_label }}</span>
                                 </div>
                                 <p class="review-copy">{{ $review->display_message }}</p>
                             </div>
@@ -627,9 +651,9 @@
             pointer-events: none;
         }
 
-        .star-picker input:checked ~ label,
+        .star-picker input:checked~label,
         .star-picker label:hover,
-        .star-picker label:hover ~ label {
+        .star-picker label:hover~label {
             color: #f59e0b;
         }
 
@@ -784,113 +808,27 @@
 @endsection
 
 @section('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
-            const panels = Array.from(document.querySelectorAll('.tab-panel'));
-            const searchInput = document.getElementById('reviewSearch');
-
-            tabButtons.forEach((button) => {
-                button.addEventListener('click', () => {
-                    tabButtons.forEach((tab) => tab.classList.remove('active'));
-                    panels.forEach((panel) => panel.classList.remove('active'));
-
-                    button.classList.add('active');
-                    document.querySelector(`[data-panel="${button.dataset.tab}"]`)?.classList.add('active');
-                    applySearch();
-                });
-            });
-
-            document.querySelectorAll('.review-card-item').forEach((card) => {
-                card.querySelectorAll('[data-response-input]').forEach((input) => {
-                    input.addEventListener('change', () => toggleRatingField(card));
-                });
-
-                const editToggle = card.querySelector('[data-edit-toggle]');
-                if (editToggle) {
-                    editToggle.addEventListener('click', () => toggleEditMode(card));
-                }
-
-                toggleRatingField(card);
-            });
-
-            document.querySelectorAll('[data-dismissible]').forEach((element) => {
-                element.querySelector('[data-dismiss-trigger]')?.addEventListener('click', () => {
-                    element.style.display = 'none';
-                });
-            });
-
-            const toast = document.getElementById('reviewToast');
-            if (toast) {
-                const hideToast = () => {
-                    toast.classList.add('hide');
-                    window.setTimeout(() => toast.remove(), 180);
-                };
-
-                toast.querySelector('[data-close-toast]')?.addEventListener('click', hideToast);
-                window.setTimeout(hideToast, 4200);
-            }
-
-            searchInput?.addEventListener('input', applySearch);
-
-            function applySearch() {
-                const activePanel = document.querySelector('.tab-panel.active');
-                const term = (searchInput?.value || '').trim().toLowerCase();
-
-                activePanel?.querySelectorAll('.review-card-item').forEach((card) => {
-                    const haystack = String(card.dataset.searchable || '').toLowerCase();
-                    card.style.display = haystack.includes(term) ? '' : 'none';
-                });
-            }
-
-            function toggleRatingField(card) {
-                const ratingWrap = card?.querySelector('[data-rating-wrap]');
-                const checkedResponse = card?.querySelector('[data-response-input]:checked');
-                const needsRating = checkedResponse?.value === '{{ \App\Models\ItemReview::STATUS_REVIEWED }}';
-
-                if (!ratingWrap) {
-                    return;
-                }
-
-                ratingWrap.style.display = needsRating ? '' : 'none';
-
-                card.querySelectorAll('.status-choice').forEach((choice) => {
-                    const input = choice.querySelector('[data-response-input]');
-                    choice.classList.toggle('active', Boolean(input?.checked));
-                });
-
-                card.querySelectorAll('[data-rating-input]').forEach((input) => {
-                    input.required = needsRating;
-                });
-            }
-
-            function toggleEditMode(card) {
-                const fieldset = card.querySelector('.review-fieldset');
-                const editToggle = card.querySelector('[data-edit-toggle]');
-                const submitButton = card.querySelector('.submit-button');
-                const isEditing = card.dataset.editing === 'true';
-
-                if (!fieldset || !editToggle || !submitButton) {
-                    return;
-                }
-
-                if (isEditing) {
-                    card.dataset.editing = 'false';
-                    fieldset.disabled = true;
-                    card.querySelector('form')?.reset();
-                    editToggle.innerHTML = '<i class="ri-edit-line"></i> Edit';
-                    submitButton.classList.add('hidden');
-                    toggleRatingField(card);
-
-                    return;
-                }
-
-                card.dataset.editing = 'true';
-                fieldset.disabled = false;
-                editToggle.innerHTML = '<i class="ri-close-line"></i> Batal';
-                submitButton.classList.remove('hidden');
-                toggleRatingField(card);
-            }
-        });
+    <script>     document.addEventListener('DOMContentLoaded', () => {         const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));         const panels = Array.from(document.querySelectorAll('.tab-panel'));         const searchInput = document.getElementById('reviewSearch');
+             tabButtons.forEach((button) => {             button.addEventListener('click', () => {                 tabButtons.forEach((tab) => tab.classList.remove('active'));                 panels.forEach((panel) => panel.classList.remove('active'));
+                     button.classList.add('active');                 document.querySelector(`[data-panel="${button.dataset.tab}"]`)?.classList.add('active');                 applySearch();             });         });
+             document.querySelectorAll('.review-card-item').forEach((card) => {             card.querySelectorAll('[data-response-input]').forEach((input) => {                 input.addEventListener('change', () => toggleRatingField(card));             });
+                 const editToggle = card.querySelector('[data-edit-toggle]');             if (editToggle) {                 editToggle.addEventListener('click', () => toggleEditMode(card));             }
+                 toggleRatingField(card);         });
+             document.querySelectorAll('[data-dismissible]').forEach((element) => {             element.querySelector('[data-dismiss-trigger]')?.addEventListener('click', () => {                 element.style.display = 'none';             });         });
+             const toast = document.getElementById('reviewToast');         if (toast) {             const hideToast = () => {                 toast.classList.add('hide');                 window.setTimeout(() => toast.remove(), 180);             };
+                 toast.querySelector('[data-close-toast]')?.addEventListener('click', hideToast);             window.setTimeout(hideToast, 4200);         }
+             searchInput?.addEventListener('input', applySearch);
+             function applySearch() {             const activePanel = document.querySelector('.tab-panel.active');             const term = (searchInput?.value || '').trim().toLowerCase();
+                 activePanel?.querySelectorAll('.review-card-item').forEach((card) => {                 const haystack = String(card.dataset.searchable || '').toLowerCase();                 card.style.display = haystack.includes(term) ? '' : 'none';             });         }
+             function toggleRatingField(card) {             const ratingWrap = card?.querySelector('[data-rating-wrap]');             const checkedResponse = card?.querySelector('[data-response-input]:checked');             const needsRating = checkedResponse?.value === '{{ \App\Models\ItemReview::STATUS_REVIEWED }}';
+                 if (!ratingWrap) {                 return;             }
+                 ratingWrap.style.display = needsRating ? '' : 'none';
+                 card.querySelectorAll('.status-choice').forEach((choice) => {                 const input = choice.querySelector('[data-response-input]');                 choice.classList.toggle('active', Boolean(input?.checked));             });
+                 card.querySelectorAll('[data-rating-input]').forEach((input) => {                 input.required = needsRating;             });         }
+             function toggleEditMode(card) {             const fieldset = card.querySelector('.review-fieldset');             const editToggle = card.querySelector('[data-edit-toggle]');             const submitButton = card.querySelector('.submit-button');             const isEditing = card.dataset.editing === 'true';
+                 if (!fieldset || !editToggle || !submitButton) {                 return;             }
+                 if (isEditing) {                 card.dataset.editing = 'false';                 fieldset.disabled = true;                 card.querySelector('form')?.reset();                 editToggle.innerHTML = '<i class="ri-edit-line"></i> Edit';                 submitButton.classList.add('hidden');                 toggleRatingField(card);
+                     return;             }
+                 card.dataset.editing = 'true';             fieldset.disabled = false;             editToggle.innerHTML = '<i class="ri-close-line"></i> Batal';             submitButton.classList.remove('hidden');             toggleRatingField(card);         }     });
     </script>
 @endsection

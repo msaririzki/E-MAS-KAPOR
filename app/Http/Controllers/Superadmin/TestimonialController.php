@@ -71,8 +71,14 @@ class TestimonialController extends Controller
             $query->where('rating', $request->rating);
         }
 
+        $activeYear = \App\Models\Setting::getValue('active_year', date('Y'));
+        $fiscalYear = $request->query('year', $activeYear);
+        $availableYears = \App\Models\ItemReview::distinct()->pluck('fiscal_year')->push($activeYear)->unique()->sortDesc();
+
+        $query->where('fiscal_year', $fiscalYear);
+
         $testimonials = $query->latest()->paginate(15)->withQueryString();
 
-        return view('superadmin.testimonials.index', compact('testimonials'));
+        return view('superadmin.testimonials.index', compact('testimonials', 'availableYears', 'fiscalYear', 'activeYear'));
     }
 }

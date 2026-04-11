@@ -102,7 +102,7 @@ class PersonilPortalController extends Controller
         $this->logIdentityChanges($personnel, $previousIdentity, $nextIdentity);
 
         if ($mode === 'identity') {
-            return redirect()->to(route('dashboard').'#ukuran-form')
+            return redirect()->to(route('dashboard') . '#ukuran-form')
                 ->with('success', $requiresBagian
                     ? 'Data jabatan, bag/fungsi, dan no. HP tersimpan. Lanjutkan ke form ukuran kaporlap.'
                     : 'Data jabatan dan no. HP tersimpan. Lanjutkan ke form ukuran kaporlap.');
@@ -116,7 +116,7 @@ class PersonilPortalController extends Controller
     {
         $personnel = $request->user()?->personnel;
         $kaporSizes = $personnel ? ($personnel->kapor_sizes ?? []) : [];
-        $hasSubmitted = ! empty(array_filter((array) $kaporSizes));
+        $hasSubmitted = !empty(array_filter((array) $kaporSizes));
         $isComplete = $personnel ? $kaporRequirementService->personnelHasAllRequiredSizes($personnel) : false;
 
         return view('personil.kapor.history', compact('kaporSizes', 'hasSubmitted', 'isComplete', 'personnel'));
@@ -125,8 +125,19 @@ class PersonilPortalController extends Controller
     public function showTestimoni(Request $request): View
     {
         $user = $request->user();
-        $fiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $activeYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $fiscalYear = (int) $request->get('year', $activeYear);
         $reviewPeriodStatus = PeriodGate::resolveReviewStatus();
+
+        // Get available years for this personil (years they have reviews or allocations)
+        $availableYears = DB::table('item_reviews')
+            ->where('user_id', $user->id)
+            ->distinct()
+            ->pluck('fiscal_year')
+            ->push($activeYear)
+            ->unique()
+            ->sortDesc()
+            ->values();
 
         $allocations = PersonnelItemAllocation::query()
             ->with(['kaporItem:id,item_name,category', 'budgetPackage:id,name'])
@@ -167,7 +178,7 @@ class PersonilPortalController extends Controller
         $pendingCards = $allocationCards->where('is_reviewed', false)->values();
         $reviewedCards = $allocationCards->where('is_reviewed', true)->values();
         $orphanReviews = $existingReviews
-            ->reject(fn (ItemReview $review) => $allocationCards->contains(fn (array $card): bool => (int) $card['allocation']->kapor_item_id === (int) $review->kapor_item_id))
+            ->reject(fn(ItemReview $review) => $allocationCards->contains(fn(array $card): bool => (int) $card['allocation']->kapor_item_id === (int) $review->kapor_item_id))
             ->values();
 
         return view('personil.testimoni.index', compact(
@@ -177,6 +188,8 @@ class PersonilPortalController extends Controller
             'pendingCards',
             'reviewedCards',
             'orphanReviews',
+            'availableYears',
+            'activeYear',
         ));
     }
 
@@ -198,12 +211,12 @@ class PersonilPortalController extends Controller
 
         $validated = $request->validate([
             'allocation_id' => 'required|integer',
-            'response_status' => 'required|in:'.implode(',', array_keys(ItemReview::RESPONSE_STATUSES)),
+            'response_status' => 'required|in:' . implode(',', array_keys(ItemReview::RESPONSE_STATUSES)),
             'rating' => 'nullable|integer|min:1|max:5',
             'message' => 'nullable|string|max:2000',
         ]);
 
-        if ($validated['response_status'] === ItemReview::STATUS_REVIEWED && ! isset($validated['rating'])) {
+        if ($validated['response_status'] === ItemReview::STATUS_REVIEWED && !isset($validated['rating'])) {
             return redirect()->route('personil.testimoni.index')
                 ->with('error_testimoni', 'Rating wajib diisi jika Anda memilih status sudah menerima item.');
         }
@@ -238,8 +251,8 @@ class PersonilPortalController extends Controller
             ],
             'success',
             $review->response_status === ItemReview::STATUS_NOT_RECEIVED
-                ? 'Personil melaporkan item kapor belum diterima.'
-                : 'Personil mengirim atau memperbarui review item kapor.',
+            ? 'Personil melaporkan item kapor belum diterima.'
+            : 'Personil mengirim atau memperbarui review item kapor.',
         );
 
         return redirect()->route('personil.testimoni.index')
