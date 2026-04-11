@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\SystemLock;
 use App\Models\BagianOption;
 use App\Models\KaporItem;
 use App\Models\Personnel;
 use App\Models\Satker;
 use App\Models\Setting;
+use App\Models\Testimonial;
 use App\Models\User;
 use App\Services\KaporRequirementService;
 use App\Services\SatkerPersonnelCountService;
@@ -209,6 +211,7 @@ class DashboardController extends Controller
     {
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
         $personnel = $user->personnel;
+        $inputPeriodStatus = SystemLock::resolveStatus();
         $bagianOptions = BagianOption::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
@@ -221,6 +224,17 @@ class DashboardController extends Controller
         $identityReady = false;
         $requiresBagian = false;
         $contactPhone = User::normalizePhone($user->phone);
+        $latestTestimonial = Testimonial::query()
+            ->where('user_id', $user->id)
+            ->latest()
+            ->first();
+        $testimonialCooldownEndsAt = null;
+        $canSubmitTestimonial = true;
+
+        if ($latestTestimonial !== null) {
+            $testimonialCooldownEndsAt = $latestTestimonial->created_at->copy()->addDays(Testimonial::COOLDOWN_DAYS);
+            $canSubmitTestimonial = now()->greaterThanOrEqualTo($testimonialCooldownEndsAt);
+        }
 
         if ($personnel) {
             $kaporSizes = $personnel->kapor_sizes ?? [];
@@ -233,7 +247,57 @@ class DashboardController extends Controller
                 && filled(trim((string) $contactPhone));
         }
 
-        return view('dashboard.personil', compact('user', 'personnel', 'kaporSizes', 'hasSubmitted', 'isComplete', 'identityReady', 'requiresBagian', 'fiscalYear', 'bagianOptions', 'contactPhone'));
+        $reviewPrompt = [
+            'title' => 'Bagikan Pengalaman Kapor',
+            'message' => 'Masukan Anda membantu admin mengevaluasi kualitas item kapor yang diterima di lapangan.',
+            'action_label' => 'Buka Halaman Testimoni',
+            'action' => 'testimoni',
+            'tone' => 'info',
+        ];
+
+        if (! ($inputPeriodStatus['is_open'] ?? true)) {
+            $reviewPrompt = [
+                'title' => 'Review Sementara Mode Baca Saja',
+                'message' => 'Halaman testimoni tetap bisa dibuka untuk melihat riwayat, tetapi pengiriman masukan baru mengikuti status periode input yang sedang berlaku.',
+                'action_label' => 'Lihat Halaman Testimoni',
+                'action' => 'testimoni',
+                'tone' => 'info',
+            ];
+        } elseif (! $isComplete) {
+            $reviewPrompt = [
+                'title' => 'Lengkapi Data Kaporelap Dulu',
+                'message' => 'Selesaikan data ukuran lebih dulu. Setelah itu Anda bisa mengirim testimoni untuk membantu evaluasi kualitas layanan.',
+                'action_label' => 'Lengkapi Ukuran',
+                'action' => 'ukuran',
+                'tone' => 'warning',
+            ];
+        } elseif (! $canSubmitTestimonial && $testimonialCooldownEndsAt !== null) {
+            $reviewPrompt = [
+                'title' => 'Testimoni Terakhir Sudah Terkirim',
+                'message' => 'Anda bisa mengirim testimoni lagi mulai '.$testimonialCooldownEndsAt->translatedFormat('d M Y').'. Jika ingin melihat riwayat masukan sebelumnya, buka halaman testimoni.',
+                'action_label' => 'Lihat Halaman Testimoni',
+                'action' => 'testimoni',
+                'tone' => 'success',
+            ];
+        }
+
+        return view('dashboard.personil', compact(
+            'user',
+            'personnel',
+            'kaporSizes',
+            'hasSubmitted',
+            'isComplete',
+            'identityReady',
+            'requiresBagian',
+            'fiscalYear',
+            'bagianOptions',
+            'contactPhone',
+            'inputPeriodStatus',
+            'latestTestimonial',
+            'testimonialCooldownEndsAt',
+            'canSubmitTestimonial',
+            'reviewPrompt',
+        ));
     }
 
     private function countPersonnelWithCompleteSizes(?int $satkerId = null): int

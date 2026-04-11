@@ -7,6 +7,7 @@ use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\Setting;
+use App\Models\Testimonial;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -112,21 +113,18 @@ class PersonnelFieldEditPolicyTest extends TestCase
             'jabatan' => 'JABATAN BARU',
             'bagian' => 'BAGIAN BARU',
             'keterangan' => 'KET BARU',
-            'keterangan_2' => 'KET2 BARU',
-            'keterangan_3' => 'KET3 BARU',
-            'keterangan_4' => 'KET4 BARU',
             'personnel_type' => 'PNS',
             'gender' => 'P',
             'golongan' => 'III/A',
             'religion' => 'Hindu',
-            'phone' => '628123456789',
+            'phone' => '08123456789',
         ]);
 
         $this->assertSame(['topi' => '60'], $personnel->fresh()->kapor_sizes);
         $this->assertSame('99999999', $user->fresh()->nrp_nip);
         $this->assertSame('NAMA BARU', $user->fresh()->name);
         $this->assertSame($satker->id, $user->fresh()->satker_id);
-        $this->assertSame('628123456789', $user->fresh()->phone);
+        $this->assertSame('08123456789', $user->fresh()->phone);
     }
 
     public function test_admin_satker_gets_info_feedback_when_no_personnel_data_changes(): void
@@ -267,11 +265,11 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $this->assertSame('BANIT RESKRIM', $personnel->jabatan);
         $this->assertSame('SAT RESKRIM', $personnel->bagian);
-        $this->assertSame('628123456789', $personnel->phone);
+        $this->assertSame('08123456789', $personnel->phone);
         $this->assertSame($satker->id, $personnel->satker_id);
         $this->assertSame('15', $personnel->kapor_sizes['kemeja']);
         $this->assertSame('57', $personnel->kapor_sizes['topi']);
-        $this->assertSame('628123456789', $user->fresh()->phone);
+        $this->assertSame('08123456789', $user->fresh()->phone);
     }
 
     public function test_personil_can_save_identity_first_and_generate_audit_log(): void
@@ -319,7 +317,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
             'mode' => 'identity',
             'jabatan' => 'BANIT SAMAPTA',
             'bagian' => 'SIAGA',
-            'phone' => '628123456789',
+            'phone' => '08123456789',
         ]);
 
         $response->assertRedirect(route('dashboard').'#ukuran-form');
@@ -329,8 +327,8 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $this->assertSame('BANIT SAMAPTA', $personnel->jabatan);
         $this->assertSame('SIAGA', $personnel->bagian);
-        $this->assertSame('628123456789', $personnel->phone);
-        $this->assertSame('628123456789', $user->fresh()->phone);
+        $this->assertSame('08123456789', $personnel->phone);
+        $this->assertSame('08123456789', $user->fresh()->phone);
 
         $auditLog = AuditLog::query()->latest()->first();
 
@@ -339,7 +337,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $this->assertSame('Data Personil', $auditLog->category);
         $this->assertSame($personnel->id, $auditLog->auditable_id);
         $this->assertSame(['jabatan' => 'JABATAN SDM', 'bagian' => null, 'phone' => null], $auditLog->old_values);
-        $this->assertSame(['jabatan' => 'BANIT SAMAPTA', 'bagian' => 'SIAGA', 'phone' => '628123456789'], $auditLog->new_values);
+        $this->assertSame(['jabatan' => 'BANIT SAMAPTA', 'bagian' => 'SIAGA', 'phone' => '08123456789'], $auditLog->new_values);
     }
 
     public function test_personil_non_polres_can_update_jabatan_and_sizes_without_bagian(): void
@@ -403,10 +401,10 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $this->assertSame('BANUM URMINTU SUBBAGRENMIN DITLANTAS', $personnel->jabatan);
         $this->assertSame('BAGIAN SDM', $personnel->bagian);
-        $this->assertSame('628123456789', $personnel->phone);
+        $this->assertSame('08123456789', $personnel->phone);
         $this->assertSame('15', $personnel->kapor_sizes['kemeja']);
         $this->assertSame('57', $personnel->kapor_sizes['topi']);
-        $this->assertSame('628123456789', $user->fresh()->phone);
+        $this->assertSame('08123456789', $user->fresh()->phone);
     }
 
     public function test_personil_dashboard_hides_bagian_field_for_non_polres_satker(): void
@@ -511,7 +509,8 @@ class PersonnelFieldEditPolicyTest extends TestCase
                 'sepatu_dinas' => '41',
                 'sepatu_olahraga' => '41',
             ])
-            ->assertForbidden();
+            ->assertRedirect()
+            ->assertSessionHas('error');
     }
 
     public function test_admin_satker_write_routes_are_blocked_outside_input_period_but_index_remains_read_only(): void
@@ -539,7 +538,158 @@ class PersonnelFieldEditPolicyTest extends TestCase
             ->post(route('admin-satker.kebutuhan.store'), [
                 'items' => [],
             ])
-            ->assertForbidden();
+            ->assertRedirect()
+            ->assertSessionHas('error');
+    }
+
+    public function test_personil_dashboard_shows_input_period_status_and_testimonial_cta_when_sizes_complete(): void
+    {
+        Setting::setValue('is_system_locked', 'false');
+        Setting::setValue('input_start_date', now()->subDay()->toDateString());
+        Setting::setValue('input_end_date', now()->addDays(7)->toDateString());
+
+        $satker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPTU',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'BAYU SAPUTRA',
+            'nrp_nip' => '76100171',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        Personnel::create([
+            'user_id' => $user->id,
+            'nrp' => '76100171',
+            'full_name' => 'BAYU SAPUTRA',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'golongan' => 'BINTARA',
+            'jabatan' => 'BANIT OPERASI',
+            'bagian' => 'SIAGA',
+            'phone' => '08123456789',
+            'satker_id' => $satker->id,
+            'religion' => 'Islam',
+            'is_active' => true,
+            'kapor_sizes' => [
+                'topi' => '57',
+                'kemeja' => '15',
+                'celana' => '32',
+                'olahraga' => 'B',
+                'jaket' => 'B',
+                'sepatu_dinas' => '41',
+                'sepatu_olahraga' => '41',
+                'sabuk' => '42',
+            ],
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSeeText('Periode Input Sedang Berjalan');
+        $response->assertSeeText('Bagikan Pengalaman Kapor');
+        $response->assertSeeText('Buka Halaman Testimoni');
+    }
+
+    public function test_personil_dashboard_shows_testimonial_cooldown_message_when_recent_feedback_exists(): void
+    {
+        Setting::setValue('is_system_locked', 'false');
+        Setting::setValue('input_start_date', now()->subDay()->toDateString());
+        Setting::setValue('input_end_date', now()->addDays(7)->toDateString());
+
+        $satker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPTU',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'BAYU SAPUTRA',
+            'nrp_nip' => '76100172',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        Personnel::create([
+            'user_id' => $user->id,
+            'nrp' => '76100172',
+            'full_name' => 'BAYU SAPUTRA',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'golongan' => 'BINTARA',
+            'jabatan' => 'BANIT OPERASI',
+            'bagian' => 'SIAGA',
+            'phone' => '08123456789',
+            'satker_id' => $satker->id,
+            'religion' => 'Islam',
+            'is_active' => true,
+            'kapor_sizes' => [
+                'topi' => '57',
+                'kemeja' => '15',
+                'celana' => '32',
+                'olahraga' => 'B',
+                'jaket' => 'B',
+                'sepatu_dinas' => '41',
+                'sepatu_olahraga' => '41',
+                'sabuk' => '42',
+            ],
+        ]);
+
+        Testimonial::create([
+            'user_id' => $user->id,
+            'category' => 'tutup_kepala',
+            'message' => 'Nyaman dipakai.',
+            'rating' => 5,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSeeText('Testimoni Terakhir Sudah Terkirim');
+        $response->assertSeeText('Lihat Halaman Testimoni');
+    }
+
+    public function test_personil_testimoni_page_shows_read_only_notice_when_input_period_is_closed(): void
+    {
+        Setting::setValue('is_system_locked', 'false');
+        Setting::setValue('input_start_date', now()->subMonths(2)->toDateString());
+        Setting::setValue('input_end_date', now()->subDay()->toDateString());
+
+        $satker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'BAYU SAPUTRA',
+            'nrp_nip' => '76100173',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        $response = $this->actingAs($user)->get(route('personil.testimoni.index'));
+
+        $response->assertOk();
+        $response->assertSeeText('Periode Input Sudah Ditutup');
+        $response->assertSeeText('Pengiriman testimoni sedang nonaktif');
     }
 
     public function test_personil_dashboard_renders_mobile_first_form_flow(): void
@@ -584,7 +734,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response->assertOk();
         $response->assertSeeText('Data Kaporlap Personil');
         $response->assertSeeText('Data Personel');
-        $response->assertSeeText('Nomor WhatsApp');
+        $response->assertSeeText('No. HP (WhatsApp)');
         $response->assertSeeText('Ukuran kaporlap');
     }
 }

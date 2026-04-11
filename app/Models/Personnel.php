@@ -13,6 +13,10 @@ class Personnel extends Model
 
     protected $table = 'personnels';
 
+    protected $appends = [
+        'whatsapp_link',
+    ];
+
     protected $fillable = [
         'user_id',
         'nrp',
@@ -70,6 +74,11 @@ class Personnel extends Model
     public function submissions(): HasMany
     {
         return $this->hasMany(KaporSubmission::class);
+    }
+
+    public function getWhatsappLinkAttribute(): ?string
+    {
+        return User::buildWhatsappLink($this->phone ?: $this->user?->phone);
     }
 
     // ── Scopes ────────────────────────────────────────────────

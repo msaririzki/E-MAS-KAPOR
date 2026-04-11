@@ -26,6 +26,7 @@ use App\Services\KaporRequirementService;
 use App\Services\SdmImportRunService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -379,7 +380,7 @@ class PersonnelController extends Controller
             'kapor_sizes' => 'nullable|array',
         ]);
 
-        if (!auth()->user()?->hasRole('superadmin')) {
+        if (! auth()->user()?->hasRole('superadmin')) {
             unset($validated['keterangan_2'], $validated['keterangan_3'], $validated['keterangan_4']);
         }
 
@@ -651,7 +652,7 @@ class PersonnelController extends Controller
             'kapor_sizes' => 'nullable|array',
         ]);
 
-        if (!auth()->user()?->hasRole('superadmin')) {
+        if (! auth()->user()?->hasRole('superadmin')) {
             unset($validated['keterangan_2'], $validated['keterangan_3'], $validated['keterangan_4']);
         }
 
@@ -1985,7 +1986,7 @@ class PersonnelController extends Controller
 
         $lockMessage = SystemLock::resolveLockMessage();
         if ($lockMessage !== null) {
-            abort(403, $lockMessage);
+            throw new HttpResponseException(SystemLock::buildBlockedResponse($request, $lockMessage));
         }
     }
 }

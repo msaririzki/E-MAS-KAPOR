@@ -116,15 +116,37 @@ class User extends Authenticatable
             return null;
         }
 
+        return $normalized;
+    }
+
+    public static function normalizeWhatsappPhone(?string $phone): ?string
+    {
+        $normalized = static::normalizePhone($phone);
+
+        if ($normalized === null) {
+            return null;
+        }
+
         if (str_starts_with($normalized, '620')) {
-            $normalized = '62'.substr($normalized, 3);
-        } elseif (str_starts_with($normalized, '0')) {
-            $normalized = '62'.substr($normalized, 1);
-        } elseif (str_starts_with($normalized, '8')) {
-            $normalized = '62'.$normalized;
+            return '62'.substr($normalized, 3);
+        }
+
+        if (str_starts_with($normalized, '0')) {
+            return '62'.substr($normalized, 1);
+        }
+
+        if (str_starts_with($normalized, '8')) {
+            return '62'.$normalized;
         }
 
         return $normalized;
+    }
+
+    public static function buildWhatsappLink(?string $phone): ?string
+    {
+        $normalized = static::normalizeWhatsappPhone($phone);
+
+        return $normalized ? 'https://wa.me/'.$normalized : null;
     }
 
     // ── Scopes ────────────────────────────────────────────────

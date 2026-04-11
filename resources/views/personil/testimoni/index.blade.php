@@ -30,6 +30,19 @@
             gap: 10px;
         }
 
+        .alert-info {
+            padding: 16px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .field {
             margin-top: 14px;
             padding: 0;
@@ -341,13 +354,27 @@
             </div>
         @endif
 
+        @if (session('error'))
+            <div class="alert-error">
+                <i class="ri-error-warning-fill" style="font-size: 18px;"></i>
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @if (!($inputPeriodStatus['is_open'] ?? true))
+            <div class="alert-info">
+                <i class="ri-calendar-event-line" style="font-size: 18px;"></i>
+                {{ $inputPeriodStatus['title'] }}. {{ $inputPeriodStatus['message'] }} Periode yang berlaku: {{ $inputPeriodStatus['period_label'] }}.
+            </div>
+        @endif
+
         <section class="panel">
             <div class="panel-header">
                 <h2>Testimoni Kapor</h2>
                 <p>Beri penilaian Anda untuk setiap bagian kaporlap yang diterima.</p>
             </div>
             <div class="panel-body">
-                @if ($canSubmit)
+                @if ($canSubmitNow)
                     <form action="{{ route('personil.testimoni.store') }}" method="POST">
                         @csrf
 
@@ -428,7 +455,7 @@
                             </button>
                         </div>
                     </form>
-                @else
+                @elseif (!$canSubmit)
                     <div class="cooldown-banner">
                         <div class="cooldown-icon">
                             <i class="ri-time-line"></i>
@@ -445,6 +472,20 @@
                             @if ($daysSinceLastSubmit !== null)
                                 ({{ $daysSinceLastSubmit + 1 }} hari lagi)
                             @endif
+                        </div>
+                    </div>
+                @else
+                    <div class="cooldown-banner">
+                        <div class="cooldown-icon">
+                            <i class="ri-lock-line"></i>
+                        </div>
+                        <div class="cooldown-title">Pengiriman testimoni sedang nonaktif</div>
+                        <div class="cooldown-desc">
+                            Anda masih bisa melihat riwayat testimoni sebelumnya, tetapi pengiriman testimoni baru akan dibuka kembali mengikuti status periode input yang aktif.
+                        </div>
+                        <div class="cooldown-date">
+                            <i class="ri-calendar-check-line"></i>
+                            {{ $inputPeriodStatus['period_label'] }}
                         </div>
                     </div>
                 @endif

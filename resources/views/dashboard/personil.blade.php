@@ -291,10 +291,75 @@
             color: var(--success);
         }
 
+        .alert.info {
+            border-color: #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .alert.warning {
+            border-color: #fde68a;
+            background: #fffbeb;
+            color: #b45309;
+        }
+
         .alert.error {
             border-color: #fecaca;
             background: #fef2f2;
             color: var(--danger);
+        }
+
+        .status-banner {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .status-banner strong,
+        .review-card strong {
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .status-banner span,
+        .review-card p {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .status-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.75);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .review-card {
+            padding: 18px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .review-card.info {
+            border-color: #bfdbfe;
+            background: linear-gradient(180deg, #ffffff, #eff6ff);
+        }
+
+        .review-card.warning {
+            border-color: #fde68a;
+            background: linear-gradient(180deg, #ffffff, #fffbeb);
+        }
+
+        .review-card.success {
+            border-color: #bbf7d0;
+            background: linear-gradient(180deg, #ffffff, #f0fdf4);
         }
 
         .hidden {
@@ -345,6 +410,7 @@
         $identityStepLabel = $usesBagianDropdown ? '1. Jabatan + Bag/Fungsi + No. WA' : '1. Jabatan + No. WA';
         $showIdentityForm = !$identityReady || old('mode') === 'identity' || $errors->has('jabatan') || $errors->has('bagian') || $errors->has('phone');
         $showSizesForm = !$hasSubmitted || old('mode') === 'sizes';
+        $isInputOpen = $inputPeriodStatus['is_open'] ?? true;
         $progressClass = !$identityReady ? 'progress-38' : ($isComplete ? 'progress-100' : ($hasSubmitted ? 'progress-82' : 'progress-64'));
         $summaryItems = [
             'Kemeja' => $kaporSizes['kemeja'] ?? '-',
@@ -398,6 +464,15 @@
                 <div class="alert error">{{ session('error') }}</div>
             @endif
 
+            <div class="alert {{ $inputPeriodStatus['tone'] }} status-banner">
+                <strong>{{ $inputPeriodStatus['title'] }}</strong>
+                <span>{{ $inputPeriodStatus['message'] }}</span>
+                <div class="status-meta">
+                    <i class="ri-calendar-line"></i>
+                    Periode aktif: {{ $inputPeriodStatus['period_label'] }}
+                </div>
+            </div>
+
             @if ($errors->any())
                 <div class="alert error">Masih ada field yang perlu diperbaiki.</div>
             @endif
@@ -415,14 +490,16 @@
                             @if ($usesBagianDropdown)
                                 <div class="summary-item"><strong>Bag/Fungsi</strong><span>{{ $personnel->bagian }}</span></div>
                             @endif
-                            <div class="summary-item"><strong>No. WhatsApp</strong><span>{{ $currentPhone ?: '-' }}</span></div>
+                            <div class="summary-item"><strong>No. HP (WhatsApp)</strong><span>{{ $currentPhone ?: '-' }}</span></div>
                         </div>
 
-                        <div style="margin-top: 12px;">
-                            <button type="button" class="button-secondary" data-open-identity style="width: auto;">
-                                <i class="ri-edit-line"></i> Edit Data Personel
-                            </button>
-                        </div>
+                        @if ($isInputOpen)
+                            <div style="margin-top: 12px;">
+                                <button type="button" class="button-secondary" data-open-identity style="width: auto;">
+                                    <i class="ri-edit-line"></i> Edit Data Personel
+                                </button>
+                            </div>
+                        @endif
                     </div>
                 @endif
 
@@ -431,48 +508,56 @@
                     @csrf
                     <input type="hidden" name="mode" value="identity">
 
-                    <div class="identity-grid">
-                        <div class="field">
-                            <label class="label" for="jabatan">Jabatan</label>
-                            <input id="jabatan" type="text" name="jabatan" class="control"
-                                value="{{ old('jabatan', $personnel->jabatan ?? '') }}" style="text-transform: uppercase;"
-                                oninput="this.value = this.value.toUpperCase()">
-                            <span class="hint">Referensi SDM Polda NTB.</span>
-                            @error('jabatan')<span class="error">{{ $message }}</span>@enderror
-                        </div>
-
-                        @if ($usesBagianDropdown)
+                    <fieldset @disabled(! $isInputOpen) style="border: 0; padding: 0; margin: 0; min-width: 0;">
+                        <div class="identity-grid">
                             <div class="field">
-                                <label class="label" for="bagian">Bag/Fungsi</label>
-                                <select id="bagian" name="bagian" class="control">
-                                    <option value="">Pilih Bagian / Fungsi</option>
-                                    @if ($selectedBagian && ! $bagianOptionsList->contains($selectedBagian))
-                                        <option value="{{ $selectedBagian }}" selected>{{ $selectedBagian }}</option>
-                                    @endif
-                                    @foreach ($bagianOptionsList as $option)
-                                        <option value="{{ $option }}" {{ $selectedBagian === $option ? 'selected' : '' }}>{{ $option }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <span class="hint">Khusus satker kategori polres, bag/fungsi dipilih dari master superadmin.</span>
-                                @error('bagian')<span class="error">{{ $message }}</span>@enderror
+                                <label class="label" for="jabatan">Jabatan</label>
+                                <input id="jabatan" type="text" name="jabatan" class="control"
+                                    value="{{ old('jabatan', $personnel->jabatan ?? '') }}" style="text-transform: uppercase;"
+                                    oninput="this.value = this.value.toUpperCase()">
+                                <span class="hint">Referensi SDM Polda NTB.</span>
+                                @error('jabatan')<span class="error">{{ $message }}</span>@enderror
                             </div>
-                        @endif
 
-                        <div class="field">
-                            <label class="label" for="phone">Nomor WhatsApp</label>
-                            <input id="phone" type="text" name="phone" class="control" inputmode="numeric" autocomplete="tel"
-                                placeholder="Contoh: 08123456789" value="{{ $currentPhone }}"
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                            <span class="hint">Nomor ini dipakai admin untuk kontak cepat dan pengumuman WhatsApp.</span>
-                            @error('phone')<span class="error">{{ $message }}</span>@enderror
+                            @if ($usesBagianDropdown)
+                                <div class="field">
+                                    <label class="label" for="bagian">Bag/Fungsi</label>
+                                    <select id="bagian" name="bagian" class="control">
+                                        <option value="">Pilih Bagian / Fungsi</option>
+                                        @if ($selectedBagian && ! $bagianOptionsList->contains($selectedBagian))
+                                            <option value="{{ $selectedBagian }}" selected>{{ $selectedBagian }}</option>
+                                        @endif
+                                        @foreach ($bagianOptionsList as $option)
+                                            <option value="{{ $option }}" {{ $selectedBagian === $option ? 'selected' : '' }}>{{ $option }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <span class="hint">Khusus satker kategori polres, bag/fungsi dipilih dari master superadmin.</span>
+                                    @error('bagian')<span class="error">{{ $message }}</span>@enderror
+                                </div>
+                            @endif
+
+                            <div class="field">
+                                <label class="label" for="phone">No. HP (WhatsApp)</label>
+                                <input id="phone" type="text" name="phone" class="control" inputmode="numeric" autocomplete="tel"
+                                    placeholder="Contoh: 08123456789" value="{{ $currentPhone }}"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                <span class="hint">Nomor ini dipakai admin untuk chat cepat via WhatsApp.</span>
+                                @error('phone')<span class="error">{{ $message }}</span>@enderror
+                            </div>
                         </div>
-                    </div>
+                    </fieldset>
 
-                    <div class="note">{{ $usesBagianDropdown ? 'Simpan jabatan, bag/fungsi, dan nomor WhatsApp dulu, lalu lanjut ke ukuran.' : 'Simpan jabatan dan nomor WhatsApp dulu, lalu lanjut ke ukuran.' }}</div>
+                    <div class="note">{{ $usesBagianDropdown ? 'Simpan jabatan, bag/fungsi, dan no. HP dulu, lalu lanjut ke ukuran.' : 'Simpan jabatan dan no. HP dulu, lalu lanjut ke ukuran.' }}</div>
+
+                    @unless ($isInputOpen)
+                        <div class="note" style="background: #fef2f2; border-color: #fecaca; color: #b91c1c;">
+                            Perubahan sementara dinonaktifkan karena periode input belum dibuka atau sudah ditutup.
+                        </div>
+                    @endunless
 
                         <div style="margin-top: 14px;">
-                            <button type="submit" class="button">Simpan</button>
+                            <button type="submit" class="button" @disabled(! $isInputOpen)>{{ $isInputOpen ? 'Simpan' : 'Input Ditutup' }}</button>
                         </div>
                     </form>
                 </div>
@@ -493,11 +578,13 @@
                                 @endforeach
                             </div>
 
-                            <div style="margin-top: 12px;">
-                                <button type="button" class="button-secondary" data-open-sizes style="width: auto;">
-                                    <i class="ri-edit-line"></i> Edit Ukuran
-                                </button>
-                            </div>
+                            @if ($isInputOpen)
+                                <div style="margin-top: 12px;">
+                                    <button type="button" class="button-secondary" data-open-sizes style="width: auto;">
+                                        <i class="ri-edit-line"></i> Edit Ukuran
+                                    </button>
+                                </div>
+                            @endif
                         </div>
                     @endif
 
@@ -510,6 +597,8 @@
                         @if ($usesBagianDropdown)
                             <input type="hidden" name="bagian" value="{{ old('bagian', $personnel->bagian ?? '') }}">
                         @endif
+
+                        <fieldset @disabled(! $isInputOpen) style="border: 0; padding: 0; margin: 0; min-width: 0;">
 
                         <div class="field-grid">
                             <div class="field">
@@ -605,9 +694,16 @@
                                 @error('sepatu_olahraga')<span class="error">{{ $message }}</span>@enderror
                             </div>
                         </div>
+                        </fieldset>
+
+                        @unless ($isInputOpen)
+                            <div class="note" style="background: #fef2f2; border-color: #fecaca; color: #b91c1c;">
+                                Ukuran dapat dilihat, tetapi penyimpanan baru dinonaktifkan sampai periode input dibuka kembali.
+                            </div>
+                        @endunless
 
                             <div style="margin-top: 14px;">
-                                <button type="submit" class="button">Simpan Ukuran</button>
+                                <button type="submit" class="button" @disabled(! $isInputOpen)>{{ $isInputOpen ? 'Simpan Ukuran' : 'Input Ditutup' }}</button>
                             </div>
                         </form>
                     </div>
@@ -621,6 +717,29 @@
                 </section>
             @endif
 
+            <section class="review-card {{ $reviewPrompt['tone'] }}">
+                <strong>{{ $reviewPrompt['title'] }}</strong>
+                <p>{{ $reviewPrompt['message'] }}</p>
+                <div class="link-row" style="margin-top: 14px;">
+                    @if (($reviewPrompt['action'] ?? 'testimoni') === 'testimoni')
+                        <a href="{{ route('personil.testimoni.index') }}" class="button-secondary" style="width: auto; text-decoration: none;">
+                            <i class="ri-chat-3-line"></i>
+                            {{ $reviewPrompt['action_label'] }}
+                        </a>
+                    @else
+                        <a href="#ukuran-form" class="button-secondary" style="width: auto; text-decoration: none;">
+                            <i class="ri-ruler-line"></i>
+                            {{ $reviewPrompt['action_label'] }}
+                        </a>
+                    @endif
+
+                    <a href="{{ route('personil.kapor.history') }}" class="button-secondary" style="width: auto; text-decoration: none;">
+                        <i class="ri-file-list-3-line"></i>
+                        Riwayat Ukuran
+                    </a>
+                </div>
+            </section>
+
         </div>
 
         <footer style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color); text-align: center;">
@@ -629,7 +748,7 @@
                     style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Riwayat Ukuran</a>
                 <span style="color: var(--slate-300);">•</span>
                 <a href="{{ route('personil.testimoni.index') }}"
-                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Halaman Testimoni</a>
+                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Review / Testimoni</a>
             </div>
         </footer>
     @endif

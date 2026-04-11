@@ -103,7 +103,7 @@ class PersonnelImportAccountProvisioningTest extends TestCase
         $user = User::create([
             'name' => 'Lalu Muhamad Zainul',
             'nrp_nip' => '198501012010011001',
-            'phone' => '628123456789',
+            'phone' => '08123456789',
             'password' => bcrypt('198501012010011001'),
             'satker_id' => $satker->id,
             'is_active' => true,
@@ -146,8 +146,8 @@ class PersonnelImportAccountProvisioningTest extends TestCase
 
         $this->assertSame(1, $result['success_count']);
         $this->assertSame(0, $result['error_count']);
-        $this->assertSame('628123456789', $personnel->fresh()->phone);
-        $this->assertSame('628123456789', $user->fresh()->phone);
+        $this->assertSame('08123456789', $personnel->fresh()->phone);
+        $this->assertSame('08123456789', $user->fresh()->phone);
     }
 
     private function createSatker(): Satker

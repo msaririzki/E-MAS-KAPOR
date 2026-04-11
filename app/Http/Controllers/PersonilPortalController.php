@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Middleware\SystemLock;
 use App\Models\Testimonial;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -101,8 +102,8 @@ class PersonilPortalController extends Controller
         if ($mode === 'identity') {
             return redirect()->to(route('dashboard').'#ukuran-form')
                 ->with('success', $requiresBagian
-                    ? 'Data jabatan, bag/fungsi, dan nomor WhatsApp tersimpan. Lanjutkan ke form ukuran kaporlap.'
-                    : 'Data jabatan dan nomor WhatsApp tersimpan. Lanjutkan ke form ukuran kaporlap.');
+                    ? 'Data jabatan, bag/fungsi, dan no. HP tersimpan. Lanjutkan ke form ukuran kaporlap.'
+                    : 'Data jabatan dan no. HP tersimpan. Lanjutkan ke form ukuran kaporlap.');
         }
 
         return redirect()->route('dashboard')
@@ -139,6 +140,7 @@ class PersonilPortalController extends Controller
         $canSubmit = true;
         $cooldownEndsAt = null;
         $daysSinceLastSubmit = null;
+        $inputPeriodStatus = SystemLock::resolveStatus();
 
         if ($latestTestimonial) {
             $cooldownEndsAt = $latestTestimonial->created_at->addDays(Testimonial::COOLDOWN_DAYS);
@@ -153,13 +155,17 @@ class PersonilPortalController extends Controller
         $groupedTestimonials = $recentTestimonials
             ->groupBy(fn (Testimonial $t): string => $t->created_at->format('Y-m-d H:i'));
 
+        $canSubmitNow = $canSubmit && ($inputPeriodStatus['is_open'] ?? true);
+
         return view('personil.testimoni.index', compact(
             'recentTestimonials',
             'canSubmit',
+            'canSubmitNow',
             'cooldownEndsAt',
             'daysSinceLastSubmit',
             'latestTestimonial',
             'groupedTestimonials',
+            'inputPeriodStatus',
         ));
     }
 
@@ -227,7 +233,7 @@ class PersonilPortalController extends Controller
             $previousIdentity,
             $nextIdentity,
             'success',
-            'Personil memperbarui jabatan, bag/fungsi, atau nomor WhatsApp pada profil tahun berjalan.',
+            'Personil memperbarui jabatan, bag/fungsi, atau no. HP pada profil tahun berjalan.',
         );
     }
 }

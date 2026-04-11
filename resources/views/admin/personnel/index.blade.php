@@ -3616,7 +3616,7 @@
         document.getElementById('detail_phone').innerText = phone || '—';
 
         const phoneLink = document.getElementById('detail_phone_link');
-        const waLink = buildWhatsappLink(phone);
+        const waLink = p.whatsapp_link || buildWhatsappLink(phone);
         if (waLink) {
             phoneLink.href = waLink;
             phoneLink.style.display = 'inline-flex';
