@@ -7,6 +7,9 @@
 @php
     $nextBudgetYear = max((int) date('Y'), (int) ($years->max('year') ?? date('Y'))) + 1;
     $canManageBudget = auth()->user()->hasAnyRole(['superadmin', 'admin']);
+    $activeBudgetYearLabel = $activeBudgetYear?->name ?? 'Belum ada tahun anggaran budget yang ditandai aktif';
+    $inactiveYearsCount = $years->where('year', '<', $activeFiscalYear)->count();
+    $hasYearMismatch = $activeBudgetYear && (int) $activeBudgetYear->year !== (int) $activeFiscalYear;
 @endphp
 <div class="page-header">
     <div class="page-header-row">
@@ -25,39 +28,91 @@
 </div>
 
 @if($canManageBudget)
-<div class="budget-prep-card">
-    <div class="budget-prep-content">
-        <div class="budget-prep-badge">
-            <i class="ri-calendar-check-line"></i>
-            <span>Tahun Anggaran Aktif</span>
+<div class="budget-summary-compact {{ $hasYearMismatch ? 'is-warning' : '' }}">
+    <div class="bsc-content">
+        <div class="bsc-icon">
+            <i class="ri-folder-chart-line"></i>
         </div>
-        <h2>TA {{ $activeFiscalYear }}</h2>
-        <p>
-            Budget year aktif: <strong>{{ $activeBudgetYear?->name ?? 'Belum tersinkron ke modul budget' }}</strong>.
-            Aksi ini akan mengarsipkan paket tahun berjalan, mengunci sistem, menonaktifkan akun personel, mengosongkan satker pada akun personel, lalu menyiapkan tahun berikutnya dengan dataset aktif personel yang direset untuk import ulang SDM.
-        </p>
+        <div class="bsc-info">
+            <div class="bsc-stats">
+                <div class="bsc-stat">
+                    <span class="bsc-label">Sistem Aktif:</span>
+                    <strong class="bsc-val">TA {{ $activeFiscalYear }}</strong>
+                </div>
+                <div class="bsc-divider"></div>
+                <div class="bsc-stat">
+                    <span class="bsc-label">Budget Aktif:</span>
+                    <strong class="bsc-val {{ $hasYearMismatch ? 'text-danger' : '' }}">
+                        {{ $activeBudgetYear ? 'TA '.$activeBudgetYear->year : 'Belum ditetapkan' }}
+                    </strong>
+                </div>
+                <div class="bsc-divider"></div>
+                <div class="bsc-stat">
+                    <span class="bsc-label">Riwayat:</span>
+                    <strong class="bsc-val">{{ number_format($inactiveYearsCount) }} Tahun</strong>
+                </div>
+            </div>
+            <div class="bsc-text">
+                Kelola paket pengadaan kapor. Pengaturan tahun aktif diatur oleh Superadmin.
+                @if($hasYearMismatch)
+                    <span class="bsc-alert">
+                        <i class="ri-error-warning-fill"></i> Sinkronisasi tertunda
+                    </span>
+                @endif
+            </div>
+        </div>
     </div>
     @if(auth()->user()->hasRole('superadmin'))
-    <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menyiapkan Tahun Anggaran {{ $activeFiscalYear + 1 }}? Sistem akan dikunci, paket anggaran aktif akan diarsipkan, akun personel dinonaktifkan, satker akun personel dikosongkan, dan dataset aktif personel akan direset untuk import ulang SDM.')">
-        @csrf
-        <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
-            <i class="ri-arrow-right-up-line"></i> Siapkan Anggaran Berikutnya
-        </button>
-    </form>
+    <div class="bsc-actions">
+        <a href="{{ route('superadmin.settings.index') }}" class="btn-modern-settings">
+            <i class="ri-settings-3-line"></i> Buka Pengaturan
+        </a>
+    </div>
     @endif
 </div>
 @endif
 
 {{-- Year Cards --}}
+<div class="budget-years-intro">
+    <div class="byi-heading-row">
+        <h2>Daftar Tahun Anggaran</h2>
+        <span class="byi-separator"></span>
+        <p>Pilih salah satu tahun untuk melihat paket pengadaan dan hasil anggarannya. Tahun sebelumnya tetap bisa dibuka sebagai riwayat.</p>
+    </div>
+    <span class="budget-years-count">{{ number_format($years->count()) }} tahun</span>
+</div>
 <div class="budget-years-grid">
     @forelse($years as $year)
-    <div class="budget-year-card {{ $year->is_active ? '' : 'inactive' }}">
+    @php
+        $isHistoricalYear = (int) $year->year < (int) $activeFiscalYear;
+        $isCurrentFiscalYear = (int) $year->year === (int) $activeFiscalYear;
+        $isUpcomingYear = (int) $year->year > (int) $activeFiscalYear;
+        $isInvalidActiveHistory = $isHistoricalYear && $year->is_active;
+        $yearStatusLabel = $isHistoricalYear
+            ? 'Riwayat / Arsip'
+            : ($isCurrentFiscalYear
+                ? ($year->is_active ? 'Aktif Sekarang' : 'Tahun Sistem Aktif')
+                : ($year->is_active ? 'Aktif di Modul Budget' : 'Belum Dipakai'));
+        $yearStatusClass = $isHistoricalYear ? 'history' : (($year->is_active || $isCurrentFiscalYear) ? 'active' : 'upcoming');
+        $yearHelperText = $isHistoricalYear
+            ? ($isInvalidActiveHistory
+                ? 'Tahun ini sudah lewat, jadi tetap diperlakukan sebagai arsip walaupun pernah ditandai aktif di modul budget.'
+                : 'Data tahun ini disimpan sebagai riwayat dan hanya bisa dibuka kembali untuk melihat hasilnya.')
+            : ($isCurrentFiscalYear
+                ? 'Tahun ini sedang dipakai untuk penyusunan paket budget.'
+                : ($year->is_active
+                    ? 'Budget year ini aktif untuk modul budget, tetapi masih berbeda dengan tahun sistem aktif.'
+                    : 'Tahun ini sudah dibuat, tetapi belum menjadi budget year aktif.'));
+        $yearFooterLabel = $isHistoricalYear ? 'Lihat Riwayat Paket' : 'Buka Paket Tahun Ini';
+    @endphp
+    <div class="budget-year-card {{ ($isHistoricalYear || ! $year->is_active) ? 'inactive' : '' }}">
         <div class="year-card-header">
             <div class="year-badge">
                 <i class="ri-calendar-line"></i>
                 <span>T.A. {{ $year->year }}</span>
             </div>
-            @if($canManageBudget)
+            <span class="year-status-badge {{ $yearStatusClass }}">{{ $yearStatusLabel }}</span>
+            @if($canManageBudget && ! $isHistoricalYear)
             <div class="year-actions">
                 <button class="btn-icon-sm" onclick="openEditYearModal({{ json_encode($year) }})" title="Edit">
                     <i class="ri-edit-line"></i>
@@ -71,6 +126,7 @@
         </div>
         <div class="year-card-body">
             <h2 class="year-title">{{ $year->name }}</h2>
+            <p class="year-helper-text">{{ $yearHelperText }}</p>
             <div class="year-stats">
                 <div class="year-stat">
                     <span class="year-stat-value">{{ $year->packages_count }}</span>
@@ -81,12 +137,9 @@
                     <span class="year-stat-label">Total Anggaran</span>
                 </div>
             </div>
-            @if(!$year->is_active)
-                <span class="year-inactive-badge">Non-Aktif</span>
-            @endif
         </div>
         <a href="{{ route('admin.budget.show-year', $year) }}" class="year-card-footer">
-            <span>Lihat Paket</span>
+            <span>{{ $yearFooterLabel }}</span>
             <i class="ri-arrow-right-line"></i>
         </a>
     </div>
@@ -208,41 +261,129 @@
         grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
         gap: 20px;
     }
-
-    .budget-prep-card {
+    .budget-years-intro {
         display: flex;
         justify-content: space-between;
-        gap: 20px;
         align-items: center;
-        background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%);
-        border: 1px solid #FECACA;
-        border-radius: 18px;
-        padding: 22px 24px;
-        margin-bottom: 24px;
+        gap: 16px;
+        margin-bottom: 20px;
     }
-    .budget-prep-content h2 {
-        font-size: 28px;
-        font-weight: 800;
-        color: #991B1B;
-        margin: 10px 0 8px;
+    .byi-heading-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
-    .budget-prep-content p {
+    .budget-years-intro h2 {
         margin: 0;
-        color: #7F1D1D;
-        font-size: 14px;
-        line-height: 1.7;
-        max-width: 760px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        white-space: nowrap;
     }
-    .budget-prep-badge {
+    .byi-separator {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #CBD5E1;
+        flex-shrink: 0;
+    }
+    .budget-years-intro p {
+        margin: 0;
+        font-size: 13px;
+        color: #6B7280;
+    }
+    .budget-years-count {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 6px 12px;
+        padding: 7px 12px;
         border-radius: 999px;
-        background: rgba(185, 28, 28, 0.08);
-        color: #B91C1C;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        color: #475569;
         font-size: 12px;
         font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .budget-summary-compact {
+        background: #ffffff;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border-left: 4px solid #1E3A8A;
+    }
+    .budget-summary-compact.is-warning {
+        background: #FEF2F2;
+        border-color: #FECACA;
+        border-left-color: #DC2626;
+    }
+    .bsc-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .bsc-icon {
+        width: 44px; height: 44px;
+        border-radius: 10px;
+        background: #EFF6FF;
+        color: #1E3A8A;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+    .budget-summary-compact.is-warning .bsc-icon {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+    .bsc-info {
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .bsc-stats {
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .bsc-stat {
+        display: flex; align-items: center; gap: 6px;
+    }
+    .bsc-label {
+        font-size: 12px; color: #64748B;
+        text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;
+    }
+    .bsc-val {
+        font-size: 13px; font-weight: 700; color: #0F172A;
+        background: #F1F5F9; padding: 2px 8px; border-radius: 6px;
+    }
+    .bsc-val.text-danger {
+        background: #FECACA; color: #991B1B;
+    }
+    .bsc-divider {
+        width: 4px; height: 4px; border-radius: 50%; background: #CBD5E1;
+    }
+    .bsc-text {
+        font-size: 13px; color: #475569;
+        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .bsc-alert {
+        color: #B91C1C; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 12px; background: #FEE2E2; padding: 2px 6px; border-radius: 4px;
+    }
+    .btn-modern-settings {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #1e3a5f; color: #ffffff;
+        padding: 8px 16px; border-radius: 8px;
+        font-size: 13px; font-weight: 600; text-decoration: none;
+        transition: all 0.2s ease; border: none; cursor: pointer;
+        box-shadow: 0 2px 4px rgba(30, 58, 95, 0.2); white-space: nowrap;
+    }
+    .btn-modern-settings:hover {
+        background: #152b47; box-shadow: 0 4px 6px rgba(30, 58, 95, 0.3);
+        transform: translateY(-1px); color: #ffffff;
     }
 
     .budget-year-card {
@@ -258,12 +399,14 @@
         box-shadow: 0 8px 25px -5px rgba(0,0,0,0.08);
         border-color: #D1D5DB;
     }
-    .budget-year-card.inactive { opacity: 0.6; }
+    .budget-year-card.inactive { opacity: 0.92; }
 
     .year-card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
         padding: 16px 20px 0;
     }
     .year-badge {
@@ -276,6 +419,27 @@
         background: #FEF2F2;
         padding: 4px 10px;
         border-radius: 20px;
+    }
+    .year-status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .year-status-badge.active {
+        background: #DCFCE7;
+        color: #166534;
+    }
+    .year-status-badge.history {
+        background: #EFF6FF;
+        color: #1D4ED8;
+    }
+    .year-status-badge.upcoming {
+        background: #F3F4F6;
+        color: #4B5563;
     }
     .year-actions { display: flex; gap: 4px; }
 
@@ -300,7 +464,13 @@
         font-size: 18px;
         font-weight: 700;
         color: #111827;
-        margin-bottom: 16px;
+        margin-bottom: 8px;
+    }
+    .year-helper-text {
+        margin: 0 0 16px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #6B7280;
     }
     .year-stats {
         display: grid;
@@ -326,17 +496,6 @@
         margin-top: 2px;
         text-transform: uppercase;
         font-weight: 600;
-    }
-
-    .year-inactive-badge {
-        display: inline-block;
-        margin-top: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        color: #991B1B;
-        background: #FEE2E2;
-        padding: 3px 10px;
-        border-radius: 20px;
     }
 
     .year-card-footer {
@@ -402,13 +561,33 @@
             align-items: flex-start;
             gap: 12px;
         }
-        .budget-prep-card {
+        .budget-years-intro {
             flex-direction: column;
-            align-items: stretch;
+            align-items: flex-start;
         }
-        .budget-prep-card .btn {
+        .byi-heading-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+        .byi-separator {
+            display: none;
+        }
+        .budget-summary-compact {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .bsc-actions, .bsc-actions .btn-modern-settings {
             width: 100%;
             justify-content: center;
+        }
+        .bsc-divider {
+            display: none;
+        }
+        .bsc-stats {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
         }
     }
 

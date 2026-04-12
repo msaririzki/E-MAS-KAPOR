@@ -63,39 +63,38 @@
 
 <div class="settings-container">
     <div class="settings-overview-list">
-        <div class="overview-row compact">
-            <div class="overview-main">
-                <span class="overview-label">Tahun Anggaran Aktif</span>
-                <strong>TA {{ $settings['fiscal_year'] }}</strong>
+        <div class="superadmin-stats-bar">
+            <div class="ssb-item">
+                <div class="ssb-icon"><i class="ri-calendar-event-line"></i></div>
+                <div class="ssb-content">
+                    <span class="ssb-label">Tahun Aktif</span>
+                    <span class="ssb-val">TA {{ $settings['fiscal_year'] }}</span>
+                </div>
             </div>
-            <span class="overview-note">Dipakai pada dashboard, rekap, dan pengolahan data berjalan.</span>
-        </div>
-        <div class="overview-row compact">
-            <div class="overview-main">
-                <span class="overview-label">Status Sistem Input</span>
-                <strong>{{ $systemStatusLabel }}</strong>
+            <div class="ssb-divider"></div>
+            <div class="ssb-item">
+                <div class="ssb-icon"><i class="{{ $settings['is_system_locked'] ? 'ri-lock-line text-danger' : 'ri-time-line' }}"></i></div>
+                <div class="ssb-content">
+                    <span class="ssb-label">Sistem Input</span>
+                    <span class="ssb-status {{ $systemStatusClass }}">{{ $systemStatusLabel }}</span>
+                </div>
             </div>
-            <div class="overview-side">
-                <span class="status-pill {{ $systemStatusClass }}">{{ $settings['is_system_locked'] ? 'Input ditutup' : 'Mengikuti jadwal' }}</span>
-                <span class="overview-note">Periode input: {{ $periodSummary }}</span>
+            <div class="ssb-divider"></div>
+            <div class="ssb-item">
+                <div class="ssb-icon"><i class="{{ $settings['is_review_locked'] ? 'ri-lock-line text-danger' : 'ri-chat-check-line' }}"></i></div>
+                <div class="ssb-content">
+                    <span class="ssb-label">Review Item</span>
+                    <span class="ssb-status {{ $reviewStatusClass }}">{{ $reviewStatusLabel }}</span>
+                </div>
             </div>
-        </div>
-        <div class="overview-row compact">
-            <div class="overview-main">
-                <span class="overview-label">Status Review Item</span>
-                <strong>{{ $reviewStatusLabel }}</strong>
+            <div class="ssb-divider"></div>
+            <div class="ssb-item">
+                <div class="ssb-icon"><i class="ri-user-add-line"></i></div>
+                <div class="ssb-content">
+                    <span class="ssb-label">Personel Baru</span>
+                    <strong class="ssb-val">{{ $personnelRequestModeLabel }}</strong>
+                </div>
             </div>
-            <div class="overview-side">
-                <span class="status-pill {{ $reviewStatusClass }}">{{ $reviewStatusLabel }}</span>
-                <span class="overview-note">Periode review: {{ $reviewPeriodSummary }}</span>
-            </div>
-        </div>
-        <div class="overview-row compact">
-            <div class="overview-main">
-                <span class="overview-label">Mode Tambah Personel</span>
-                <strong>{{ $personnelRequestModeLabel }}</strong>
-            </div>
-            <span class="overview-note">Mengatur usulan personel baru dari admin satker.</span>
         </div>
     </div>
 
@@ -112,150 +111,95 @@
                 @csrf
                 @method('PUT')
 
-                <div class="section-guide">
-                    <div class="guide-title">
-                        <i class="ri-information-line"></i>
-                        <strong>Panduan singkat</strong>
+                <div class="compact-guide-alert">
+                    <i class="ri-lightbulb-flash-line"></i>
+                    <div>
+                        <strong>Panduan Singkat:</strong> Ubah Tahun Anggaran saat pindah siklus. Fitur <strong>'Kunci Paksa'</strong> dapat digunakan untuk menutup akses di tengah periode secara darurat.
                     </div>
-                    <ul class="guide-list">
-                        <li>Ubah Tahun Anggaran aktif hanya saat Anda memang memindahkan siklus kerja.</li>
-                        <li>`Kunci Sistem Paksa` dipakai untuk kondisi darurat, misalnya ingin menutup akses input segera.</li>
-                        <li>Review item kapor memakai periode terpisah agar evaluasi penerimaan barang bisa dibuka di akhir tahun anggaran.</li>
-                    </ul>
-                </div>
-                
-                <div class="modern-form-group">
-                    <label>Nama Aplikasi <span class="required">*</span></label>
-                    <div class="input-with-icon">
-                        <i class="ri-window-line"></i>
-                        <input type="text" name="app_name" class="modern-input" value="{{ $settings['app_name'] }}" required>
-                    </div>
-                </div>
-                
-                <div class="modern-form-group">
-                    <label>Tahun Anggaran Aktif <span class="required">*</span></label>
-                    <div class="input-with-icon">
-                        <i class="ri-calendar-event-line"></i>
-                        <input type="number" name="fiscal_year" class="modern-input" value="{{ $settings['fiscal_year'] }}" required>
-                    </div>
-                    <p class="help-text">Tahun yang digunakan untuk Dashboard dan perhitungan data saat ini.</p>
                 </div>
 
-                <div class="modern-form-group">
-                    <label>Mode Penambahan Personel oleh Admin Satker <span class="required">*</span></label>
+                <div class="form-grid-2">
+                    <div class="modern-form-group">
+                        <label>Nama Aplikasi <span class="required">*</span></label>
+                        <div class="input-with-icon">
+                            <i class="ri-window-line"></i>
+                            <input type="text" name="app_name" class="modern-input" value="{{ $settings['app_name'] }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="modern-form-group">
+                        <label>Tahun Anggaran Aktif <span class="required">*</span></label>
+                        <div class="input-with-icon">
+                            <i class="ri-calendar-event-line"></i>
+                            <input type="number" name="fiscal_year" class="modern-input" value="{{ $settings['fiscal_year'] }}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modern-form-group" style="margin-bottom: 24px;">
+                    <label>Penambahan Personel Baru (Admin Satker) <span class="required">*</span></label>
                     <select name="personnel_request_mode" class="modern-input" required>
-                        <option value="auto" {{ $settings['personnel_request_mode'] === 'auto' ? 'selected' : '' }}>Langsung aktif</option>
-                        <option value="pending_verification" {{ $settings['personnel_request_mode'] === 'pending_verification' ? 'selected' : '' }}>Perlu verifikasi superadmin</option>
+                        <option value="auto" {{ $settings['personnel_request_mode'] === 'auto' ? 'selected' : '' }}>Langsung Aktif</option>
+                        <option value="pending_verification" {{ $settings['personnel_request_mode'] === 'pending_verification' ? 'selected' : '' }}>Perlu Verifikasi Superadmin</option>
                     </select>
-                    <p class="help-text">Pilih `Langsung aktif` jika usulan personel dari admin satker boleh langsung menjadi akun aktif. Pilih `Perlu verifikasi superadmin` jika setiap usulan harus dicek lebih dulu.</p>
                 </div>
 
-                <div class="modern-toggle-group" style="padding-bottom: 12px; border-bottom: none;">
-                    <div class="toggle-info">
-                        <strong>Kunci Sistem Paksa</strong>
-                        <span>Jika diaktifkan, seluruh input dan perubahan data akan langsung ditutup walaupun periode input masih berjalan.</span>
+                <div class="form-grid-2" style="margin-bottom: 24px;">
+                    <div class="modern-toggle-group" style="border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px;">
+                        <div class="toggle-info">
+                            <strong style="font-size:13px; color:#1e293b;">Kunci Sistem Paksa</strong>
+                            <span style="font-size:11px;">Tutup semua input darurat</span>
+                        </div>
+                        <label class="modern-toggle">
+                            <input type="checkbox" name="is_system_locked" value="1" {{ $settings['is_system_locked'] ? 'checked' : '' }}>
+                            <div class="toggle-slider"></div>
+                        </label>
                     </div>
-                    <label class="modern-toggle">
-                        <input type="checkbox" name="is_system_locked" value="1" {{ $settings['is_system_locked'] ? 'checked' : '' }}>
-                        <div class="toggle-slider"></div>
-                    </label>
+
+                    <div class="modern-toggle-group" style="border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px;">
+                        <div class="toggle-info">
+                            <strong style="font-size:13px; color:#1e293b;">Tutup Review Paksa</strong>
+                            <span style="font-size:11px;">Hentikan review item kapor</span>
+                        </div>
+                        <label class="modern-toggle">
+                            <input type="checkbox" name="is_review_locked" value="1" {{ $settings['is_review_locked'] ? 'checked' : '' }}>
+                            <div class="toggle-slider"></div>
+                        </label>
+                    </div>
                 </div>
 
-                <div class="modern-toggle-group" style="padding-bottom: 12px; border-bottom: none; margin-top: -6px;">
-                    <div class="toggle-info">
-                        <strong>Tutup Review Paksa</strong>
-                        <span>Jika diaktifkan, review item kapor langsung ditutup walaupun periode review masih berjalan.</span>
+                <div class="period-card" style="margin-bottom: 16px;">
+                    <div class="period-card-head" style="margin-bottom: 12px;">
+                        <strong style="font-size: 13px; color: #1e293b;"><i class="ri-calendar-check-line" style="color:#2563EB; margin-right:4px;"></i> Masa Pengisian Data Personel (Input)</strong>
+                        <span class="compact-pill {{ $systemStatusClass }}" style="font-size:11px;">{{ $systemStatusLabel }}</span>
                     </div>
-                    <label class="modern-toggle">
-                        <input type="checkbox" name="is_review_locked" value="1" {{ $settings['is_review_locked'] ? 'checked' : '' }}>
-                        <div class="toggle-slider"></div>
-                    </label>
+                    <div class="period-grid">
+                        <div class="input-with-icon">
+                            <i class="ri-calendar-event-line"></i>
+                            <input type="date" name="input_start_date" class="modern-input" value="{{ $settings['input_start_date'] }}" title="Tanggal Mulai" required>
+                        </div>
+                        <div class="input-with-icon">
+                            <i class="ri-calendar-close-line"></i>
+                            <input type="date" name="input_end_date" class="modern-input" value="{{ $settings['input_end_date'] }}" title="Tanggal Ditutup" required>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="status-banner {{ $systemStatusClass }}">
-                    <i class="{{ $settings['is_system_locked'] ? 'ri-lock-line' : 'ri-calendar-check-line' }}"></i>
-                    <div>
-                        <strong>Status saat ini: {{ $systemStatusLabel }}</strong>
-                        <span>
-                            @if($settings['is_system_locked'])
-                                Sistem sedang ditutup manual oleh superadmin.
-                            @elseif($isWithinInputPeriod)
-                                Hari ini masih berada di dalam masa pengisian data.
-                            @else
-                                Hari ini berada di luar masa pengisian data sehingga input otomatis ditutup.
-                            @endif
-                        </span>
-                    </div>
-                </div>
-                
                 <div class="period-card">
-                    <div class="period-card-head">
-                        <div>
-                            <strong>Masa Pengisian Data</strong>
-                            <span>Tentukan kapan form input dibuka dan kapan sistem otomatis menutup pengisian.</span>
-                        </div>
-                        <span class="compact-pill">{{ $periodSummary }}</span>
+                    <div class="period-card-head" style="margin-bottom: 12px;">
+                        <strong style="font-size: 13px; color: #1e293b;"><i class="ri-chat-check-line" style="color:#2563EB; margin-right:4px;"></i> Masa Evaluasi & Review Item Kapor</strong>
+                        <span class="compact-pill {{ $reviewStatusClass }}" style="font-size:11px;">{{ $reviewStatusLabel }}</span>
                     </div>
                     <div class="period-grid">
-                        <div>
-                            <label>Tanggal Mulai</label>
-                            <div class="input-with-icon">
-                                <i class="ri-calendar-event-line"></i>
-                                <input type="date" name="input_start_date" class="modern-input" value="{{ $settings['input_start_date'] }}" required>
-                            </div>
+                        <div class="input-with-icon">
+                            <i class="ri-calendar-event-line"></i>
+                            <input type="date" name="review_start_date" class="modern-input" value="{{ $settings['review_start_date'] }}" title="Tanggal Mulai Review" required>
                         </div>
-                        <div>
-                            <label>Tanggal Ditutup</label>
-                            <div class="input-with-icon">
-                                <i class="ri-calendar-close-line"></i>
-                                <input type="date" name="input_end_date" class="modern-input" value="{{ $settings['input_end_date'] }}" required>
-                            </div>
+                        <div class="input-with-icon">
+                            <i class="ri-calendar-close-line"></i>
+                            <input type="date" name="review_end_date" class="modern-input" value="{{ $settings['review_end_date'] }}" title="Tanggal Review Ditutup" required>
                         </div>
                     </div>
-                    <p class="help-text">Jika tanggal hari ini berada di luar rentang ini, form pengisian personel tidak bisa dipakai kecuali Anda membuka kembali periodenya.</p>
-                </div>
-
-                <div class="status-banner {{ $reviewStatusClass }}" style="margin-top: 16px;">
-                    <i class="{{ $settings['is_review_locked'] ? 'ri-lock-line' : 'ri-chat-check-line' }}"></i>
-                    <div>
-                        <strong>Status review saat ini: {{ $reviewStatusLabel }}</strong>
-                        <span>
-                            @if($settings['is_review_locked'])
-                                Review item sedang ditutup manual oleh superadmin.
-                            @elseif($isWithinReviewPeriod)
-                                Hari ini berada di dalam masa review item kapor.
-                            @else
-                                Hari ini berada di luar masa review item kapor sehingga form review hanya bisa dibuka dalam mode baca saja.
-                            @endif
-                        </span>
-                    </div>
-                </div>
-
-                <div class="period-card" style="margin-top: 16px;">
-                    <div class="period-card-head">
-                        <div>
-                            <strong>Masa Review Item Kapor</strong>
-                            <span>Tentukan kapan personil dapat melaporkan item belum diterima atau memperbarui review item yang sudah diterima.</span>
-                        </div>
-                        <span class="compact-pill">{{ $reviewPeriodSummary }}</span>
-                    </div>
-                    <div class="period-grid">
-                        <div>
-                            <label>Tanggal Mulai Review</label>
-                            <div class="input-with-icon">
-                                <i class="ri-calendar-event-line"></i>
-                                <input type="date" name="review_start_date" class="modern-input" value="{{ $settings['review_start_date'] }}" required>
-                            </div>
-                        </div>
-                        <div>
-                            <label>Tanggal Review Ditutup</label>
-                            <div class="input-with-icon">
-                                <i class="ri-calendar-close-line"></i>
-                                <input type="date" name="review_end_date" class="modern-input" value="{{ $settings['review_end_date'] }}" required>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="help-text">Gunakan periode ini untuk membuka evaluasi penerimaan dan kualitas item kapor setelah proses pengadaan atau distribusi berjalan.</p>
                 </div>
 
                 <div class="settings-action-bar">
@@ -424,59 +368,60 @@
                 @csrf
                 @method('PUT')
 
-                <div class="section-guide subtle">
-                    <div class="guide-title">
-                        <i class="ri-file-text-line"></i>
-                        <strong>Isi sesuai format dokumen resmi</strong>
-                    </div>
-                    <p class="guide-text">Data ini akan muncul sebagai penanda tangan bawaan saat export. Jika admin satker punya pengaturan sendiri, pengaturan satker akan diprioritaskan.</p>
-                </div>
-
-                <div class="modern-form-group">
-                    <label>Lokasi Tanda Tangan</label>
-                    <div class="input-with-icon">
-                        <i class="ri-map-pin-line"></i>
-                        <input type="text" name="location" class="modern-input" value="{{ $signatorySettings['location'] ?? '' }}" placeholder="Contoh: Mataram">
+                <div class="compact-guide-alert">
+                    <i class="ri-file-text-line"></i>
+                    <div>
+                        <strong>Format Dokumen Resmi:</strong> Data ini akan muncul sebagai penanda tangan bawaan ekspor. Pengaturan satker masing-masing tetap akan diprioritaskan jika tersedia.
                     </div>
                 </div>
 
-                <div class="modern-form-group">
-                    <label>Atas Nama Organisasi</label>
-                    <div class="input-with-icon">
-                        <i class="ri-government-line"></i>
-                        <input type="text" name="organization_name" class="modern-input" value="{{ $signatorySettings['organization_name'] ?? '' }}" placeholder="Contoh: KEPALA BIRO LOGISTIK POLDA NTB">
+                <div class="form-grid-2" style="margin-bottom: 20px;">
+                    <div class="modern-form-group" style="padding-bottom: 0; border: none;">
+                        <label>Nama Penanda Tangan</label>
+                        <div class="input-with-icon">
+                            <i class="ri-user-3-line"></i>
+                            <input type="text" name="signatory_name" class="modern-input" value="{{ $signatorySettings['signatory_name'] ?? '' }}" placeholder="Contoh: KOMISARIS BESAR POLISI NAMA">
+                        </div>
                     </div>
-                </div>
 
-                <div class="modern-form-group">
-                    <label>Jabatan Penanda Tangan</label>
-                    <div class="input-with-icon">
-                        <i class="ri-briefcase-4-line"></i>
-                        <input type="text" name="signatory_title" class="modern-input" value="{{ $signatorySettings['signatory_title'] ?? '' }}" placeholder="Contoh: PEJABAT PEMBUAT KOMITMEN">
+                    <div class="modern-form-group" style="padding-bottom: 0; border: none;">
+                        <label>Pangkat Penanda Tangan</label>
+                        <div class="input-with-icon">
+                            <i class="ri-shield-user-line"></i>
+                            <input type="text" name="signatory_rank" class="modern-input" value="{{ $signatorySettings['signatory_rank'] ?? '' }}" placeholder="Contoh: KOMPOL">
+                        </div>
                     </div>
-                </div>
-
-                <div class="modern-form-group">
-                    <label>Nama Penanda Tangan</label>
-                    <div class="input-with-icon">
-                        <i class="ri-user-3-line"></i>
-                        <input type="text" name="signatory_name" class="modern-input" value="{{ $signatorySettings['signatory_name'] ?? '' }}" placeholder="Contoh: KOMISARIS BESAR POLISI NAMA">
+                    
+                    <div class="modern-form-group" style="padding-bottom: 0; border: none;">
+                        <label>NRP / NIP Penanda Tangan</label>
+                        <div class="input-with-icon">
+                            <i class="ri-id-card-line"></i>
+                            <input type="text" name="signatory_nrp" class="modern-input" value="{{ $signatorySettings['signatory_nrp'] ?? '' }}" placeholder="Masukkan NRP/NIP">
+                        </div>
                     </div>
-                </div>
 
-                <div class="modern-form-group">
-                    <label>Pangkat Penanda Tangan</label>
-                    <div class="input-with-icon">
-                        <i class="ri-shield-user-line"></i>
-                        <input type="text" name="signatory_rank" class="modern-input" value="{{ $signatorySettings['signatory_rank'] ?? '' }}" placeholder="Contoh: KOMPOL">
+                    <div class="modern-form-group" style="padding-bottom: 0; border: none;">
+                        <label>Jabatan Penanda Tangan</label>
+                        <div class="input-with-icon">
+                            <i class="ri-briefcase-4-line"></i>
+                            <input type="text" name="signatory_title" class="modern-input" value="{{ $signatorySettings['signatory_title'] ?? '' }}" placeholder="Contoh: PEJABAT PEMBUAT KOMITMEN">
+                        </div>
                     </div>
-                </div>
 
-                <div class="modern-form-group" style="border-bottom: none;">
-                    <label>NRP / NIP Penanda Tangan</label>
-                    <div class="input-with-icon">
-                        <i class="ri-id-card-line"></i>
-                        <input type="text" name="signatory_nrp" class="modern-input" value="{{ $signatorySettings['signatory_nrp'] ?? '' }}" placeholder="Masukkan NRP/NIP">
+                    <div class="modern-form-group" style="padding-bottom: 0; border: none;">
+                        <label>Atas Nama Organisasi</label>
+                        <div class="input-with-icon">
+                            <i class="ri-government-line"></i>
+                            <input type="text" name="organization_name" class="modern-input" value="{{ $signatorySettings['organization_name'] ?? '' }}" placeholder="Contoh: KEPALA BIRO LOGISTIK POLDA NTB">
+                        </div>
+                    </div>
+
+                    <div class="modern-form-group" style="padding-bottom: 0; border: none;">
+                        <label>Lokasi Tanda Tangan</label>
+                        <div class="input-with-icon">
+                            <i class="ri-map-pin-line"></i>
+                            <input type="text" name="location" class="modern-input" value="{{ $signatorySettings['location'] ?? '' }}" placeholder="Contoh: Mataram">
+                        </div>
                     </div>
                 </div>
 
@@ -520,47 +465,29 @@
                 <div class="table-card-head">
                     <h4>Daftar Master Bagian / Fungsi</h4>
                 </div>
-                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
-                    <table class="modern-table" style="min-width: 560px;">
-                        <thead>
-                            <tr>
-                                <th>Nama</th>
-                                <th>Status</th>
-                                <th style="text-align:right;">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($bagianOptions as $option)
-                            <tr>
-                                <td>
-                                    <form method="POST" action="{{ route('superadmin.bagian-options.update', $option) }}" style="display:flex; gap:8px; align-items:center;">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="text" name="name" value="{{ $option->name }}" class="modern-input" style="min-width: 220px; text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" required>
-                                </td>
-                                <td>
-                                        <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--text-main);">
-                                            <input type="checkbox" name="is_active" value="1" {{ $option->is_active ? 'checked' : '' }}>
-                                            {{ $option->is_active ? 'Aktif' : 'Nonaktif' }}
-                                        </label>
-                                </td>
-                                <td style="text-align:right; white-space:nowrap;">
-                                        <button type="submit" class="btn btn-outline" style="padding:8px 12px;">Simpan</button>
-                                    </form>
-                                    <form method="POST" action="{{ route('superadmin.bagian-options.destroy', $option) }}" style="display:inline-block; margin-top:8px;" onsubmit="return confirm('Hapus opsi {{ $option->name }}?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn" style="padding:8px 12px; background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border);">Hapus</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="3" class="empty-state">Belum ada master bagian/fungsi.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                <div class="dropdown-options-grid">
+                    @forelse($bagianOptions as $option)
+                        <div class="inline-edit-row grid-ier">
+                            <form method="POST" action="{{ route('superadmin.bagian-options.update', $option) }}" class="ier-form" style="grid-template-columns: 1fr auto auto; padding: 10px 16px; min-height: 52px; gap: 12px;">
+                                @csrf
+                                @method('PUT')
+                                <input type="text" name="name" value="{{ $option->name }}" class="ier-input" style="text-transform: uppercase; padding: 6px 10px; font-size: 13px;" oninput="this.value = this.value.toUpperCase()" required>
+                                <label class="ier-toggle" style="margin:0;" title="{{ $option->is_active ? 'Aktif' : 'Nonaktif' }}">
+                                    <input type="checkbox" name="is_active" value="1" {{ $option->is_active ? 'checked' : '' }}>
+                                </label>
+                                <div class="ier-actions" style="gap: 6px;">
+                                    <button type="submit" class="btn-ier-save" style="padding: 4px 10px;">Simpan</button>
+                                    <button type="submit" form="delete-bagian-{{ $option->id }}" class="btn-ier-delete" style="padding: 4px 10px;">Hapus</button>
+                                </div>
+                            </form>
+                            <form id="delete-bagian-{{ $option->id }}" method="POST" action="{{ route('superadmin.bagian-options.destroy', $option) }}" onsubmit="return confirm('Hapus opsi {{ $option->name }}?')" style="display:none;">
+                                @csrf
+                                @method('DELETE')
+                            </form>
+                        </div>
+                    @empty
+                        <div class="empty-state" style="grid-column: 1 / -1; padding: 24px;">Belum ada master bagian/fungsi.</div>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -627,29 +554,31 @@
                             @forelse($sdmSatkerAliases as $alias)
                             <tr>
                                 <td colspan="5" style="padding:0; border:none;">
-                                    <form method="POST" action="{{ route('superadmin.sdm-satker-aliases.update', $alias) }}" style="display:grid; grid-template-columns: 1.2fr 1fr 1fr 0.6fr auto; gap:12px; align-items:center; padding:14px 16px; border-bottom:1px solid #F3F4F6;">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="text" name="alias" value="{{ $alias->alias }}" class="modern-input" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" required>
-                                        <select name="satker_id" class="modern-input" required>
-                                            @foreach($satkers as $satker)
-                                                <option value="{{ $satker->id }}" {{ $alias->satker_id === $satker->id ? 'selected' : '' }}>{{ $satker->name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <input type="text" name="notes" value="{{ $alias->notes }}" class="modern-input" placeholder="Opsional">
-                                        <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--text-main);">
-                                            <input type="checkbox" name="is_active" value="1" {{ $alias->is_active ? 'checked' : '' }}>
-                                            {{ $alias->is_active ? 'Aktif' : 'Nonaktif' }}
-                                        </label>
-                                        <div style="display:flex; justify-content:flex-end; gap:8px; white-space:nowrap;">
-                                            <button type="submit" class="btn btn-outline" style="padding:8px 12px;">Simpan</button>
-                                            <button type="submit" form="delete-alias-{{ $alias->id }}" class="btn" style="padding:8px 12px; background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border);">Hapus</button>
-                                        </div>
-                                    </form>
-                                    <form id="delete-alias-{{ $alias->id }}" method="POST" action="{{ route('superadmin.sdm-satker-aliases.destroy', $alias) }}" onsubmit="return confirm('Hapus alias {{ $alias->alias }}?')">
-                                        @csrf
-                                        @method('DELETE')
-                                    </form>
+                                    <div class="inline-edit-row">
+                                        <form method="POST" action="{{ route('superadmin.sdm-satker-aliases.update', $alias) }}" class="ier-form" style="grid-template-columns: 1.2fr 1fr 1fr auto auto;">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="text" name="alias" value="{{ $alias->alias }}" class="ier-input" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" required>
+                                            <select name="satker_id" class="ier-input" required>
+                                                @foreach($satkers as $satker)
+                                                    <option value="{{ $satker->id }}" {{ $alias->satker_id === $satker->id ? 'selected' : '' }}>{{ $satker->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="text" name="notes" value="{{ $alias->notes }}" class="ier-input" placeholder="Opsional">
+                                            <label class="ier-toggle">
+                                                <input type="checkbox" name="is_active" value="1" {{ $alias->is_active ? 'checked' : '' }}>
+                                                <span>{{ $alias->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                                            </label>
+                                            <div class="ier-actions">
+                                                <button type="submit" class="btn-ier-save">Simpan</button>
+                                                <button type="submit" form="delete-alias-{{ $alias->id }}" class="btn-ier-delete">Hapus</button>
+                                            </div>
+                                        </form>
+                                        <form id="delete-alias-{{ $alias->id }}" method="POST" action="{{ route('superadmin.sdm-satker-aliases.destroy', $alias) }}" onsubmit="return confirm('Hapus alias {{ $alias->alias }}?')" style="display:none;">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                             @empty
@@ -719,7 +648,7 @@
                                 <th>Periode</th>
                                 <th style="text-align:right;">Personel Final</th>
                                 <th style="text-align:right;">Lengkap Ukuran</th>
-                                <th style="text-align:right;">Entri Pengisian</th>
+                                <th style="text-align:right;">Entri Legacy</th>
                                 <th style="text-align:right;">Arsip Final</th>
                                 <th style="text-align:right;">Status</th>
                             </tr>
@@ -736,11 +665,21 @@
                                         <div style="margin-top: 4px; font-size: 12px; color: var(--text-muted);">
                                             {{ $ys->snapshot_source }}
                                         </div>
+                                        @if(!$ys->is_active && $ys->has_budget_active_flag && (int) $ys->fiscal_year !== (int) $settings['fiscal_year'])
+                                            <div style="margin-top: 2px; font-size: 11px; color: #B45309;">
+                                                Flag budget aktif masih menyala, tetapi tahun ini bukan Tahun Sistem Aktif.
+                                            </div>
+                                        @endif
                                     </div>
                                 </td>
                                 <td align="right"><strong>{{ number_format($ys->personnel_total) }}</strong> personel</td>
                                 <td align="right"><strong>{{ number_format($ys->submitted_total) }}</strong> personel</td>
-                                <td align="right"><strong>{{ number_format($ys->submission_total) }}</strong> entri</td>
+                                <td align="right">
+                                    <strong>{{ number_format($ys->submission_total) }}</strong> entri
+                                    <div style="margin-top: 2px; font-size: 11px; color: var(--text-muted);">
+                                        KaporSubmission lama
+                                    </div>
+                                </td>
                                 <td align="right">
                                     @if($ys->archive_files > 0)
                                         <strong>{{ number_format($ys->archive_files) }}</strong> file
@@ -776,55 +715,34 @@
         display: flex;
         flex-direction: column;
         gap: 0;
-        max-width: 1000px;
+        max-width: 1280px;
         margin: 0 auto;
         padding-bottom: 60px;
     }
     .settings-overview-list {
-        display: grid;
-        gap: 10px;
         margin-bottom: 8px;
     }
-    .overview-row {
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        border-radius: 14px;
-        padding: 14px 16px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+    .superadmin-stats-bar {
+        background: #ffffff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px 20px;
+        display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
-    .overview-main {
-        display: grid;
-        gap: 4px;
-        min-width: 0;
-    }
-    .overview-side {
-        display: grid;
-        gap: 6px;
-        justify-items: end;
-        text-align: right;
-        flex-shrink: 0;
-    }
-    .overview-label {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--text-muted);
-    }
-    .overview-row strong {
-        font-size: 16px;
-        color: var(--text-main);
-        line-height: 1.3;
-    }
-    .overview-note {
-        font-size: 12px;
-        line-height: 1.55;
-        color: var(--text-muted);
-    }
+    .ssb-item { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+    .ssb-icon { width: 44px; height: 44px; border-radius: 10px; background: #EEF2FF; color: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .ssb-icon .text-danger { color: #DC2626; background: #FEF2F2; }
+    .ssb-content { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+    .ssb-label { font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; text-overflow: ellipsis; }
+    .ssb-val { font-size: 14px; font-weight: 700; color: #0F172A; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    .ssb-status { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; white-space: nowrap; max-width: fit-content; }
+    .ssb-status.success { background: #DCFCE7; color: #166534; }
+    .ssb-status.warning { background: #FEF9C3; color: #854D0E; }
+    .ssb-status.danger { background: #FEE2E2; color: #991B1B; }
+    .ssb-divider { width: 1px; height: 36px; background: #E2E8F0; flex-shrink: 0; }
+
+    .compact-guide-alert { background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; margin-bottom: 24px; }
+    .compact-guide-alert i { font-size: 20px; color: #2563EB; margin-top: 2px; }
+    .compact-guide-alert div { font-size: 13px; color: #1E3A8A; line-height: 1.5; }
+    
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; min-width: 0; }
     .settings-section {
         display: grid;
         grid-template-columns: 300px 1fr;
@@ -833,9 +751,30 @@
     }
     @media (max-width: 900px) {
         .settings-section { grid-template-columns: 1fr; gap: 20px; padding: 30px 0; }
-        .overview-row { flex-direction: column; align-items: flex-start; }
-        .overview-side { justify-items: start; text-align: left; }
+        .superadmin-stats-bar { flex-direction: column; align-items: flex-start; }
+        .ssb-divider { width: 100%; height: 1px; }
+        .form-grid-2 { grid-template-columns: 1fr; }
     }
+
+    .inline-edit-row { border-bottom: 1px solid #F1F5F9; transition: all 0.2s; }
+    .inline-edit-row:hover { background: #F8FAFC; }
+    .inline-edit-row:last-child { border-bottom: none; }
+    .ier-form { display: grid; gap: 16px; align-items: center; padding: 12px 24px; min-height: 56px; width: 100%; }
+    .ier-input { border: 1px solid transparent; background: transparent; padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; color: #1E293B; width: 100%; transition: 0.2s; }
+    .ier-input:hover { border-color: #E2E8F0; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .ier-input:focus { border-color: #3B82F6; background: #fff; outline:none; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .ier-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; cursor: pointer; white-space: nowrap; user-select: none; }
+    .ier-actions { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+    .btn-ier-save { background: #F8FAFC; border: 1px solid #CBD5E1; color: #475569; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+    .btn-ier-save:hover { background: #F1F5F9; color: #1E293B; border-color: #94A3B8; }
+    .btn-ier-delete { background: #FEF2F2; border: 1px solid #FECACA; color: #DC2626; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+    .btn-ier-delete:hover { background: #FEE2E2; color: #B91C1C; border-color: #F87171; }
+
+    .dropdown-options-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #F1F5F9; }
+    .grid-ier { border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9; }
+    .grid-ier:nth-child(even) { border-right: none; }
+    @media (max-width: 1024px) { .dropdown-options-grid { grid-template-columns: 1fr; } .grid-ier { border-right: none; } }
+
     .settings-divider {
         border: none;
         border-top: 1px solid var(--slate-200);

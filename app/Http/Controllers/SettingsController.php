@@ -77,9 +77,11 @@ class SettingsController extends Controller
             $archiveItems = $annualArchives->get((int) $year);
             $archiveItem = $archiveItems?->first();
             $archiveFiles = (int) ($archiveItems?->count() ?? 0);
-            $isActive = ((int) $year === (int) $activeYear) || (bool) ($budgetYear?->is_active);
+            $isCurrentYear = (int) $year === (int) $activeYear;
+            $hasBudgetActiveFlag = (bool) ($budgetYear?->is_active);
+            $isActive = $isCurrentYear;
 
-            if ($isActive) {
+            if ($isCurrentYear) {
                 $personnelTotal = (int) ($currentSnapshot['total_personnel'] ?? 0);
                 $submittedTotal = (int) ($currentSnapshot['submitted_personnel'] ?? 0);
                 $submissionTotal = $currentSubmissionTotal;
@@ -106,6 +108,7 @@ class SettingsController extends Controller
                 'submission_total' => $submissionTotal,
                 'archive_files' => $archiveFiles,
                 'is_active' => $isActive,
+                'has_budget_active_flag' => $hasBudgetActiveFlag,
                 'status' => $status,
                 'snapshot_source' => $snapshotSource,
             ];

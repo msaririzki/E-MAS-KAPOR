@@ -25,7 +25,7 @@ class BudgetController extends Controller
             ->orderByDesc('year')
             ->get();
 
-        $activeFiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $activeFiscalYear = $this->activeFiscalYear();
         $activeBudgetYear = $years->firstWhere('is_active', true);
 
         return view('admin.budget.index', compact('years', 'activeFiscalYear', 'activeBudgetYear'));
@@ -51,11 +51,27 @@ class BudgetController extends Controller
     {
         $this->ensureBudgetManager();
 
+        if ($budgetYear->year < $this->activeFiscalYear()) {
+            return redirect()->back()->with('error', 'Tahun anggaran yang sudah lewat hanya bisa dilihat sebagai arsip.');
+        }
+
         $validated = $request->validate([
             'year' => 'required|integer|min:2020|max:2050|unique:budget_years,year,'.$budgetYear->id,
             'name' => 'nullable|string|max:255',
             'is_active' => 'boolean',
         ]);
+
+        $activeFiscalYear = $this->activeFiscalYear();
+        $targetYear = (int) $validated['year'];
+        $isActive = (bool) ($validated['is_active'] ?? false);
+
+        if ($isActive && $targetYear !== $activeFiscalYear) {
+            return redirect()->back()->with('error', 'Budget year aktif harus sama dengan Tahun Sistem Aktif (TA '.$activeFiscalYear.').');
+        }
+
+        if ($isActive) {
+            BudgetYear::query()->whereKeyNot($budgetYear->id)->update(['is_active' => false]);
+        }
 
         $budgetYear->update($validated);
 
@@ -65,6 +81,10 @@ class BudgetController extends Controller
     public function destroyYear(BudgetYear $budgetYear)
     {
         $this->ensureBudgetManager();
+
+        if ($budgetYear->year === $this->activeFiscalYear()) {
+            return redirect()->back()->with('error', 'Tahun sistem aktif tidak dapat dihapus dari modul budget.');
+        }
 
         $yearName = $budgetYear->name;
 
@@ -90,12 +110,15 @@ class BudgetController extends Controller
             $query->orderBy('name');
         }]);
 
-        return view('admin.budget.packages', compact('budgetYear'));
+        $activeFiscalYear = $this->activeFiscalYear();
+
+        return view('admin.budget.packages', compact('budgetYear', 'activeFiscalYear'));
     }
 
     public function storePackage(Request $request, BudgetYear $budgetYear)
     {
         $this->ensureBudgetManager();
+        $this->ensureBudgetYearProcessable($budgetYear);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -110,6 +133,8 @@ class BudgetController extends Controller
     public function updatePackage(Request $request, BudgetPackage $budgetPackage)
     {
         $this->ensureBudgetManager();
+        $budgetPackage->loadMissing('budgetYear');
+        $this->ensureBudgetYearProcessable($budgetPackage->budgetYear);
 
         $previousStatus = $budgetPackage->status;
 
@@ -144,6 +169,8 @@ class BudgetController extends Controller
     public function destroyPackage(BudgetPackage $budgetPackage)
     {
         $this->ensureBudgetManager();
+        $budgetPackage->loadMissing('budgetYear');
+        $this->ensureBudgetYearProcessable($budgetPackage->budgetYear);
 
         $yearId = $budgetPackage->budget_year_id;
         $budgetPackage->delete();
@@ -170,13 +197,16 @@ class BudgetController extends Controller
         ]);
 
         $sizeWarnings = $this->kaporRequirementService->buildPackageSizeWarnings($budgetPackage);
+        $activeFiscalYear = $this->activeFiscalYear();
 
-        return view('admin.budget.package-detail', compact('budgetPackage', 'sizeWarnings'));
+        return view('admin.budget.package-detail', compact('budgetPackage', 'sizeWarnings', 'activeFiscalYear'));
     }
 
     public function recalculatePackage(BudgetPackage $budgetPackage)
     {
         $this->ensureBudgetManager();
+        $budgetPackage->loadMissing('budgetYear');
+        $this->ensureBudgetYearProcessable($budgetPackage->budgetYear);
 
         $budgetPackage->load(['items.kaporItem', 'items.recipients.satker']);
 
@@ -196,6 +226,20 @@ class BudgetController extends Controller
     private function ensureBudgetManager(): void
     {
         abort_unless(auth()->user()?->hasAnyRole(['superadmin', 'admin']), 403, 'Hanya admin pengelola anggaran yang dapat melakukan aksi ini.');
+    }
+
+    private function ensureBudgetYearProcessable(BudgetYear $budgetYear): void
+    {
+        abort_if(
+            (int) $budgetYear->year !== $this->activeFiscalYear(),
+            403,
+            'Hanya tahun sistem aktif yang dapat diubah. Tahun lain bersifat baca-saja sebagai riwayat atau persiapan.',
+        );
+    }
+
+    private function activeFiscalYear(): int
+    {
+        return (int) Setting::getValue('fiscal_year', date('Y'));
     }
 
     private function syncPackageCalculatedFields(BudgetPackage $budgetPackage): void

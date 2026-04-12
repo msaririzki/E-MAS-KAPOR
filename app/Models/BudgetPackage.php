@@ -35,7 +35,10 @@ class BudgetPackage extends Model
 
     public function items(): HasMany
     {
-        return $this->hasMany(PackageItem::class);
+        return $this->hasMany(PackageItem::class)
+            ->orderByRaw('CASE WHEN sort_order IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 
     // ── Scopes ────────────────────────────────────────────────

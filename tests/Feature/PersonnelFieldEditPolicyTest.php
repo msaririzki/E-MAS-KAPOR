@@ -797,10 +797,11 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $this->actingAs($user)
             ->post(route('personil.testimoni.store'), [
                 'allocation_id' => $allocation->id,
+                'year' => $allocation->fiscal_year,
                 'response_status' => ItemReview::STATUS_NOT_RECEIVED,
                 'message' => 'Belum saya terima sampai sekarang.',
             ])
-            ->assertRedirect(route('personil.testimoni.index'))
+            ->assertRedirect(route('personil.testimoni.index', ['year' => $allocation->fiscal_year]))
             ->assertSessionHas('success_testimoni');
 
         $this->assertDatabaseHas('item_reviews', [
@@ -813,11 +814,12 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $this->actingAs($user)
             ->post(route('personil.testimoni.store'), [
                 'allocation_id' => $allocation->id,
+                'year' => $allocation->fiscal_year,
                 'response_status' => ItemReview::STATUS_REVIEWED,
                 'rating' => 4,
                 'message' => 'Item sudah diterima dan kondisinya baik.',
             ])
-            ->assertRedirect(route('personil.testimoni.index'))
+            ->assertRedirect(route('personil.testimoni.index', ['year' => $allocation->fiscal_year]))
             ->assertSessionHas('success_testimoni');
 
         $this->assertDatabaseHas('item_reviews', [
@@ -853,6 +855,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $this->actingAs($user)
             ->post(route('personil.testimoni.store'), [
                 'allocation_id' => $allocation->id,
+                'year' => $allocation->fiscal_year,
                 'response_status' => ItemReview::STATUS_REVIEWED,
                 'rating' => 5,
                 'message' => 'Siap.',
@@ -861,6 +864,63 @@ class PersonnelFieldEditPolicyTest extends TestCase
             ->assertSessionHas('error');
 
         $this->assertDatabaseCount('item_reviews', 0);
+    }
+
+    public function test_personil_history_year_review_is_read_only(): void
+    {
+        Setting::setValue('review_start_date', now()->subDay()->toDateString());
+        Setting::setValue('review_end_date', now()->addDays(7)->toDateString());
+        Setting::setValue('fiscal_year', '2026');
+
+        $satker = Satker::create([
+            'name' => 'Polres Dompu',
+            'code' => 'POLRES-DOMPU',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'BAGUS PRASETYO',
+            'nrp_nip' => '76100199',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        $personnel = Personnel::create([
+            'user_id' => $user->id,
+            'nrp' => '76100199',
+            'full_name' => 'BAGUS PRASETYO',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'satker_id' => $satker->id,
+            'is_active' => true,
+        ]);
+
+        $allocation2025 = $this->createItemAllocation($user, $satker, 'HELM TAKTIS', $personnel, 2025);
+
+        $this->actingAs($user)
+            ->get(route('personil.testimoni.index', ['year' => 2025]))
+            ->assertOk()
+            ->assertSeeText('TA 2025')
+            ->assertSeeText('HELM TAKTIS')
+            ->assertSeeText('Riwayat Tahun Sebelumnya')
+            ->assertSeeText('tidak bisa mengirim atau mengubah data lagi');
+
+        $this->actingAs($user)
+            ->post(route('personil.testimoni.store'), [
+                'allocation_id' => $allocation2025->id,
+                'year' => 2025,
+                'response_status' => ItemReview::STATUS_REVIEWED,
+                'rating' => 5,
+                'message' => 'Item tahun sebelumnya sudah saya terima.',
+            ])
+            ->assertRedirect(route('personil.testimoni.index', ['year' => 2025]))
+            ->assertSessionHas('error_testimoni');
+
+        $this->assertDatabaseMissing('item_reviews', [
+            'user_id' => $user->id,
+            'kapor_item_id' => $allocation2025->kapor_item_id,
+            'fiscal_year' => 2025,
+        ]);
     }
 
     public function test_personil_dashboard_renders_mobile_first_form_flow(): void
@@ -909,11 +969,13 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response->assertSeeText('Ukuran kaporlap');
     }
 
-    private function createItemAllocation(User $user, Satker $satker, string $itemName, ?Personnel $personnel = null): PersonnelItemAllocation
+    private function createItemAllocation(User $user, Satker $satker, string $itemName, ?Personnel $personnel = null, ?int $fiscalYear = null): PersonnelItemAllocation
     {
+        $fiscalYear ??= (int) Setting::getValue('fiscal_year', date('Y'));
+
         $budgetYear = BudgetYear::create([
-            'year' => (int) Setting::getValue('fiscal_year', date('Y')),
-            'name' => 'Tahun Anggaran '.Setting::getValue('fiscal_year', date('Y')),
+            'year' => $fiscalYear,
+            'name' => 'Tahun Anggaran '.$fiscalYear,
             'is_active' => true,
         ]);
 
@@ -947,7 +1009,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
             'user_id' => $user->id,
             'personnel_id' => $personnel?->id,
             'satker_id' => $satker->id,
-            'fiscal_year' => (int) Setting::getValue('fiscal_year', date('Y')),
+            'fiscal_year' => $fiscalYear,
             'allocation_status' => 'eligible',
             'allocated_at' => now(),
             'nrp_snapshot' => $user->nrp_nip,

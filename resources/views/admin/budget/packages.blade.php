@@ -10,6 +10,21 @@
 @section('content')
 @php
     $canManageBudget = auth()->user()->hasAnyRole(['superadmin', 'admin']);
+    $isHistoricalYear = (int) $budgetYear->year < (int) $activeFiscalYear;
+    $isUpcomingYear = (int) $budgetYear->year > (int) $activeFiscalYear;
+    $isCurrentFiscalYear = (int) $budgetYear->year === (int) $activeFiscalYear;
+    $canManageThisYear = $canManageBudget && $isCurrentFiscalYear;
+    $yearContextLabel = $budgetYear->is_active
+        ? ($isCurrentFiscalYear ? 'Tahun Aktif Saat Ini' : 'Aktif di Modul Budget')
+        : ($isHistoricalYear ? 'Riwayat / Arsip' : ($isUpcomingYear ? 'Belum Dipakai' : 'Nonaktif'));
+    $yearContextClass = $budgetYear->is_active
+        ? ($isCurrentFiscalYear ? 'active' : 'warning')
+        : ($isHistoricalYear ? 'history' : 'neutral');
+    $yearSubtitle = $isCurrentFiscalYear
+        ? 'Kelola paket pengadaan kapor untuk tahun anggaran yang sedang berjalan.'
+        : ($isHistoricalYear
+            ? 'Lihat kembali paket pengadaan dan hasil anggaran pada tahun sebelumnya.'
+            : 'Tahun ini sudah tersedia di modul budget, tetapi belum menjadi tahun sistem aktif.');
 @endphp
 <div class="page-header">
     <div class="page-header-row">
@@ -20,15 +35,30 @@
                 </a>
                 <h1 class="page-title">{{ $budgetYear->name }}</h1>
             </div>
-            <p class="page-subtitle">Kelola paket pengadaan kapor untuk T.A. {{ $budgetYear->year }}</p>
+            <p class="page-subtitle">{{ $yearSubtitle }}</p>
         </div>
-        @if($canManageBudget)
+        @if($canManageThisYear)
         <div class="page-header-actions">
             <button class="btn btn-primary" onclick="openModal('addPackageModal')">
                 <i class="ri-add-line"></i> Tambah Paket
             </button>
         </div>
         @endif
+    </div>
+</div>
+
+<div class="year-context-card {{ $yearContextClass }}">
+    <div class="year-context-meta">
+        <span class="year-context-badge">{{ $yearContextLabel }}</span>
+        <strong>T.A. {{ $budgetYear->year }}</strong>
+        <small>
+            {{ $budgetYear->packages->count() }} paket terdaftar.
+            {{ $isHistoricalYear ? 'Gunakan halaman ini untuk melihat riwayat paket tahun tersebut.' : ($isUpcomingYear ? 'Paket bisa disiapkan lebih awal untuk tahun ini.' : 'Paket pada tahun ini dipakai untuk penyusunan anggaran aktif.') }}
+        </small>
+    </div>
+    <div class="year-context-side">
+        <span class="year-context-side-label">Tahun Sistem Aktif</span>
+        <span class="year-context-side-value">TA {{ $activeFiscalYear }}</span>
     </div>
 </div>
 
@@ -48,7 +78,7 @@
                     </span>
                 </div>
             </div>
-            @if($canManageBudget)
+            @if($canManageThisYear)
             <div class="package-actions">
                 <button class="btn-icon-sm" onclick="openEditPackageModal({{ json_encode($package) }})" title="Edit">
                     <i class="ri-edit-line"></i>
@@ -79,7 +109,7 @@
         </div>
 
         <a href="{{ route('admin.budget.show-package', $package) }}" class="package-card-footer">
-            <span>Kelola Item Paket</span>
+            <span>{{ $canManageThisYear ? 'Kelola Item Paket' : 'Lihat Detail Paket' }}</span>
             <i class="ri-arrow-right-line"></i>
         </a>
     </div>
@@ -87,8 +117,8 @@
     <div class="empty-state" style="grid-column: 1 / -1;">
         <i class="ri-box-3-line"></i>
         <h3>Belum ada Paket</h3>
-        <p>{{ $canManageBudget ? 'Tambahkan paket pengadaan untuk tahun anggaran ini' : 'Belum ada paket pengadaan pada tahun anggaran ini.' }}</p>
-        @if($canManageBudget)
+        <p>{{ $canManageThisYear ? 'Tambahkan paket pengadaan untuk tahun anggaran ini' : 'Belum ada paket pengadaan pada tahun anggaran ini.' }}</p>
+        @if($canManageThisYear)
         <button class="btn btn-primary" onclick="openModal('addPackageModal')">
             <i class="ri-add-line"></i> Tambah Paket
         </button>
@@ -97,7 +127,7 @@
     @endforelse
 </div>
 
-@if($canManageBudget)
+@if($canManageThisYear)
 {{-- Add Package Modal --}}
 <div id="addPackageModal" class="modal">
     <div class="modal-content" style="max-width: 480px;">
@@ -188,6 +218,82 @@
     .page-subtitle { color: #6B7280; font-size: 14px; margin-top: 2px; margin-left: 40px; }
     .page-header { margin-bottom: 24px; }
     .page-header-row { display: flex; justify-content: space-between; width: 100%; align-items: center; }
+    .year-context-card {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        padding: 18px 20px;
+        margin-bottom: 20px;
+        border-radius: 16px;
+        border: 1px solid #E5E7EB;
+        background: #FFFFFF;
+    }
+    .year-context-card.active {
+        background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
+        border-color: #BBF7D0;
+    }
+    .year-context-card.history {
+        background: linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 100%);
+        border-color: #BFDBFE;
+    }
+    .year-context-card.warning {
+        background: linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%);
+        border-color: #FCD34D;
+    }
+    .year-context-card.neutral {
+        background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%);
+        border-color: #E2E8F0;
+    }
+    .year-context-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .year-context-badge {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.06);
+        color: #334155;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .year-context-meta strong {
+        font-size: 24px;
+        line-height: 1.2;
+        color: #0F172A;
+    }
+    .year-context-meta small {
+        font-size: 13px;
+        line-height: 1.6;
+        color: #64748B;
+    }
+    .year-context-side {
+        min-width: 140px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        text-align: center;
+    }
+    .year-context-side-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #64748B;
+        margin-bottom: 4px;
+    }
+    .year-context-side-value {
+        display: block;
+        font-size: 22px;
+        font-weight: 800;
+        color: #0F172A;
+    }
 
     .packages-grid {
         display: grid;
@@ -274,6 +380,18 @@
     .form-input { width: 100%; padding: 10px 14px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 14px; outline: none; font-family: inherit; }
     .form-input:focus { border-color: #B91C1C; box-shadow: 0 0 0 3px #FEF2F2; }
     textarea.form-input { resize: vertical; }
+
+    @media (max-width: 768px) {
+        .page-header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+        .page-subtitle { margin-left: 0; }
+        .year-context-card {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .year-context-side {
+            min-width: 0;
+        }
+    }
 
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>

@@ -10,6 +10,18 @@
 @endsection
 
 @section('content')
+@php
+    $isHistoricalYear = (int) $budgetPackage->budgetYear->year < (int) $activeFiscalYear;
+    $isUpcomingYear = (int) $budgetPackage->budgetYear->year > (int) $activeFiscalYear;
+    $isCurrentFiscalYear = (int) $budgetPackage->budgetYear->year === (int) $activeFiscalYear;
+    $canManagePackage = auth()->user()->hasAnyRole(['superadmin', 'admin']) && $isCurrentFiscalYear;
+    $packageYearLabel = (int) $budgetPackage->budgetYear->year === (int) $activeFiscalYear
+        ? 'Tahun Aktif Saat Ini'
+        : ($isHistoricalYear ? 'Riwayat Tahun Anggaran' : ($isUpcomingYear ? 'Tahun Anggaran Mendatang' : 'Konteks Budget'));
+    $packageYearClass = (int) $budgetPackage->budgetYear->year === (int) $activeFiscalYear
+        ? 'active'
+        : ($isHistoricalYear ? 'history' : 'neutral');
+@endphp
 
 {{-- Hero Section --}}
 <div class="package-hero">
@@ -26,9 +38,15 @@
                         <span class="badge" style="background: {{ $budgetPackage->status_color['bg'] }}; color: {{ $budgetPackage->status_color['text'] }}; border: 1px solid {{ str_replace(')', ', 0.2)', str_replace('rgb', 'rgba', $budgetPackage->status_color['text'])) }}; font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 700; letter-spacing: 0.3px;">
                             {{ $budgetPackage->status_label }}
                         </span>
-                        <a href="{{ route('admin.budget.wizard.step1', $budgetPackage) }}" class="btn-action-primary" style="margin-left: auto;">
-                            <i class="ri-edit-box-line" style="margin-right: 6px;"></i> Edit Paket
-                        </a>
+                        @if($canManagePackage)
+                            <a href="{{ route('admin.budget.wizard.step1', $budgetPackage) }}" class="btn-action-primary" style="margin-left: auto;">
+                                <i class="ri-edit-box-line" style="margin-right: 6px;"></i> Edit Paket
+                            </a>
+                        @else
+                            <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px; background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569; font-size: 12px; font-weight: 700;">
+                                <i class="ri-lock-line"></i> Mode Baca Saja
+                            </span>
+                        @endif
                     </div>
                     <p class="package-desc" style="color: #64748B; font-size: 13px; margin: 0; line-height: 1.4; display: flex; align-items: center; gap: 6px;">
                         <i class="ri-calendar-event-line" style="font-size: 15px; color: #94A3B8;"></i>
@@ -40,6 +58,22 @@
         </div>
     </div>
 </div>
+
+@if(! $isCurrentFiscalYear)
+<div class="package-context-card {{ $packageYearClass }}">
+    <div class="package-context-copy">
+        <span class="package-context-badge">{{ $packageYearLabel }}</span>
+        <strong>{{ $budgetPackage->budgetYear->name }}</strong>
+        <small>
+            {{ $isHistoricalYear ? 'Paket ini berasal dari tahun sebelumnya dan hanya bisa dibuka sebagai referensi atau arsip.' : 'Paket ini berasal dari tahun yang belum aktif, sehingga belum bisa dikelola sebagai paket berjalan.' }}
+        </small>
+    </div>
+    <div class="package-context-side">
+        <span class="package-context-side-label">Tahun Sistem Aktif</span>
+        <span class="package-context-side-value">TA {{ $activeFiscalYear }}</span>
+    </div>
+</div>
+@endif
 
 {{-- Wizard Steps Container --}}
 <div class="wizard-steps-container">
@@ -479,6 +513,78 @@
     .btn-back:hover { background: #C62828; color: #ffffff; border-color: #C62828; transform: translateX(-2px); }
     .package-hero-content { flex: 1; }
     .package-title-wrapper { display: flex; align-items: center; flex-wrap: wrap; }
+    .package-context-card {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 18px;
+        padding: 16px 18px;
+        border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+    }
+    .package-context-card.active {
+        background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
+        border-color: #BBF7D0;
+    }
+    .package-context-card.history {
+        background: linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 100%);
+        border-color: #BFDBFE;
+    }
+    .package-context-card.neutral {
+        background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%);
+        border-color: #E2E8F0;
+    }
+    .package-context-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .package-context-badge {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.06);
+        color: #334155;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .package-context-copy strong {
+        font-size: 20px;
+        line-height: 1.25;
+        color: #0F172A;
+    }
+    .package-context-copy small {
+        font-size: 13px;
+        line-height: 1.6;
+        color: #64748B;
+    }
+    .package-context-side {
+        min-width: 140px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.78);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        text-align: center;
+    }
+    .package-context-side-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #64748B;
+        margin-bottom: 4px;
+    }
+    .package-context-side-value {
+        display: block;
+        font-size: 22px;
+        font-weight: 800;
+        color: #0F172A;
+    }
     
     .btn-action-primary {
         display: inline-flex; align-items: center; justify-content: center;
@@ -933,6 +1039,8 @@
         .wizard-track { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
         .export-actions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
         .export-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .package-context-card { flex-direction: column; align-items: stretch; }
+        .package-context-side { min-width: 0; }
     }
     @media (max-width: 768px) {
         .wizard-track { grid-template-columns: 1fr; }

@@ -156,8 +156,43 @@ class PrepareNextYearTest extends TestCase
         $response = $this->actingAs($superadmin)->get(route('admin.budget.index'));
 
         $response->assertOk();
-        $response->assertSeeText('Tahun Anggaran Aktif');
-        $response->assertSeeText('TA 2026');
-        $response->assertSeeText('Siapkan Anggaran Berikutnya');
+        $response->assertViewHas('activeFiscalYear', 2026);
+        $response->assertViewHas('activeBudgetYear', fn ($budgetYear) => $budgetYear?->year === 2026);
+    }
+
+    public function test_settings_history_marks_only_fiscal_year_as_active(): void
+    {
+        Setting::setValue('fiscal_year', '2026');
+
+        $superadmin = User::factory()->create();
+        $superadmin->assignRole('superadmin');
+
+        BudgetYear::create([
+            'year' => 2026,
+            'name' => 'Tahun Anggaran 2026',
+            'is_active' => true,
+        ]);
+
+        BudgetYear::create([
+            'year' => 2025,
+            'name' => 'Tahun Anggaran 2025',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($superadmin)->get(route('superadmin.settings.index'));
+
+        $response->assertOk();
+        $response->assertViewHas('yearlyStats', function (array $stats) {
+            $currentYear = collect($stats)->firstWhere('fiscal_year', 2026);
+            $historicalYear = collect($stats)->firstWhere('fiscal_year', 2025);
+
+            return $currentYear !== null
+                && $historicalYear !== null
+                && $currentYear->is_active === true
+                && $currentYear->status === 'Berjalan'
+                && $historicalYear->is_active === false
+                && $historicalYear->status === 'Belum Diarsipkan'
+                && $historicalYear->has_budget_active_flag === true;
+        });
     }
 }

@@ -15,6 +15,11 @@
     $statusClass = $review === null
         ? 'info'
         : ($review->response_status === \App\Models\ItemReview::STATUS_NOT_RECEIVED ? 'warning' : 'success');
+    $helperMessage = ($isHistoricalYear ?? false)
+        ? 'Tahun anggaran ini sudah menjadi arsip. Detail review hanya bisa dibaca sebagai riwayat.'
+        : ($isReadOnly
+            ? 'Periode review sedang ditutup. Form tampil dalam mode baca saja.'
+            : 'Anda dapat memperbarui respons ini selama periode review masih berjalan.');
 @endphp
 
 <section class="panel review-card-item" data-searchable="{{ strtolower($card['item_name'].' '.$card['item_category'].' '.$card['package_name'].' '.($review?->response_label ?? '')) }}" data-editing="false">
@@ -39,6 +44,7 @@
         <form action="{{ route('personil.testimoni.store') }}" method="POST" class="review-form">
             @csrf
             <input type="hidden" name="allocation_id" value="{{ $allocation->id }}">
+            <input type="hidden" name="year" value="{{ $fiscalYear }}">
 
             <fieldset @disabled($isReadOnly || $review !== null) class="review-fieldset">
                 <div class="field-group">
@@ -83,14 +89,14 @@
             </fieldset>
 
             <div class="review-actions">
-                <span class="helper-copy">{{ $isReadOnly ? 'Periode review sedang ditutup. Form tampil dalam mode baca saja.' : 'Anda dapat memperbarui respons ini selama periode review masih berjalan.' }}</span>
+                <span class="helper-copy">{{ $helperMessage }}</span>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                    @if ($review && ! $isReadOnly)
+                    @if ($review && ! $isReadOnly && ! ($isHistoricalYear ?? false))
                         <button type="button" class="edit-toggle" data-edit-toggle>
                             <i class="ri-edit-line"></i> Edit
                         </button>
                     @endif
-                    <button type="submit" class="submit-button {{ $review ? 'hidden' : '' }}" @disabled($isReadOnly)>
+                    <button type="submit" class="submit-button {{ ($review || ($isHistoricalYear ?? false)) ? 'hidden' : '' }}" @disabled($isReadOnly)>
                     {{ $review ? 'Perbarui Respons' : 'Simpan Respons' }}
                     </button>
                 </div>

@@ -737,7 +737,7 @@
             <div class="page-header-row" style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h1>Statistik Review Item</h1>
-                    <p>Panel evaluasi kualitas layanan E-MAS KAPOR berdasarkan masukan personel yang login menggunakan
+                    <p>Panel evaluasi kualitas layanan E-MAS KAPOR berdasarkan ulasan dan apresiasi personel yang login menggunakan
                         NRP/NIP.</p>
                 </div>
 
@@ -793,7 +793,7 @@
                         </div>
                         <div class="hero-pill">
                             <i class="ri-time-line" style="color: var(--info);"></i>
-                            {{ number_format($recentTestimonialsCount) }} masukan 30 hari terakhir
+                            {{ number_format($recentTestimonialsCount) }} ulasan 30 hari terakhir
                         </div>
                         <div class="hero-pill">
                             <i class="ri-star-smile-line" style="color: #f59e0b;"></i>
@@ -801,7 +801,7 @@
                         </div>
                         <div class="hero-pill">
                             <i class="ri-calendar-check-line" style="color: var(--success);"></i>
-                            {{ $lastSubmittedAt ? 'Masukan terakhir ' . $lastSubmittedAt->format('d M Y, H:i') : 'Belum ada waktu masukan' }}
+                            {{ $lastSubmittedAt ? 'Ulasan terakhir ' . $lastSubmittedAt->format('d M Y, H:i') : 'Belum ada ulasan' }}
                         </div>
                     </div>
                 </div>
@@ -847,7 +847,7 @@
                 <h2 style="font-size: 28px; font-weight: 800; color: var(--text-main); margin-bottom: 10px;">Belum ada testimoni
                     masuk</h2>
                 <p style="max-width: 720px; margin: 0 auto; color: var(--text-muted); line-height: 1.8;">
-                    Begitu personel mulai mengirim masukan dari dashboard mereka, halaman ini otomatis berubah menjadi panel
+                    Begitu personel mulai mengirim ulasan dari dashboard mereka, halaman ini otomatis berubah menjadi panel
                     statistik untuk admin dan para atasan: rata-rata bintang, distribusi kepuasan, satker paling aktif, dan
                     pesan
                     terbaru.
@@ -936,7 +936,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="category-stat-count">{{ number_format($catStat['count']) }} review masuk</div>
+                                    <div class="category-stat-count">{{ number_format($catStat['count']) }} total ulasan</div>
                                 @endif
                             </div>
                         @endforeach
@@ -963,7 +963,7 @@
                                                     <span>{{ $bucket['stars'] }} <i class="ri-star-fill" style="color: #f59e0b;"></i></span>
                                                 </div>
                                                 <div style="font-size: 12px; color: var(--text-muted);">
-                                                    {{ number_format($bucket['count']) }} masukan
+                                                    {{ number_format($bucket['count']) }} ulasan
                                                     <strong
                                                         style="color: var(--text-main); margin-left: 6px;">{{ number_format($bucket['percentage'], 1) }}%</strong>
                                                 </div>
@@ -984,7 +984,7 @@
                     <div class="card-head">
                         <h3><i class="ri-building-line" style="margin-right: 8px; color: var(--brand);"></i>Satker Paling Aktif
                             Memberi
-                            Masukan</h3>
+                            Ulasan</h3>
                     </div>
                     <div class="card-body">
                         <div class="satker-list">
@@ -1031,6 +1031,11 @@
                 </div>
                 <div class="card-body">
                     <form method="GET" action="{{ route('superadmin.statistics') }}" id="comparisonFilterForm">
+                        <input type="hidden" name="year" value="{{ $fiscal_year }}">
+                        <input type="hidden" name="distribution_group" value="{{ $distributionFilters['group'] }}">
+                        @if($distributionFilters['rating'] !== null)
+                            <input type="hidden" name="distribution_rating" value="{{ $distributionFilters['rating'] }}">
+                        @endif
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px;">
                             @for($i = 0; $i < 3; $i++)
                                 <select name="compare_items[]" class="comparison-select" style="width: 100%;">

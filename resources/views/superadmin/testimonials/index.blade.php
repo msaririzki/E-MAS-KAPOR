@@ -33,6 +33,7 @@
 
     <div class="filter-bar">
         <form method="GET" action="{{ route('superadmin.testimonials.index') }}" class="filter-form" id="filterForm">
+            <input type="hidden" name="year" value="{{ $fiscalYear }}">
             <div class="search-input-wrapper" style="flex: 2;">
                 <i class="ri-search-line search-icon"></i>
                 <input type="text" name="search" value="{{ request('search') }}"
@@ -120,7 +121,7 @@
 
             @if(request('search') || request('category') || request('response_status') || request('rating'))
                 <div style="padding: 0 10px;">
-                    <a href="{{ route('superadmin.testimonials.index') }}" class="btn btn-ghost" style="color: #6B7280;"><i
+                    <a href="{{ route('superadmin.testimonials.index', ['year' => $fiscalYear]) }}" class="btn btn-ghost" style="color: #6B7280;"><i
                             class="ri-close-line"></i> Reset</a>
                 </div>
             @endif

@@ -35,10 +35,16 @@
             <div class="panel-body hero-body">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
                     <div>
-                        <div class="eyebrow">Portal Review Personil</div>
+                        <div class="eyebrow">{{ $isHistoricalYear ? 'Arsip Review Personil' : 'Portal Review Personil' }}</div>
                         <h1>Review Item Kapor</h1>
-                        <p>Laporkan item yang belum diterima atau beri penilaian untuk item kapor yang sudah Anda terima
-                            pada T.A. {{ $fiscalYear }}.</p>
+                        <p>
+                            @if ($isHistoricalYear)
+                                Riwayat review item kapor untuk T.A. {{ $fiscalYear }} ditampilkan sebagai arsip baca-saja.
+                            @else
+                                Laporkan item yang belum diterima atau beri penilaian untuk item kapor yang sudah Anda terima
+                                pada T.A. {{ $fiscalYear }}.
+                            @endif
+                        </p>
                     </div>
 
                     {{-- Filter Tahun --}}
@@ -47,7 +53,7 @@
                         <i class="ri-calendar-line" style="color: var(--brand); font-size: 16px;"></i>
                         <select onchange="window.location.href='?year='+this.value"
                             style="border: none; background: transparent; font-size: 13px; font-weight: 700; color: var(--text-main); outline: none; cursor: pointer;">
-                            @foreach($availableYears as $year)
+                            @foreach ($availableYears as $year)
                                 <option value="{{ $year }}" {{ $fiscalYear == $year ? 'selected' : '' }}>
                                     TA {{ $year }} {{ $year == $activeYear ? '(Aktif)' : '' }}
                                 </option>
@@ -65,17 +71,35 @@
             </div>
         @endif
 
+        @if ($isHistoricalYear)
+            <div class="alert info">
+                <i class="ri-history-line"></i>
+                <span>T.A. {{ $fiscalYear }} sudah tidak aktif. Anda masih bisa melihat hasil review lama, tetapi tidak bisa mengirim atau mengubah data lagi.</span>
+            </div>
+        @endif
+
         <section class="panel">
             <div class="panel-body toolbar-stack">
                 <div class="compact-summary">
-                    <strong>{{ $allocationCards->count() }} item eligible untuk Anda</strong>
-                    <span>Daftar item di bawah ini berasal dari snapshot paket pengadaan yang sudah difinalkan untuk akun
-                        Anda.</span>
+                    <strong>
+                        @if ($isHistoricalYear)
+                            {{ $allocationCards->count() }} item arsip untuk T.A. {{ $fiscalYear }}
+                        @else
+                            {{ $allocationCards->count() }} item eligible untuk Anda
+                        @endif
+                    </strong>
+                    <span>
+                        @if ($isHistoricalYear)
+                            Daftar ini berasal dari snapshot paket yang sudah difinalkan pada tahun tersebut dan hanya bisa dibuka sebagai referensi.
+                        @else
+                            Daftar item di bawah ini berasal dari snapshot paket pengadaan yang sudah difinalkan untuk akun Anda.
+                        @endif
+                    </span>
                     <div class="eligible-chip-row">
                         @forelse ($allocationCards as $card)
                             <span class="eligible-chip">{{ $card['item_name'] }}</span>
                         @empty
-                            <span class="eligible-chip muted">Belum ada item review</span>
+                            <span class="eligible-chip muted">{{ $isHistoricalYear ? 'Tidak ada item arsip' : 'Belum ada item review' }}</span>
                         @endforelse
                     </div>
                 </div>
@@ -88,8 +112,8 @@
                 </div>
 
                 <div class="tab-row mobile-tabs">
-                    <button type="button" class="tab-btn active" data-tab="pending">Perlu Ditinjau</button>
-                    <button type="button" class="tab-btn" data-tab="reviewed">Sudah Direview</button>
+                    <button type="button" class="tab-btn active" data-tab="pending">{{ $isHistoricalYear ? 'Belum Ada Respons' : 'Perlu Ditinjau' }}</button>
+                    <button type="button" class="tab-btn" data-tab="reviewed">{{ $isHistoricalYear ? 'Sudah Tersimpan' : 'Sudah Direview' }}</button>
                     <button type="button" class="tab-btn" data-tab="history">Riwayat Lain</button>
                 </div>
             </div>
@@ -100,8 +124,14 @@
                 <section class="panel">
                     <div class="panel-body empty-state">
                         <i class="ri-inbox-archive-line"></i>
-                        <strong>Tidak ada item yang menunggu respons</strong>
-                        <span>Jika ada item kapor baru yang difinalkan untuk Anda, item tersebut akan muncul di sini.</span>
+                        <strong>{{ $isHistoricalYear ? 'Tidak ada item arsip tanpa respons' : 'Tidak ada item yang menunggu respons' }}</strong>
+                        <span>
+                            @if ($isHistoricalYear)
+                                Semua item arsip pada tahun ini sudah memiliki hasil review, atau memang tidak ada data alokasi yang tersimpan.
+                            @else
+                                Jika ada item kapor baru yang difinalkan untuk Anda, item tersebut akan muncul di sini.
+                            @endif
+                        </span>
                     </div>
                 </section>
             @endif
@@ -118,9 +148,14 @@
                 <section class="panel">
                     <div class="panel-body empty-state">
                         <i class="ri-chat-check-line"></i>
-                        <strong>Belum ada review atau laporan penerimaan</strong>
-                        <span>Item yang sudah Anda respons akan tampil di sini untuk memudahkan update selama periode review
-                            masih terbuka.</span>
+                        <strong>{{ $isHistoricalYear ? 'Belum ada hasil review tersimpan' : 'Belum ada review atau laporan penerimaan' }}</strong>
+                        <span>
+                            @if ($isHistoricalYear)
+                                Jika tahun ini pernah memiliki review item, hasilnya akan tampil di sini sebagai arsip baca-saja.
+                            @else
+                                Item yang sudah Anda respons akan tampil di sini untuk memudahkan update selama periode review masih terbuka.
+                            @endif
+                        </span>
                     </div>
                 </section>
             @endif
@@ -138,7 +173,13 @@
                     <div class="panel-body empty-state compact">
                         <i class="ri-file-list-3-line"></i>
                         <strong>Tidak ada riwayat tambahan</strong>
-                        <span>Semua review tahun ini masih terhubung dengan daftar item alokasi aktif Anda.</span>
+                        <span>
+                            @if ($isHistoricalYear)
+                                Semua hasil review pada tahun ini masih terhubung dengan snapshot item yang tersedia.
+                            @else
+                                Semua review tahun ini masih terhubung dengan daftar item alokasi aktif Anda.
+                            @endif
+                        </span>
                     </div>
                 </section>
             @else

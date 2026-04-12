@@ -102,7 +102,7 @@ class PersonilPortalController extends Controller
         $this->logIdentityChanges($personnel, $previousIdentity, $nextIdentity);
 
         if ($mode === 'identity') {
-            return redirect()->to(route('dashboard') . '#ukuran-form')
+            return redirect()->to(route('dashboard').'#ukuran-form')
                 ->with('success', $requiresBagian
                     ? 'Data jabatan, bag/fungsi, dan no. HP tersimpan. Lanjutkan ke form ukuran kaporlap.'
                     : 'Data jabatan dan no. HP tersimpan. Lanjutkan ke form ukuran kaporlap.');
@@ -116,7 +116,7 @@ class PersonilPortalController extends Controller
     {
         $personnel = $request->user()?->personnel;
         $kaporSizes = $personnel ? ($personnel->kapor_sizes ?? []) : [];
-        $hasSubmitted = !empty(array_filter((array) $kaporSizes));
+        $hasSubmitted = ! empty(array_filter((array) $kaporSizes));
         $isComplete = $personnel ? $kaporRequirementService->personnelHasAllRequiredSizes($personnel) : false;
 
         return view('personil.kapor.history', compact('kaporSizes', 'hasSubmitted', 'isComplete', 'personnel'));
@@ -129,15 +129,37 @@ class PersonilPortalController extends Controller
         $fiscalYear = (int) $request->get('year', $activeYear);
         $reviewPeriodStatus = PeriodGate::resolveReviewStatus();
 
-        // Get available years for this personil (years they have reviews or allocations)
-        $availableYears = DB::table('item_reviews')
+        $availableYears = PersonnelItemAllocation::query()
             ->where('user_id', $user->id)
             ->distinct()
             ->pluck('fiscal_year')
+            ->merge(
+                ItemReview::query()
+                    ->where('user_id', $user->id)
+                    ->distinct()
+                    ->pluck('fiscal_year')
+            )
             ->push($activeYear)
             ->unique()
             ->sortDesc()
             ->values();
+
+        if (! $availableYears->contains($fiscalYear)) {
+            $fiscalYear = (int) $availableYears->first();
+        }
+
+        $isHistoricalYear = $fiscalYear !== $activeYear;
+
+        if ($isHistoricalYear) {
+            $reviewPeriodStatus = [
+                'state' => 'historical',
+                'is_open' => false,
+                'title' => 'Riwayat Tahun Sebelumnya',
+                'message' => 'Tahun anggaran ini sudah tidak aktif. Review item hanya ditampilkan sebagai arsip dan tidak dapat diubah lagi.',
+                'period_label' => 'TA '.$fiscalYear.' (arsip)',
+                'tone' => 'info',
+            ];
+        }
 
         $allocations = PersonnelItemAllocation::query()
             ->with(['kaporItem:id,item_name,category', 'budgetPackage:id,name'])
@@ -178,7 +200,7 @@ class PersonilPortalController extends Controller
         $pendingCards = $allocationCards->where('is_reviewed', false)->values();
         $reviewedCards = $allocationCards->where('is_reviewed', true)->values();
         $orphanReviews = $existingReviews
-            ->reject(fn(ItemReview $review) => $allocationCards->contains(fn(array $card): bool => (int) $card['allocation']->kapor_item_id === (int) $review->kapor_item_id))
+            ->reject(fn (ItemReview $review) => $allocationCards->contains(fn (array $card): bool => (int) $card['allocation']->kapor_item_id === (int) $review->kapor_item_id))
             ->values();
 
         return view('personil.testimoni.index', compact(
@@ -190,34 +212,43 @@ class PersonilPortalController extends Controller
             'orphanReviews',
             'availableYears',
             'activeYear',
+            'isHistoricalYear',
         ));
     }
 
     public function storeTestimoni(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $fiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
-
-        $allocation = PersonnelItemAllocation::query()
-            ->whereKey($request->input('allocation_id'))
-            ->where('user_id', $user->id)
-            ->where('fiscal_year', $fiscalYear)
-            ->first();
-
-        if ($allocation === null) {
-            return redirect()->route('personil.testimoni.index')
-                ->with('error_testimoni', 'Item review yang dipilih tidak ditemukan atau sudah tidak tersedia untuk akun Anda.');
-        }
+        $activeYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $requestedYear = (int) $request->input('year', Setting::getValue('fiscal_year', date('Y')));
 
         $validated = $request->validate([
             'allocation_id' => 'required|integer',
-            'response_status' => 'required|in:' . implode(',', array_keys(ItemReview::RESPONSE_STATUSES)),
+            'year' => 'nullable|integer',
+            'response_status' => 'required|in:'.implode(',', array_keys(ItemReview::RESPONSE_STATUSES)),
             'rating' => 'nullable|integer|min:1|max:5',
             'message' => 'nullable|string|max:2000',
         ]);
 
-        if ($validated['response_status'] === ItemReview::STATUS_REVIEWED && !isset($validated['rating'])) {
-            return redirect()->route('personil.testimoni.index')
+        $allocation = PersonnelItemAllocation::query()
+            ->whereKey($validated['allocation_id'])
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($allocation === null) {
+            return redirect()->route('personil.testimoni.index', ['year' => $requestedYear])
+                ->with('error_testimoni', 'Item review yang dipilih tidak ditemukan atau sudah tidak tersedia untuk akun Anda.');
+        }
+
+        $fiscalYear = (int) $allocation->fiscal_year;
+
+        if ($fiscalYear !== $activeYear) {
+            return redirect()->route('personil.testimoni.index', ['year' => $fiscalYear])
+                ->with('error_testimoni', 'Tahun anggaran tersebut sudah tidak aktif. Review lama hanya bisa dilihat sebagai riwayat.');
+        }
+
+        if ($validated['response_status'] === ItemReview::STATUS_REVIEWED && ! isset($validated['rating'])) {
+            return redirect()->route('personil.testimoni.index', ['year' => $fiscalYear])
                 ->with('error_testimoni', 'Rating wajib diisi jika Anda memilih status sudah menerima item.');
         }
 
@@ -255,7 +286,7 @@ class PersonilPortalController extends Controller
             : 'Personil mengirim atau memperbarui review item kapor.',
         );
 
-        return redirect()->route('personil.testimoni.index')
+        return redirect()->route('personil.testimoni.index', ['year' => $fiscalYear])
             ->with('success_testimoni', $review->response_status === ItemReview::STATUS_NOT_RECEIVED
                 ? 'Laporan item belum diterima berhasil disimpan. Admin dapat menindaklanjuti status penerimaan item tersebut.'
                 : 'Review item kapor berhasil disimpan. Anda masih bisa memperbaruinya selama periode review masih berjalan.');

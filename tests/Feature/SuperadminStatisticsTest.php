@@ -85,9 +85,11 @@ class SuperadminStatisticsTest extends TestCase
         $response->assertOk();
         $response->assertViewHas('totalTestimonials', 2);
         $response->assertViewHas('averageRating', 4.0);
-        $response->assertSeeText('Statistik Testimoni');
-        $response->assertSeeText('Biro SDM');
-        $response->assertSeeText('Aplikasi sangat membantu rekap kapor menjadi cepat dan rapi.');
+        $response->assertViewHas('fiscal_year', '2026');
+        $response->assertViewHas('topSatkers', fn ($satkers) => $satkers->pluck('satker_name')->contains('Biro SDM'));
+        $response->assertViewHas('latestTestimonials', function ($reviews) {
+            return $reviews->pluck('comment')->contains('Aplikasi sangat membantu rekap kapor menjadi cepat dan rapi.');
+        });
     }
 
     public function test_statistics_page_shows_empty_state_when_no_testimonials_exist(): void
@@ -109,7 +111,8 @@ class SuperadminStatisticsTest extends TestCase
 
         $response->assertOk();
         $response->assertViewHas('totalTestimonials', 0);
-        $response->assertSeeText('Belum ada testimoni masuk');
+        $response->assertSeeText('Belum ada testimoni');
+        $response->assertSeeText('masuk');
     }
 
     public function test_statistics_page_groups_reviews_into_four_fixed_buckets_and_applies_distribution_filters(): void
@@ -190,12 +193,13 @@ class SuperadminStatisticsTest extends TestCase
         $response->assertViewHas('distributionFilters', [
             'group' => 'kepala',
             'rating' => 5,
+            'compare_items' => [],
         ]);
         $response->assertViewHas('categoryStats', function (array $stats) {
             return array_key_exists('kepala', $stats)
                 && array_key_exists('badan', $stats)
                 && array_key_exists('kaki', $stats)
-                && array_key_exists('belum_menerima', $stats);
+                && array_key_exists('lainnya', $stats);
         });
         $response->assertViewHas('distributionStats', function (array $stats) {
             return array_key_exists('kepala', $stats)
@@ -205,13 +209,78 @@ class SuperadminStatisticsTest extends TestCase
         });
     }
 
-    private function createAllocation(User $user, Satker $satker, string $itemName, string $snapshotCategory = 'Tutup Kepala', string $dbCategory = 'Tutup_Kepala'): PersonnelItemAllocation
+    public function test_statistics_page_honors_selected_year_filter(): void
+    {
+        Setting::setValue('fiscal_year', '2026');
+
+        $satker = Satker::create([
+            'name' => 'Polda NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        $superadmin = User::factory()->create([
+            'satker_id' => $satker->id,
+        ]);
+        $superadmin->assignRole('superadmin');
+
+        $personil2025 = User::factory()->create([
+            'name' => 'User 2025',
+            'satker_id' => $satker->id,
+        ]);
+        $personil2025->assignRole('personil');
+
+        $personil2026 = User::factory()->create([
+            'name' => 'User 2026',
+            'satker_id' => $satker->id,
+        ]);
+        $personil2026->assignRole('personil');
+
+        $allocation2025 = $this->createAllocation($personil2025, $satker, 'HELM TAKTIS', 'Tutup Kepala', 'Tutup_Kepala', 2025);
+        $allocation2026 = $this->createAllocation($personil2026, $satker, 'ROMPI', 'Tutup Badan', 'Tutup_Badan', 2026);
+
+        ItemReview::create([
+            'personnel_item_allocation_id' => $allocation2025->id,
+            'user_id' => $personil2025->id,
+            'kapor_item_id' => $allocation2025->kapor_item_id,
+            'fiscal_year' => 2025,
+            'response_status' => ItemReview::STATUS_REVIEWED,
+            'comment' => 'Review lama masih harus bisa dibuka.',
+            'rating' => 5,
+            'submitted_at' => now()->subYear(),
+        ]);
+
+        ItemReview::create([
+            'personnel_item_allocation_id' => $allocation2026->id,
+            'user_id' => $personil2026->id,
+            'kapor_item_id' => $allocation2026->kapor_item_id,
+            'fiscal_year' => 2026,
+            'response_status' => ItemReview::STATUS_REVIEWED,
+            'comment' => 'Review tahun aktif.',
+            'rating' => 2,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this->actingAs($superadmin)->get(route('superadmin.statistics', [
+            'year' => 2025,
+        ]));
+
+        $response->assertOk();
+        $response->assertViewHas('fiscal_year', '2025');
+        $response->assertViewHas('totalTestimonials', 1);
+        $response->assertViewHas('latestTestimonials', function ($reviews) {
+            return $reviews->count() === 1
+                && $reviews->first()->comment === 'Review lama masih harus bisa dibuka.';
+        });
+    }
+
+    private function createAllocation(User $user, Satker $satker, string $itemName, string $snapshotCategory = 'Tutup Kepala', string $dbCategory = 'Tutup_Kepala', int $fiscalYear = 2026): PersonnelItemAllocation
     {
         $budgetYear = BudgetYear::firstOrCreate([
-            'year' => 2026,
+            'year' => $fiscalYear,
         ], [
-            'name' => 'Tahun Anggaran 2026',
-            'is_active' => true,
+            'name' => 'Tahun Anggaran '.$fiscalYear,
+            'is_active' => $fiscalYear === 2026,
         ]);
 
         $package = BudgetPackage::create([
@@ -243,7 +312,7 @@ class SuperadminStatisticsTest extends TestCase
             'kapor_item_id' => $kaporItem->id,
             'user_id' => $user->id,
             'satker_id' => $satker->id,
-            'fiscal_year' => 2026,
+            'fiscal_year' => $fiscalYear,
             'allocation_status' => 'eligible',
             'allocated_at' => now(),
             'nrp_snapshot' => $user->nrp_nip,

@@ -41,7 +41,8 @@ class TestimonialInsightService
 
     public function getStatistics(array $filters = []): array
     {
-        $fiscalYear = $filters['year'] ?? \App\Models\Setting::getValue('fiscal_year', date('Y'));
+        $activeYear = (int) \App\Models\Setting::getValue('fiscal_year', date('Y'));
+        $fiscalYear = (string) ($filters['year'] ?? $activeYear);
 
         $distributionFilters = [
             'group' => $filters['distribution_group'] ?? 'all',
@@ -62,9 +63,13 @@ class TestimonialInsightService
         $averageRating = round((float) ((clone $reviewQuery)->avg('rating') ?? 0), 1);
 
         $recentWindowStart = now()->subDays(30);
-        $recentTestimonialsCount = (clone $baseQuery)->where('created_at', '>=', $recentWindowStart)->count();
+        $recentTestimonialsCount = (clone $baseQuery)
+            ->whereRaw($this->submissionTimestampExpression().' >= ?', [$recentWindowStart])
+            ->count();
         $recentAverageRating = round(
-            (float) ((clone $reviewQuery)->where('created_at', '>=', $recentWindowStart)->avg('rating') ?? 0),
+            (float) ((clone $reviewQuery)
+                ->whereRaw($this->submissionTimestampExpression().' >= ?', [$recentWindowStart])
+                ->avg('rating') ?? 0),
             1,
         );
 
@@ -84,9 +89,9 @@ class TestimonialInsightService
                 ];
             });
 
-        $positiveCount = (int) $ratingBreakdown->filter(fn(array $bucket): bool => $bucket['stars'] >= 4)->sum('count');
-        $neutralCount = (int) $ratingBreakdown->filter(fn(array $bucket): bool => $bucket['stars'] === 3)->sum('count');
-        $lowRatingCount = (int) $ratingBreakdown->filter(fn(array $bucket): bool => $bucket['stars'] <= 2)->sum('count');
+        $positiveCount = (int) $ratingBreakdown->filter(fn (array $bucket): bool => $bucket['stars'] >= 4)->sum('count');
+        $neutralCount = (int) $ratingBreakdown->filter(fn (array $bucket): bool => $bucket['stars'] === 3)->sum('count');
+        $lowRatingCount = (int) $ratingBreakdown->filter(fn (array $bucket): bool => $bucket['stars'] <= 2)->sum('count');
         $attentionCount = $lowRatingCount + $notReceivedCount;
 
         $sentimentBreakdown = collect([
@@ -130,19 +135,25 @@ class TestimonialInsightService
             ->get();
 
         $latestTestimonials = (clone $baseQuery)->with(['user.satker', 'kaporItem', 'allocation'])
-            ->latest()
+            ->orderByRaw($this->submissionTimestampExpression().' DESC')
+            ->orderByDesc('item_reviews.id')
             ->take(18)
             ->get();
 
         $latestBatches = $latestTestimonials
-            ->groupBy(fn(ItemReview $review): string => $review->user_id . '|' . $review->created_at->format('Y-m-d H:i'))
+            ->groupBy(function (ItemReview $review): string {
+                $submittedAt = $review->submitted_at ?? $review->created_at;
+
+                return $review->user_id.'|'.$submittedAt?->format('Y-m-d H:i');
+            })
             ->take(8)
             ->values();
 
         $latestPositive = (clone $baseQuery)->with(['user.satker', 'kaporItem', 'allocation'])
             ->where('response_status', ItemReview::STATUS_REVIEWED)
             ->where('rating', '>=', 4)
-            ->latest()
+            ->orderByRaw($this->submissionTimestampExpression().' DESC')
+            ->orderByDesc('item_reviews.id')
             ->first();
 
         $latestNeedsAttention = (clone $baseQuery)->with(['user.satker', 'kaporItem', 'allocation'])
@@ -153,7 +164,8 @@ class TestimonialInsightService
                             ->where('rating', '<=', 2);
                     });
             })
-            ->latest()
+            ->orderByRaw($this->submissionTimestampExpression().' DESC')
+            ->orderByDesc('item_reviews.id')
             ->first();
 
         $lastSubmittedAt = (clone $baseQuery)->latest('submitted_at')->first()?->submitted_at;
@@ -163,7 +175,6 @@ class TestimonialInsightService
         $categoryStats = $this->buildCategoryStats($fiscalYear);
         $distributionStats = $this->buildDistributionStats($distributionFilters, $fiscalYear);
 
-        $activeYear = \App\Models\Setting::getValue('active_year', date('Y'));
         $availableYears = ItemReview::distinct()->pluck('fiscal_year')->push($activeYear)->unique()->sortDesc();
 
         return [
@@ -208,6 +219,7 @@ class TestimonialInsightService
                     } else {
                         $item->group = 'Lainnya';
                     }
+
                     return $item;
                 }),
         ];
@@ -301,10 +313,10 @@ class TestimonialInsightService
             ->whereNotNull('item_reviews.rating');
 
         return match ($groupKey) {
-            'kepala' => $query->whereRaw($this->categorySql() . ' = ?', ['kepala']),
-            'kaki' => $query->whereRaw($this->categorySql() . ' = ?', ['kaki']),
-            'badan' => $query->whereRaw($this->categorySql() . ' = ?', ['badan']),
-            default => $query->whereRaw($this->categorySql() . ' = ?', ['lainnya']),
+            'kepala' => $query->whereRaw($this->categorySql().' = ?', ['kepala']),
+            'kaki' => $query->whereRaw($this->categorySql().' = ?', ['kaki']),
+            'badan' => $query->whereRaw($this->categorySql().' = ?', ['badan']),
+            default => $query->whereRaw($this->categorySql().' = ?', ['lainnya']),
         };
     }
 
@@ -452,7 +464,7 @@ class TestimonialInsightService
             ]);
         }
 
-        if ($latestNeedsAttention && (!$latestPositive || $latestNeedsAttention->id !== $latestPositive->id)) {
+        if ($latestNeedsAttention && (! $latestPositive || $latestNeedsAttention->id !== $latestPositive->id)) {
             $quotes->push([
                 'type' => 'Perlu Tindak Lanjut',
                 'accent' => 'var(--danger)',
@@ -462,7 +474,7 @@ class TestimonialInsightService
         }
 
         foreach ($latestResponses as $response) {
-            if ($quotes->contains(fn(array $quote): bool => $quote['testimonial']->id === $response->id)) {
+            if ($quotes->contains(fn (array $quote): bool => $quote['testimonial']->id === $response->id)) {
                 continue;
             }
 
@@ -498,12 +510,14 @@ class TestimonialInsightService
 
         $stats = [];
         foreach ($itemIds as $id) {
-            if (!$id)
+            if (! $id) {
                 continue;
+            }
 
             $item = \App\Models\KaporItem::find($id);
-            if (!$item)
+            if (! $item) {
                 continue;
+            }
 
             $reviewQuery = ItemReview::query()
                 ->where('fiscal_year', $fiscalYear)
@@ -526,6 +540,7 @@ class TestimonialInsightService
             $ratingBreakdown = collect(range(5, 1))
                 ->map(function (int $stars) use ($ratingCounts, $totalReviewed): array {
                     $count = (int) ($ratingCounts[$stars] ?? 0);
+
                     return [
                         'stars' => $stars,
                         'count' => $count,
@@ -553,5 +568,10 @@ class TestimonialInsightService
         }
 
         return round(($count / $total) * 100, 1);
+    }
+
+    private function submissionTimestampExpression(): string
+    {
+        return 'COALESCE(item_reviews.submitted_at, item_reviews.created_at)';
     }
 }

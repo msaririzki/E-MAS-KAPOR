@@ -9,6 +9,8 @@ use App\Models\PackageItem;
 use App\Models\PackageItemRecipient;
 use App\Models\Personnel;
 use App\Models\Satker;
+use App\Models\Setting;
+use App\Services\PersonnelItemAllocationSnapshotService;
 use App\Services\PersonnelKeteranganService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -16,7 +18,8 @@ use Illuminate\Support\Collection;
 class PackageItemController extends Controller
 {
     public function __construct(
-        private readonly PersonnelKeteranganService $personnelKeteranganService
+        private readonly PersonnelKeteranganService $personnelKeteranganService,
+        private readonly PersonnelItemAllocationSnapshotService $personnelItemAllocationSnapshotService,
     ) {}
 
     /**
@@ -25,6 +28,10 @@ class PackageItemController extends Controller
     public function selectItems(BudgetPackage $budgetPackage)
     {
         $budgetPackage->load('budgetYear');
+
+        if ($response = $this->redirectIfPackageReadOnly($budgetPackage)) {
+            return $response;
+        }
 
         $allItems = KaporItem::where('is_active', true)
             ->orderBy('category')
@@ -51,6 +58,8 @@ class PackageItemController extends Controller
      */
     public function toggleItem(Request $request, BudgetPackage $budgetPackage)
     {
+        $this->ensurePackageEditable($budgetPackage);
+
         $validated = $request->validate([
             'kapor_item_id' => 'required|exists:kapor_items,id',
         ]);
@@ -77,6 +86,8 @@ class PackageItemController extends Controller
             ->where('kapor_item_id', $validated['kapor_item_id'])
             ->value('id');
 
+        $this->refreshAllocationsForFinalizedPackage($budgetPackage);
+
         return response()->json([
             'action' => $action,
             'count' => $count,
@@ -89,6 +100,8 @@ class PackageItemController extends Controller
      */
     public function reorderItems(Request $request, BudgetPackage $budgetPackage)
     {
+        $this->ensurePackageEditable($budgetPackage);
+
         $validated = $request->validate([
             'ordered_ids' => 'required|array',
             'ordered_ids.*' => 'exists:package_items,id',
@@ -112,6 +125,10 @@ class PackageItemController extends Controller
             $q->orderBy('sort_order')->orderBy('id');
         }, 'items.kaporItem', 'items.recipients.satker']);
 
+        if ($response = $this->redirectIfPackageReadOnly($budgetPackage)) {
+            return $response;
+        }
+
         if ($budgetPackage->items->isEmpty()) {
             return redirect()->route('admin.budget.wizard.step1', $budgetPackage)
                 ->with('error', 'Pilih minimal 1 item terlebih dahulu.');
@@ -131,6 +148,9 @@ class PackageItemController extends Controller
      */
     public function saveRecipients(Request $request, PackageItem $packageItem)
     {
+        $budgetPackage = $packageItem->budgetPackage()->with('budgetYear')->firstOrFail();
+        $this->ensurePackageEditable($budgetPackage);
+
         $validated = $request->validate([
             'satker_ids' => 'present|array',
             'satker_ids.*' => 'exists:satkers,id',
@@ -167,6 +187,8 @@ class PackageItemController extends Controller
             ];
         });
 
+        $this->refreshAllocationsForFinalizedPackage($budgetPackage);
+
         return response()->json([
             'success' => true,
             'total_recipients' => $packageItem->recipients()->sum('matched_count'),
@@ -188,6 +210,10 @@ class PackageItemController extends Controller
             'items.kaporItem',
             'items.recipients.satker',
         ]);
+
+        if ($response = $this->redirectIfPackageReadOnly($budgetPackage)) {
+            return $response;
+        }
 
         // Recalculate semua item
         foreach ($budgetPackage->items as $item) {
@@ -238,6 +264,9 @@ class PackageItemController extends Controller
      */
     public function removeItem(PackageItem $packageItem)
     {
+        $budgetPackage = $packageItem->budgetPackage()->with('budgetYear')->firstOrFail();
+        $this->ensurePackageEditable($budgetPackage);
+
         $package = $packageItem->budgetPackage;
         $packageItem->recipients()->delete();
         $packageItem->delete();
@@ -246,6 +275,8 @@ class PackageItemController extends Controller
         $package->update([
             'total_budget' => $package->items()->sum('calculated_total'),
         ]);
+
+        $this->refreshAllocationsForFinalizedPackage($budgetPackage);
 
         return redirect()->back()->with('success', 'Item berhasil dihapus dari paket');
     }
@@ -388,5 +419,43 @@ class PackageItemController extends Controller
         }
 
         return $cleaned === [] ? null : $cleaned;
+    }
+
+    private function ensurePackageEditable(BudgetPackage $budgetPackage): void
+    {
+        $budgetPackage->loadMissing('budgetYear');
+
+        abort_if(
+            (int) $budgetPackage->budgetYear->year !== $this->activeFiscalYear(),
+            403,
+            'Paket pada tahun selain Tahun Sistem Aktif hanya bisa dilihat sebagai riwayat.',
+        );
+    }
+
+    private function refreshAllocationsForFinalizedPackage(BudgetPackage $budgetPackage): void
+    {
+        $budgetPackage->loadMissing('budgetYear');
+
+        if ($budgetPackage->status !== 'finalized') {
+            return;
+        }
+
+        $this->personnelItemAllocationSnapshotService->regenerateForBudgetPackage($budgetPackage->fresh());
+    }
+
+    private function redirectIfPackageReadOnly(BudgetPackage $budgetPackage)
+    {
+        if ((int) $budgetPackage->budgetYear->year === $this->activeFiscalYear()) {
+            return null;
+        }
+
+        return redirect()
+            ->route('admin.budget.show-package', $budgetPackage)
+            ->with('warning', 'Paket pada tahun selain Tahun Sistem Aktif hanya bisa dilihat sebagai riwayat.');
+    }
+
+    private function activeFiscalYear(): int
+    {
+        return (int) Setting::getValue('fiscal_year', date('Y'));
     }
 }
