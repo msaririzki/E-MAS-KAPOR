@@ -83,27 +83,33 @@
         .login-card-split {
             display: flex;
             width: 100%;
-            max-width: 980px;
-            min-height: 560px;
-            border-radius: 28px;
+            max-width: 1000px;
+            min-height: 600px;
+            border-radius: 24px;
             overflow: hidden;
-            box-shadow:
-                0 40px 80px rgba(0, 0, 0, .35),
-                0 0 0 1px rgba(255, 255, 255, .06);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
             animation: cardPop .7s cubic-bezier(.22, 1, .36, 1) both;
+            background: #ffffff;
         }
 
         /* ---- LEFT: DARK BRANDED PANEL ---- */
         .card-brand {
             flex: 1;
             position: relative;
-            padding: 52px 48px;
+            padding: 60px 50px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             overflow: hidden;
-            background-color: #7F1D1D;
-            /* Solid dark red (Tailwind red-900) */
+            background: url('{{ asset('logistik_polri_wide.png') }}') center/cover no-repeat;
+        }
+
+        .card-brand::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(120, 15, 15, 0.9) 0%, rgba(160, 30, 30, 0.7) 100%);
+            z-index: 1;
         }
 
         .card-brand-inner {
@@ -115,111 +121,96 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            margin-bottom: 28px;
+            margin-bottom: 32px;
         }
 
         .card-logo {
             width: 72px;
             height: 72px;
             object-fit: contain;
-            filter: drop-shadow(0 4px 16px rgba(0, 0, 0, .35));
-            animation: float 5s ease-in-out infinite;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
         }
 
         .brand-header-text h3 {
             font-size: 20px;
             font-weight: 800;
-            color: #fff;
+            color: #ffffff;
             letter-spacing: 1px;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, .4);
         }
 
         .brand-header-text p {
             font-size: 11px;
-            color: rgba(255, 255, 255, .7);
+            color: rgba(255, 255, 255, 0.8);
             font-weight: 500;
             letter-spacing: .5px;
+            text-transform: uppercase;
         }
 
         .card-brand-inner h1 {
-            font-size: 34px;
+            font-size: 36px;
             font-weight: 800;
-            color: #fff;
-            letter-spacing: 2px;
-            line-height: 1.2;
-            margin-bottom: 6px;
+            color: #ffffff;
+            letter-spacing: 1px;
+            line-height: 1.25;
+            margin-bottom: 8px;
         }
 
-        .card-brand-inner .org-badge {
-            display: inline-block;
-            font-size: 11px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, .85);
-            background: rgba(255, 255, 255, .12);
-            border: 1px solid rgba(255, 255, 255, .15);
-            padding: 4px 14px;
-            border-radius: 20px;
-            letter-spacing: .5px;
-            margin-bottom: 28px;
-            backdrop-filter: blur(6px);
-        }
-
-        /* Red glowing line */
         .glow-line {
-            width: 50px;
-            height: 3px;
-            background: linear-gradient(90deg, #EF5350, #D32F2F);
+            width: 60px;
+            height: 4px;
+            background: #ef4444;
             border-radius: 2px;
             margin-bottom: 24px;
-            box-shadow: 0 0 16px rgba(229, 57, 53, .5);
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
         }
 
         .card-brand-inner .desc {
             font-size: 15px;
-            color: rgba(255, 255, 255, .75);
-            line-height: 1.75;
-            font-weight: 300;
-            margin-bottom: 36px;
-            max-width: 380px;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.7;
+            font-weight: 400;
+            margin-bottom: 40px;
+            max-width: 400px;
         }
 
         /* Feature pills */
         .feature-pills {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
         }
 
         .pill {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 11.5px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, .75);
-            background: rgba(255, 255, 255, .08);
-            border: 1px solid rgba(255, 255, 255, .1);
-            padding: 7px 14px;
-            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 8px 16px;
+            border-radius: 30px;
             backdrop-filter: blur(4px);
-            transition: all .25s;
+            transition: all .3s;
         }
 
         .pill:hover {
-            background: rgba(255, 255, 255, .14);
-            border-color: rgba(255, 255, 255, .2);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
 
         .pill i {
             font-size: 14px;
-            color: #FF8A80;
+            color: #fca5a5;
         }
 
         /* ---- RIGHT: WHITE FORM PANEL ---- */
         .card-form {
-            width: 420px;
-            background: #fff;
-            padding: 52px 44px;
+            width: 440px;
+            background: #ffffff;
+            padding: 60px 48px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -230,31 +221,30 @@
         }
 
         .form-header h2 {
-            font-size: 26px;
-            font-weight: 700;
-            color: #1a1a2e;
+            font-size: 28px;
+            font-weight: 800;
+            color: #111827;
             margin-bottom: 8px;
         }
 
         .form-header p {
             font-size: 14px;
-            color: #999;
-            font-weight: 400;
+            color: #4B5563;
+            font-weight: 500;
             line-height: 1.6;
         }
 
         /* Input */
         .field {
-            margin-bottom: 22px;
+            margin-bottom: 24px;
         }
 
         .field-label {
             display: block;
-            font-size: 12.5px;
-            font-weight: 600;
-            color: #444;
+            font-size: 13px;
+            font-weight: 700;
+            color: #374151;
             margin-bottom: 8px;
-            letter-spacing: .3px;
         }
 
         .field-wrap {
@@ -263,25 +253,25 @@
 
         .field-input {
             width: 100%;
-            padding: 13px 16px;
-            border: 1.5px solid #E8E8E8;
-            border-radius: 12px;
+            padding: 14px 16px;
+            border: 1.5px solid #E5E7EB;
+            border-radius: 10px;
             font-size: 14px;
             font-family: 'Poppins', sans-serif;
-            color: #1a1a2e;
-            background: #FAFAFA;
+            color: #111827;
+            background: #F9FAFB;
             outline: none;
-            transition: all .25s ease;
+            transition: all .2s ease;
         }
 
         .field-input:focus {
-            border-color: #D32F2F;
-            background: #fff;
-            box-shadow: 0 0 0 4px rgba(211, 47, 47, .07);
+            border-color: #DC2626;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
         }
 
         .field-input::placeholder {
-            color: #ccc;
+            color: #9CA3AF;
         }
 
         .field-input.pr-icon {
@@ -300,77 +290,79 @@
             transform: translateY(-50%);
             cursor: pointer;
             font-size: 18px;
-            color: #bbb;
+            color: #9CA3AF;
             transition: color .2s;
             user-select: none;
             z-index: 10;
         }
 
         .toggle-pw:hover {
-            color: #D32F2F;
+            color: #DC2626;
         }
 
         /* Remember */
         .remember-row {
             display: flex;
             align-items: center;
-            margin-bottom: 28px;
+            margin-bottom: 32px;
         }
 
         .remember-label {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
-            color: #888;
+            font-size: 13.5px;
+            color: #4B5563;
+            font-weight: 600;
             cursor: pointer;
         }
 
         .remember-label input[type="checkbox"] {
-            accent-color: #D32F2F;
+            accent-color: #DC2626;
             width: 16px;
             height: 16px;
+            cursor: pointer;
         }
 
         /* Button */
         .btn-login {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #C62828, #E53935);
-            color: #fff;
+            padding: 15px;
+            background: #DC2626;
+            color: #ffffff;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             font-size: 15px;
             font-weight: 600;
             font-family: 'Poppins', sans-serif;
             cursor: pointer;
-            letter-spacing: .3px;
-            transition: all .3s ease;
-            box-shadow: 0 4px 16px rgba(211, 47, 47, .3);
+            transition: all .2s ease;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
         }
 
         .btn-login:hover {
-            background: linear-gradient(135deg, #B71C1C, #D32F2F);
+            background: #B91C1C;
             transform: translateY(-2px);
-            box-shadow: 0 10px 28px rgba(211, 47, 47, .4);
+            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.35);
         }
 
         .btn-login:active {
             transform: translateY(0);
-            box-shadow: 0 4px 12px rgba(211, 47, 47, .25);
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
         }
 
         /* Help */
         .help-text {
             text-align: center;
             margin-top: 24px;
-            font-size: 12px;
-            color: #aaa;
+            font-size: 13px;
+            color: #6B7280;
+            font-weight: 500;
             line-height: 1.6;
         }
 
         .help-text a {
-            color: #D32F2F;
+            color: #DC2626;
             text-decoration: none;
             font-weight: 600;
         }
@@ -381,32 +373,33 @@
 
         /* Error */
         .error-msg {
-            background: #FFF5F5;
-            border: 1px solid #FED7D7;
-            border-radius: 12px;
+            background: #FEF2F2;
+            border: 1px solid #FCA5A5;
+            border-radius: 10px;
             padding: 12px 16px;
-            margin-bottom: 22px;
+            margin-bottom: 24px;
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 13px;
-            color: #C53030;
-            font-weight: 500;
+            font-size: 13.5px;
+            color: #B91C1C;
+            font-weight: 600;
         }
 
         .error-msg i {
             font-size: 18px;
-            color: #E53E3E;
+            color: #EF4444;
         }
 
         /* Form footer */
         .form-footer-text {
             text-align: center;
-            margin-top: 28px;
-            padding-top: 20px;
-            border-top: 1px solid #f3f3f3;
-            font-size: 10.5px;
-            color: #ccc;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #F3F4F6;
+            font-size: 11.5px;
+            color: #9CA3AF;
+            font-weight: 500;
         }
 
 
@@ -539,9 +532,8 @@
 
             .card-brand {
                 display: flex;
-                padding: 40px 24px 16px 24px;
+                padding: 40px 24px 32px 24px;
                 flex: none;
-                background: transparent;
                 min-height: auto;
                 align-items: center;
                 justify-content: center;
@@ -574,15 +566,16 @@
 
             .brand-header-text h3 {
                 font-size: 22px;
-                color: #1a1a2e;
+                color: #ffffff;
                 text-shadow: none;
                 letter-spacing: 0.5px;
             }
 
             .brand-header-text p {
-                font-size: 13px;
-                color: #666;
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.85);
                 font-weight: 500;
+                text-transform: uppercase;
             }
 
             .card-brand-inner h1,
@@ -607,13 +600,13 @@
             .form-header h2 {
                 font-size: 24px;
                 margin-bottom: 8px;
-                color: #1a1a2e;
+                color: #111827;
             }
 
             .form-header p {
-                font-size: 13px;
+                font-size: 13.5px;
                 line-height: 1.6;
-                color: #666;
+                color: #4B5563;
             }
 
             .field {
