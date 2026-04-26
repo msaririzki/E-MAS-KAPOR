@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\PersonnelExport;
 use App\Exports\PersonnelKeteranganExport;
+use App\Exports\PersonnelSheetExport;
 use App\Exports\PersonnelTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\SystemLock;
@@ -1001,8 +1002,11 @@ class PersonnelController extends Controller
         $personnelIds = $this->resolvePersonnelExportIds($request, $satkerIds);
 
         $signatorySettings = app(ExportSignatorySettingService::class)->resolveForUser($user);
+        $mode = $request->get('mode') === PersonnelSheetExport::MODE_MONITORING
+            ? PersonnelSheetExport::MODE_MONITORING
+            : PersonnelSheetExport::MODE_UPDATE;
 
-        return Excel::download(new PersonnelExport($satkerIds, $satkerName, $personnelIds, $signatorySettings), $fileName);
+        return Excel::download(new PersonnelExport($satkerIds, $satkerName, $personnelIds, $signatorySettings, $mode), $fileName);
     }
 
     /**

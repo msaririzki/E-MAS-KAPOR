@@ -17,30 +17,15 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Style\Protection;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-/**
- * Sheet tunggal — format Excel monitoring yang konsisten dengan format PDF/cetak.
- *
- * Kolom: NO | NAMA LENGKAP | PANGKAT | GOL | NRP/NIP | JABATAN | BAG/FUNGSI | JK
- *        | (9 kolom UKURAN) | KET
- *
- * Total 18 kolom  (A–R).
- */
 class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithEvents, WithHeadings, WithStyles, WithTitle
 {
-    protected Collection $personnels;
+    public const MODE_UPDATE = 'update';
 
-    protected string $satkerName;
+    public const MODE_MONITORING = 'monitoring';
 
-    protected string $sheetTitle;
-
-    /** @var array<string, string> */
-    protected array $signatorySettings;
-
-    /**
-     * JSON key → short label used in the PDF/print view.
-     */
     private const SIZE_KEYS = [
         'topi',
         'kemeja',
@@ -53,13 +38,13 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
         'jilbab',
     ];
 
-    public function __construct(Collection $personnels, string $satkerName, string $sheetTitle, array $signatorySettings = [])
-    {
-        $this->personnels = $personnels;
-        $this->satkerName = $satkerName;
-        $this->sheetTitle = $sheetTitle;
-        $this->signatorySettings = $signatorySettings;
-    }
+    public function __construct(
+        protected Collection $personnels,
+        protected string $satkerName,
+        protected string $sheetTitle,
+        protected array $signatorySettings = [],
+        protected string $mode = self::MODE_UPDATE,
+    ) {}
 
     public function title(): string
     {
@@ -67,6 +52,38 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
     }
 
     public function collection(): Collection
+    {
+        return $this->mode === self::MODE_MONITORING
+            ? $this->monitoringRows()
+            : $this->updateTemplateRows();
+    }
+
+    private function updateTemplateRows(): Collection
+    {
+        $rows = collect();
+        $no = 1;
+
+        foreach ($this->personnels as $personnel) {
+            $genderExcel = $personnel->gender === 'P' ? 'W' : 'P';
+
+            $rows->push([
+                $no++,
+                $personnel->full_name ?? '',
+                $personnel->rank->name ?? '',
+                $personnel->golongan ?? ($personnel->rank->category ?? ''),
+                "\t".($personnel->nrp ?? ''),
+                $personnel->jabatan ?? '',
+                $personnel->bagian ?? '',
+                $genderExcel,
+                $personnel->religion ?? '',
+                $personnel->keterangan ?? '',
+            ]);
+        }
+
+        return $rows;
+    }
+
+    private function monitoringRows(): Collection
     {
         $rows = collect();
         $no = 1;
@@ -86,13 +103,11 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                 $genderExcel,
             ];
 
-            // 9 size columns – same order as PDF
             foreach (self::SIZE_KEYS as $key) {
-                $v = trim($kaporSizes[$key] ?? '');
-                $row[] = ($v !== '' && $v !== '-' && $v !== '0') ? $v : '-';
+                $value = trim($kaporSizes[$key] ?? '');
+                $row[] = ($value !== '' && $value !== '-' && $value !== '0') ? $value : '-';
             }
 
-            // Keterangan (dikosongkan)
             $row[] = '';
 
             $rows->push($row);
@@ -104,20 +119,36 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
     public function columnFormats(): array
     {
         return [
-            'E' => NumberFormat::FORMAT_TEXT, // NRP/NIP
+            'E' => NumberFormat::FORMAT_TEXT,
         ];
     }
 
-    /**
-     * Headings — 3 header rows that mirror the PDF print layout.
-     *
-     * Row 1-6: KOP
-     * Row 7: spacer
-     * Row 8: header row 1  (NO, NAMA LENGKAP … , UKURAN (colspan 9), KET)
-     * Row 9: header row 2  (TUTUP KEPALA, TUTUP BADAN (colspan 3), TUTUP KAKI (colspan 2), JAKET, SABUK, JILBAB)
-     * Row 10: header row 3 (KEMEJA, CELANA/ROK, T-SHIRT OLHRG, DINAS, OLHRG)
-     */
     public function headings(): array
+    {
+        return $this->mode === self::MODE_MONITORING
+            ? $this->monitoringHeadings()
+            : $this->updateTemplateHeadings();
+    }
+
+    private function updateTemplateHeadings(): array
+    {
+        $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
+
+        return [
+            ['KEPOLISIAN NEGARA REPUBLIK INDONESIA'],
+            ['DAERAH NUSA TENGGARA BARAT'],
+            ['BIRO LOGISTIK'],
+            [''],
+            ['DATA PERSONEL SATKER '.strtoupper($this->satkerName)],
+            ['TEMPLATE UPDATE JABATAN, BAG/FUNGSI, DAN KETERANGAN TA. '.$fiscalYear],
+            [''],
+            ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP/NIP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'AGAMA', 'KETERANGAN'],
+            ['', '', '', '', '', '', '', '', '', ''],
+            ['', '', '', '', '', '', '', '', '', ''],
+        ];
+    }
+
+    private function monitoringHeadings(): array
     {
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
 
@@ -127,15 +158,12 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
             ['BIRO LOGISTIK'],
             [''],
             ['MONITORING DATA PERSONEL & UKURAN KAPOR'],
-            ['SATKER '.strtoupper($this->satkerName).' — TA. '.$fiscalYear],
+            ['SATKER '.strtoupper($this->satkerName).' - TA. '.$fiscalYear],
             [''],
-            // Header row 1: 8 fixed cols + 9 size placeholder + KET = 18 cols
             ['NO', 'NAMA LENGKAP', 'PANGKAT', 'GOL', 'NRP/NIP', 'JABATAN', 'BAG/FUNGSI', 'JK',
                 'U K U R A N', '', '', '', '', '', '', '', '', 'KET'],
-            // Header row 2: empty for fixed cols, then sub-headers
             ['', '', '', '', '', '', '', '',
                 'TUTUP KEPALA', 'TUTUP BADAN', '', '', 'TUTUP KAKI', '', 'JAKET', 'SABUK', 'JILBAB', ''],
-            // Header row 3: empty for fixed cols, then detail labels
             ['', '', '', '', '', '', '', '',
                 '', 'KEMEJA', 'CELANA/ ROK', 'T-SHIRT OLHRG', 'DINAS', 'OLHRG', '', '', '', ''],
         ];
@@ -162,134 +190,182 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                 $sheet = $event->sheet->getDelegate();
                 $lastDataRow = $sheet->getHighestRow();
 
-                // ── Fix NRP/NIP (col E) so leading zeros are preserved ──
-                for ($row = 11; $row <= $lastDataRow; $row++) {
-                    $cell = $sheet->getCell('E'.$row);
-                    $rawValue = ltrim((string) $cell->getValue(), "\t");
-                    $cell->setValueExplicit($rawValue, DataType::TYPE_STRING);
+                if ($this->mode === self::MODE_MONITORING) {
+                    $this->applyMonitoringSheet($sheet, $lastDataRow);
+
+                    return;
                 }
 
-                // ── KOP merges (rows 1–6) ──
-                $sheet->getStyle('A1:R6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->mergeCells('A1:C1');
-                $sheet->mergeCells('A2:C2');
-                $sheet->mergeCells('A3:C3');
-                $sheet->mergeCells('A5:R5');
-                $sheet->mergeCells('A6:R6');
-
-                // ── Header merges (rows 8–10) matching PDF structure ──
-
-                // Fixed columns span all 3 header rows
-                foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as $col) {
-                    $sheet->mergeCells("{$col}8:{$col}10");
-                }
-
-                // "U K U R A N" spans I8:Q8 (9 cols)
-                $sheet->mergeCells('I8:Q8');
-
-                // KET spans R8:R10
-                $sheet->mergeCells('R8:R10');
-
-                // Row 9 sub-headers:
-                // TUTUP KEPALA: I9:I10 (rowspan 2)
-                $sheet->mergeCells('I9:I10');
-                // TUTUP BADAN: J9:L9 (colspan 3)
-                $sheet->mergeCells('J9:L9');
-                // TUTUP KAKI: M9:N9 (colspan 2)
-                $sheet->mergeCells('M9:N9');
-                // JAKET: O9:O10
-                $sheet->mergeCells('O9:O10');
-                // SABUK: P9:P10
-                $sheet->mergeCells('P9:P10');
-                // JILBAB: Q9:Q10
-                $sheet->mergeCells('Q9:Q10');
-
-                // ── Header styling ──
-                $headerRange = 'A8:R10';
-
-                $sheet->getStyle($headerRange)->applyFromArray([
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => Border::BORDER_THIN,
-                            'color' => ['argb' => '000000'],
-                        ],
-                    ],
-                ]);
-
-                $sheet->getStyle($headerRange)->getFill()
-                    ->setFillType(Fill::FILL_SOLID)
-                    ->getStartColor()->setARGB('F2F2F2');
-
-                // Size columns header light teal
-                $sheet->getStyle('I8:Q8')->getFill()
-                    ->setFillType(Fill::FILL_SOLID)
-                    ->getStartColor()->setARGB('F1F5F9');
-
-                $sheet->getStyle('I9:Q9')->getFill()
-                    ->setFillType(Fill::FILL_SOLID)
-                    ->getStartColor()->setARGB('F8FAFC');
-
-                $sheet->getStyle('J10:N10')->getFill()
-                    ->setFillType(Fill::FILL_SOLID)
-                    ->getStartColor()->setARGB('F1F5F9');
-
-                // ── Data rows styling ──
-                if ($lastDataRow >= 11) {
-                    $dataRange = 'A11:R'.$lastDataRow;
-
-                    $sheet->getStyle($dataRange)->applyFromArray([
-                        'borders' => [
-                            'allBorders' => [
-                                'borderStyle' => Border::BORDER_THIN,
-                                'color' => ['argb' => 'CCCCCC'],
-                            ],
-                            'outline' => [
-                                'borderStyle' => Border::BORDER_THIN,
-                                'color' => ['argb' => '000000'],
-                            ],
-                        ],
-                    ]);
-
-                    // NO column centered
-                    $sheet->getStyle('A11:A'.$lastDataRow)
-                        ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-                    // GOL column centered
-                    $sheet->getStyle('D11:D'.$lastDataRow)
-                        ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-                    // JK column centered
-                    $sheet->getStyle('H11:H'.$lastDataRow)
-                        ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-                    // NRP left
-                    $sheet->getStyle('E11:E'.$lastDataRow)
-                        ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
-
-                    // All 9 size columns centered (I–Q)
-                    $sheet->getStyle('I11:Q'.$lastDataRow)
-                        ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                }
-
-                // ── Row heights ──
-                $sheet->getRowDimension(8)->setRowHeight(20);
-                $sheet->getRowDimension(9)->setRowHeight(20);
-                $sheet->getRowDimension(10)->setRowHeight(24);
-
-                // ── Freeze pane below headers ──
-                $sheet->freezePane('A11');
-
-                // ── Signatory / Tanda Tangan ──
-                if (! empty($this->signatorySettings)) {
-                    $this->renderSignatory($sheet, $lastDataRow);
-                }
+                $this->applyUpdateTemplateSheet($sheet, $lastDataRow);
             },
         ];
     }
 
-    /**
-     * Render signatory block below the data table in the Excel sheet.
-     */
+    private function applyUpdateTemplateSheet(Worksheet $sheet, int $lastDataRow): void
+    {
+        for ($row = 11; $row <= $lastDataRow; $row++) {
+            $cell = $sheet->getCell('E'.$row);
+            $rawValue = ltrim((string) $cell->getValue(), "\t");
+            $cell->setValueExplicit($rawValue, DataType::TYPE_STRING);
+        }
+
+        $sheet->getStyle('A1:J6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->mergeCells('A1:C1');
+        $sheet->mergeCells('A2:C2');
+        $sheet->mergeCells('A3:C3');
+        $sheet->mergeCells('A5:J5');
+        $sheet->mergeCells('A6:J6');
+
+        foreach (range('A', 'J') as $column) {
+            $sheet->mergeCells($column.'8:'.$column.'10');
+        }
+
+        $sheet->getStyle('A8:J10')->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => '000000'],
+                ],
+            ],
+        ]);
+
+        if ($lastDataRow >= 11) {
+            $sheet->getStyle('A11:J'.$lastDataRow)->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['argb' => 'CCCCCC'],
+                    ],
+                    'outline' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['argb' => '000000'],
+                    ],
+                ],
+            ]);
+        }
+
+        $sheet->getStyle('A8:J10')->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('F2F2F2');
+
+        $sheet->getRowDimension(8)->setRowHeight(20);
+        $sheet->getRowDimension(9)->setRowHeight(20);
+        $sheet->getRowDimension(10)->setRowHeight(24);
+        $sheet->freezePane('A11');
+
+        if ($lastDataRow >= 11) {
+            $sheet->getStyle('A11:A'.$lastDataRow)
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('H11:I'.$lastDataRow)
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E11:E'.$lastDataRow)
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+
+            $sheet->getStyle('A11:J'.$lastDataRow)
+                ->getProtection()
+                ->setLocked(Protection::PROTECTION_PROTECTED);
+
+            foreach (['F', 'G', 'J'] as $editableColumn) {
+                $sheet->getStyle($editableColumn.'11:'.$editableColumn.$lastDataRow)
+                    ->getProtection()
+                    ->setLocked(Protection::PROTECTION_UNPROTECTED);
+            }
+        }
+
+        $sheet->getProtection()->setSheet(true);
+        $sheet->getProtection()->setSort(false);
+        $sheet->getProtection()->setInsertRows(false);
+        $sheet->getProtection()->setFormatCells(false);
+        $sheet->getProtection()->setPassword('EMAS-KAPOR');
+    }
+
+    private function applyMonitoringSheet(Worksheet $sheet, int $lastDataRow): void
+    {
+        for ($row = 11; $row <= $lastDataRow; $row++) {
+            $cell = $sheet->getCell('E'.$row);
+            $rawValue = ltrim((string) $cell->getValue(), "\t");
+            $cell->setValueExplicit($rawValue, DataType::TYPE_STRING);
+        }
+
+        $sheet->getStyle('A1:R6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->mergeCells('A1:C1');
+        $sheet->mergeCells('A2:C2');
+        $sheet->mergeCells('A3:C3');
+        $sheet->mergeCells('A5:R5');
+        $sheet->mergeCells('A6:R6');
+
+        foreach (['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as $col) {
+            $sheet->mergeCells("{$col}8:{$col}10");
+        }
+
+        $sheet->mergeCells('I8:Q8');
+        $sheet->mergeCells('I9:I10');
+        $sheet->mergeCells('J9:L9');
+        $sheet->mergeCells('M9:N9');
+        $sheet->mergeCells('O9:O10');
+        $sheet->mergeCells('P9:P10');
+        $sheet->mergeCells('Q9:Q10');
+        $sheet->mergeCells('R8:R10');
+
+        $headerRange = 'A8:R10';
+        $sheet->getStyle($headerRange)->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => '000000'],
+                ],
+            ],
+        ]);
+
+        $sheet->getStyle($headerRange)->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('F2F2F2');
+        $sheet->getStyle('I8:Q8')->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('F1F5F9');
+        $sheet->getStyle('I9:Q9')->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('F8FAFC');
+        $sheet->getStyle('J10:N10')->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('F1F5F9');
+
+        if ($lastDataRow >= 11) {
+            $sheet->getStyle('A11:R'.$lastDataRow)->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['argb' => 'CCCCCC'],
+                    ],
+                    'outline' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['argb' => '000000'],
+                    ],
+                ],
+            ]);
+
+            $sheet->getStyle('A11:A'.$lastDataRow)
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('D11:D'.$lastDataRow)
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('H11:H'.$lastDataRow)
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('E11:E'.$lastDataRow)
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle('I11:Q'.$lastDataRow)
+                ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        }
+
+        $sheet->getRowDimension(8)->setRowHeight(20);
+        $sheet->getRowDimension(9)->setRowHeight(20);
+        $sheet->getRowDimension(10)->setRowHeight(24);
+        $sheet->freezePane('A11');
+
+        if (! empty($this->signatorySettings)) {
+            $this->renderSignatory($sheet, $lastDataRow);
+        }
+    }
+
     private function renderSignatory(Worksheet $sheet, int $lastDataRow): void
     {
         $location = $this->signatorySettings['location'] ?? 'Mataram';
@@ -298,49 +374,38 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
         $nama = strtoupper($this->signatorySettings['signatory_name'] ?? '..........................................');
         $nrp = $this->signatorySettings['signatory_nrp'] ?? '.............................';
 
-        // Start 2 rows below the last data row
         $startRow = $lastDataRow + 2;
+        $sigCol = 'N';
+        $endCol = 'R';
 
-        // Signatory is placed in columns N–R (right side of the table)
-        $sigCol = 'N'; // Start column
-        $endCol = 'R'; // End column for merge
-
-        // Row 1: Location & Date
-        $dateStr = $location.', '.now()->translatedFormat('d F Y');
-        $sheet->setCellValue($sigCol.$startRow, $dateStr);
+        $sheet->setCellValue($sigCol.$startRow, $location.', '.now()->translatedFormat('d F Y'));
         $sheet->mergeCells("{$sigCol}{$startRow}:{$endCol}{$startRow}");
-        $sheet->getStyle("{$sigCol}{$startRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle($sigCol.$startRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Row 2: Organization Name (if set)
         $currentRow = $startRow + 1;
         if ($orgName !== '') {
             $sheet->setCellValue($sigCol.$currentRow, $orgName);
             $sheet->mergeCells("{$sigCol}{$currentRow}:{$endCol}{$currentRow}");
-            $sheet->getStyle("{$sigCol}{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle($sigCol.$currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $currentRow++;
         }
 
-        // Row 3: Jabatan
         $sheet->setCellValue($sigCol.$currentRow, $jabatan);
         $sheet->mergeCells("{$sigCol}{$currentRow}:{$endCol}{$currentRow}");
-        $sheet->getStyle("{$sigCol}{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle($sigCol.$currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Skip rows for signature space
         $currentRow += 4;
-
-        // Row 7: Nama (bold + underline)
         $sheet->setCellValue($sigCol.$currentRow, $nama);
         $sheet->mergeCells("{$sigCol}{$currentRow}:{$endCol}{$currentRow}");
-        $sheet->getStyle("{$sigCol}{$currentRow}")->applyFromArray([
+        $sheet->getStyle($sigCol.$currentRow)->applyFromArray([
             'font' => ['bold' => true, 'underline' => true],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
         ]);
 
-        // Row 8: NRP/NIP
         $currentRow++;
         $sheet->setCellValue($sigCol.$currentRow, 'NRP/NIP. '.$nrp);
         $sheet->mergeCells("{$sigCol}{$currentRow}:{$endCol}{$currentRow}");
-        $sheet->getStyle("{$sigCol}{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle("{$sigCol}{$currentRow}")->getFont()->setSize(10);
+        $sheet->getStyle($sigCol.$currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle($sigCol.$currentRow)->getFont()->setSize(10);
     }
 }

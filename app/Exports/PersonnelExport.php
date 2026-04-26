@@ -23,18 +23,21 @@ class PersonnelExport implements WithMultipleSheets
     /** @var array<string, string> */
     protected array $signatorySettings;
 
+    protected string $mode;
+
     /**
      * @param  array|null  $satkerIds  Array of satker IDs to filter, null = semua.
      * @param  array|null  $personnelIds  Array of personnel IDs to filter, null = tanpa filter personel spesifik.
      * @param  string  $satkerName  Nama untuk header.
      * @param  array<string, string>  $signatorySettings  Resolved signatory settings.
      */
-    public function __construct(?array $satkerIds = null, string $satkerName = 'SEMUA SATKER', ?array $personnelIds = null, array $signatorySettings = [])
+    public function __construct(?array $satkerIds = null, string $satkerName = 'SEMUA SATKER', ?array $personnelIds = null, array $signatorySettings = [], string $mode = PersonnelSheetExport::MODE_UPDATE)
     {
         $this->satkerIds = $satkerIds;
         $this->satkerName = $satkerName;
         $this->personnelIds = $personnelIds;
         $this->signatorySettings = $signatorySettings;
+        $this->mode = $mode;
     }
 
     public function sheets(): array
@@ -64,8 +67,8 @@ class PersonnelExport implements WithMultipleSheets
         $pns = $all->filter(fn ($p) => ! $this->isPolri($p));
 
         return [
-            new PersonnelSheetExport($polri, $this->satkerName, 'Data Polri', $this->signatorySettings),
-            new PersonnelSheetExport($pns, $this->satkerName, 'Data PNS', $this->signatorySettings),
+            new PersonnelSheetExport($polri, $this->satkerName, 'Data Polri', $this->signatorySettings, $this->mode),
+            new PersonnelSheetExport($pns, $this->satkerName, 'Data PNS', $this->signatorySettings, $this->mode),
         ];
     }
 

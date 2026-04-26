@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\Personnel;
 use App\Models\Rank;
+use App\Models\Satker;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -91,6 +92,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
     public function generatePreview(Collection $rows): array
     {
         $ranks = Rank::all()->keyBy(fn ($rank) => strtoupper($rank->name));
+        $satkerCode = Satker::whereKey($this->satkerId)->value('code');
 
         $allNrpData = Personnel::whereNotNull('nrp')
             ->where('nrp', '!=', '')
@@ -132,11 +134,15 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                 $nrp = trim((string) $nrpRaw);
             }
 
+            $usesMonitoringLayout = $this->usesMonitoringLayout($row);
             $jabatan = trim($row[5] ?? '');
             $bagian = trim($row[6] ?? '');
             $genderRaw = strtoupper(trim($row[7] ?? ''));
-            $religion = trim($row[8] ?? '');
-            $keterangan = trim($row[9] ?? '');
+            $religion = $usesMonitoringLayout ? '' : trim($row[8] ?? '');
+            $keterangan = trim($row[$usesMonitoringLayout ? 17 : 9] ?? '');
+            $keterangan2 = $usesMonitoringLayout ? trim($row[18] ?? '') : '';
+            $keterangan3 = $usesMonitoringLayout ? trim($row[19] ?? '') : '';
+            $keterangan4 = $usesMonitoringLayout ? trim($row[20] ?? '') : '';
             $no = trim($row[0] ?? '');
 
             if (empty($fullName)) {
@@ -157,7 +163,8 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
             }
 
             $gender = $genderRaw === 'W' ? 'P' : 'L';
-            $rankResult = PersonnelImport::findRankWithCorrection($rankInput, $ranks, $golongan);
+            $rankResult = PersonnelImport::findRankWithCorrection($rankInput, $ranks, $golongan, $satkerCode);
+            $sizes = $usesMonitoringLayout ? $this->extractSizes($row, $gender) : [];
 
             $match = $this->findMatch($nrp, $fullName, $existingByNrp, $existingByName);
             $existingPersonnel = $match['personnel'];
@@ -192,6 +199,15 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
             $diff = [];
             if ($existingPersonnel && ! $isDuplicate) {
                 $diff = $this->computeDiff($existingPersonnel, $jabatan, $bagian, $keterangan);
+
+                if ($rankResult['rank'] && $rankResult['rank']->id !== $existingPersonnel->rank_id) {
+                    $diff = array_merge([
+                        'Pangkat' => [
+                            'from' => $existingPersonnel->rank?->name ?? $existingPersonnel->golongan ?? '(kosong)',
+                            'to' => $rankResult['rank']->name,
+                        ],
+                    ], $diff);
+                }
 
                 if ($matchBy === 'name_add_nrp' && ! empty($nrp)) {
                     $diff = array_merge([
@@ -242,6 +258,10 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                 'gender_raw' => $genderRaw,
                 'religion' => $religion,
                 'keterangan' => $keterangan,
+                'keterangan_2' => $keterangan2,
+                'keterangan_3' => $keterangan3,
+                'keterangan_4' => $keterangan4,
+                'sizes' => $sizes,
                 'status' => $status,
                 'error_type' => $errorType,
                 'skip_reason' => $skipReason,
@@ -253,11 +273,48 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                 'existing_bagian' => $existingPersonnel?->bagian,
                 'existing_gender' => $existingPersonnel?->gender,
                 'existing_keterangan' => $existingPersonnel?->keterangan,
+                'existing_sizes' => is_array($existingPersonnel?->kapor_sizes) ? $existingPersonnel->kapor_sizes : [],
                 'diff' => $diff,
             ];
         }
 
         return $preview;
+    }
+
+    /**
+     * Older exports include size columns I-Q and place keterangan in R.
+     * The newer admin-satker update template has only A-J and places agama/keterangan in I/J.
+     */
+    private function usesMonitoringLayout(array $row): bool
+    {
+        foreach ([10, 11, 12, 13, 14, 15, 16, 17] as $index) {
+            if (array_key_exists($index, $row)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function extractSizes(array $row, string $gender): array
+    {
+        $sizes = [
+            'topi' => trim($row[8] ?? ''),
+            'kemeja' => trim($row[9] ?? ''),
+            'celana' => trim($row[10] ?? ''),
+            'olahraga' => trim($row[11] ?? ''),
+            'sepatu_dinas' => trim($row[12] ?? ''),
+            'sepatu_olahraga' => trim($row[13] ?? ''),
+            'jaket' => trim($row[14] ?? ''),
+            'sabuk' => trim($row[15] ?? ''),
+            'jilbab' => trim($row[16] ?? ''),
+        ];
+
+        if ($gender === 'L') {
+            unset($sizes['jilbab']);
+        }
+
+        return $sizes;
     }
 
     protected function computeDiff(
@@ -322,6 +379,11 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         }
 
                         $updateData = [];
+                        $rank = ! empty($data['rank_id']) ? Rank::find($data['rank_id']) : null;
+                        if ($rank) {
+                            $updateData['rank_id'] = $rank->id;
+                            $updateData['personnel_type'] = PersonnelImport::resolvePersonnelType($rank, (string) ($data['golongan'] ?? ''));
+                        }
                         if (! empty($data['jabatan'])) {
                             $updateData['jabatan'] = $data['jabatan'];
                         }
@@ -377,7 +439,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                     Personnel::create([
                         'user_id' => $user?->id,
                         'satker_id' => $this->satkerId,
-                        'rank_id' => $data['rank_id'] ?? null,
+                        'rank_id' => $rank?->id,
                         'full_name' => $data['full_name'],
                         'nrp' => $nrp,
                         'phone' => $user?->phone,
@@ -385,9 +447,9 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
                         'bagian' => $data['bagian'] ?: null,
                         'golongan' => $data['golongan'] ?: null,
                         'gender' => $data['gender'] ?: 'L',
-                        'religion' => $data['religion'] ?: null,
-                        'personnel_type' => $rank?->category === 'PNS' ? 'PNS' : 'Polri',
-                        'keterangan' => $data['keterangan'] ?: null,
+                        'religion' => ($data['religion'] ?? '') ?: null,
+                        'personnel_type' => PersonnelImport::resolvePersonnelType($rank, (string) ($data['golongan'] ?? '')),
+                        'keterangan' => ($data['keterangan'] ?? '') ?: null,
                         'is_active' => true,
                         'verification_status' => 'approved',
                         'nrp_issue_note' => $this->buildNrpIssueNote($data),
