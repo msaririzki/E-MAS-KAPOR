@@ -20,12 +20,11 @@ if [ -z "$APP_KEY_VALUE" ]; then
     fi
 fi
 
-# 3. Populate shared public volume (jika masih kosong)
-if [ ! -f /var/www/html/public/index.php ]; then
-    echo "==> [Entrypoint] Menyalin file public ke volume bersama..."
-    cp -r /public-init/. /var/www/html/public/
-    chown -R www-data:www-data /var/www/html/public
-fi
+# 3. Sync file statis baru dari image ke volume (selalu dijalankan)
+# Menggunakan cp -ru agar hanya file baru/lebih baru yang disalin (tidak menghapus upload user)
+echo "==> [Entrypoint] Menyinkronkan file public dari image ke volume..."
+cp -ru /public-init/. /var/www/html/public/
+chown -R www-data:www-data /var/www/html/public
 
 # 4. Tunggu MariaDB siap menggunakan PHP PDO
 if [ "$DB_CONNECTION" = "mysql" ] || [ "$DB_CONNECTION" = "mariadb" ] || [ -n "$DB_HOST" ]; then
