@@ -573,6 +573,20 @@ class BudgetExportController extends Controller
     }
 
     /**
+     * Export detail penerima sebagai Excel dengan pengelompokan per satker.
+     */
+    public function exportDetailBySatkerExcel(BudgetPackage $budgetPackage)
+    {
+        set_time_limit(0);
+        ini_set('memory_limit', '2G');
+
+        $budgetPackage->load('budgetYear');
+        $filename = 'Nominatif_Per_Satker_'.str_replace(' ', '_', $budgetPackage->name).'_'.$budgetPackage->budgetYear->year.'.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PackageSatkerDetailExport($budgetPackage), $filename);
+    }
+
+    /**
      * Export SPPM Word
      */
     public function exportSppmWord(Request $request, BudgetPackage $budgetPackage)

@@ -4,12 +4,14 @@ namespace App\Http\Controllers\AdminSatker;
 
 use App\Http\Controllers\Controller;
 use App\Models\BagianOption;
+use App\Models\BudgetPackage;
 use App\Models\Personnel;
 use App\Models\Satker;
 use App\Models\Setting;
 use App\Services\AuditLogger;
 use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
+use App\Services\PackageSatkerAllocationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -174,6 +176,121 @@ class AdminSatkerController extends Controller
         $signatorySettings = app(ExportSignatorySettingService::class)->resolveForUser($user);
 
         return view('admin-satker.reports', compact('stats', 'satker', 'fiscalYear', 'personnels', 'jsonMapping', 'bagians', 'signatorySettings'));
+    }
+
+    public function allocations(Request $request, PackageSatkerAllocationService $allocationService)
+    {
+        $user = $request->user();
+        $satkerId = (int) $user->satker_id;
+        $satker = Satker::findOrFail($satkerId);
+        
+        $budgetYears = \App\Models\BudgetYear::orderByDesc('year')->get();
+        $activeBudgetYear = $budgetYears->firstWhere('is_active', true) ?? $budgetYears->first();
+        $selectedBudgetYearId = $request->input('budget_year_id') ?: ($activeBudgetYear->id ?? null);
+        $selectedBudgetYear = $budgetYears->firstWhere('id', $selectedBudgetYearId);
+        $fiscalYear = $selectedBudgetYear->year ?? Setting::getValue('fiscal_year', date('Y'));
+
+        $packagesQuery = BudgetPackage::query()
+            ->with('budgetYear')
+            ->whereHas('items.recipients', fn ($query) => $query->where('satker_id', $satkerId))
+            ->orderByDesc('id');
+
+        if ($selectedBudgetYearId) {
+            $packagesQuery->where('budget_year_id', $selectedBudgetYearId);
+        }
+
+        $packages = $packagesQuery->get();
+
+        $selectedPackage = $packages->firstWhere('id', (int) $request->input('package_id')) ?? $packages->first();
+
+        $rows = collect();
+        if ($selectedPackage) {
+            $rows = $allocationService->buildRows($selectedPackage, $satker);
+        }
+
+        if ($request->filled('search')) {
+            $search = Str::lower(trim((string) $request->input('search')));
+            $rows = $rows->filter(function (array $row) use ($search) {
+                return Str::contains(Str::lower($row['full_name']), $search)
+                    || Str::contains(Str::lower($row['nrp']), $search)
+                    || Str::contains(Str::lower($row['rank']), $search)
+                    || Str::contains(Str::lower($row['jabatan']), $search)
+                    || Str::contains(Str::lower(implode(' ', $row['items'])), $search)
+                    || Str::contains(Str::lower(implode(' ', $row['sizes'])), $search);
+            })->values();
+        }
+
+        $stats = [
+            'satker_name' => $satker->name,
+            'fiscal_year' => $fiscalYear,
+            'package_count' => $packages->count(),
+            'personnel_count' => $rows->count(),
+            'item_count' => $rows->sum('item_count'),
+            'selected_package_name' => $selectedPackage?->name ?? '-',
+        ];
+
+        return view('admin-satker.allocations', compact('stats', 'satker', 'budgetYears', 'selectedBudgetYearId', 'packages', 'selectedPackage', 'rows'));
+    }
+
+    public function allocationsExportPdf(Request $request, PackageSatkerAllocationService $allocationService, ExportSignatorySettingService $signatoryService)
+    {
+        $user = $request->user();
+        $satkerId = (int) $user->satker_id;
+        $satker = Satker::findOrFail($satkerId);
+        
+        $budgetYears = \App\Models\BudgetYear::orderByDesc('year')->get();
+        $activeBudgetYear = $budgetYears->firstWhere('is_active', true) ?? $budgetYears->first();
+        $selectedBudgetYearId = $request->input('budget_year_id') ?: ($activeBudgetYear->id ?? null);
+        $selectedBudgetYear = $budgetYears->firstWhere('id', $selectedBudgetYearId);
+        $fiscalYear = $selectedBudgetYear->year ?? Setting::getValue('fiscal_year', date('Y'));
+
+        $packagesQuery = BudgetPackage::query()
+            ->with('budgetYear')
+            ->whereHas('items.recipients', fn ($query) => $query->where('satker_id', $satkerId))
+            ->orderByDesc('id');
+
+        if ($selectedBudgetYearId) {
+            $packagesQuery->where('budget_year_id', $selectedBudgetYearId);
+        }
+
+        $packages = $packagesQuery->get();
+        $selectedPackage = $packages->firstWhere('id', (int) $request->input('package_id')) ?? $packages->first();
+
+        $rows = collect();
+        if ($selectedPackage) {
+            $rows = $allocationService->buildRows($selectedPackage, $satker);
+        }
+
+        if ($request->filled('search')) {
+            $search = Str::lower(trim((string) $request->input('search')));
+            $rows = $rows->filter(function (array $row) use ($search) {
+                return Str::contains(Str::lower($row['full_name']), $search)
+                    || Str::contains(Str::lower($row['nrp']), $search)
+                    || Str::contains(Str::lower($row['rank']), $search)
+                    || Str::contains(Str::lower($row['jabatan']), $search)
+                    || Str::contains(Str::lower(implode(' ', $row['items'])), $search)
+                    || Str::contains(Str::lower(implode(' ', $row['sizes'])), $search);
+            })->values();
+        }
+
+        $stats = [
+            'satker_name' => $satker->name,
+            'fiscal_year' => $fiscalYear,
+            'package_count' => $packages->count(),
+            'personnel_count' => $rows->count(),
+            'item_count' => $rows->sum('item_count'),
+            'selected_package_name' => $selectedPackage?->name ?? '-',
+        ];
+
+        $signatorySettings = $signatoryService->resolveForUser($user);
+
+        $pdf = \PDF::loadView('admin-satker.exports.allocations-pdf', compact('stats', 'satker', 'rows', 'selectedPackage', 'signatorySettings'), [], [
+            'format' => 'A4',
+            'orientation' => 'L'
+        ]);
+
+        $filename = 'Alokasi_Kapor_'.str_replace(' ', '_', $satker->name).'_'.date('YmdHis').'.pdf';
+        return $pdf->download($filename);
     }
 
     private function resolveAvailableBagians(int $satkerId): Collection

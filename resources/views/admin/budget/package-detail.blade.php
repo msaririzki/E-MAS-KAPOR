@@ -301,6 +301,18 @@
                 </div>
             </a>
 
+            <a href="{{ route('admin.budget.export-detail-satker', $budgetPackage) }}" class="export-btn export-blue" data-download data-estimate="25">
+                <div class="export-icon"><i class="ri-building-4-line"></i></div>
+                <div class="export-info">
+                    <h4>Nominatif per Satker</h4>
+                    <p>Personil dan barang per satker.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-download-2-line"></i></div>
+                <div class="export-loading">
+                    <i class="ri-loader-4-line spinner"></i>
+                </div>
+            </a>
+
             <button type="button" onclick="openSppmModal()" class="export-btn export-indigo export-btn-button">
                 <div class="export-icon"><i class="ri-file-word-line"></i></div>
                 <div class="export-info">
