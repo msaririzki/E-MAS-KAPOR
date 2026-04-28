@@ -133,7 +133,7 @@ if [ "$BOOTSTRAP_ON_UPDATE" = "true" ] && [ -n "$BOOTSTRAP_EMAIL" ]; then
     docker compose exec -T app php artisan app:bootstrap-superadmin "$BOOTSTRAP_EMAIL" --name="$BOOTSTRAP_NAME" --generate --only-if-missing
 fi
 
-echo "==> Restart queue worker..."
-docker compose restart queue
+echo "==> Restart web server dan queue worker..."
+docker compose restart web queue
 
 echo "==> Update branch ${TARGET_BRANCH} selesai! Aplikasi siap digunakan."
