@@ -209,6 +209,7 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
         Route::get('/packages/{budgetPackage}/export-pdf', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportRecapPdf'])->name('export-pdf');
         Route::get('/packages/{budgetPackage}/export-detail', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportDetailExcel'])->name('export-detail');
         Route::get('/packages/{budgetPackage}/export-detail-satker', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportDetailBySatkerExcel'])->name('export-detail-satker');
+        Route::get('/years/{budgetYear}/export-detail-satker', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportYearDetailBySatkerExcel'])->name('export-year-detail-satker');
         Route::post('/packages/{budgetPackage}/export-sppm', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportSppmWord'])->name('export-sppm');
         Route::post('/invoice-settings', [\App\Http\Controllers\Admin\BudgetExportController::class, 'updateSettings'])->name('update-settings');
     });

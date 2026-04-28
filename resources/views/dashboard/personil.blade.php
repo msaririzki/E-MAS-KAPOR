@@ -761,7 +761,7 @@
                                 <div class="allocation-item">
                                     <div class="allocation-main">
                                         <strong>{{ $item['item_name'] }}</strong>
-                                        <span>{{ $item['package_name'] }} - {{ $item['category'] }}</span>
+                                        <span>{{ $item['category'] }}</span>
                                     </div>
                                     <div class="allocation-size">
                                         <small>{{ $item['size_label'] }}</small>

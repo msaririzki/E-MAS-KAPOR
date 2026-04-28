@@ -37,13 +37,18 @@
             </div>
             <p class="page-subtitle">{{ $yearSubtitle }}</p>
         </div>
-        @if($canManageThisYear)
         <div class="page-header-actions">
+            @if($budgetYear->packages->isNotEmpty())
+            <a href="{{ route('admin.budget.export-year-detail-satker', $budgetYear) }}" class="btn btn-outline">
+                <i class="ri-building-4-line"></i> Nominatif per Satker
+            </a>
+            @endif
+            @if($canManageThisYear)
             <button class="btn btn-primary" onclick="openModal('addPackageModal')">
                 <i class="ri-add-line"></i> Tambah Paket
             </button>
+            @endif
         </div>
-        @endif
     </div>
 </div>
 

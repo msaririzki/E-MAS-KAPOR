@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\BudgetYearSatkerDetailExport;
 use App\Http\Controllers\Controller;
 use App\Models\BudgetPackage;
+use App\Models\BudgetYear;
 use App\Models\InvoiceSetting;
 use App\Models\Personnel;
 use App\Services\BudgetCalculationService;
@@ -584,6 +586,24 @@ class BudgetExportController extends Controller
         $filename = 'Nominatif_Per_Satker_'.str_replace(' ', '_', $budgetPackage->name).'_'.$budgetPackage->budgetYear->year.'.xlsx';
 
         return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PackageSatkerDetailExport($budgetPackage), $filename);
+    }
+
+    /**
+     * Export detail penerima semua paket dalam satu tahun anggaran sebagai Excel dengan pengelompokan per satker.
+     */
+    public function exportYearDetailBySatkerExcel(BudgetYear $budgetYear)
+    {
+        set_time_limit(0);
+        ini_set('memory_limit', '2G');
+
+        $budgetYear->load([
+            'packages.items.kaporItem',
+            'packages.items.recipients.satker',
+        ]);
+
+        $filename = 'Nominatif_Per_Satker_TA_'.$budgetYear->year.'.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new BudgetYearSatkerDetailExport($budgetYear), $filename);
     }
 
     /**

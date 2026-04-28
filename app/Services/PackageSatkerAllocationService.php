@@ -20,10 +20,31 @@ class PackageSatkerAllocationService
             'items.recipients.satker',
         ]);
 
+        return $this->buildRowsForPackageItems($budgetPackage->items, $satker);
+    }
+
+    public function buildRowsForBudgetYearPackages(Collection $budgetPackages, Satker $satker): Collection
+    {
+        $packageItems = $budgetPackages
+            ->each(function (BudgetPackage $budgetPackage): void {
+                $budgetPackage->loadMissing([
+                    'items.kaporItem',
+                    'items.recipients.satker',
+                ]);
+            })
+            ->flatMap(fn (BudgetPackage $budgetPackage) => $budgetPackage->items);
+
+        return $this->buildRowsForPackageItems($packageItems, $satker);
+    }
+
+    private function buildRowsForPackageItems(Collection $packageItems, Satker $satker): Collection
+    {
+        $packageItems = $packageItems->filter();
+
         $personnelRows = [];
         $exportedPersonnelItems = [];
 
-        foreach ($budgetPackage->items as $packageItem) {
+        foreach ($packageItems as $packageItem) {
             $recipients = $packageItem->recipients->where('satker_id', $satker->id);
 
             if ($recipients->isEmpty()) {

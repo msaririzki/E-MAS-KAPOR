@@ -794,7 +794,8 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response->assertOk();
         $response->assertSeeText('Barang yang Anda Dapatkan');
         $response->assertSeeText('BARET LAPANGAN');
-        $response->assertSeeText('Paket Review BARET LAPANGAN');
+        $response->assertSeeText('Tutup Kepala');
+        $response->assertDontSeeText('Paket Review BARET LAPANGAN');
         $response->assertSeeText('Ukuran Topi');
         $response->assertSeeText('57');
         $response->assertDontSeeText('Ada 1 Item Menunggu Respons');

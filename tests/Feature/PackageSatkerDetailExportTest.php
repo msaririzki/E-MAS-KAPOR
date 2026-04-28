@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Exports\BudgetYearSatkerDetailExport;
+use App\Exports\BudgetYearSatkerDetailSheet;
 use App\Exports\PackageSatkerDetailExport;
 use App\Exports\PackageSatkerDetailSheet;
 use App\Models\BudgetPackage;
@@ -48,6 +50,24 @@ class PackageSatkerDetailExportTest extends TestCase
         );
     }
 
+    public function test_admin_can_download_year_level_nominatif_per_satker_export(): void
+    {
+        [$package] = $this->createPackageWithRecipient();
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Excel::fake();
+
+        $this->actingAs($admin)
+            ->get(route('admin.budget.export-year-detail-satker', $package->budgetYear))
+            ->assertOk();
+
+        Excel::assertDownloaded(
+            'Nominatif_Per_Satker_TA_2026.xlsx',
+            fn ($export) => $export instanceof BudgetYearSatkerDetailExport
+        );
+    }
+
     public function test_satker_detail_sheet_lists_personnel_and_received_items(): void
     {
         [$package, $satker] = $this->createPackageWithRecipient();
@@ -71,6 +91,57 @@ class PackageSatkerDetailExportTest extends TestCase
 
         $personnelRows = array_filter($rows, fn (array $row) => ($row[1] ?? null) === 'Budi Santoso');
         $this->assertCount(1, $personnelRows);
+    }
+
+    public function test_year_satker_detail_sheet_combines_items_from_all_packages_without_package_names(): void
+    {
+        [$package, $satker] = $this->createPackageWithRecipient();
+
+        $secondPackage = BudgetPackage::create([
+            'budget_year_id' => $package->budgetYear->id,
+            'name' => 'Paket Rahasia Internal',
+            'status' => 'draft',
+            'total_budget' => 0,
+        ]);
+
+        $thirdKaporItem = KaporItem::create([
+            'category' => 'Tutup_Badan',
+            'item_name' => 'KEMEJA PDL',
+            'price' => 175000,
+            'unit' => 'PCS',
+            'is_active' => true,
+            'for_identifikasi' => true,
+        ]);
+
+        $thirdPackageItem = PackageItem::create([
+            'budget_package_id' => $secondPackage->id,
+            'kapor_item_id' => $thirdKaporItem->id,
+            'calculated_qty' => 1,
+            'calculated_total' => 175000,
+        ]);
+
+        PackageItemRecipient::create([
+            'package_item_id' => $thirdPackageItem->id,
+            'satker_id' => $satker->id,
+            'recipient_filters' => null,
+            'matched_count' => 1,
+        ]);
+
+        $admin = User::factory()->create(['satker_id' => $satker->id]);
+        $admin->assignRole('admin');
+
+        $this->actingAs($admin);
+
+        $sheet = new BudgetYearSatkerDetailSheet($package->budgetYear->fresh('packages'), $satker, 'Polres Bima');
+        $rows = $sheet->array();
+
+        $this->assertContains('DAFTAR NOMINATIF PENERIMA', array_column($rows, 0));
+        $this->assertContains('T.A. 2026 SATKER POLRES BIMA', array_column($rows, 0));
+        $this->assertContains("BARET LAPANGAN\nSEPATU PDL\nKEMEJA PDL", array_column($rows, 8));
+        $this->assertContains("58\n42\n-", array_column($rows, 10));
+        $this->assertNotContains('Paket Seragam', array_column($rows, 0));
+        $this->assertNotContains('Paket Rahasia Internal', array_column($rows, 0));
+        $this->assertNotContains('Paket Rahasia Internal', array_column($rows, 8));
     }
 
     public function test_admin_satker_can_monitor_allocations_for_own_satker(): void
