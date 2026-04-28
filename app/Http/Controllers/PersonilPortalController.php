@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\KaporRequirementService;
+use App\Services\PackageSatkerAllocationService;
 use App\Support\PeriodGate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,10 @@ use Illuminate\View\View;
 
 class PersonilPortalController extends Controller
 {
+    public function __construct(
+        private readonly PackageSatkerAllocationService $packageSatkerAllocationService,
+    ) {}
+
     public function storeKapor(Request $request, KaporRequirementService $kaporRequirementService): RedirectResponse
     {
         $personnel = $request->user()?->personnel;
@@ -177,12 +182,14 @@ class PersonilPortalController extends Controller
             ->get()
             ->keyBy('kapor_item_id');
 
+        $personnel = $user->personnel;
         $allocationCards = $allocations
             ->groupBy('kapor_item_id')
-            ->map(function ($group) use ($existingReviews) {
+            ->map(function ($group) use ($existingReviews, $personnel) {
                 /** @var \App\Models\PersonnelItemAllocation $allocation */
                 $allocation = $group->sortByDesc('allocated_at')->first();
                 $review = $existingReviews->get($allocation->kapor_item_id);
+                $sizeKey = $this->packageSatkerAllocationService->sizeKeyFor($allocation->kapor_item_name_snapshot);
 
                 return [
                     'allocation' => $allocation,
@@ -193,6 +200,9 @@ class PersonilPortalController extends Controller
                     'status' => $review?->response_status,
                     'is_reviewed' => $review !== null,
                     'updated_at' => $review?->updated_at,
+                    'size_value' => $personnel
+                        ? $this->packageSatkerAllocationService->sizeValue($personnel->kapor_sizes, $sizeKey)
+                        : '-',
                 ];
             })
             ->values();

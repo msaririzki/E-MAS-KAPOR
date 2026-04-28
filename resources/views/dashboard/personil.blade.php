@@ -463,6 +463,64 @@
             transform: translateY(-1px);
         }
 
+        .allocation-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .allocation-item {
+            display: grid;
+            gap: 12px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--ui-radius-md);
+            background: var(--slate-50);
+        }
+
+        .allocation-main {
+            min-width: 0;
+        }
+
+        .allocation-main strong {
+            display: block;
+            color: var(--text-main);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .allocation-main span {
+            display: block;
+            margin-top: 4px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .allocation-size {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--ui-radius-sm);
+            background: #fff;
+            border: 1px solid rgba(15, 23, 42, 0.06);
+        }
+
+        .allocation-size small {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .allocation-size b {
+            color: var(--brand);
+            font-size: 18px;
+            line-height: 1;
+        }
+
         .review-action-row {
             display: flex;
             justify-content: center;
@@ -546,6 +604,7 @@
         @media (min-width: 768px) {
             .field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .identity-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .allocation-item { grid-template-columns: minmax(0, 1fr) 220px; align-items: center; }
             .review-card-body { padding: 24px; }
         }
 
@@ -688,6 +747,31 @@
 
             @if ($errors->any())
                 <div class="alert error">Masih ada field yang perlu diperbaiki.</div>
+            @endif
+
+            @if ($allocatedKaporItems->isNotEmpty())
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>Barang yang Anda Dapatkan</h2>
+                        <p>Daftar ini muncul setelah superadmin memfinalkan paket pengadaan untuk periode berjalan.</p>
+                    </div>
+                    <div class="panel-body">
+                        <div class="allocation-list">
+                            @foreach ($allocatedKaporItems as $item)
+                                <div class="allocation-item">
+                                    <div class="allocation-main">
+                                        <strong>{{ $item['item_name'] }}</strong>
+                                        <span>{{ $item['package_name'] }} - {{ $item['category'] }}</span>
+                                    </div>
+                                    <div class="allocation-size">
+                                        <small>{{ $item['size_label'] }}</small>
+                                        <b>{{ $item['size_value'] }}</b>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </section>
             @endif
 
             <section class="panel">

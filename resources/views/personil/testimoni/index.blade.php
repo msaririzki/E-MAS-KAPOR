@@ -3,6 +3,12 @@
 @section('title', 'Review Item Kapor')
 
 @section('content')
+    @php
+        $defaultReviewTab = $pendingCards->isEmpty() && $reviewedCards->isNotEmpty()
+            ? 'reviewed'
+            : 'pending';
+    @endphp
+
     <div class="page review-page">
         @if (session('success_testimoni'))
             <div class="toast-success" id="reviewToast" role="status" aria-live="polite">
@@ -112,14 +118,14 @@
                 </div>
 
                 <div class="tab-row mobile-tabs">
-                    <button type="button" class="tab-btn active" data-tab="pending">{{ $isHistoricalYear ? 'Belum Ada Respons' : 'Perlu Ditinjau' }}</button>
-                    <button type="button" class="tab-btn" data-tab="reviewed">{{ $isHistoricalYear ? 'Sudah Tersimpan' : 'Sudah Direview' }}</button>
+                    <button type="button" class="tab-btn {{ $defaultReviewTab === 'pending' ? 'active' : '' }}" data-tab="pending">{{ $isHistoricalYear ? 'Belum Ada Respons' : 'Belum Direview' }}</button>
+                    <button type="button" class="tab-btn {{ $defaultReviewTab === 'reviewed' ? 'active' : '' }}" data-tab="reviewed">{{ $isHistoricalYear ? 'Sudah Tersimpan' : 'Sudah Direview' }}</button>
                     <button type="button" class="tab-btn" data-tab="history">Riwayat Lain</button>
                 </div>
             </div>
         </section>
 
-        <section class="tab-panel active" data-panel="pending">
+        <section class="tab-panel {{ $defaultReviewTab === 'pending' ? 'active' : '' }}" data-panel="pending">
             @if ($pendingCards->isEmpty())
                 <section class="panel">
                     <div class="panel-body empty-state">
@@ -143,7 +149,7 @@
             </div>
         </section>
 
-        <section class="tab-panel" data-panel="reviewed">
+        <section class="tab-panel {{ $defaultReviewTab === 'reviewed' ? 'active' : '' }}" data-panel="reviewed">
             @if ($reviewedCards->isEmpty())
                 <section class="panel">
                     <div class="panel-body empty-state">
