@@ -167,7 +167,7 @@ class PersonilPortalController extends Controller
         }
 
         $allocations = PersonnelItemAllocation::query()
-            ->with(['kaporItem:id,item_name,category', 'budgetPackage:id,name'])
+            ->with(['kaporItem:id,item_name,category,unit', 'budgetPackage:id,name'])
             ->where('user_id', $user->id)
             ->where('fiscal_year', $fiscalYear)
             ->orderByDesc('allocated_at')
@@ -189,7 +189,13 @@ class PersonilPortalController extends Controller
                 /** @var \App\Models\PersonnelItemAllocation $allocation */
                 $allocation = $group->sortByDesc('allocated_at')->first();
                 $review = $existingReviews->get($allocation->kapor_item_id);
-                $sizeKey = $this->packageSatkerAllocationService->sizeKeyFor($allocation->kapor_item_name_snapshot);
+                $sizeMeta = $personnel
+                    ? $this->packageSatkerAllocationService->sizeDisplayMeta(
+                        $allocation->kapor_item_name_snapshot,
+                        $personnel->kapor_sizes,
+                        $allocation->kaporItem?->unit,
+                    )
+                    : ['label' => 'Ukuran', 'value' => '-'];
 
                 return [
                     'allocation' => $allocation,
@@ -200,9 +206,8 @@ class PersonilPortalController extends Controller
                     'status' => $review?->response_status,
                     'is_reviewed' => $review !== null,
                     'updated_at' => $review?->updated_at,
-                    'size_value' => $personnel
-                        ? $this->packageSatkerAllocationService->sizeValue($personnel->kapor_sizes, $sizeKey)
-                        : '-',
+                    'size_label' => $sizeMeta['label'],
+                    'size_value' => $sizeMeta['value'],
                 ];
             })
             ->values();

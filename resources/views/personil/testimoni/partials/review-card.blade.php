@@ -27,7 +27,7 @@
         <div class="review-head">
             <div>
                 <div class="review-item-name">{{ $card['item_name'] }}</div>
-                <div class="review-meta">{{ $card['item_category'] ?: 'Tanpa kategori' }} • TA {{ $allocation->fiscal_year }} • Ukuran {{ $card['size_value'] ?? '-' }}</div>
+                <div class="review-meta">{{ $card['item_category'] ?: 'Tanpa kategori' }} • TA {{ $allocation->fiscal_year }} • {{ $card['size_label'] ?? 'Ukuran' }} {{ $card['size_value'] ?? '-' }}</div>
                 @if($review?->updated_at)
                     <div class="review-meta">Diperbarui {{ $review->updated_at->translatedFormat('d M Y H:i') }}</div>
                 @endif
