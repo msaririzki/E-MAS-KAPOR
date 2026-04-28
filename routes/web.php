@@ -48,6 +48,8 @@ Route::middleware(['auth', 'role:personil'])->prefix('personil')->name('personil
 Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope::class, 'system.lock'])->prefix('admin-satker')->name('admin-satker.')->group(function () {
     Route::get('/monitor', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'monitor'])->name('monitor');
     Route::get('/reports', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'reports'])->name('reports');
+    Route::get('/allocations', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'allocations'])->name('allocations');
+    Route::get('/allocations/export-pdf', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'allocationsExportPdf'])->name('allocations.export-pdf');
     Route::get('/settings', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'settings'])->name('settings');
     Route::put('/settings/signatory', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'updateSignatorySettings'])->name('settings.signatory.update');
 
@@ -206,6 +208,7 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
         Route::get('/packages/{budgetPackage}/export-csv', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportRecapExcel'])->name('export-csv');
         Route::get('/packages/{budgetPackage}/export-pdf', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportRecapPdf'])->name('export-pdf');
         Route::get('/packages/{budgetPackage}/export-detail', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportDetailExcel'])->name('export-detail');
+        Route::get('/packages/{budgetPackage}/export-detail-satker', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportDetailBySatkerExcel'])->name('export-detail-satker');
         Route::post('/packages/{budgetPackage}/export-sppm', [\App\Http\Controllers\Admin\BudgetExportController::class, 'exportSppmWord'])->name('export-sppm');
         Route::post('/invoice-settings', [\App\Http\Controllers\Admin\BudgetExportController::class, 'updateSettings'])->name('update-settings');
     });

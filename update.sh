@@ -1,13 +1,32 @@
 #!/bin/bash
 set -e
 
-BOOTSTRAP_EMAIL="${BOOTSTRAP_SUPERADMIN_EMAIL:-}"
-BOOTSTRAP_NAME="${BOOTSTRAP_SUPERADMIN_NAME:-Bootstrap Super Administrator}"
-BOOTSTRAP_ON_UPDATE="${BOOTSTRAP_SUPERADMIN_ON_UPDATE:-false}"
-RUN_SEED_ON_UPDATE="${RUN_SEED_ON_UPDATE:-false}"
-RUN_DEMO_SEED_ON_UPDATE="${RUN_DEMO_SEED_ON_UPDATE:-false}"
 CURRENT_BRANCH="$(git branch --show-current 2>/dev/null || true)"
-TARGET_BRANCH="${TARGET_BRANCH:-${CURRENT_BRANCH:-main}}"
+
+read_env_value() {
+    local key="$1"
+    local fallback="$2"
+    local current_value="${!key:-}"
+
+    if [ -n "$current_value" ]; then
+        printf '%s' "$current_value"
+        return 0
+    fi
+
+    if [ -f ".env" ]; then
+        local line
+        line=$(grep -E "^${key}=" .env | tail -n 1 || true)
+        if [ -n "$line" ]; then
+            local value="${line#*=}"
+            value="${value%\"}"
+            value="${value#\"}"
+            printf '%s' "$value"
+            return 0
+        fi
+    fi
+
+    printf '%s' "$fallback"
+}
 
 wait_for_app() {
     echo "==> Menunggu container app siap menerima perintah..."
@@ -37,6 +56,15 @@ wait_for_database() {
     return 1
 }
 
+core_seed_needed() {
+    docker compose exec -T app php artisan tinker --execute="echo (int) (
+        \Illuminate\Support\Facades\DB::table('roles')->count() === 0 ||
+        \Illuminate\Support\Facades\DB::table('ranks')->count() === 0 ||
+        \Illuminate\Support\Facades\DB::table('satkers')->count() === 0 ||
+        \Illuminate\Support\Facades\DB::table('settings')->count() === 0
+    );" 2>/dev/null | tr -d '\r\n[:space:]'
+}
+
 # Pastikan file .env ada sebagai file, bukan jadi folder gara-gara volume docker-compose
 if [ ! -f ".env" ]; then
     if [ -d ".env" ]; then
@@ -46,6 +74,19 @@ if [ ! -f ".env" ]; then
     echo "==> MENGUPDATE: Membuat file .env kosong agar terisi otomatis dari .env.example..."
     touch .env
 fi
+
+BOOTSTRAP_EMAIL="$(read_env_value "BOOTSTRAP_SUPERADMIN_EMAIL" "")"
+BOOTSTRAP_NAME="$(read_env_value "BOOTSTRAP_SUPERADMIN_NAME" "Bootstrap Super Administrator")"
+BOOTSTRAP_ON_UPDATE="$(read_env_value "BOOTSTRAP_SUPERADMIN_ON_UPDATE" "false")"
+RUN_SEED_ON_UPDATE="$(read_env_value "RUN_SEED_ON_UPDATE" "false")"
+RUN_DEMO_SEED_ON_UPDATE="$(read_env_value "RUN_DEMO_SEED_ON_UPDATE" "false")"
+TARGET_BRANCH="$(read_env_value "TARGET_BRANCH" "${CURRENT_BRANCH:-main}")"
+
+echo "==> Konfigurasi update:"
+echo "    TARGET_BRANCH=${TARGET_BRANCH}"
+echo "    RUN_SEED_ON_UPDATE=${RUN_SEED_ON_UPDATE}"
+echo "    RUN_DEMO_SEED_ON_UPDATE=${RUN_DEMO_SEED_ON_UPDATE}"
+echo "    BOOTSTRAP_SUPERADMIN_ON_UPDATE=${BOOTSTRAP_ON_UPDATE}"
 
 echo "==> Pindah ke branch ${TARGET_BRANCH}..."
 git fetch origin "${TARGET_BRANCH}"
@@ -66,9 +107,16 @@ wait_for_database
 echo "==> Menjalankan migrasi database..."
 docker compose exec -T app php artisan migrate --force
 
+CORE_SEED_NEEDED="$(core_seed_needed || true)"
+
 if [ "$RUN_SEED_ON_UPDATE" = "true" ]; then
     echo "==> Menjalankan seeder inti aplikasi..."
     docker compose exec -T app php artisan db:seed --force
+elif [ "$CORE_SEED_NEEDED" = "1" ]; then
+    echo "==> Master data inti belum ada. Menjalankan seeder inti otomatis..."
+    docker compose exec -T app php artisan db:seed --force
+else
+    echo "==> Seeder inti dilewati karena master data inti sudah tersedia."
 fi
 
 if [ "$RUN_DEMO_SEED_ON_UPDATE" = "true" ]; then

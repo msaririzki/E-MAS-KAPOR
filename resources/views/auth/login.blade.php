@@ -101,7 +101,10 @@
             flex-direction: column;
             justify-content: center;
             overflow: hidden;
-            background: url('{{ asset('logistik_polri_wide.png') }}') center/cover no-repeat;
+            background-color: #7f1d1d;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         .card-brand::before {
@@ -685,7 +688,7 @@
         {{-- ===== FLOATING SPLIT CARD ===== --}}
         <div class="login-card-split">
             {{-- Left — Branding --}}
-            <div class="card-brand">
+            <div class="card-brand" style="background-image: url('{{ asset('logistik_polri_wide.png') }}');">
                 <div class="card-brand-inner">
                     <div class="brand-header">
                         <img src="{{ asset('e-mas-kapor.png') }}" alt="Logo E-Mas Kapor" class="card-logo">

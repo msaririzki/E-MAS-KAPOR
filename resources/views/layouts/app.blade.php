@@ -2189,6 +2189,10 @@
                             class="nav-link {{ request()->routeIs('admin-satker.reports') ? 'active' : '' }}">
                             Monitoring
                         </a>
+                        <a href="{{ route('admin-satker.allocations') }}"
+                            class="nav-link {{ request()->routeIs('admin-satker.allocations') ? 'active' : '' }}">
+                            Penerima Barang
+                        </a>
                         <a href="{{ route('admin-satker.settings') }}"
                             class="nav-link {{ request()->routeIs('admin-satker.settings') ? 'active' : '' }}">
                             Pengaturan
