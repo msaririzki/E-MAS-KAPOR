@@ -801,6 +801,111 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response->assertDontSeeText('Ada 1 Item Menunggu Respons');
     }
 
+    public function test_personil_dashboard_shows_combined_shirt_and_pants_size_for_stel_item(): void
+    {
+        Setting::setValue('fiscal_year', '2026');
+        Setting::setValue('is_system_locked', 'false');
+
+        $satker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPTU',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $user = User::factory()->create([
+            'name' => 'BAYU SAPUTRA',
+            'nrp_nip' => '76100179',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        $personnel = Personnel::create([
+            'user_id' => $user->id,
+            'nrp' => '76100179',
+            'full_name' => 'BAYU SAPUTRA',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'satker_id' => $satker->id,
+            'jabatan' => 'BANIT OPERASI',
+            'bagian' => 'SIAGA',
+            'phone' => '08123456789',
+            'religion' => 'Islam',
+            'is_active' => true,
+            'kapor_sizes' => [
+                'topi' => '57',
+                'kemeja' => '15',
+                'celana' => '32',
+                'olahraga' => 'B',
+                'jaket' => 'B',
+                'sepatu_dinas' => '41',
+                'sepatu_olahraga' => '41',
+                'sabuk' => '42',
+            ],
+        ]);
+
+        $budgetYear = BudgetYear::create([
+            'year' => 2026,
+            'name' => 'Tahun Anggaran 2026',
+            'is_active' => true,
+        ]);
+
+        $package = BudgetPackage::create([
+            'budget_year_id' => $budgetYear->id,
+            'name' => 'Paket Review HUMAS',
+            'status' => 'finalized',
+            'total_budget' => 0,
+        ]);
+
+        $kaporItem = KaporItem::create([
+            'category' => 'Tutup_Badan',
+            'item_name' => 'PAKAIAN HUMAS LENGAN PANJANG PRIA',
+            'price' => 100000,
+            'unit' => 'STEL',
+            'is_active' => true,
+            'for_identifikasi' => true,
+        ]);
+
+        $packageItem = PackageItem::create([
+            'budget_package_id' => $package->id,
+            'kapor_item_id' => $kaporItem->id,
+            'calculated_qty' => 1,
+            'calculated_total' => 100000,
+        ]);
+
+        PersonnelItemAllocation::create([
+            'budget_package_id' => $package->id,
+            'package_item_id' => $packageItem->id,
+            'kapor_item_id' => $kaporItem->id,
+            'user_id' => $user->id,
+            'personnel_id' => $personnel->id,
+            'satker_id' => $satker->id,
+            'fiscal_year' => 2026,
+            'allocation_status' => 'eligible',
+            'allocated_at' => now(),
+            'nrp_snapshot' => $user->nrp_nip,
+            'full_name_snapshot' => $personnel->full_name,
+            'satker_name_snapshot' => $satker->name,
+            'kapor_item_name_snapshot' => $kaporItem->item_name,
+            'item_category_snapshot' => 'Tutup Badan',
+            'budget_package_name_snapshot' => $package->name,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSeeText('PAKAIAN HUMAS LENGAN PANJANG PRIA');
+        $response->assertSeeText('Tutup Badan');
+        $response->assertSeeText('Ukuran Baju / Celana');
+        $response->assertSeeText('15 / 32');
+    }
+
     public function test_personil_testimoni_page_shows_read_only_notice_when_review_period_is_closed(): void
     {
         Setting::setValue('is_system_locked', 'false');

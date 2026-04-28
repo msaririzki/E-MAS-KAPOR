@@ -20,19 +20,19 @@
 
 <div class="compact-stats-bar" id="statsContainer" style="border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
     <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-        <div class="compact-stat-item" title="Paket yang memuat satker ini">
+        <div class="compact-stat-item" title="Jumlah paket pada tahun anggaran ini yang memuat satker Anda">
             <div class="compact-stat-icon blue">
                 <i class="ri-archive-stack-line"></i>
             </div>
             <div class="compact-stat-content">
-                <span class="compact-stat-label">Paket Tersedia</span>
+                <span class="compact-stat-label">Paket TA Ini</span>
                 <span class="compact-stat-value">{{ number_format($stats['package_count']) }}</span>
             </div>
         </div>
         
         <div class="compact-stat-divider" style="height: 32px;"></div>
 
-        <div class="compact-stat-item" title="{{ $stats['selected_package_name'] }}">
+        <div class="compact-stat-item" title="Jumlah personel penerima dari semua paket pada T.A. terpilih">
             <div class="compact-stat-icon emerald">
                 <i class="ri-user-received-line"></i>
             </div>
@@ -101,30 +101,6 @@
                 <input type="hidden" name="budget_year_id" id="budget_year_id" value="{{ $selectedBudgetYearId }}">
             </div>
 
-            <div class="custom-select-wrapper" style="width: 280px;" id="packageSelectWrapper">
-                <div class="custom-select" onclick="toggleDropdown(this)">
-                    <div class="select-trigger" style="padding: 9px 12px; border: 1px solid #CBD5E1; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-                        <span id="package_label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">
-                            {{ $selectedPackage?->name ? ($selectedPackage->name . ' - TA ' . ($selectedPackage->budgetYear->year ?? '-')) : 'Belum ada paket penerima' }}
-                        </span>
-                        <i class="ri-arrow-down-s-line" style="flex-shrink: 0;"></i>
-                    </div>
-                    <div class="custom-options">
-                        <div class="options-scroll">
-                            @forelse($packages as $package)
-                                <div class="option {{ $selectedPackage?->id === $package->id ? 'selected' : '' }}" 
-                                     onclick="selectPackageOption(event, this, '{{ $package->id }}', '{{ $package->name }} - TA {{ $package->budgetYear->year ?? '-' }}')">
-                                    {{ $package->name }} - TA {{ $package->budgetYear->year ?? '-' }}
-                                </div>
-                            @empty
-                                <div class="option" style="color: #94A3B8;">Belum ada paket penerima</div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
-                <input type="hidden" name="package_id" id="package_id" value="{{ request('package_id', $selectedPackage?->id) }}">
-            </div>
-
             <button type="button" onclick="resetFilter()" class="btn btn-outline" style="padding: 9px 14px; border-radius: 8px; font-weight: 500; display: flex; align-items: center; gap: 6px; border: 1px solid #CBD5E1; background: #fff; color: #475569; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
                 <i class="ri-refresh-line"></i> Reset
             </button>
@@ -141,80 +117,93 @@
             <table class="allocation-table">
                 <thead>
                     <tr>
-                        <th style="width: 40px; text-align: center;">No</th>
-                        <th>Personel</th>
-                        <th>Pangkat/Gol</th>
-                        <th>Jabatan / Bagian</th>
-                        <th style="text-align: center;">Jenis Kelamin</th>
-                        <th>Barang & Kategori</th>
-                        <th style="text-align: center;">Ukuran</th>
-                        <th style="text-align: center; width: 70px;">Total</th>
+                        <th style="width: 44px; text-align: center;">No</th>
+                        <th style="min-width: 180px;">Personel</th>
+                        <th style="min-width: 80px;">Pangkat/Gol</th>
+                        <th style="min-width: 140px; max-width: 180px;">Jabatan / Bagian</th>
+                        <th style="text-align: center; min-width: 90px;">Jenis Kelamin</th>
+                        <th style="min-width: 380px;">Barang Diterima</th>
+                        <th style="text-align: center; width: 64px;">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($rows as $index => $row)
                         <tr>
-                            <td style="color: #0F172A; font-size: 13px; text-align: center; vertical-align: top; padding-top: 18px; font-weight: 600;">{{ $index + 1 }}</td>
+                            {{-- No --}}
+                            <td style="color: #94A3B8; font-size: 13px; text-align: center; vertical-align: top; padding-top: 20px; font-weight: 600;">{{ $index + 1 }}</td>
+
+                            {{-- Personel --}}
                             <td style="vertical-align: top; padding-top: 14px;">
-                                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                                    <div style="width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; background: linear-gradient(135deg, var(--brand), #2563EB); box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">
+                                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                    <div style="width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; background: linear-gradient(135deg, #3B82F6, #2563EB); box-shadow: 0 2px 6px rgba(37,99,235,0.25);">
                                         {{ strtoupper(substr($row['full_name'], 0, 1)) }}
                                     </div>
-                                    <div style="padding-top: 2px;">
-                                        <div style="font-weight: 700; color: #0F172A; font-size: 13px; line-height: 1.4;">{{ $row['full_name'] }}</div>
-                                        <div style="font-size: 12px; color: #0F172A; margin-top: 2px; font-weight: 500;">{{ $row['nrp'] ?: '-' }}</div>
+                                    <div>
+                                        <div style="font-weight: 700; color: #0F172A; font-size: 13px; line-height: 1.45;">{{ $row['full_name'] }}</div>
+                                        <div style="font-size: 11.5px; color: #64748B; margin-top: 1px; font-weight: 500; letter-spacing: 0.3px;">{{ $row['nrp'] ?: '—' }}</div>
                                     </div>
                                 </div>
                             </td>
-                            <td style="vertical-align: top; padding-top: 16px;">
-                                <div style="font-size: 13px; color: #0F172A; font-weight: 600;">{{ $row['rank'] ?? '—' }}</div>
+
+                            {{-- Pangkat --}}
+                            <td style="vertical-align: top; padding-top: 18px;">
+                                <span style="font-size: 13px; color: #1E293B; font-weight: 600;">{{ $row['rank'] ?? '—' }}</span>
                             </td>
-                            <td style="vertical-align: top; padding-top: 16px;">
-                                <div style="font-size: 13px; color: #0F172A; line-height: 1.4; font-weight: 500;">{{ $row['jabatan'] ?? '—' }}</div>
+
+                            {{-- Jabatan / Bagian (diperkecil) --}}
+                            <td style="vertical-align: top; padding-top: 16px; max-width: 180px;">
+                                <div style="font-size: 12px; color: #1E293B; line-height: 1.5; font-weight: 500; word-break: break-word;">{{ $row['jabatan'] ?? '—' }}</div>
                                 @if($row['bagian'] && trim((string)$row['bagian']) !== '-')
-                                    <div style="font-size: 12px; color: #0F172A; margin-top: 4px; display: inline-block; background: #F8FAFC; padding: 2px 6px; border-radius: 4px; border: 1px solid #E2E8F0; font-weight: 500;">{{ $row['bagian'] }}</div>
+                                    <div style="margin-top: 3px;">
+                                        <span style="font-size: 11px; color: #64748B; background: #F1F5F9; padding: 2px 6px; border-radius: 4px; border: 1px solid #E2E8F0; font-weight: 500; display: inline-block; word-break: break-word;">{{ $row['bagian'] }}</span>
+                                    </div>
                                 @endif
                             </td>
-                            <td style="text-align: center; vertical-align: top; padding-top: 16px;">
-                                @php
-                                    $genderLower = strtolower($row['gender']);
-                                @endphp
+
+                            {{-- Jenis Kelamin --}}
+                            <td style="text-align: center; vertical-align: top; padding-top: 18px;">
+                                @php $genderLower = strtolower($row['gender']); @endphp
                                 @if(in_array($genderLower, ['l', 'laki-laki', 'pria']))
-                                    <span class="badge" style="background:#EFF6FF; color:#2563EB; font-size: 11px; padding: 4px 8px; font-weight: 700; border: 1px solid #DBEAFE;">Pria (L)</span>
+                                    <span class="gender-badge male">Pria (L)</span>
                                 @elseif(in_array($genderLower, ['p', 'perempuan', 'wanita']))
-                                    <span class="badge" style="background:#FDF2F8; color:#DB2777; font-size: 11px; padding: 4px 8px; font-weight: 700; border: 1px solid #FCE7F3;">Wanita (P)</span>
+                                    <span class="gender-badge female">Wanita (P)</span>
                                 @else
-                                    <span class="badge" style="background:#F1F5F9; color:#0F172A; font-size: 11px; padding: 4px 8px; font-weight: 700; border: 1px solid #E2E8F0;">{{ $row['gender'] ?: '—' }}</span>
+                                    <span class="gender-badge other">{{ $row['gender'] ?: '—' }}</span>
                                 @endif
                             </td>
-                            <td style="vertical-align: top; padding-top: 12px;">
-                                <div class="stacked-list">
+
+                            {{-- Barang Diterima: nama + kategori + ukuran dalam satu kolom --}}
+                            <td style="vertical-align: top; padding: 10px 16px;">
+                                <div class="item-list-wrap">
                                     @foreach($row['items'] as $itemIndex => $item)
-                                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                                            <span style="font-weight: 600; color: #0F172A; font-size: 13px;">{{ $item }}</span>
-                                            <span style="font-size: 12px; color: #0F172A; font-weight: 500;">{{ $row['categories'][$itemIndex] ?? '' }}</span>
+                                        <div class="item-row">
+                                            <div class="item-row-left">
+                                                <span class="item-number">{{ $itemIndex + 1 }}</span>
+                                                <span class="item-name">{{ $item }}</span>
+                                            </div>
+                                            <div class="item-row-right">
+                                                @if(!empty($row['categories'][$itemIndex]))
+                                                    <span class="item-cat-badge">{{ $row['categories'][$itemIndex] }}</span>
+                                                @endif
+                                                @if(!empty($row['sizes'][$itemIndex]) && $row['sizes'][$itemIndex] !== '-')
+                                                    <span class="item-size-badge">{{ $row['sizes'][$itemIndex] }}</span>
+                                                @endif
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
                             </td>
-                            <td style="text-align: center; vertical-align: top; padding-top: 12px;">
-                                <div class="stacked-list" style="border: none;">
-                                    @foreach($row['sizes'] as $size)
-                                        <div style="display: flex; justify-content: center; align-items: center;">
-                                            <span class="size-badge" style="color: #0F172A; font-weight: 700; font-size: 12px;">{{ $size }}</span>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </td>
+
+                            {{-- Total --}}
                             <td style="text-align: center; vertical-align: top; padding-top: 16px;">
                                 <span class="item-count">{{ $row['item_count'] }}</span>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 48px; color: #94A3B8;">
-                                <i class="ri-inbox-line" style="font-size: 36px; display: block; margin-bottom: 8px; opacity: 0.3;"></i>
-                                <div>Belum ada data penerima barang untuk filter ini.</div>
+                            <td colspan="7" style="text-align: center; padding: 56px 24px; color: #94A3B8;">
+                                <i class="ri-inbox-line" style="font-size: 40px; display: block; margin-bottom: 10px; opacity: 0.25;"></i>
+                                <div style="font-size: 14px; font-weight: 500;">Belum ada data penerima barang untuk filter ini.</div>
                             </td>
                         </tr>
                     @endforelse
@@ -247,23 +236,6 @@
     }
 
     // Select Option
-    function selectPackageOption(event, element, value, label) {
-        event.stopPropagation();
-        
-        const wrapper = element.closest('.custom-select-wrapper');
-        wrapper.querySelector('#package_id').value = value;
-        wrapper.querySelector('#package_label').innerText = label;
-        
-        wrapper.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
-        element.classList.add('selected');
-        
-        const select = wrapper.querySelector('.custom-select');
-        select.classList.remove('active');
-        select.querySelector('.custom-options').style.display = 'none';
-        
-        applyFilter();
-    }
-
     function selectBudgetYearOption(event, element, value, label) {
         event.stopPropagation();
         
@@ -277,10 +249,7 @@
         const select = wrapper.querySelector('.custom-select');
         select.classList.remove('active');
         select.querySelector('.custom-options').style.display = 'none';
-        
-        // Reset package_id so backend automatically selects the first package of the new budget year
-        document.getElementById('package_id').value = '';
-        
+
         applyFilter();
     }
 
@@ -332,9 +301,6 @@
             const newStats = doc.getElementById('statsContainer');
             if (newStats) document.getElementById('statsContainer').innerHTML = newStats.innerHTML;
 
-            const newPackageSelect = doc.getElementById('packageSelectWrapper');
-            if (newPackageSelect) document.getElementById('packageSelectWrapper').innerHTML = newPackageSelect.innerHTML;
-            
             document.getElementById('tableLoader').style.display = 'none';
         })
         .catch(err => {
@@ -505,7 +471,7 @@
     }
 
     .allocation-table {
-        min-width: 1000px;
+        min-width: 1100px;
         width: 100%;
         border-collapse: collapse;
     }
@@ -535,29 +501,102 @@
         background-color: #F8FAFC;
     }
 
-    .stacked-list > div {
-        padding: 4px 0;
-        min-height: 28px;
+    /* Gender badges */
+    .gender-badge {
+        display: inline-block;
+        padding: 4px 9px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .gender-badge.male  { background: #EFF6FF; color: #2563EB; border: 1px solid #DBEAFE; }
+    .gender-badge.female { background: #FDF2F8; color: #DB2777; border: 1px solid #FCE7F3; }
+    .gender-badge.other { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
+
+    /* Item list dalam kolom Barang Diterima */
+    .item-list-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .item-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 6px 0;
         border-bottom: 1px dashed #E2E8F0;
     }
 
-    .stacked-list > div:last-child {
-        border-bottom: 0;
+    .item-row:last-child {
+        border-bottom: none;
     }
 
-    .size-badge {
+    .item-row-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .item-row-right {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .item-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #F1F5F9;
+        color: #64748B;
+        font-size: 10.5px;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .item-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1E293B;
+        line-height: 1.4;
+    }
+
+    .item-cat-badge {
+        display: inline-block;
+        padding: 2px 7px;
+        background: #EFF6FF;
+        color: #2563EB;
+        border-radius: 4px;
+        font-size: 10.5px;
+        font-weight: 600;
+        border: 1px solid #DBEAFE;
+        white-space: nowrap;
+    }
+
+    .item-size-badge {
         display: inline-block;
         padding: 2px 8px;
-        background: #F1F5F9;
-        color: #475569;
+        background: #F0FDF4;
+        color: #16A34A;
         border-radius: 4px;
-        font-weight: 600;
-        font-size: 11px;
+        font-size: 10.5px;
+        font-weight: 700;
+        border: 1px solid #BBF7D0;
+        white-space: nowrap;
     }
 
     .item-count {
         display: inline-flex;
-        min-width: 32px;
+        min-width: 30px;
         height: 26px;
         align-items: center;
         justify-content: center;

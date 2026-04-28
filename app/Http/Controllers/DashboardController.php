@@ -321,19 +321,24 @@ class DashboardController extends Controller
         return PersonnelItemAllocation::query()
             ->where('user_id', $user->id)
             ->where('fiscal_year', $fiscalYear)
+            ->with('packageItem.kaporItem:id,unit')
             ->orderBy('kapor_item_name_snapshot')
             ->orderByDesc('allocated_at')
             ->get()
             ->map(function (PersonnelItemAllocation $allocation) use ($personnel): array {
                 $itemName = $allocation->kapor_item_name_snapshot;
-                $sizeKey = $this->packageSatkerAllocationService->sizeKeyFor($itemName);
+                $sizeMeta = $this->packageSatkerAllocationService->sizeDisplayMeta(
+                    $itemName,
+                    $personnel->kapor_sizes,
+                    $allocation->packageItem?->kaporItem?->unit,
+                );
 
                 return [
                     'item_name' => $itemName,
                     'category' => $allocation->item_category_snapshot ?: '-',
                     'package_name' => $allocation->budget_package_name_snapshot ?: '-',
-                    'size_label' => $this->kaporRequirementService->sizeLabel($sizeKey),
-                    'size_value' => $this->packageSatkerAllocationService->sizeValue($personnel->kapor_sizes, $sizeKey),
+                    'size_label' => $sizeMeta['label'],
+                    'size_value' => $sizeMeta['value'],
                     'allocated_at' => $allocation->allocated_at,
                 ];
             })

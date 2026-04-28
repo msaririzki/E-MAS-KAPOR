@@ -106,9 +106,9 @@ class PackageSatkerDetailExportTest extends TestCase
 
         $thirdKaporItem = KaporItem::create([
             'category' => 'Tutup_Badan',
-            'item_name' => 'KEMEJA PDL',
+            'item_name' => 'PAKAIAN HUMAS LENGAN PANJANG PRIA',
             'price' => 175000,
-            'unit' => 'PCS',
+            'unit' => 'STEL',
             'is_active' => true,
             'for_identifikasi' => true,
         ]);
@@ -132,13 +132,23 @@ class PackageSatkerDetailExportTest extends TestCase
 
         $this->actingAs($admin);
 
+        $personnel = Personnel::where('satker_id', $satker->id)->firstOrFail();
+        $personnel->update([
+            'kapor_sizes' => [
+                'topi' => '58',
+                'sepatu_dinas' => '42',
+                'kemeja' => '15',
+                'celana' => '32',
+            ],
+        ]);
+
         $sheet = new BudgetYearSatkerDetailSheet($package->budgetYear->fresh('packages'), $satker, 'Polres Bima');
         $rows = $sheet->array();
 
         $this->assertContains('DAFTAR NOMINATIF PENERIMA', array_column($rows, 0));
         $this->assertContains('T.A. 2026 SATKER POLRES BIMA', array_column($rows, 0));
-        $this->assertContains("BARET LAPANGAN\nSEPATU PDL\nKEMEJA PDL", array_column($rows, 8));
-        $this->assertContains("58\n42\n-", array_column($rows, 10));
+        $this->assertContains("BARET LAPANGAN\nSEPATU PDL\nPAKAIAN HUMAS LENGAN PANJANG PRIA", array_column($rows, 8));
+        $this->assertContains("58\n42\n15 / 32", array_column($rows, 10));
         $this->assertNotContains('Paket Seragam', array_column($rows, 0));
         $this->assertNotContains('Paket Rahasia Internal', array_column($rows, 0));
         $this->assertNotContains('Paket Rahasia Internal', array_column($rows, 8));
@@ -147,17 +157,52 @@ class PackageSatkerDetailExportTest extends TestCase
     public function test_admin_satker_can_monitor_allocations_for_own_satker(): void
     {
         [$package, $satker] = $this->createPackageWithRecipient();
+
+        $secondPackage = BudgetPackage::create([
+            'budget_year_id' => $package->budgetYear->id,
+            'name' => 'Paket Internal Dua',
+            'status' => 'draft',
+            'total_budget' => 0,
+        ]);
+
+        $thirdKaporItem = KaporItem::create([
+            'category' => 'Tutup_Badan',
+            'item_name' => 'PAKAIAN HUMAS LENGAN PANJANG PRIA',
+            'price' => 175000,
+            'unit' => 'STEL',
+            'is_active' => true,
+            'for_identifikasi' => true,
+        ]);
+
+        $thirdPackageItem = PackageItem::create([
+            'budget_package_id' => $secondPackage->id,
+            'kapor_item_id' => $thirdKaporItem->id,
+            'calculated_qty' => 1,
+            'calculated_total' => 175000,
+        ]);
+
+        PackageItemRecipient::create([
+            'package_item_id' => $thirdPackageItem->id,
+            'satker_id' => $satker->id,
+            'recipient_filters' => null,
+            'matched_count' => 1,
+        ]);
+
         $adminSatker = User::factory()->create(['satker_id' => $satker->id]);
         $adminSatker->assignRole('admin_satker');
 
         $response = $this->actingAs($adminSatker)
-            ->get(route('admin-satker.allocations', ['package_id' => $package->id]));
+            ->get(route('admin-satker.allocations', ['budget_year_id' => $package->budgetYear->id]));
 
         $response->assertOk();
         $response->assertSeeText('Penerima Barang Satker');
         $response->assertSeeText('Budi Santoso');
         $response->assertSeeText('BARET LAPANGAN');
         $response->assertSeeText('SEPATU PDL');
+        $response->assertSeeText('PAKAIAN HUMAS LENGAN PANJANG PRIA');
+        $response->assertSeeText('15 / 32');
+        $response->assertSeeText('Paket TA Ini');
+        $response->assertDontSeeText('Paket Internal Dua');
         $response->assertSeeText('42');
     }
 
@@ -243,7 +288,7 @@ class PackageSatkerDetailExportTest extends TestCase
             'personnel_type' => 'Polri',
             'jabatan' => 'Banit',
             'bagian' => 'Logistik',
-            'kapor_sizes' => ['topi' => '58', 'sepatu_dinas' => '42'],
+            'kapor_sizes' => ['topi' => '58', 'sepatu_dinas' => '42', 'kemeja' => '15', 'celana' => '32'],
             'is_active' => true,
         ]);
 

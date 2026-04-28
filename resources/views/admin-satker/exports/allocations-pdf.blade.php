@@ -105,12 +105,6 @@
             TAHUN ANGGARAN {{ $stats['fiscal_year'] }} - {{ strtoupper($satker->name ?? '') }}
         </div>
         
-        @if($selectedPackage)
-        <div style="font-family: Arial, sans-serif; font-size: 11px; margin-bottom: 10px; font-weight: bold;">
-            PAKET: {{ strtoupper($selectedPackage->name) }}
-        </div>
-        @endif
-
         <table class="data-table">
             <thead>
                 <tr>

@@ -52,7 +52,6 @@ class PackageSatkerAllocationService
             }
 
             $kaporItem = $packageItem->kaporItem;
-            $sizeKey = $this->sizeKeyFor($kaporItem->item_name);
 
             foreach ($recipients as $recipient) {
                 $query = Personnel::query()
@@ -79,7 +78,7 @@ class PackageSatkerAllocationService
                 $query
                     ->with('rank:id,name')
                     ->orderBy('full_name')
-                    ->chunk(500, function ($personnels) use (&$personnelRows, &$exportedPersonnelItems, $kaporItem, $packageItem, $sizeKey) {
+                    ->chunk(500, function ($personnels) use (&$personnelRows, &$exportedPersonnelItems, $kaporItem, $packageItem) {
                         foreach ($personnels as $personnel) {
                             $exportKey = $packageItem->id.'-'.$personnel->id;
 
@@ -107,7 +106,11 @@ class PackageSatkerAllocationService
 
                             $personnelRows[$personnel->id]['items'][] = $kaporItem->item_name;
                             $personnelRows[$personnel->id]['categories'][] = $kaporItem->category ?? '-';
-                            $personnelRows[$personnel->id]['sizes'][] = $this->sizeValue($personnel->kapor_sizes, $sizeKey);
+                            $personnelRows[$personnel->id]['sizes'][] = $this->sizeDisplayValue(
+                                $kaporItem->item_name,
+                                $personnel->kapor_sizes,
+                                $kaporItem->unit,
+                            );
                         }
                     });
             }
@@ -164,6 +167,28 @@ class PackageSatkerAllocationService
         return filled($value) && $value !== '-' && $value !== 'null' ? $value : '-';
     }
 
+    public function sizeDisplayMeta(string $itemName, array|string|null $kaporSizes, ?string $unit = null): array
+    {
+        $primaryKey = $this->sizeKeyFor($itemName);
+
+        if ($this->needsCompanionPants($itemName, $unit)) {
+            return [
+                'label' => 'Ukuran Baju / Celana',
+                'value' => $this->sizeValue($kaporSizes, $primaryKey).' / '.$this->sizeValue($kaporSizes, 'celana'),
+            ];
+        }
+
+        return [
+            'label' => $this->kaporRequirementService->sizeLabel($primaryKey),
+            'value' => $this->sizeValue($kaporSizes, $primaryKey),
+        ];
+    }
+
+    public function sizeDisplayValue(string $itemName, array|string|null $kaporSizes, ?string $unit = null): string
+    {
+        return $this->sizeDisplayMeta($itemName, $kaporSizes, $unit)['value'];
+    }
+
     private function genderLabel(?string $gender): string
     {
         return match ($gender) {
@@ -171,5 +196,22 @@ class PackageSatkerAllocationService
             'P' => 'Perempuan',
             default => '-',
         };
+    }
+
+    private function needsCompanionPants(string $itemName, ?string $unit = null): bool
+    {
+        $name = strtoupper($itemName);
+        $unit = strtoupper((string) $unit);
+        $isStel = $unit === 'STEL';
+        $isAlreadyPants = str_contains($name, 'CELANA') || str_contains($name, 'ROK');
+        $isNonClothing = str_contains($name, 'TOPI')
+            || str_contains($name, 'SEPATU')
+            || str_contains($name, 'JILBAB')
+            || str_contains($name, 'SABUK')
+            || str_contains($name, 'BARET')
+            || str_contains($name, 'PECI')
+            || str_contains($name, 'PET');
+
+        return $isStel && ! $isAlreadyPants && ! $isNonClothing;
     }
 }

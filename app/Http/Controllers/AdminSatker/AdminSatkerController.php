@@ -183,7 +183,7 @@ class AdminSatkerController extends Controller
         $user = $request->user();
         $satkerId = (int) $user->satker_id;
         $satker = Satker::findOrFail($satkerId);
-        
+
         $budgetYears = \App\Models\BudgetYear::orderByDesc('year')->get();
         $activeBudgetYear = $budgetYears->firstWhere('is_active', true) ?? $budgetYears->first();
         $selectedBudgetYearId = $request->input('budget_year_id') ?: ($activeBudgetYear->id ?? null);
@@ -200,13 +200,7 @@ class AdminSatkerController extends Controller
         }
 
         $packages = $packagesQuery->get();
-
-        $selectedPackage = $packages->firstWhere('id', (int) $request->input('package_id')) ?? $packages->first();
-
-        $rows = collect();
-        if ($selectedPackage) {
-            $rows = $allocationService->buildRows($selectedPackage, $satker);
-        }
+        $rows = $allocationService->buildRowsForBudgetYearPackages($packages, $satker);
 
         if ($request->filled('search')) {
             $search = Str::lower(trim((string) $request->input('search')));
@@ -226,10 +220,9 @@ class AdminSatkerController extends Controller
             'package_count' => $packages->count(),
             'personnel_count' => $rows->count(),
             'item_count' => $rows->sum('item_count'),
-            'selected_package_name' => $selectedPackage?->name ?? '-',
         ];
 
-        return view('admin-satker.allocations', compact('stats', 'satker', 'budgetYears', 'selectedBudgetYearId', 'packages', 'selectedPackage', 'rows'));
+        return view('admin-satker.allocations', compact('stats', 'satker', 'budgetYears', 'selectedBudgetYearId', 'rows'));
     }
 
     public function allocationsExportPdf(Request $request, PackageSatkerAllocationService $allocationService, ExportSignatorySettingService $signatoryService)
@@ -237,7 +230,7 @@ class AdminSatkerController extends Controller
         $user = $request->user();
         $satkerId = (int) $user->satker_id;
         $satker = Satker::findOrFail($satkerId);
-        
+
         $budgetYears = \App\Models\BudgetYear::orderByDesc('year')->get();
         $activeBudgetYear = $budgetYears->firstWhere('is_active', true) ?? $budgetYears->first();
         $selectedBudgetYearId = $request->input('budget_year_id') ?: ($activeBudgetYear->id ?? null);
@@ -254,12 +247,7 @@ class AdminSatkerController extends Controller
         }
 
         $packages = $packagesQuery->get();
-        $selectedPackage = $packages->firstWhere('id', (int) $request->input('package_id')) ?? $packages->first();
-
-        $rows = collect();
-        if ($selectedPackage) {
-            $rows = $allocationService->buildRows($selectedPackage, $satker);
-        }
+        $rows = $allocationService->buildRowsForBudgetYearPackages($packages, $satker);
 
         if ($request->filled('search')) {
             $search = Str::lower(trim((string) $request->input('search')));
@@ -279,18 +267,44 @@ class AdminSatkerController extends Controller
             'package_count' => $packages->count(),
             'personnel_count' => $rows->count(),
             'item_count' => $rows->sum('item_count'),
-            'selected_package_name' => $selectedPackage?->name ?? '-',
         ];
 
         $signatorySettings = $signatoryService->resolveForUser($user);
 
-        $pdf = \PDF::loadView('admin-satker.exports.allocations-pdf', compact('stats', 'satker', 'rows', 'selectedPackage', 'signatorySettings'), [], [
-            'format' => 'A4',
-            'orientation' => 'L'
-        ]);
+        // Naikkan limit PCRE dan memori sementara untuk dataset besar
+        $prevPcreLimit  = ini_get('pcre.backtrack_limit');
+        $prevMemLimit   = ini_get('memory_limit');
+        ini_set('pcre.backtrack_limit', 10_000_000);
+        ini_set('memory_limit', '512M');
 
-        $filename = 'Alokasi_Kapor_'.str_replace(' ', '_', $satker->name).'_'.date('YmdHis').'.pdf';
-        return $pdf->download($filename);
+        try {
+            $mpdf = new \Mpdf\Mpdf([
+                'format'        => 'A4-L',
+                'orientation'   => 'L',
+                'margin_top'    => 10,
+                'margin_bottom' => 15,
+                'margin_left'   => 15,
+                'margin_right'  => 15,
+            ]);
+
+            $html = view('admin-satker.exports.allocations-pdf', compact(
+                'stats', 'satker', 'rows', 'signatorySettings'
+            ))->render();
+
+            $mpdf->WriteHTML($html);
+
+            $filename = 'Alokasi_Kapor_'.str_replace(' ', '_', $satker->name).'_'.date('YmdHis').'.pdf';
+            $output = $mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN);
+        } finally {
+            // Kembalikan nilai semula
+            ini_set('pcre.backtrack_limit', $prevPcreLimit);
+            ini_set('memory_limit', $prevMemLimit);
+        }
+
+        return response($output, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
     }
 
     private function resolveAvailableBagians(int $satkerId): Collection
