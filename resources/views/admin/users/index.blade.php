@@ -11,9 +11,12 @@
             <h1 style="font-size: 24px; font-weight: 700; color: #111827;">Manajemen Pengguna</h1>
             <p style="color: #6B7280; font-size: 14px; margin-top: 4px;">Kelola akun pengguna, peran, dan hak akses</p>
         </div>
-        <div class="page-header-actions" style="display: flex; gap: 12px;">
-            <button class="btn btn-outline" onclick="openModal('importModal')" style="border-radius: 10px; padding: 10px 18px; font-weight: 600; border-color: #E5E7EB; color: #374151;">
-                <i class="ri-file-upload-line" style="color: #B91C1C;"></i> Impor CSV
+        <div class="page-header-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn btn-outline" onclick="openModal('bulkAdminSatkerModal')" style="border-radius: 10px; padding: 10px 18px; font-weight: 600; border-color: #DDD6FE; color: #4C1D95; background: #F5F3FF;">
+                <i class="ri-shield-user-line" style="color: #7C3AED;"></i> Generate Admin Satker
+            </button>
+            <button class="btn btn-outline" onclick="openModal('bulkDeleteAdminSatkerModal')" style="border-radius: 10px; padding: 10px 18px; font-weight: 600; border-color: #FECACA; color: #991B1B; background: #FEF2F2;">
+                <i class="ri-user-unfollow-line" style="color: #DC2626;"></i> Hapus Admin Satker
             </button>
             <button id="addBtn" class="btn btn-primary btn-maroon" onclick="toggleAddForm()" style="border-radius: 10px; padding: 10px 18px; font-weight: 700;">
                 @if($errors->any())
@@ -154,7 +157,7 @@
 {{-- Toast Notification Container --}}
 <div id="toastContainer" class="toast-container"></div>
 
-@if(session('success') || session('error') || $errors->any())
+@if(session('success') || session('error') || session('warning') || $errors->any())
 <script>
     window.addEventListener('DOMContentLoaded', () => {
         @if(session('success'))
@@ -171,6 +174,60 @@
         @endif
     });
 </script>
+@endif
+
+@if(session('bulk_admin_satker_credentials'))
+    <div class="inline-card" style="margin-bottom: 24px;">
+        <div class="card-header-simple" style="display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
+            <div>
+                <h3 style="font-size: 18px; font-weight: 700; color: #111827;">Hasil Generate Admin Satker</h3>
+                <p style="font-size: 13px; color: #6B7280; margin-top: 6px;">Daftar akun dan password awal ini hanya ditampilkan sekali setelah proses generate.</p>
+            </div>
+            <button type="button" class="btn btn-outline" onclick="copyBulkCredentials()" style="border-radius: 10px; padding: 10px 18px; font-weight: 600; border-color: #E5E7EB; color: #374151;">
+                <i class="ri-file-copy-line" style="color: #B91C1C;"></i> Salin Daftar
+            </button>
+        </div>
+
+        <div class="card-body-simple">
+            @if(session('bulk_admin_satker_skipped'))
+                <div style="background: #FFF7ED; border: 1px solid #FFEDD5; color: #9A3412; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; line-height: 1.6;">
+                    <strong>Satker dilewati:</strong> {{ implode(', ', session('bulk_admin_satker_skipped')) }}
+                </div>
+            @endif
+
+            <div id="bulkCredentialsText" style="display: none;">@foreach(session('bulk_admin_satker_credentials') as $credential)Satker: {{ $credential['satker_name'] }}
+Nama Akun: {{ $credential['account_name'] }}
+Gmail: {{ $credential['email'] }}
+Password: {{ $credential['password'] }}
+
+@endforeach</div>
+
+            <div class="table-container" style="margin: 0;">
+                <div class="table-wrap">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th style="border-top-left-radius: 12px;">SATKER</th>
+                                <th>NAMA AKUN</th>
+                                <th>GMAIL LOGIN</th>
+                                <th style="border-top-right-radius: 12px;">PASSWORD AWAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(session('bulk_admin_satker_credentials') as $credential)
+                                <tr>
+                                    <td>{{ $credential['satker_name'] }}</td>
+                                    <td>{{ $credential['account_name'] }}</td>
+                                    <td>{{ $credential['email'] }}</td>
+                                    <td><code style="font-size: 13px; color: #111827;">{{ $credential['password'] }}</code></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 @endif
 
 {{-- Stats Row --}}
@@ -1385,6 +1442,21 @@
                 if (toast.parentElement) toast.remove();
             }, 400);
         }, 4000);
+    }
+
+    async function copyBulkCredentials() {
+        const source = document.getElementById('bulkCredentialsText');
+        if (!source) {
+            showToast('Daftar credential tidak ditemukan.', 'error');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(source.innerText.trim());
+            showToast('Daftar credential admin satker berhasil disalin.', 'success');
+        } catch (error) {
+            showToast('Gagal menyalin daftar credential.', 'error');
+        }
     }
 
     function updateQueryStringParameter(uri, key, value) {

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Models\Role;
 
@@ -116,6 +117,81 @@ class UserController extends Controller
         AuditLogger::log('Tambah User', 'Manajemen Pengguna', $user, null, $user->toArray(), 'success', "Menambah pengguna baru: {$user->name}");
 
         return redirect()->route('admin.users.index')->with('success', 'User berhasil ditambahkan.');
+    }
+
+    public function bulkCreateAdminSatker(Request $request)
+    {
+        $this->authorize('create', User::class);
+
+        $adminSatkerRole = Role::findByName('admin_satker');
+        $credentials = [];
+        $skippedSatkers = [];
+
+        $satkers = Satker::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        DB::transaction(function () use ($satkers, $adminSatkerRole, &$credentials, &$skippedSatkers): void {
+            foreach ($satkers as $satker) {
+                $existingAdmin = User::query()
+                    ->where('satker_id', $satker->id)
+                    ->whereHas('roles', fn ($query) => $query->where('name', 'admin_satker'))
+                    ->first();
+
+                if ($existingAdmin !== null) {
+                    $skippedSatkers[] = $satker->name;
+
+                    continue;
+                }
+
+                $password = $this->generateAdminSatkerPassword($satker);
+                $user = User::create([
+                    'name' => $this->buildAdminSatkerName($satker),
+                    'email' => $this->buildAdminSatkerEmail($satker),
+                    'phone' => null,
+                    'nrp_nip' => null,
+                    'password' => Hash::make($password),
+                    'satker_id' => $satker->id,
+                    'is_active' => true,
+                ]);
+
+                $user->assignRole($adminSatkerRole);
+
+                $credentials[] = [
+                    'satker_name' => $satker->name,
+                    'account_name' => $user->name,
+                    'email' => $user->email,
+                    'password' => $password,
+                ];
+            }
+        });
+
+        AuditLogger::log(
+            'Generate Admin Satker Massal',
+            'Manajemen Pengguna',
+            null,
+            null,
+            [
+                'generated_count' => count($credentials),
+                'skipped_count' => count($skippedSatkers),
+                'skipped_satkers' => $skippedSatkers,
+            ],
+            'success',
+            'Superadmin membuat akun admin satker massal untuk satker yang belum memiliki akun.',
+        );
+
+        if ($credentials === []) {
+            return redirect()
+                ->route('admin.users.index')
+                ->with('warning', 'Semua satker sudah memiliki akun admin satker. Tidak ada akun baru yang dibuat.');
+        }
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', count($credentials).' akun admin satker berhasil dibuat.')
+            ->with('bulk_admin_satker_credentials', $credentials)
+            ->with('bulk_admin_satker_skipped', $skippedSatkers);
     }
 
     /**
@@ -367,5 +443,92 @@ class UserController extends Controller
             'password' => Hash::make($row['password']),
             'is_active' => true,
         ];
+    }
+
+    private function buildAdminSatkerName(Satker $satker): string
+    {
+        return strtoupper($satker->name).' - ADMIN SATKER';
+    }
+
+    private function buildAdminSatkerEmail(Satker $satker): string
+    {
+        // Format pendek: nama satker → slug tanpa spasi/tanda baca
+        // Contoh: "Polres Sumbawa" → "polressumbawa@gmail.com"
+        $slug = Str::of($satker->name)
+            ->ascii()
+            ->lower()
+            ->replaceMatches('/[^a-z0-9]+/', '') // hapus semua non-alfanumerik
+            ->value();
+
+        $baseLocal = $slug !== '' ? $slug : 'satker'.$satker->id;
+        $localPart = $baseLocal;
+        $counter   = 2;
+
+        while (User::query()->where('email', $localPart.'@gmail.com')->exists()) {
+            $suffix    = $counter;
+            $localPart = Str::limit($baseLocal, 64 - strlen((string) $suffix), '').$suffix;
+            $counter++;
+        }
+
+        return $localPart.'@gmail.com';
+    }
+
+    private function generateAdminSatkerPassword(Satker $satker): string
+    {
+        $fragment = Str::of($satker->code ?: $satker->name)
+            ->ascii()
+            ->replaceMatches('/[^A-Za-z0-9]/', '')
+            ->substr(0, 6)
+            ->value();
+
+        $fragment = $fragment !== '' ? Str::ucfirst(Str::lower($fragment)) : 'Satker';
+
+        return $fragment.'@'.Str::upper(Str::random(1)).random_int(10, 99).Str::lower(Str::random(2)).'!';
+    }
+
+    /**
+     * Hapus semua akun admin_satker secara massal.
+     */
+    public function bulkDeleteAdminSatker(Request $request)
+    {
+        $this->authorize('create', User::class); // hanya superadmin
+
+        $adminSatkerUsers = User::query()
+            ->whereHas('roles', fn ($q) => $q->where('name', 'admin_satker'))
+            ->get();
+
+        $deletedCount = 0;
+
+        DB::transaction(function () use ($adminSatkerUsers, &$deletedCount): void {
+            foreach ($adminSatkerUsers as $user) {
+                // Jangan hapus akun yang sedang login
+                if (auth()->id() === $user->id) {
+                    continue;
+                }
+
+                $user->delete();
+                $deletedCount++;
+            }
+        });
+
+        AuditLogger::log(
+            'Hapus Admin Satker Massal',
+            'Manajemen Pengguna',
+            null,
+            null,
+            ['deleted_count' => $deletedCount],
+            'success',
+            "Superadmin menghapus {$deletedCount} akun admin satker secara massal.",
+        );
+
+        if ($deletedCount === 0) {
+            return redirect()
+                ->route('admin.users.index')
+                ->with('warning', 'Tidak ada akun admin satker yang dihapus.');
+        }
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', "{$deletedCount} akun admin satker berhasil dihapus.");
     }
 }

@@ -57,4 +57,54 @@ class AdminUserManagementGmailTest extends TestCase
         $this->assertTrue($createdUser->hasRole('admin_gudang'));
         $this->assertTrue($createdUser->usesEmailLogin());
     }
+
+    public function test_superadmin_can_bulk_create_admin_satker_accounts_and_skip_existing_satkers(): void
+    {
+        $existingSatker = Satker::create([
+            'name' => 'Polda NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        $newSatker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 2,
+        ]);
+
+        $superadmin = User::factory()->create([
+            'email' => 'superadmin.kapor@gmail.com',
+            'nrp_nip' => null,
+            'satker_id' => $existingSatker->id,
+        ]);
+        $superadmin->assignRole('superadmin');
+
+        $existingAdminSatker = User::factory()->create([
+            'name' => 'POLDA NTB - ADMIN SATKER',
+            'email' => 'admin.satker.polda.ntb@gmail.com',
+            'nrp_nip' => null,
+            'satker_id' => $existingSatker->id,
+        ]);
+        $existingAdminSatker->assignRole('admin_satker');
+
+        $response = $this->actingAs($superadmin)->post(route('admin.users.bulk-admin-satker'));
+
+        $response->assertRedirect(route('admin.users.index'));
+        $response->assertSessionHas('bulk_admin_satker_credentials');
+        $response->assertSessionHas('bulk_admin_satker_skipped', [$existingSatker->name]);
+
+        $createdUser = User::query()
+            ->where('satker_id', $newSatker->id)
+            ->where('name', 'POLRES BIMA - ADMIN SATKER')
+            ->first();
+
+        $this->assertNotNull($createdUser);
+        $this->assertTrue($createdUser->hasRole('admin_satker'));
+        $this->assertTrue($createdUser->usesEmailLogin());
+        $this->assertNotNull($createdUser->email);
+        $this->assertStringEndsWith('@gmail.com', $createdUser->email);
+        $this->assertMatchesRegularExpression('/Polres/i', $response->getSession()->get('bulk_admin_satker_credentials')[0]['password']);
+
+        $this->assertSame(2, User::role('admin_satker')->count());
+    }
 }

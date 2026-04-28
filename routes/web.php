@@ -74,6 +74,8 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     // User Management
     Route::get('/users/template', [\App\Http\Controllers\UserController::class, 'downloadTemplate'])->name('users.template');
     Route::post('/users/import', [\App\Http\Controllers\UserController::class, 'import'])->name('users.import');
+    Route::post('/users/bulk-admin-satker', [\App\Http\Controllers\UserController::class, 'bulkCreateAdminSatker'])->name('users.bulk-admin-satker');
+    Route::delete('/users/bulk-admin-satker', [\App\Http\Controllers\UserController::class, 'bulkDeleteAdminSatker'])->name('users.bulk-delete-admin-satker');
     Route::get('/users', [\App\Http\Controllers\UserController::class, 'index'])->name('users.index');
     Route::post('/users', [\App\Http\Controllers\UserController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [\App\Http\Controllers\UserController::class, 'update'])->name('users.update');
