@@ -4,7 +4,6 @@ namespace App\Exports;
 
 use App\Models\BudgetPackage;
 use App\Models\Satker;
-use App\Services\ExportSignatorySettingService;
 use App\Services\PackageSatkerAllocationService;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -45,15 +44,9 @@ class PackageSatkerDetailSheet implements FromArray, WithEvents, WithTitle
         ini_set('memory_limit', '2G');
         set_time_limit(0);
 
-        $settings = (object) app(ExportSignatorySettingService::class)->resolveForCurrentUser();
-
-        $this->rows[] = [$settings->organization_name ?? 'KEPOLISIAN NEGARA REPUBLIK INDONESIA'];
-        $this->rows[] = [$settings->header_title ?? 'DAERAH NUSA TENGGARA BARAT'];
-        $this->rows[] = ['BIRO LOGISTIK'];
-        $this->rows[] = [''];
-        $this->rows[] = ['DAFTAR NOMINATIF PENERIMA BERDASARKAN SATKER'];
-        $this->rows[] = [strtoupper($this->budgetPackage->name).' T.A. '.($this->budgetPackage->budgetYear->year ?? '')];
-        $this->rows[] = ['SATKER: '.strtoupper($this->satker->name)];
+        $this->rows[] = ['DAFTAR NOMINATIF PENERIMA'];
+        $this->rows[] = ['PENGADAAN KAPOR POLRI DAN PNS POLDA NTB'];
+        $this->rows[] = ['T.A. '.($this->budgetPackage->budgetYear->year ?? '').' SATKER '.strtoupper($this->satker->name)];
         $this->rows[] = [''];
         $this->rows[] = [
             'NO',
@@ -95,18 +88,6 @@ class PackageSatkerDetailSheet implements FromArray, WithEvents, WithTitle
         $this->personnelCount = $no;
 
         $this->rows[] = ['', 'TOTAL', '', '', '', '', '', '', '', '', '', $this->itemCount.' Item'];
-        $this->rows[] = [''];
-        $this->rows[] = [''];
-        $this->rows[] = ['', '', '', '', '', '', '', '', ($settings->location ?? 'Mataram').', '.now()->translatedFormat('d F Y')];
-        $this->rows[] = ['', '', '', '', '', '', '', '', $settings->signatory_title ?? 'Kabag RenMin'];
-        $this->rows[] = [''];
-        $this->rows[] = ['', '', '', '', '', '', '', '', $settings->signatory_rank ?? ''];
-        $this->rows[] = [''];
-        $this->rows[] = [''];
-        $this->rows[] = [''];
-        $this->rows[] = [''];
-        $this->rows[] = ['', '', '', '', '', '', '', '', $settings->signatory_name ?? ''];
-        $this->rows[] = ['', '', '', '', '', '', '', '', 'NRP. '.($settings->signatory_nrp ?? '')];
     }
 
     public function registerEvents(): array
@@ -114,7 +95,7 @@ class PackageSatkerDetailSheet implements FromArray, WithEvents, WithTitle
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
-                $headerRow = 9;
+                $headerRow = 5;
                 $firstDataRow = $headerRow + 1;
                 $lastDataRow = $headerRow + max($this->personnelCount, 0);
                 $footerRow = $lastDataRow + 1;
@@ -125,14 +106,9 @@ class PackageSatkerDetailSheet implements FromArray, WithEvents, WithTitle
                 $sheet->mergeCells('A1:L1');
                 $sheet->mergeCells('A2:L2');
                 $sheet->mergeCells('A3:L3');
-                $sheet->mergeCells('A5:L5');
-                $sheet->mergeCells('A6:L6');
-                $sheet->mergeCells('A7:L7');
 
+                $sheet->getStyle('A1:L3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet->getStyle('A1:L3')->getFont()->setBold(true)->setSize(11);
-                $sheet->getStyle('A1:L7')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle('A3:L3')->getBorders()->getBottom()->setBorderStyle(Border::BORDER_MEDIUM);
-                $sheet->getStyle('A5:L7')->getFont()->setBold(true)->setSize(11);
 
                 $sheet->getStyle("A{$headerRow}:{$lastCol}{$headerRow}")->getFont()->setBold(true);
                 $sheet->getStyle("A{$headerRow}:{$lastCol}{$headerRow}")->getAlignment()
@@ -153,14 +129,6 @@ class PackageSatkerDetailSheet implements FromArray, WithEvents, WithTitle
                 $sheet->getStyle("A{$footerRow}:{$lastCol}{$footerRow}")->getFont()->setBold(true);
                 $sheet->getStyle("A{$headerRow}:{$lastCol}{$footerRow}")->getBorders()->getAllBorders()
                     ->setBorderStyle(Border::BORDER_THIN);
-
-                $ttdStartRow = $footerRow + 3;
-                for ($row = $ttdStartRow; $row <= $ttdStartRow + 9; $row++) {
-                    $sheet->mergeCells("I{$row}:L{$row}");
-                    $sheet->getStyle("I{$row}:L{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                }
-                $sheet->getStyle('I'.($ttdStartRow + 1))->getFont()->setBold(true);
-                $sheet->getStyle('I'.($ttdStartRow + 7))->getFont()->setBold(true)->setUnderline(true);
 
                 foreach ([
                     'A' => 6,
@@ -189,7 +157,7 @@ class PackageSatkerDetailSheet implements FromArray, WithEvents, WithTitle
                 $sheet->getPageMargins()->setBottom(0.5);
                 $sheet->getPageMargins()->setLeft(0.35);
                 $sheet->getPageMargins()->setRight(0.35);
-                $sheet->getPageSetup()->setPrintArea('A1:L'.($ttdStartRow + 8));
+                $sheet->getPageSetup()->setPrintArea("A1:L{$footerRow}");
             },
         ];
     }

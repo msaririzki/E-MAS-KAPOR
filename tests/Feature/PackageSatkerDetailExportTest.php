@@ -59,11 +59,15 @@ class PackageSatkerDetailExportTest extends TestCase
         $sheet = new PackageSatkerDetailSheet($package->fresh('budgetYear'), $satker, 'Polres Bima');
         $rows = $sheet->array();
 
-        $this->assertContains('SATKER: POLRES BIMA', array_column($rows, 0));
+        $this->assertContains('DAFTAR NOMINATIF PENERIMA', array_column($rows, 0));
+        $this->assertContains('PENGADAAN KAPOR POLRI DAN PNS POLDA NTB', array_column($rows, 0));
+        $this->assertContains('T.A. 2026 SATKER POLRES BIMA', array_column($rows, 0));
         $this->assertContains('Budi Santoso', array_column($rows, 1));
         $this->assertContains("BARET LAPANGAN\nSEPATU PDL", array_column($rows, 8));
         $this->assertContains("58\n42", array_column($rows, 10));
-        $this->assertNotContains('HARGA SATUAN', $rows[8]);
+        $this->assertNotContains('HARGA SATUAN', $rows[4]);
+        $this->assertNotContains('Kabag RenMin', array_column($rows, 8));
+        $this->assertNotContains('NRP. ', array_column($rows, 8));
 
         $personnelRows = array_filter($rows, fn (array $row) => ($row[1] ?? null) === 'Budi Santoso');
         $this->assertCount(1, $personnelRows);
