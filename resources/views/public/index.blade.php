@@ -108,7 +108,9 @@
         .delay-400 { transition-delay: 400ms; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen">
+<body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen relative">
+    <!-- Global Animated Background -->
+    <div class="fixed inset-0 z-[-1] animate-ken-burns bg-cover bg-[47.5%_top] md:bg-center origin-[47.5%_top] md:origin-center" style="background-image: url('{{ asset("bg_polda.jpg") }}');"></div>
 
     <!-- Header / Navbar -->
     <header class="fixed w-full top-0 z-50 glass-panel border-b border-white/10 transition-all duration-300">
@@ -132,14 +134,11 @@
     </header>
 
     <!-- Hero Section -->
-    <section class="relative bg-slate-900 min-h-[100dvh] flex items-center pt-20 pb-16 overflow-hidden">
-        <!-- Animated Background Image -->
-        <div class="absolute inset-0 z-0 overflow-hidden">
-            <div class="absolute inset-0 bg-cover bg-[47.5%_top] md:bg-center origin-[47.5%_top] md:origin-center animate-ken-burns" style="background-image: url('{{ asset("bg_polda.jpg") }}');"></div>
-            <div class="absolute inset-0 hero-overlay"></div>
-        </div>
+    <section class="relative min-h-[100dvh] flex items-center pt-20 pb-16 overflow-hidden">
+        <!-- Hero Overlay (Background is global) -->
+        <div class="absolute inset-0 z-0 hero-overlay"></div>
+        
         <!-- Decorative elements -->
-        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/50 to-slate-900 z-0"></div>
         <div class="absolute -top-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-red-900/20 blur-[120px] pointer-events-none z-0"></div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex flex-col items-center text-center">
@@ -181,8 +180,7 @@
 
     <!-- Features Section -->
     <section id="fitur" class="py-24 flex-grow relative overflow-hidden">
-        <!-- Animated Background -->
-        <div class="absolute inset-0 z-0 animate-ken-burns bg-cover bg-[47.5%_top] md:bg-center" style="background-image: url('{{ asset("bg_polda.jpg") }}');"></div>
+        <!-- Features Overlay (Background is global) -->
         <div class="absolute inset-0 features-overlay z-0"></div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
