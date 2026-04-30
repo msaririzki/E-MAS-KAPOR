@@ -77,10 +77,8 @@
             background: linear-gradient(to bottom, rgba(15, 23, 42, 0.70), rgba(15, 23, 42, 0.88));
         }
         
-        .features-bg {
-            background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.94)), url('{{ asset("bg_polda.jpg") }}');
-            background-size: cover;
-            background-attachment: fixed;
+        .features-overlay {
+            background: linear-gradient(to bottom, rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.94));
         }
         
         .glass-panel {
@@ -182,8 +180,12 @@
     </section>
 
     <!-- Features Section -->
-    <section id="fitur" class="py-24 features-bg bg-[47.5%_top] md:bg-center flex-grow relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="fitur" class="py-24 flex-grow relative overflow-hidden">
+        <!-- Animated Background -->
+        <div class="absolute inset-0 z-0 animate-ken-burns bg-cover bg-[47.5%_top] md:bg-center" style="background-image: url('{{ asset("bg_polda.jpg") }}');"></div>
+        <div class="absolute inset-0 features-overlay z-0"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="reveal-item text-center max-w-3xl mx-auto mb-16">
                 <h2 class="text-3xl font-bold text-slate-900 mb-4">Fitur Utama Sistem</h2>
                 <div class="h-1 w-20 bg-red-700 mx-auto rounded-full mb-6"></div>
