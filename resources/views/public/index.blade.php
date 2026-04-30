@@ -123,7 +123,7 @@
     <section class="relative bg-slate-900 min-h-[100dvh] flex items-center pt-20 pb-16 overflow-hidden">
         <!-- Animated Background Image -->
         <div class="absolute inset-0 z-0 overflow-hidden">
-            <div class="absolute inset-0 bg-cover bg-center animate-ken-burns" style="background-image: url('{{ asset("bg_polda.jpg") }}');"></div>
+            <div class="absolute inset-0 bg-cover bg-[47.5%_top] md:bg-center origin-[47.5%_top] md:origin-center animate-ken-burns" style="background-image: url('{{ asset("bg_polda.jpg") }}');"></div>
             <div class="absolute inset-0 hero-overlay"></div>
         </div>
         <!-- Decorative elements -->
