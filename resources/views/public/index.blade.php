@@ -140,10 +140,6 @@
             <p class="mt-2 md:mt-4 text-sm md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-8 md:mb-10 drop-shadow px-2">
                 Sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan, perencanaan, dan distribusi yang lebih terintegrasi.
             </p>
-            <p class="text-xs md:text-sm text-slate-400 max-w-2xl mx-auto mb-8">
-                Portal resmi E Mas Kapor, EMAS KAPOR Logistik, Kapor Biro Logistik Polda NTB, dan E-MAS KAPOR Polda Nusa Tenggara Barat.
-            </p>
-            
             <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
                 <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-base transition-all duration-300 bg-red-700 hover:bg-red-600 text-white shadow-xl shadow-red-900/40 border border-red-500/50 hover:-translate-y-0.5 w-full sm:w-auto">
                     Masuk ke Sistem
@@ -230,6 +226,9 @@
             <div class="text-center md:text-right">
                 <p class="text-slate-400 font-medium">&copy; {{ date('Y') }} Biro Logistik Polda NTB.</p>
                 <p class="text-slate-500 text-sm mt-1">Hak Cipta Dilindungi Undang-Undang.</p>
+                <p class="text-slate-600 text-xs mt-2 max-w-xl">
+                    Portal resmi E Mas Kapor, EMAS KAPOR Logistik, Kapor Biro Logistik Polda NTB, dan E-MAS KAPOR Polda Nusa Tenggara Barat.
+                </p>
             </div>
         </div>
     </footer>
