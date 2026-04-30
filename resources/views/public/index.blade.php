@@ -76,7 +76,12 @@
         .hero-overlay {
             background: linear-gradient(to bottom, rgba(15, 23, 42, 0.70), rgba(15, 23, 42, 0.88));
         }
-        /* Features background removed for a cleaner solid transition */
+        
+        .features-bg {
+            background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.94)), url('{{ asset("bg_polda.jpg") }}');
+            background-size: cover;
+            background-attachment: fixed;
+        }
         
         .glass-panel {
             background: rgba(255, 255, 255, 0.05);
@@ -171,13 +176,13 @@
         <!-- Shape divider -->
         <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10">
             <svg class="relative block w-full h-[50px] md:h-[80px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                <path d="M1200,120 L0,120 L0,16 C400,16 800,120 1200,120 Z" class="fill-slate-50"></path>
+                <path d="M1200,120 L0,120 L0,16 C400,16 800,120 1200,120 Z" class="fill-slate-50 opacity-[0.88]"></path>
             </svg>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section id="fitur" class="py-24 bg-slate-50 flex-grow relative">
+    <section id="fitur" class="py-24 features-bg bg-[47.5%_top] md:bg-center flex-grow relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="reveal-item text-center max-w-3xl mx-auto mb-16">
                 <h2 class="text-3xl font-bold text-slate-900 mb-4">Fitur Utama Sistem</h2>
