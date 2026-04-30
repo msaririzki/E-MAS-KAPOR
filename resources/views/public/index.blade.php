@@ -74,11 +74,11 @@
         }
         
         .hero-overlay {
-            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.70), rgba(15, 23, 42, 0.88));
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.70) 0%, rgba(15, 23, 42, 0.88) calc(100% - 150px), rgba(15, 23, 42, 0) calc(100% - 79px));
         }
         
         .features-overlay {
-            background: linear-gradient(to bottom, rgba(248, 250, 252, 1) 0%, rgba(248, 250, 252, 0.88) 120px, rgba(248, 250, 252, 0.94) 100%);
+            background: linear-gradient(to bottom, rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.94));
         }
         
         .glass-panel {
@@ -174,7 +174,7 @@
         <!-- Shape divider -->
         <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10">
             <svg class="relative block w-full h-[50px] md:h-[80px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                <path d="M1200,120 L0,120 L0,16 C400,16 800,120 1200,120 Z" class="fill-slate-50"></path>
+                <path d="M1200,120 L0,120 L0,16 C400,16 800,120 1200,120 Z" class="fill-slate-50 opacity-[0.88]"></path>
             </svg>
         </div>
     </section>
