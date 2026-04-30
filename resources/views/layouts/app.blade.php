@@ -2168,8 +2168,7 @@
 
             {{-- ══ Admin Satker Role ══ --}}
             @if(auth()->user()->hasRole('admin_satker'))
-                <div
-                    class="nav-group {{ request()->routeIs('admin.personnel.*') || request()->routeIs('admin-satker.*') ? 'open' : '' }}">
+                <div class="nav-group open">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-building-2-line group-icon"></i> Satker Saya
                         <i class="ri-arrow-down-s-line group-chevron"></i>
