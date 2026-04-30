@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="index, follow">
     <title>E-MAS KAPOR | Biro Logistik Polda NTB</title>
-    <meta name="description" content="E-MAS KAPOR adalah sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
+    <meta name="description" content="E-MAS KAPOR atau E Mas Kapor adalah sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
     <link rel="canonical" href="{{ url('/') }}">
     
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url('/') }}">
     <meta property="og:title" content="E-MAS KAPOR | Biro Logistik Polda NTB">
-    <meta property="og:description" content="E-MAS KAPOR adalah sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
+    <meta property="og:description" content="E-MAS KAPOR atau E Mas Kapor adalah sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
     <meta property="og:image" content="{{ asset('e-mas-kapor.png') }}">
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:url" content="{{ url('/') }}">
     <meta name="twitter:title" content="E-MAS KAPOR | Biro Logistik Polda NTB">
-    <meta name="twitter:description" content="E-MAS KAPOR adalah sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
+    <meta name="twitter:description" content="E-MAS KAPOR atau E Mas Kapor adalah sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
     <meta name="twitter:image" content="{{ asset('e-mas-kapor.png') }}">
     
     <link rel="icon" href="{{ asset('e-mas-kapor.png') }}" type="image/png">
@@ -36,6 +36,12 @@
       "@@context": "https://schema.org",
       "@@type": "GovernmentService",
       "name": "E-MAS KAPOR",
+      "alternateName": [
+        "EMAS KAPOR",
+        "E Mas Kapor",
+        "Kapor Logistik Polda NTB",
+        "E-MAS KAPOR Biro Logistik Polda NTB"
+      ],
       "description": "Sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.",
       "provider": {
         "@@type": "GovernmentOrganization",
@@ -50,11 +56,25 @@
     <style>
         body { font-family: 'Poppins', sans-serif; }
         
-        .hero-bg {
-            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('{{ asset("bg_polda.jpg") }}');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+        @-webkit-keyframes ken-burns {
+            0% { -webkit-transform: scale(1); transform: scale(1); }
+            50% { -webkit-transform: scale(1.15); transform: scale(1.15); }
+            100% { -webkit-transform: scale(1); transform: scale(1); }
+        }
+        @keyframes ken-burns {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        
+        .animate-ken-burns {
+            -webkit-animation: ken-burns 12s ease-in-out infinite;
+            animation: ken-burns 12s ease-in-out infinite;
+            will-change: transform;
+        }
+        
+        .hero-overlay {
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95));
         }
         
         .features-bg {
@@ -100,7 +120,12 @@
     </header>
 
     <!-- Hero Section -->
-    <section class="relative hero-bg min-h-[100dvh] lg:min-h-[90vh] flex items-center pt-20 pb-16 overflow-hidden">
+    <section class="relative bg-slate-900 min-h-[100dvh] flex items-center pt-20 pb-16 overflow-hidden">
+        <!-- Animated Background Image -->
+        <div class="absolute inset-0 z-0 overflow-hidden">
+            <div class="absolute inset-0 bg-cover bg-center animate-ken-burns" style="background-image: url('{{ asset("bg_polda.jpg") }}');"></div>
+            <div class="absolute inset-0 hero-overlay"></div>
+        </div>
         <!-- Decorative elements -->
         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/50 to-slate-900 z-0"></div>
         <div class="absolute -top-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-red-900/20 blur-[120px] pointer-events-none z-0"></div>
@@ -114,6 +139,9 @@
             
             <p class="mt-2 md:mt-4 text-sm md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-8 md:mb-10 drop-shadow px-2">
                 Sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan, perencanaan, dan distribusi yang lebih terintegrasi.
+            </p>
+            <p class="text-xs md:text-sm text-slate-400 max-w-2xl mx-auto mb-8">
+                Portal resmi E Mas Kapor, EMAS KAPOR Logistik, Kapor Biro Logistik Polda NTB, dan E-MAS KAPOR Polda Nusa Tenggara Barat.
             </p>
             
             <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
@@ -138,8 +166,7 @@
         <!-- Shape divider -->
         <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10">
             <svg class="relative block w-full h-[50px] md:h-[80px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                <path d="M1200 120L0 16.48 0 0 1200 0 1200 120z" class="fill-slate-900"></path>
-                <path d="M1200 120L0 120 0 16.48 1200 120z" class="fill-slate-50"></path>
+                <path d="M1200,120 L0,120 L0,16 C400,16 800,120 1200,120 Z" class="fill-slate-50"></path>
             </svg>
         </div>
     </section>
@@ -148,7 +175,7 @@
     <section id="fitur" class="py-20 features-bg flex-grow relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto mb-16">
-                <h2 class="text-3xl font-bold text-slate-900 mb-4">Modul Utama Sistem</h2>
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">Fitur Utama Sistem</h2>
                 <div class="h-1 w-20 bg-red-700 mx-auto rounded-full mb-6"></div>
                 <p class="text-slate-600 text-lg">E-MAS KAPOR mengintegrasikan seluruh alur manajemen logistik dari perencanaan hingga distribusi kepada personel.</p>
             </div>
@@ -197,8 +224,7 @@
     <footer class="bg-slate-900 py-10 border-t border-slate-800 mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="flex items-center gap-4">
-                <img src="{{ asset('e-mas-kapor.png') }}" alt="Logo" class="h-12 w-auto grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all">
-                <img src="{{ asset('logistik_polri.png') }}" alt="Logo Logistik" class="h-12 w-auto grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all">
+                <img src="{{ asset('e-mas-kapor.png') }}" alt="Logo" class="h-12 w-auto">
             </div>
             
             <div class="text-center md:text-right">
