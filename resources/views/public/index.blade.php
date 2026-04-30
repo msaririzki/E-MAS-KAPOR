@@ -179,37 +179,45 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <!-- Feature 1 -->
                 <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-red-50 text-red-700 flex items-center justify-center text-2xl mb-6 group-hover:bg-red-700 group-hover:text-white transition-colors duration-300">
-                        <i class="ri-shirt-line"></i>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 shrink-0 rounded-xl bg-red-50 text-red-700 flex items-center justify-center text-xl group-hover:bg-red-700 group-hover:text-white transition-colors duration-300">
+                            <i class="ri-shirt-line"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 leading-tight">Pendataan Ukuran Kapor</h3>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Pendataan Ukuran Kapor</h3>
                     <p class="text-slate-600 leading-relaxed text-sm">Personel dapat memasukkan dan memperbarui data ukuran perlengkapan perorangan mereka secara mandiri dan akurat.</p>
                 </div>
                 
                 <!-- Feature 2 -->
                 <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-2xl mb-6 group-hover:bg-slate-700 group-hover:text-white transition-colors duration-300">
-                        <i class="ri-git-repository-line"></i>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 shrink-0 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-xl group-hover:bg-slate-700 group-hover:text-white transition-colors duration-300">
+                            <i class="ri-git-repository-line"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 leading-tight">Sinkronisasi Kebutuhan Satker</h3>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Sinkronisasi Kebutuhan Satker</h3>
                     <p class="text-slate-600 leading-relaxed text-sm">Admin Satker dapat memantau dan memverifikasi identifikasi kebutuhan riil dari masing-masing satuan kerja.</p>
                 </div>
                 
                 <!-- Feature 3 -->
                 <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl mb-6 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
-                        <i class="ri-pie-chart-box-line"></i>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 shrink-0 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
+                            <i class="ri-pie-chart-box-line"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 leading-tight">Perencanaan Pengadaan</h3>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Perencanaan Pengadaan</h3>
                     <p class="text-slate-600 leading-relaxed text-sm">Rekapitulasi otomatis yang membantu Bagian Logistik dalam menyusun rencana pengadaan berbasis data akurat (data-driven).</p>
                 </div>
                 
                 <!-- Feature 4 -->
                 <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
-                    <div class="w-14 h-14 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-2xl mb-6 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                        <i class="ri-truck-line"></i>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 shrink-0 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-xl group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                            <i class="ri-truck-line"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 leading-tight">Gudang & Distribusi</h3>
                     </div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-3">Gudang & Distribusi</h3>
                     <p class="text-slate-600 leading-relaxed text-sm">Manajemen stok barang masuk dan pendistribusian langsung kepada personel secara transparan dan terekam.</p>
                 </div>
             </div>
