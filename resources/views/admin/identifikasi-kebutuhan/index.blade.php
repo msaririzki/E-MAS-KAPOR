@@ -336,14 +336,34 @@
                 @endforelse
             </tbody>
         </table>
+        
+        @if($kebutuhans->total() > 0)
+        <div class="table-footer">
+            <div class="footer-left">
+                Menampilkan {{ $kebutuhans->firstItem() ?? 0 }} hingga {{ $kebutuhans->lastItem() ?? 0 }} dari {{ $kebutuhans->total() }} data
+            </div>
+            
+            <div class="footer-right">
+                <div class="pagination-controls">
+                    <a href="{{ $kebutuhans->url(1) }}" class="page-btn {{ $kebutuhans->onFirstPage() ? 'disabled' : '' }}" title="Halaman Pertama">
+                        <i class="ri-double-left-line"></i>
+                    </a>
+                    <a href="{{ $kebutuhans->previousPageUrl() }}" class="page-btn {{ $kebutuhans->onFirstPage() ? 'disabled' : '' }}" title="Halaman Sebelumnya">
+                        <i class="ri-arrow-left-s-line"></i>
+                    </a>
+                    <span class="page-info">Halaman <strong>{{ $kebutuhans->currentPage() }}</strong> dari <strong>{{ $kebutuhans->lastPage() }}</strong></span>
+                    <a href="{{ $kebutuhans->nextPageUrl() }}" class="page-btn {{ !$kebutuhans->hasMorePages() ? 'disabled' : '' }}" title="Halaman Selanjutnya">
+                        <i class="ri-arrow-right-s-line"></i>
+                    </a>
+                    <a href="{{ $kebutuhans->url($kebutuhans->lastPage()) }}" class="page-btn {{ !$kebutuhans->hasMorePages() ? 'disabled' : '' }}" title="Halaman Terakhir">
+                        <i class="ri-double-right-line"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 </div>
-
-@if($kebutuhans->hasPages())
-<div style="display: flex; justify-content: center; margin-top: 16px;">
-    {{ $kebutuhans->links('pagination::simple-default') }}
-</div>
-@endif
 @endsection
 
 @section('scripts')
@@ -611,5 +631,25 @@
         color: #B91C1C;
         font-weight: 600;
     }
+
+    /* ── Table Footer (Pagination) ────────────────────── */
+    .table-footer {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 16px 20px; border-top: 1px solid #F3F4F6;
+        background: #fff; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;
+    }
+    .footer-left { font-size: 13px; color: #6B7280; }
+    .pagination-controls { display: flex; align-items: center; gap: 4px; }
+    .page-btn {
+        width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 8px; color: #4B5563; text-decoration: none; transition: all 0.2s; font-size: 18px;
+    }
+    .page-btn:hover:not(.disabled) { background: #F3F4F6; color: #111827; }
+    .page-btn.disabled { color: #D1D5DB; cursor: not-allowed; pointer-events: none; }
+    .page-info {
+        font-size: 13px; color: #4B5563; padding: 0 12px;
+        display: flex; align-items: center; height: 32px; border-radius: 8px; background: #F9FAFB;
+    }
+    .page-info strong { color: #111827; font-weight: 600; margin: 0 4px; }
 </style>
 @endsection
