@@ -38,11 +38,14 @@ class KebutuhanExportService
                 $mappedItems = $items
                     ->map(function (IdentifikasiItem $item) use ($itemCounts, $totalSatkers): array {
                         $satkerCount = (int) ($itemCounts[$item->id] ?? 0);
+                        // Gunakan eligible_satker_count jika diisi, jika tidak pakai total satker aplikasi
+                        $eligible = $item->eligible_satker_count ?? $totalSatkers;
 
                         return [
-                            'name' => $item->item_name,
-                            'satker_count' => $satkerCount,
-                            'percentage' => $this->percentage($satkerCount, $totalSatkers),
+                            'name'            => $item->item_name,
+                            'satker_count'    => $satkerCount,
+                            'eligible_count'  => $eligible,
+                            'percentage'      => $this->percentage($satkerCount, $eligible),
                         ];
                     })
                     ->filter(fn (array $item): bool => $item['satker_count'] > 0)
@@ -50,10 +53,10 @@ class KebutuhanExportService
                     ->values();
 
                 return [
-                    'name' => str_replace('_', ' ', $category),
-                    'items' => $mappedItems,
+                    'name'         => str_replace('_', ' ', $category),
+                    'items'        => $mappedItems,
                     'satker_count' => (int) $mappedItems->sum('satker_count'),
-                    'percentage' => $mappedItems->isNotEmpty()
+                    'percentage'   => $mappedItems->isNotEmpty()
                         ? (int) round($mappedItems->avg('percentage'))
                         : 0,
                 ];

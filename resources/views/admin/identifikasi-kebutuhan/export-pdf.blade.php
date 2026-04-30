@@ -176,7 +176,7 @@
                                 </tr>
                             </table>
                         </td>
-                        <td class="count-cell">{{ number_format($item['satker_count']) }} / {{ number_format($totalSatkers) }}</td>
+                        <td class="count-cell">{{ number_format($item['satker_count']) }} / {{ number_format($item['eligible_count']) }}</td>
                         <td class="score-cell">{{ number_format($item['percentage']) }}%</td>
                     </tr>
                 @endforeach

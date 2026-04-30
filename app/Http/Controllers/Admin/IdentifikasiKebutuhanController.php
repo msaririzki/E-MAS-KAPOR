@@ -83,11 +83,13 @@ class IdentifikasiKebutuhanController extends Controller
                     ->get()
                     ->map(function ($row) use ($totalKebutuhans) {
                         $item = IdentifikasiItem::find($row->identifikasi_item_id);
+                        // Gunakan eligible_satker_count jika diisi, jika tidak pakai total satker
+                        $eligible = $item?->eligible_satker_count ?? $totalKebutuhans;
 
                         return [
-                            'item_name' => $item->item_name ?? '-',
+                            'item_name'   => $item?->item_name ?? '-',
                             'satker_count' => (int) $row->satker_count,
-                            'percentage' => (int) round(($row->satker_count / max($totalKebutuhans, 1)) * 100),
+                            'percentage'  => (int) round(($row->satker_count / max($eligible, 1)) * 100),
                         ];
                     });
 

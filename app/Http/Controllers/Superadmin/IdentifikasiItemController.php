@@ -60,14 +60,19 @@ class IdentifikasiItemController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'item_name' => 'required|string|max:255',
-            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Lainnya',
+            'item_name'             => 'required|string|max:255',
+            'category'              => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Lainnya',
+            'eligible_satker_count' => 'nullable|integer|min:1|max:9999',
         ], [
-            'item_name.required' => 'Nama item wajib diisi.',
-            'category.required' => 'Kategori wajib dipilih.',
-            'category.in' => 'Kategori tidak valid.',
+            'item_name.required'             => 'Nama item wajib diisi.',
+            'category.required'              => 'Kategori wajib dipilih.',
+            'category.in'                    => 'Kategori tidak valid.',
+            'eligible_satker_count.integer'  => 'Jumlah satker eligible harus berupa angka.',
+            'eligible_satker_count.min'      => 'Jumlah satker eligible minimal 1.',
         ]);
 
+        // nullable: kosongkan jika tidak diisi
+        $validated['eligible_satker_count'] = $validated['eligible_satker_count'] ?: null;
         $validated['is_active'] = true;
 
         $item = IdentifikasiItem::create($validated);
@@ -88,12 +93,14 @@ class IdentifikasiItemController extends Controller
     public function update(Request $request, IdentifikasiItem $identifikasiItem)
     {
         $validated = $request->validate([
-            'item_name' => 'required|string|max:255',
-            'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Lainnya',
-            'is_active' => 'boolean',
+            'item_name'             => 'required|string|max:255',
+            'category'              => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Lainnya',
+            'is_active'             => 'boolean',
+            'eligible_satker_count' => 'nullable|integer|min:1|max:9999',
         ]);
 
         $validated['is_active'] = $request->has('is_active');
+        $validated['eligible_satker_count'] = $validated['eligible_satker_count'] ?: null;
 
         $identifikasiItem->update($validated);
 

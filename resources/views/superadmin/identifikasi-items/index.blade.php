@@ -136,6 +136,7 @@
                     <th style="width: 60px;">NO</th>
                     <th>NAMA ITEM</th>
                     <th>KATEGORI</th>
+                    <th style="text-align: center;">ELIGIBLE SATKER</th>
                     <th>STATUS AKTIF</th>
                     <th style="text-align: center;">AKSI</th>
                 </tr>
@@ -156,6 +157,15 @@
                         ">
                             {{ str_replace('_', ' ', $item->category) }}
                         </span>
+                    </td>
+                    <td style="text-align: center;">
+                        @if($item->eligible_satker_count)
+                            <span class="role-pill" style="background: #FFF7ED; color: #C2410C;">
+                                <i class="ri-group-line" style="margin-right: 3px;"></i>{{ $item->eligible_satker_count }} satker
+                            </span>
+                        @else
+                            <span style="font-size: 12px; color: #9CA3AF;">Semua satker</span>
+                        @endif
                     </td>
                     <td>
                         <form action="{{ route('superadmin.identifikasi-items.toggle', $item->id) }}" method="POST">
@@ -199,7 +209,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 48px; color: #9CA3AF;">
+                    <td colspan="6" style="text-align: center; padding: 48px; color: #9CA3AF;">
                         <i class="ri-inbox-line" style="font-size: 48px; display: block; margin-bottom: 12px; opacity: 0.3;"></i>
                         Belum ada data item.
                     </td>
@@ -270,6 +280,10 @@
                         <input type="hidden" name="category" required>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label>JUMLAH SATKER ELIGIBLE <span style="font-weight:400; color:#9CA3AF; text-transform:none;">(opsional — kosongkan jika berlaku untuk semua satker)</span></label>
+                    <input type="number" name="eligible_satker_count" class="form-input" placeholder="Contoh: 11" min="1" max="9999">
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('addItemModal')">Batal</button>
@@ -314,6 +328,11 @@
                     </div>
                 </div>
                 
+                <div class="form-group">
+                    <label>JUMLAH SATKER ELIGIBLE <span style="font-weight:400; color:#9CA3AF; text-transform:none;">(opsional — kosongkan jika semua satker)</span></label>
+                    <input type="number" name="eligible_satker_count" id="edit_eligible_satker_count" class="form-input" placeholder="Contoh: 11" min="1" max="9999">
+                </div>
+
                 <div style="margin-top: 16px;">
                     <div class="form-group" style="background: #F3F4F6; padding: 12px; border-radius: 8px; margin: 0;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; text-transform: none; font-size: 13px;">
@@ -365,6 +384,7 @@
         document.getElementById('edit_item_name').value = item.item_name;
         document.getElementById('edit_category').value = item.category;
         document.getElementById('edit_is_active').checked = item.is_active;
+        document.getElementById('edit_eligible_satker_count').value = item.eligible_satker_count ?? '';
 
         document.getElementById('editForm').action = "{{ url('superadmin/identifikasi-items') }}/" + item.id;
         

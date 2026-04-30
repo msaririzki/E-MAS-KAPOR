@@ -14,6 +14,7 @@ class IdentifikasiItem extends Model
         'item_name',
         'category',
         'description',
+        'eligible_satker_count',
         'is_active',
     ];
 
@@ -21,6 +22,7 @@ class IdentifikasiItem extends Model
     {
         return [
             'is_active' => 'boolean',
+            'eligible_satker_count' => 'integer',
         ];
     }
 
