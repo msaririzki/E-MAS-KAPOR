@@ -57,6 +57,13 @@
             background-attachment: fixed;
         }
         
+        .features-bg {
+            background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.93), rgba(248, 250, 252, 0.97)), url('{{ asset("bg_polda.jpg") }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        
         .glass-panel {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
@@ -75,17 +82,17 @@
     <header class="fixed w-full top-0 z-50 glass-panel border-b border-white/10 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
-                <div class="flex items-center gap-3">
-                    <img src="{{ asset('e-mas-kapor.png') }}" alt="Logo" class="h-10 w-auto drop-shadow-md">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <img src="{{ asset('e-mas-kapor.png') }}" alt="Logo" class="h-8 md:h-10 w-auto drop-shadow-md">
                     <div>
-                        <h1 class="text-white font-bold text-lg leading-tight tracking-wide">E-MAS KAPOR</h1>
-                        <p class="text-slate-300 text-xs font-medium uppercase tracking-wider">Biro Logistik Polda NTB</p>
+                        <h1 class="text-white font-bold text-base md:text-lg leading-tight tracking-wide">E-MAS KAPOR</h1>
+                        <p class="text-slate-300 text-[10px] md:text-xs font-medium uppercase tracking-wider">Biro Logistik Polda NTB</p>
                     </div>
                 </div>
                 <div>
-                    <a href="{{ route('login') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 bg-red-700 hover:bg-red-600 text-white shadow-lg shadow-red-900/50 border border-red-500/30">
+                    <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-lg font-semibold text-xs md:text-sm transition-all duration-200 bg-red-700 hover:bg-red-600 text-white shadow-lg shadow-red-900/50 border border-red-500/30">
                         Masuk
-                        <i class="ri-login-circle-line text-lg"></i>
+                        <i class="ri-login-circle-line text-base md:text-lg"></i>
                     </a>
                 </div>
             </div>
@@ -93,25 +100,19 @@
     </header>
 
     <!-- Hero Section -->
-    <section class="relative hero-bg min-h-[90vh] flex items-center pt-20 pb-16 overflow-hidden">
+    <section class="relative hero-bg min-h-[100dvh] lg:min-h-[90vh] flex items-center pt-20 pb-16 overflow-hidden">
         <!-- Decorative elements -->
         <div class="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/50 to-slate-900 z-0"></div>
         <div class="absolute -top-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-red-900/20 blur-[120px] pointer-events-none z-0"></div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex flex-col items-center text-center">
             
-            <div class="mb-8 animate-fade-in-up">
-                <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-yellow-500/30 bg-yellow-500/10 text-yellow-400 text-xs font-semibold uppercase tracking-widest backdrop-blur-sm">
-                    <i class="ri-lock-2-line"></i> Akses Terbatas
-                </span>
-            </div>
-            
-            <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-6 drop-shadow-lg leading-tight">
+            <h1 class="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-4 md:mb-6 drop-shadow-lg leading-tight mt-8 md:mt-0">
                 <span class="block">E-MAS KAPOR</span>
-                <span class="block text-2xl md:text-3xl lg:text-4xl font-semibold text-slate-300 mt-2">Electronic Measurement <span class="gold-accent">Perlengkapan Perorangan</span></span>
+                <span class="block text-lg sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-slate-300 mt-2 md:mt-3">Electronic Measurement <span class="gold-accent block sm:inline mt-1 sm:mt-0">Perlengkapan Perorangan</span></span>
             </h1>
             
-            <p class="mt-4 text-base md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-10 drop-shadow">
+            <p class="mt-2 md:mt-4 text-sm md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-8 md:mb-10 drop-shadow px-2">
                 Sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan, perencanaan, dan distribusi yang lebih terintegrasi.
             </p>
             
@@ -144,7 +145,7 @@
     </section>
 
     <!-- Features Section -->
-    <section id="fitur" class="py-20 bg-slate-50 flex-grow relative">
+    <section id="fitur" class="py-20 features-bg flex-grow relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto mb-16">
                 <h2 class="text-3xl font-bold text-slate-900 mb-4">Modul Utama Sistem</h2>
