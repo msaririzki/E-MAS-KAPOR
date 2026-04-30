@@ -40,7 +40,7 @@ class PolrestaMataramKebutuhanSeeder extends Seeder
         $fiscalYear = (string) ((int) date('Y') + 1);
 
         if (! IdentifikasiItem::where('is_active', true)->exists()) {
-            $this->seedFallbackIdentifikasiItems();
+            $this->seedIdentifikasiItems();
         }
 
         $selectedItems = IdentifikasiItem::query()
@@ -86,49 +86,8 @@ class PolrestaMataramKebutuhanSeeder extends Seeder
         $this->command?->info('Data kebutuhan POLRESTA MATARAM berhasil dibuat.');
     }
 
-    private function seedFallbackIdentifikasiItems(): void
+    private function seedIdentifikasiItems(): void
     {
-        $items = [
-            ['item_name' => 'TOPI LAPANGAN', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'BARET', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'HELM TAKTIS', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'TOPI DINAS HARIAN', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'PET POLRI', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'MUTS POLRI', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'TOPI RIMBA', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'PDH POLRI', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'PDL POLRI', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'JAKET LAPANGAN', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'KAOS DALAM POLRI', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'KAOS OLAHRAGA', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'CELANA PDL', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'ROMPI LAPANGAN', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'JAS HUJAN', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'SEPATU PDL', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'SEPATU PDH', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'KAOS KAKI DINAS', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'SEPATU OLAHRAGA', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'SEPATU LAPANGAN', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'SEPATU BOOT', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'KAOS KAKI OLAHRAGA', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'SABUK DINAS', 'category' => 'Atribut'],
-            ['item_name' => 'TANDA PANGKAT', 'category' => 'Atribut'],
-            ['item_name' => 'TALI KUR', 'category' => 'Atribut'],
-            ['item_name' => 'BORGOL', 'category' => 'Atribut'],
-            ['item_name' => 'PELUIT', 'category' => 'Atribut'],
-            ['item_name' => 'TONGKAT POLRI', 'category' => 'Atribut'],
-            ['item_name' => 'SARUNG TANGAN', 'category' => 'Atribut'],
-            ['item_name' => 'MASKER LAPANGAN', 'category' => 'Atribut'],
-        ];
-
-        foreach ($items as $item) {
-            IdentifikasiItem::firstOrCreate([
-                'item_name' => $item['item_name'],
-                'category' => $item['category'],
-            ], [
-                'description' => 'Data dummy item identifikasi kebutuhan.',
-                'is_active' => true,
-            ]);
-        }
+        $this->call(IdentifikasiItemSeeder::class);
     }
 }

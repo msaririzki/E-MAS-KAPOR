@@ -7,6 +7,7 @@ use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
 use App\Models\KebutuhanItem;
 use App\Models\Satker;
+use App\Services\ExportSignatorySettingService;
 use App\Services\KebutuhanExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -47,8 +48,8 @@ class IdentifikasiKebutuhanController extends Controller
         // Stats
         $stats = [
             'totalPengajuan' => Kebutuhan::count(),
-            'totalSatker'    => Kebutuhan::distinct('satker_id')->count('satker_id'),
-            'totalItem'      => \App\Models\KebutuhanItem::distinct('identifikasi_item_id')->count('identifikasi_item_id'),
+            'totalSatker' => Kebutuhan::distinct('satker_id')->count('satker_id'),
+            'totalItem' => \App\Models\KebutuhanItem::distinct('identifikasi_item_id')->count('identifikasi_item_id'),
         ];
 
         // ── Item Popularity Statistics ─────────────────────────────
@@ -79,7 +80,6 @@ class IdentifikasiKebutuhanController extends Controller
                     ->whereIn('kebutuhans.status', ['diajukan', 'disetujui'])
                     ->groupBy('identifikasi_item_id')
                     ->orderByDesc('satker_count')
-                    ->limit(10)
                     ->get()
                     ->map(function ($row) use ($totalKebutuhans) {
                         $item = IdentifikasiItem::find($row->identifikasi_item_id);
@@ -87,9 +87,9 @@ class IdentifikasiKebutuhanController extends Controller
                         $eligible = $item?->eligible_satker_count ?? $totalKebutuhans;
 
                         return [
-                            'item_name'   => $item?->item_name ?? '-',
+                            'item_name' => $item?->item_name ?? '-',
                             'satker_count' => (int) $row->satker_count,
-                            'percentage'  => (int) round(($row->satker_count / max($eligible, 1)) * 100),
+                            'percentage' => (int) round(($row->satker_count / max($eligible, 1)) * 100),
                         ];
                     });
 
@@ -118,9 +118,13 @@ class IdentifikasiKebutuhanController extends Controller
         return view('admin.identifikasi-kebutuhan.show', compact('kebutuhan'));
     }
 
-    public function exportPdf(Request $request, KebutuhanExportService $exportService)
-    {
+    public function exportPdf(
+        Request $request,
+        KebutuhanExportService $exportService,
+        ExportSignatorySettingService $signatoryService
+    ) {
         $data = $exportService->build($request->integer('year') ?: null);
+        $data['signatorySettings'] = $signatoryService->resolveForCurrentUser();
 
         $pdf = \Mccarlosen\LaravelMpdf\Facades\LaravelMpdf::loadView('admin.identifikasi-kebutuhan.export-pdf', $data, [], [
             'format' => 'A4',

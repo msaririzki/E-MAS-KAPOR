@@ -6,6 +6,7 @@ use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
 use App\Models\Satker;
 use App\Models\User;
+use App\Services\KebutuhanEligibilityService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +16,9 @@ class ManySatkerKebutuhanSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->seedFallbackIdentifikasiItems();
+        if (! IdentifikasiItem::where('is_active', true)->exists()) {
+            $this->seedIdentifikasiItems();
+        }
 
         $itemsByCategory = IdentifikasiItem::query()
             ->where('is_active', true)
@@ -48,10 +51,12 @@ class ManySatkerKebutuhanSeeder extends Seeder
 
         $fiscalYear = (string) ((int) date('Y') + 1);
 
-        DB::transaction(function () use ($satkers, $itemsByCategory, $fiscalYear): void {
+        $eligibilityService = app(KebutuhanEligibilityService::class);
+
+        DB::transaction(function () use ($satkers, $itemsByCategory, $fiscalYear, $eligibilityService): void {
             foreach ($satkers as $index => $satker) {
                 $user = $this->adminSatkerUser($satker);
-                $selectedItems = $this->selectItemsForSatker($itemsByCategory, $index);
+                $selectedItems = $this->selectItemsForSatker($itemsByCategory, $satker, $index, $eligibilityService);
 
                 if ($selectedItems->isEmpty()) {
                     continue;
@@ -111,82 +116,286 @@ class ManySatkerKebutuhanSeeder extends Seeder
         return $user;
     }
 
-    private function selectItemsForSatker($itemsByCategory, int $satkerIndex)
-    {
-        return $itemsByCategory
-            ->flatMap(function ($items) use ($satkerIndex) {
-                $items = $items->values();
-                $selected = collect();
+    private function selectItemsForSatker(
+        $itemsByCategory,
+        Satker $satker,
+        int $satkerIndex,
+        KebutuhanEligibilityService $eligibilityService
+    ) {
+        $eligibleItemIds = $eligibilityService
+            ->eligibleItemsForSatker($satker)
+            ->pluck('id')
+            ->all();
 
-                if ($satkerIndex % 7 !== 0 && $items->has(0)) {
-                    $selected->push($items[0]);
-                }
+        $itemsByCategory = $itemsByCategory
+            ->map(fn ($items) => $items->whereIn('id', $eligibleItemIds)->values())
+            ->filter(fn ($items) => $items->isNotEmpty());
 
-                if ($satkerIndex % 2 === 0 && $items->has(1)) {
-                    $selected->push($items[1]);
-                }
+        if ($itemsByCategory->isEmpty()) {
+            return collect();
+        }
 
-                if ($satkerIndex % 3 === 0 && $items->has(2)) {
-                    $selected->push($items[2]);
-                }
+        $catalog = $itemsByCategory->flatten(1)->values();
+        $selected = collect();
+        $targetItemCount = $this->targetItemCount($satker, $satkerIndex);
 
-                if ($satkerIndex % 5 === 0 && $items->has(3)) {
-                    $selected->push($items[3]);
-                }
+        $this->pushPopularCommonItems($selected, $catalog, $satkerIndex);
+        $this->pushCommonItems($selected, $itemsByCategory, $eligibilityService, $satkerIndex);
+        $this->pushMatches(
+            $selected,
+            $catalog,
+            $this->specialKeywordsForSatker($satker, $satkerIndex),
+            $this->specialItemLimit($satker, $satkerIndex)
+        );
 
-                if ($selected->isEmpty() && $items->isNotEmpty()) {
-                    $selected->push($items[$satkerIndex % $items->count()]);
-                }
+        foreach (['Tutup_Kepala', 'Tutup_Badan', 'Tutup_Kaki'] as $category) {
+            if ($selected->contains('category', $category)) {
+                continue;
+            }
 
-                return $selected;
-            })
+            $items = $itemsByCategory->get($category, collect())->values();
+            if ($items->isNotEmpty()) {
+                $selected->push($items[$satkerIndex % $items->count()]);
+            }
+        }
+
+        $this->fillRemainingItems($selected, $catalog, $targetItemCount, $satkerIndex);
+
+        return $selected
             ->unique('id')
+            ->take($targetItemCount)
             ->values();
     }
 
-    private function seedFallbackIdentifikasiItems(): void
+    private function pushPopularCommonItems($selected, $catalog, int $satkerIndex): void
     {
-        $items = [
-            ['item_name' => 'TOPI LAPANGAN', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'BARET', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'HELM TAKTIS', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'TOPI DINAS HARIAN', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'PET POLRI', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'MUTS POLRI', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'TOPI RIMBA', 'category' => 'Tutup_Kepala'],
-            ['item_name' => 'PDH POLRI', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'PDL POLRI', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'JAKET LAPANGAN', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'KAOS DALAM POLRI', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'KAOS OLAHRAGA', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'CELANA PDL', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'ROMPI LAPANGAN', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'JAS HUJAN', 'category' => 'Tutup_Badan'],
-            ['item_name' => 'SEPATU PDL', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'SEPATU PDH', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'KAOS KAKI DINAS', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'SEPATU OLAHRAGA', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'SEPATU LAPANGAN', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'SEPATU BOOT', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'KAOS KAKI OLAHRAGA', 'category' => 'Tutup_Kaki'],
-            ['item_name' => 'SABUK DINAS', 'category' => 'Atribut'],
-            ['item_name' => 'TANDA PANGKAT', 'category' => 'Atribut'],
-            ['item_name' => 'TALI KUR', 'category' => 'Atribut'],
-            ['item_name' => 'BORGOL', 'category' => 'Atribut'],
-            ['item_name' => 'PELUIT', 'category' => 'Atribut'],
-            ['item_name' => 'TONGKAT POLRI', 'category' => 'Atribut'],
-            ['item_name' => 'SARUNG TANGAN', 'category' => 'Atribut'],
-            ['item_name' => 'MASKER LAPANGAN', 'category' => 'Atribut'],
+        $popularRules = [
+            ['keyword' => 'PDH POLRI', 'skipEvery' => 3],
+            ['keyword' => 'SEPATU OLAHRAGA', 'skipEvery' => 3],
+            ['keyword' => 'KAOS KAKI OLAHRAGA', 'skipEvery' => 3],
+            ['keyword' => 'JAKET POLRI', 'skipEvery' => 3],
+            ['keyword' => 'TOPI LAPANGAN', 'skipEvery' => 3],
+            ['keyword' => 'PAKAIAN OLAHRAGA', 'skipEvery' => 3],
         ];
 
-        foreach ($items as $item) {
-            IdentifikasiItem::firstOrCreate([
-                'item_name' => $item['item_name'],
-                'category' => $item['category'],
-            ], [
-                'description' => 'Data dummy item identifikasi kebutuhan.',
-                'is_active' => true,
-            ]);
+        foreach ($popularRules as $ruleIndex => $rule) {
+            if (($satkerIndex + $ruleIndex) % $rule['skipEvery'] === 0) {
+                continue;
+            }
+
+            $item = $catalog
+                ->filter(fn (IdentifikasiItem $item): bool => strtoupper($item->item_name) === $rule['keyword'])
+                ->first();
+
+            if ($item && ! $selected->contains('id', $item->id)) {
+                $selected->push($item);
+            }
         }
+    }
+
+    private function pushCommonItems(
+        $selected,
+        $itemsByCategory,
+        KebutuhanEligibilityService $eligibilityService,
+        int $satkerIndex
+    ): void {
+        $categoryTakes = [
+            'Tutup_Kepala' => 1 + ($satkerIndex % 2),
+            'Tutup_Badan' => 2 + ($satkerIndex % 3),
+            'Tutup_Kaki' => 1 + (int) (($satkerIndex / 2) % 2),
+        ];
+
+        foreach ($categoryTakes as $category => $take) {
+            $items = $itemsByCategory
+                ->get($category, collect())
+                ->filter(fn (IdentifikasiItem $item): bool => $eligibilityService->itemGroup($item) === null)
+                ->values();
+
+            $this->pushRotatedItems($selected, $items, $satkerIndex + strlen($category), $take);
+        }
+    }
+
+    /**
+     * @param  array<int, string>  $keywords
+     */
+    private function pushFirstMatches($selected, $catalog, array $keywords): void
+    {
+        foreach ($keywords as $keyword) {
+            $item = $catalog
+                ->filter(fn (IdentifikasiItem $item): bool => str_contains(strtoupper($item->item_name), strtoupper($keyword)))
+                ->sortBy('item_name')
+                ->first();
+
+            if ($item && ! $selected->contains('id', $item->id)) {
+                $selected->push($item);
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, string>  $keywords
+     */
+    private function pushMatches($selected, $catalog, array $keywords, int $limit): void
+    {
+        $added = 0;
+
+        foreach ($keywords as $keyword) {
+            $matches = $catalog
+                ->filter(fn (IdentifikasiItem $item): bool => str_contains(strtoupper($item->item_name), strtoupper($keyword)))
+                ->sortBy('item_name')
+                ->take($limit);
+
+            foreach ($matches as $item) {
+                if ($selected->contains('id', $item->id)) {
+                    continue;
+                }
+
+                $selected->push($item);
+                $added++;
+
+                if ($added >= $limit) {
+                    return;
+                }
+            }
+        }
+    }
+
+    private function pushRotatedItems($selected, $items, int $offset, int $take): void
+    {
+        $items = $items->values();
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        for ($i = 0; $i < $take; $i++) {
+            $item = $items[($offset + $i) % $items->count()];
+
+            if (! $selected->contains('id', $item->id)) {
+                $selected->push($item);
+            }
+        }
+    }
+
+    private function fillRemainingItems($selected, $catalog, int $targetItemCount, int $satkerIndex): void
+    {
+        $catalog = $catalog->values();
+
+        if ($catalog->isEmpty()) {
+            return;
+        }
+
+        for ($i = 0; $selected->unique('id')->count() < $targetItemCount && $i < $catalog->count(); $i++) {
+            $item = $catalog[($satkerIndex + $i) % $catalog->count()];
+
+            if (! $selected->contains('id', $item->id)) {
+                $selected->push($item);
+            }
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function specialKeywordsForSatker(Satker $satker, int $satkerIndex): array
+    {
+        $name = strtoupper($satker->name.' '.$satker->code);
+
+        $profiles = [
+            'BRIMOB' => ['BRIMOB'],
+            'POLAIR' => ['POLAIR', 'AIRUD'],
+            'AIRUD' => ['POLAIR', 'AIRUD'],
+            'LANTAS' => ['LANTAS', 'POLANTAS', 'PET LANTAS'],
+            'TIK' => ['TIK'],
+            'HUMAS' => ['HUMAS'],
+            'PROPAM' => ['PROVOS', 'PROVOST'],
+            'PROVOS' => ['PROVOS', 'PROVOST'],
+            'PROVOST' => ['PROVOS', 'PROVOST'],
+            'RESKRIM' => ['RESKRIM', 'RESINTEL', 'RESINTELPAM', 'TACTICAL RESINTEL'],
+            'RESNARKOBA' => ['RESKRIM', 'RESINTEL', 'RESINTELPAM', 'TACTICAL RESINTEL'],
+            'INTEL' => ['RESKRIM', 'RESINTEL', 'RESINTELPAM', 'TACTICAL RESINTEL'],
+            'PPA' => ['RESKRIM', 'RESINTEL', 'RESINTELPAM', 'TACTICAL RESINTEL'],
+            'PPO' => ['RESKRIM', 'RESINTEL', 'RESINTELPAM', 'TACTICAL RESINTEL'],
+            'SAMAPTA' => ['SAMAPTA'],
+            'SATWA' => ['SATWA'],
+            'YANMA' => ['YANMA'],
+        ];
+
+        foreach ($profiles as $needle => $keywords) {
+            if ($this->satkerMatches($name, $needle)) {
+                return $keywords;
+            }
+        }
+
+        if (str_contains($name, 'POLRES')) {
+            $polresProfiles = [
+                ['LANTAS', 'POLANTAS', 'PET LANTAS'],
+                ['RESKRIM', 'RESINTEL', 'TACTICAL RESINTEL'],
+                ['POLAIR', 'AIRUD'],
+                ['TIK'],
+                ['HUMAS'],
+            ];
+
+            return array_values(array_unique(array_merge(
+                $polresProfiles[$satkerIndex % count($polresProfiles)],
+                $polresProfiles[($satkerIndex + 2) % count($polresProfiles)]
+            )));
+        }
+
+        return match ($satkerIndex % 5) {
+            0 => ['PDL I POLRI', 'PDU I/III POLRI'],
+            1 => ['ROMPI KESELAMATAN', 'T-SHIRT'],
+            2 => ['PAKAIAN KORPRI', 'PECI KORPRI'],
+            3 => ['SEPATU PDL II', 'TOPI LAPANGAN'],
+            default => ['PDH POLRI', 'PDL I POLRI'],
+        };
+    }
+
+    private function targetItemCount(Satker $satker, int $satkerIndex): int
+    {
+        $name = strtoupper($satker->name.' '.$satker->code);
+
+        if ($this->satkerMatches($name, 'BRIMOB') || $this->satkerMatches($name, 'POLAIR') || $this->satkerMatches($name, 'AIRUD')) {
+            return 11;
+        }
+
+        if ($this->satkerMatches($name, 'TIK') || $this->satkerMatches($name, 'HUMAS') || $this->satkerMatches($name, 'LANTAS')) {
+            return 9;
+        }
+
+        if (str_contains($name, 'POLRES')) {
+            return 7 + ($satkerIndex % 3);
+        }
+
+        return 6 + ($satkerIndex % 3);
+    }
+
+    private function specialItemLimit(Satker $satker, int $satkerIndex): int
+    {
+        $name = strtoupper($satker->name.' '.$satker->code);
+
+        if (str_contains($name, 'POLRES')) {
+            return 2 + ($satkerIndex % 3);
+        }
+
+        if ($this->satkerMatches($name, 'BRIMOB') || $this->satkerMatches($name, 'POLAIR') || $this->satkerMatches($name, 'AIRUD')) {
+            return 5;
+        }
+
+        return 2 + ($satkerIndex % 2);
+    }
+
+    private function satkerMatches(string $name, string $needle): bool
+    {
+        if (in_array($needle, ['TIK', 'PPA', 'PPO'], true)) {
+            return (bool) preg_match('/(^|[^A-Z0-9])'.preg_quote($needle, '/').'([^A-Z0-9]|$)/', $name);
+        }
+
+        return str_contains($name, $needle);
+    }
+
+    private function seedIdentifikasiItems(): void
+    {
+        $this->call(IdentifikasiItemSeeder::class);
     }
 }

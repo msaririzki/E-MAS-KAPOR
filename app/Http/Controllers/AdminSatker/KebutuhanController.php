@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\AdminSatker;
 
 use App\Http\Controllers\Controller;
-use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
 use App\Services\ExportSignatorySettingService;
+use App\Services\KebutuhanEligibilityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class KebutuhanController extends Controller
 {
@@ -48,7 +49,7 @@ class KebutuhanController extends Controller
     /**
      * Form buat pengajuan baru — menampilkan semua item kapor sebagai card selectable.
      */
-    public function create()
+    public function create(KebutuhanEligibilityService $eligibilityService)
     {
         // Cek apakah satker sudah mengajukan untuk tahun anggaran ini
         $nextFiscalYear = (int) date('Y') + 1;
@@ -61,14 +62,8 @@ class KebutuhanController extends Controller
                 ->with('error', 'Satker Anda sudah memiliki pengajuan untuk TA '.$nextFiscalYear.'. Hanya diperbolehkan 1 pengajuan per tahun anggaran.');
         }
 
-        $kaporItems = IdentifikasiItem::where('is_active', true)
-            ->orderByRaw("CASE
-                WHEN category = 'Tutup_Kepala' THEN 1
-                WHEN category = 'Tutup_Badan' THEN 2
-                WHEN category = 'Tutup_Kaki' THEN 3
-                ELSE 999 END")
-            ->orderBy('item_name')
-            ->get()
+        $kaporItems = $eligibilityService
+            ->eligibleItemsForSatker(auth()->user()->satker)
             ->groupBy('category');
 
         return view('admin-satker.kebutuhan.create', compact('kaporItems'));
@@ -77,7 +72,7 @@ class KebutuhanController extends Controller
     /**
      * Simpan pengajuan baru — hanya item IDs (tanpa quantity).
      */
-    public function store(Request $request)
+    public function store(Request $request, KebutuhanEligibilityService $eligibilityService)
     {
         $request->validate([
             'items' => 'required|array|min:1',
@@ -86,6 +81,8 @@ class KebutuhanController extends Controller
             'items.required' => 'Minimal pilih 1 item kebutuhan.',
             'items.min' => 'Minimal pilih 1 item kebutuhan.',
         ]);
+
+        $this->validateEligibleItems($request, $eligibilityService);
 
         // Tahun anggaran otomatis = tahun sekarang + 1
         $fiscalYear = (int) date('Y') + 1;
@@ -140,7 +137,7 @@ class KebutuhanController extends Controller
     /**
      * Form edit pengajuan (draft only) — card selectable.
      */
-    public function edit(Kebutuhan $kebutuhan)
+    public function edit(Kebutuhan $kebutuhan, KebutuhanEligibilityService $eligibilityService)
     {
         $this->authorizeSatker($kebutuhan);
 
@@ -150,14 +147,8 @@ class KebutuhanController extends Controller
 
         $kebutuhan->load('items');
 
-        $kaporItems = IdentifikasiItem::where('is_active', true)
-            ->orderByRaw("CASE
-                WHEN category = 'Tutup_Kepala' THEN 1
-                WHEN category = 'Tutup_Badan' THEN 2
-                WHEN category = 'Tutup_Kaki' THEN 3
-                ELSE 999 END")
-            ->orderBy('item_name')
-            ->get()
+        $kaporItems = $eligibilityService
+            ->eligibleItemsForSatker(auth()->user()->satker)
             ->groupBy('category');
 
         $selectedIds = $kebutuhan->items->pluck('identifikasi_item_id')->toArray();
@@ -168,7 +159,7 @@ class KebutuhanController extends Controller
     /**
      * Update pengajuan (draft only) — hanya item IDs.
      */
-    public function update(Request $request, Kebutuhan $kebutuhan)
+    public function update(Request $request, Kebutuhan $kebutuhan, KebutuhanEligibilityService $eligibilityService)
     {
         $this->authorizeSatker($kebutuhan);
 
@@ -180,6 +171,8 @@ class KebutuhanController extends Controller
             'items' => 'required|array|min:1',
             'items.*' => 'exists:identifikasi_items,id',
         ]);
+
+        $this->validateEligibleItems($request, $eligibilityService);
 
         // Tahun anggaran otomatis = tahun sekarang + 1
         $fiscalYear = (int) date('Y') + 1;
@@ -296,6 +289,24 @@ class KebutuhanController extends Controller
     {
         if ($kebutuhan->satker_id !== auth()->user()->satker_id) {
             abort(403, 'Anda tidak memiliki akses ke pengajuan ini.');
+        }
+    }
+
+    private function validateEligibleItems(Request $request, KebutuhanEligibilityService $eligibilityService): void
+    {
+        $eligibleItemIds = $eligibilityService
+            ->eligibleItemsForSatker($request->user()->satker)
+            ->pluck('id')
+            ->map(fn (int $id): string => (string) $id);
+
+        $invalidItemIds = collect($request->input('items', []))
+            ->map(fn ($id): string => (string) $id)
+            ->diff($eligibleItemIds);
+
+        if ($invalidItemIds->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'items' => 'Terdapat item yang tidak sesuai kewenangan satker Anda.',
+            ]);
         }
     }
 }
