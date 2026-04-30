@@ -28,39 +28,39 @@ class EligibleSatkerCountSeeder extends Seeder
      * Urutan penting: lebih spesifik dulu, lebih umum di bawah.
      */
     private const KEYWORD_MAP = [
-        // PRIMOD — hanya Polda
+        // Primod - 1 (Polda saja)
         'PRIMOD'       => 1,
+        'PROVOS'       => 1, // Menambahkan provost untuk berjaga-jaga
+        'PROVOST'      => 1,
+        'BRIMOB'       => 1, // Menambahkan brimob
 
-        // POLANTAS / LANTAS — DIT LANTAS + 10 Polres
-        'POLANTAS'     => 11,
+        // Lantas - 11 (DIT LANTAS + 10 Polres)
         'LANTAS'       => 11,
+        'POLANTAS'     => 11,
 
-        // POLAIR / AIRUD — DIT POLAIRUD + 10 Polres
-        'AIRUD'        => 11,
+        // Polair - 11 (DIT POLAIRUD + 10 Polres)
         'POLAIR'       => 11,
+        'AIRUD'        => 11,
 
-        // RESKRIM / RESINTEL / RESINTELPAM — 17 satker
-        'RESINTELPAM'  => 17,
-        'RESINTEL'     => 17,
+        // Reskrim - 17 (dari intel/intelkam sampai bitkum)
         'RESKRIM'      => 17,
+        'INTEL'        => 17,
+        'KUM'          => 17,
+        'RESINTEL'     => 17,
+        'PAMOBVIT'     => 17, // Termasuk satker lain di rentang tersebut
 
-        // TIK / OPSNAL TIK — BID TIK + 10 Polres
-        'OPSNAL TIK'   => 11,
+        // TIK - 11 (BID TIK + 10 Polres)
         'TIK'          => 11,
 
-        // HUMAS — BID HUMAS + 10 Polres
+        // Humas - 11 (BID HUMAS + 10 Polres)
         'HUMAS'        => 11,
-
-        // BRIMOB — hanya Sat Brimob (1 satker Polda)
-        'BRIMOB'       => 1,
-
-        // PROVOST / PROVOS — hanya BID PROPAM (1 satker Polda)
-        'PROVOST'      => 1,
-        'PROVOS'       => 1,
     ];
 
     public function run(): void
     {
+        // Reset semua item menjadi null dulu agar bersih
+        IdentifikasiItem::query()->update(['eligible_satker_count' => null]);
+
         $items = IdentifikasiItem::all();
         $updated = 0;
 
@@ -75,8 +75,8 @@ class EligibleSatkerCountSeeder extends Seeder
                 }
             }
 
-            // Hanya update jika ada kata kunci yang cocok
-            if ($matched !== null && $item->eligible_satker_count !== $matched) {
+            // Update jika ada kata kunci yang cocok
+            if ($matched !== null) {
                 $item->update(['eligible_satker_count' => $matched]);
                 $this->command->line(
                     "  <fg=green>✓</> [{$matched} satker] {$item->item_name}"
@@ -85,8 +85,8 @@ class EligibleSatkerCountSeeder extends Seeder
             }
         }
 
-        $this->command->info("Selesai. {$updated} item diperbarui.");
+        $this->command->info("Selesai. {$updated} item diperbarui dengan eligible satker spesifik.");
         $this->command->newLine();
-        $this->command->comment('Item tanpa kata kunci spesifik tetap NULL (berlaku untuk semua satker).');
+        $this->command->comment('Item lainnya telah direset menjadi NULL (berlaku untuk semua 40 satker).');
     }
 }
