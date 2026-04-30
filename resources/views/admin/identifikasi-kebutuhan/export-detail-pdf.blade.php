@@ -210,8 +210,8 @@
                         <tr>
                             <td style="border-top: none;"></td>
                             <td colspan="2" style="border-top: none; padding: 2px 5px 8px 5px;">
-                                <div style="font-size: 7pt; color: #4b5563; line-height: 1.4; text-align: justify;">
-                                    <span style="font-weight: bold; color: #111827;">Daftar Satker Memilih:</span> {{ implode(', ', $item['satkers']) }}
+                                <div style="font-size: 7pt; color: #000; line-height: 1.4; text-align: justify;">
+                                    <span style="font-weight: bold; color: #000;">Daftar Satker Memilih:</span> {{ implode(', ', $item['satkers']) }}
                                 </div>
                             </td>
                             <td style="border-top: none;"></td>
