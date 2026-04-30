@@ -2,8 +2,427 @@
 
 @section('title', 'Data Kaporlap Personil')
 
+
+
+@section('content')
+    @php
+        $sHead = range(54, 60);
+        $sShirtMale = ['14', '14,5', '15', '15,5', '16', '16,5', '17', '17,5', '18', '18,5', '19', '19,5', '20', '21', '22'];
+        $sWomen = ['K', 'SD', 'B', 'EB', 'EEB', 'EEEB', 'EEEEB'];
+        $sPantsMale = range(27, 50);
+        $sShoes = range(36, 48);
+        $sBelt = range(36, 60, 2);
+        $sJilbab = ['K', 'SD', 'B'];
+        $gender = $personnel?->gender ?? 'L';
+        $religion = strtoupper(trim((string) ($personnel?->religion ?? '')));
+        $requiresJilbab = $gender === 'P' && $religion === 'ISLAM';
+        $selectedBagian = old('bagian', $personnel?->bagian ?? '');
+        $bagianOptionsList = collect($bagianOptions ?? [])
+            ->filter(fn ($option) => filled($option))
+            ->values();
+
+        if (filled($selectedBagian) && ! $bagianOptionsList->contains($selectedBagian)) {
+            $bagianOptionsList = $bagianOptionsList->prepend($selectedBagian);
+        }
+
+        $usesBagianDropdown = $requiresBagian ?? false;
+        $currentPhone = old('phone', $contactPhone ?? $personnel?->phone ?? $user->phone ?? '');
+        $identityStepLabel = $usesBagianDropdown ? '1. Jabatan + Bag/Fungsi + No. WA' : '1. Jabatan + No. WA';
+        $showIdentityForm = !$identityReady || old('mode') === 'identity' || $errors->has('jabatan') || $errors->has('bagian') || $errors->has('phone');
+        $showSizesForm = !$hasSubmitted || old('mode') === 'sizes';
+        $isInputOpen = $inputPeriodStatus['is_open'] ?? true;
+        $progressClass = !$identityReady ? 'progress-38' : ($isComplete ? 'progress-100' : ($hasSubmitted ? 'progress-82' : 'progress-64'));
+        $summaryItems = [
+            'Kemeja' => $kaporSizes['kemeja'] ?? '-',
+            'Celana/Rok' => $kaporSizes['celana'] ?? '-',
+            'Olahraga' => $kaporSizes['olahraga'] ?? '-',
+            'Jaket' => $kaporSizes['jaket'] ?? '-',
+            'Topi/Baret' => $kaporSizes['topi'] ?? '-',
+            'Sabuk' => $kaporSizes['sabuk'] ?? '-',
+            'Sepatu Dinas' => $kaporSizes['sepatu_dinas'] ?? '-',
+            'Sepatu Olahraga' => $kaporSizes['sepatu_olahraga'] ?? '-',
+        ];
+
+        if ($requiresJilbab) {
+            $summaryItems['Jilbab'] = $kaporSizes['jilbab'] ?? '-';
+        }
+
+        $showReviewHero = $reviewPeriodStatus['is_open'] ?? false;
+    @endphp
+
+    @if (!$personnel)
+        <div class="alert error">Data personel belum tersedia. Hubungi admin sebelum mengisi kaporlap.</div>
+    @else
+        <div class="page">
+            @if ($showReviewHero)
+                <section class="review-card {{ $reviewPrompt['tone'] }}" data-dismissible data-dismiss-key="personil-dashboard-review-hero">
+                    <div class="review-card-body">
+                        <div class="review-card-head">
+                            <div>
+                                <div class="review-card-title-row">
+                                    <strong>{{ $reviewPrompt['title'] }}</strong>
+                                    <div class="status-meta">
+                                        <i class="ri-calendar-check-line"></i>
+                                        Review: {{ $reviewPeriodStatus['period_label'] }}
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="dismiss-btn" data-dismiss-trigger aria-label="Sembunyikan kartu review">
+                                <i class="ri-close-line"></i>
+                            </button>
+                        </div>
+                        <p class="review-card-copy">{{ $reviewPrompt['message'] }}</p>
+                        <div class="review-eligible">
+                            <strong>Item Kaporlap Anda <span class="review-inline-count">({{ $eligibleItems }})</span></strong>
+                            <div class="item-chip-row">
+                                @forelse ($eligibleReviewItems as $itemName)
+                                    <span class="item-chip">{{ $itemName }}</span>
+                                @empty
+                                    <span class="note" style="margin-top: 0;">Belum ada item review untuk akun Anda.</span>
+                                @endforelse
+                            </div>
+                        </div>
+                        <div class="review-action-row">
+                            <a href="{{ route('personil.testimoni.index') }}" class="review-cta">
+                                {{ $reviewPrompt['action_label'] }}
+                                <i class="ri-arrow-right-up-line"></i>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+            @else
+                <div class="alert {{ $inputPeriodStatus['tone'] }} status-banner" data-dismissible data-dismiss-key="personil-dashboard-input-status">
+                    <div class="dismiss-row">
+                        <strong>{{ $inputPeriodStatus['title'] }}</strong>
+                        <button type="button" class="dismiss-btn" data-dismiss-trigger aria-label="Sembunyikan status input">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+                    <span>{{ $inputPeriodStatus['message'] }}</span>
+                    <div class="status-meta">
+                        <i class="ri-calendar-line"></i>
+                        Periode aktif: {{ $inputPeriodStatus['period_label'] }}
+                    </div>
+                </div>
+            @endif
+
+            <section class="panel">
+                <div class="panel-body">
+                    <div class="profile-row">
+                        <div class="avatar">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
+                        <div>
+                            <h3>{{ $user->name }} • {{ $user->nrp_nip }}</h3>
+                        </div>
+                    </div>
+
+                    <div class="meta-row" style="margin-top: 14px;">
+                        <div class="meta-item"><strong>Satker</strong><span>{{ $personnel->satker->name ?? '-' }}</span></div>
+                        <div class="meta-item"><strong>Tahun Anggaran</strong><span>{{ $fiscalYear }}</span></div>
+                    </div>
+
+                    <div class="progress {{ $progressClass }}"><span></span></div>
+
+                    <div class="step-row" style="margin-top: 12px;">
+                        <div class="step-item {{ $identityReady ? 'done' : 'active' }}">{{ $identityStepLabel }}</div>
+                        <div class="step-item {{ !$identityReady ? '' : ($isComplete ? 'done' : 'active') }}">2. Ukuran Kaporlap
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            @if (session('success'))
+                <div class="alert success">{{ session('success') }}</div>
+            @endif
+
+            @if (session('error'))
+                <div class="alert error">{{ session('error') }}</div>
+            @endif
+
+            @if ($errors->any())
+                <div class="alert error">Masih ada field yang perlu diperbaiki.</div>
+            @endif
+
+            @if ($allocatedKaporItems->isNotEmpty())
+                <section class="panel">
+                    <div class="panel-header">
+                        <h2>Barang yang Anda Dapatkan</h2>
+                        <p>Daftar ini muncul setelah superadmin memfinalkan paket pengadaan untuk periode berjalan.</p>
+                    </div>
+                    <div class="panel-body">
+                        <div class="allocation-list">
+                            @foreach ($allocatedKaporItems as $item)
+                                <div class="allocation-item">
+                                    <div class="allocation-main">
+                                        <strong>{{ $item['item_name'] }}</strong>
+                                        <span>{{ $item['category'] }}</span>
+                                    </div>
+                                    <div class="allocation-size">
+                                        <small>{{ $item['size_label'] }}</small>
+                                        <b>{{ $item['size_value'] }}</b>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </section>
+            @endif
+
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Data Personel</h2>
+                    <p>Jabatan berasal dari import SDM Polda NTB. Perubahan akan dicatat di log audit.</p>
+                </div>
+                <div class="panel-body">
+                    @if ($identityReady && !$showIdentityForm)
+                    <div data-identity-summary>
+                        <div class="summary-grid">
+                            <div class="summary-item"><strong>Jabatan</strong><span>{{ $personnel->jabatan }}</span></div>
+                            @if ($usesBagianDropdown)
+                                <div class="summary-item"><strong>Bag/Fungsi</strong><span>{{ $personnel->bagian }}</span></div>
+                            @endif
+                            <div class="summary-item"><strong>No. HP (WhatsApp)</strong><span>{{ $currentPhone ?: '-' }}</span></div>
+                        </div>
+
+                        @if ($isInputOpen)
+                            <div style="margin-top: 12px;">
+                                <button type="button" class="button-secondary" data-open-identity style="width: auto;">
+                                    <i class="ri-edit-line"></i> Edit Data Personel
+                                </button>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                <form action="{{ route('personil.kapor.store') }}" method="POST" class="{{ $showIdentityForm ? '' : 'hidden' }}"
+                    data-identity-form style="margin-top: 14px;">
+                    @csrf
+                    <input type="hidden" name="mode" value="identity">
+
+                    <fieldset @disabled(! $isInputOpen) style="border: 0; padding: 0; margin: 0; min-width: 0;">
+                        <div class="identity-grid">
+                            <div class="field">
+                                <label class="label" for="jabatan">Jabatan</label>
+                                <input id="jabatan" type="text" name="jabatan" class="control"
+                                    value="{{ old('jabatan', $personnel->jabatan ?? '') }}" style="text-transform: uppercase;"
+                                    oninput="this.value = this.value.toUpperCase()">
+                                <span class="hint">Referensi SDM Polda NTB.</span>
+                                @error('jabatan')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+
+                            @if ($usesBagianDropdown)
+                                <div class="field">
+                                    <label class="label" for="bagian">Bag/Fungsi</label>
+                                    <select id="bagian" name="bagian" class="control">
+                                        <option value="">Pilih Bagian / Fungsi</option>
+                                        @if ($selectedBagian && ! $bagianOptionsList->contains($selectedBagian))
+                                            <option value="{{ $selectedBagian }}" selected>{{ $selectedBagian }}</option>
+                                        @endif
+                                        @foreach ($bagianOptionsList as $option)
+                                            <option value="{{ $option }}" {{ $selectedBagian === $option ? 'selected' : '' }}>{{ $option }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <span class="hint">Khusus satker kategori polres, bag/fungsi dipilih dari master superadmin.</span>
+                                    @error('bagian')<span class="error">{{ $message }}</span>@enderror
+                                </div>
+                            @endif
+
+                            <div class="field">
+                                <label class="label" for="phone">No. HP (WhatsApp)</label>
+                                <input id="phone" type="text" name="phone" class="control" inputmode="numeric" autocomplete="tel"
+                                    placeholder="Contoh: 08123456789" value="{{ $currentPhone }}"
+                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                <span class="hint">Nomor ini dipakai admin untuk chat cepat via WhatsApp.</span>
+                                @error('phone')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="note">{{ $usesBagianDropdown ? 'Simpan jabatan, bag/fungsi, dan no. HP dulu, lalu lanjut ke Isi ukuran.' : 'Simpan jabatan dan no. HP dulu, lalu lanjut ke Isi ukuran.' }}</div>
+
+                    @unless ($isInputOpen)
+                        <div class="note" style="background: #fef2f2; border-color: #fecaca; color: #b91c1c;">
+                            Periode pengisian sedang ditutup. Anda tidak dapat mengubah data personel untuk sementara waktu.
+                        </div>
+                    @endunless
+
+                        <div style="margin-top: 14px;">
+                            <button type="submit" class="button" @disabled(! $isInputOpen)>{{ $isInputOpen ? 'Simpan' : 'Input Ditutup' }}</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            @if ($identityReady)
+                <section class="panel" id="ukuran-form">
+                    <div class="panel-header">
+                        <h2>Ukuran kaporlap</h2>
+                        <p>Isi seperlunya. Jika sudah pernah menyimpan, data lama tetap tampil sebagai nilai awal.</p>
+                    </div>
+                    <div class="panel-body">
+                        @if ($hasSubmitted && !$showSizesForm)
+                        <div data-sizes-summary>
+                            <div class="summary-grid">
+                                @foreach ($summaryItems as $label => $value)
+                                    <div class="summary-item"><strong>{{ $label }}</strong><span>{{ $value ?: '-' }}</span></div>
+                                @endforeach
+                            </div>
+
+                            @if ($isInputOpen)
+                                <div style="margin-top: 12px;">
+                                    <button type="button" class="button-secondary" data-open-sizes style="width: auto;">
+                                        <i class="ri-edit-line"></i> Edit Ukuran
+                                    </button>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
+                    <form action="{{ route('personil.kapor.store') }}" method="POST" class="{{ $showSizesForm ? '' : 'hidden' }}"
+                        data-sizes-form style="margin-top: 14px;">
+                        @csrf
+                        <input type="hidden" name="mode" value="sizes">
+                        <input type="hidden" name="jabatan" value="{{ old('jabatan', $personnel->jabatan ?? '') }}">
+                        <input type="hidden" name="phone" value="{{ $currentPhone }}">
+                        @if ($usesBagianDropdown)
+                            <input type="hidden" name="bagian" value="{{ old('bagian', $personnel->bagian ?? '') }}">
+                        @endif
+
+                        <fieldset @disabled(! $isInputOpen) style="border: 0; padding: 0; margin: 0; min-width: 0;">
+
+                        <div class="field-grid">
+                            <div class="field">
+                                <label class="label" for="kemeja">Kemeja</label>
+                                <select id="kemeja" name="kemeja" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($gender === 'L' ? $sShirtMale : $sWomen as $size)
+                                        <option value="{{ $size }}" {{ old('kemeja', $kaporSizes['kemeja'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('kemeja')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="celana">Celana / Rok</label>
+                                <select id="celana" name="celana" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($gender === 'L' ? $sPantsMale : $sWomen as $size)
+                                        <option value="{{ $size }}" {{ old('celana', $kaporSizes['celana'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('celana')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="olahraga">Olahraga</label>
+                                <select id="olahraga" name="olahraga" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sWomen as $size)
+                                        <option value="{{ $size }}" {{ old('olahraga', $kaporSizes['olahraga'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('olahraga')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="jaket">Jaket</label>
+                                <select id="jaket" name="jaket" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sWomen as $size)
+                                        <option value="{{ $size }}" {{ old('jaket', $kaporSizes['jaket'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('jaket')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="topi">Topi / Baret</label>
+                                <select id="topi" name="topi" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sHead as $size)
+                                        <option value="{{ $size }}" {{ old('topi', $kaporSizes['topi'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('topi')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="sabuk">Sabuk</label>
+                                <select id="sabuk" name="sabuk" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sBelt as $size)
+                                        <option value="{{ $size }}" {{ old('sabuk', $kaporSizes['sabuk'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('sabuk')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            @if ($requiresJilbab)
+                                <div class="field">
+                                    <label class="label" for="jilbab">Jilbab</label>
+                                    <select id="jilbab" name="jilbab" class="control" required>
+                                        <option value="">Pilih</option>
+                                        @foreach ($sJilbab as $size)
+                                            <option value="{{ $size }}" {{ old('jilbab', $kaporSizes['jilbab'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('jilbab')<span class="error">{{ $message }}</span>@enderror
+                                </div>
+                            @endif
+                            <div class="field">
+                                <label class="label" for="sepatu_dinas">Sepatu Dinas</label>
+                                <select id="sepatu_dinas" name="sepatu_dinas" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sShoes as $size)
+                                        <option value="{{ $size }}" {{ old('sepatu_dinas', $kaporSizes['sepatu_dinas'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('sepatu_dinas')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field">
+                                <label class="label" for="sepatu_olahraga">Sepatu Olahraga</label>
+                                <select id="sepatu_olahraga" name="sepatu_olahraga" class="control" required>
+                                    <option value="">Pilih</option>
+                                    @foreach ($sShoes as $size)
+                                        <option value="{{ $size }}" {{ old('sepatu_olahraga', $kaporSizes['sepatu_olahraga'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                                @error('sepatu_olahraga')<span class="error">{{ $message }}</span>@enderror
+                            </div>
+                        </div>
+                        </fieldset>
+
+                        @unless ($isInputOpen)
+                            <div class="note" style="background: #fef2f2; border-color: #fecaca; color: #b91c1c;">
+                                Periode pengisian sedang ditutup. Anda hanya bisa melihat ukuran yang ada tanpa bisa mengubahnya.
+                            </div>
+                        @endunless
+
+                            <div style="margin-top: 14px;">
+                                <button type="submit" class="button" @disabled(! $isInputOpen)>{{ $isInputOpen ? 'Simpan Ukuran' : 'Input Ditutup' }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            @else
+                <section class="panel" id="ukuran-form">
+                    <div class="panel-header">
+                        <h2>Ukuran kaporlap</h2>
+                        <p>Lengkapi dulu data personel agar data ukuran aktif.</p>
+                    </div>
+                </section>
+            @endif
+
+        </div>
+
+        <footer style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color); text-align: center;">
+            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+                <a href="{{ route('personil.kapor.history') }}"
+                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Riwayat Ukuran</a>
+                <span style="color: var(--slate-300);">•</span>
+                <a href="{{ route('personil.testimoni.index') }}"
+                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Review Item</a>
+            </div>
+        </footer>
+    @endif
+@endsection
+
 @section('styles')
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
     <style>
         /* Modern Utilities */
         :root {
@@ -611,425 +1030,8 @@
     </style>
 @endsection
 
-@section('content')
-    @php
-        $sHead = range(54, 60);
-        $sShirtMale = ['14', '14,5', '15', '15,5', '16', '16,5', '17', '17,5', '18', '18,5', '19', '19,5', '20', '21', '22'];
-        $sWomen = ['K', 'SD', 'B', 'EB', 'EEB', 'EEEB', 'EEEEB'];
-        $sPantsMale = range(27, 50);
-        $sShoes = range(36, 48);
-        $sBelt = range(36, 60, 2);
-        $sJilbab = ['K', 'SD', 'B'];
-        $gender = $personnel?->gender ?? 'L';
-        $religion = strtoupper(trim((string) ($personnel?->religion ?? '')));
-        $requiresJilbab = $gender === 'P' && $religion === 'ISLAM';
-        $selectedBagian = old('bagian', $personnel?->bagian ?? '');
-        $bagianOptionsList = collect($bagianOptions ?? [])
-            ->filter(fn ($option) => filled($option))
-            ->values();
-
-        if (filled($selectedBagian) && ! $bagianOptionsList->contains($selectedBagian)) {
-            $bagianOptionsList = $bagianOptionsList->prepend($selectedBagian);
-        }
-
-        $usesBagianDropdown = $requiresBagian ?? false;
-        $currentPhone = old('phone', $contactPhone ?? $personnel?->phone ?? $user->phone ?? '');
-        $identityStepLabel = $usesBagianDropdown ? '1. Jabatan + Bag/Fungsi + No. WA' : '1. Jabatan + No. WA';
-        $showIdentityForm = !$identityReady || old('mode') === 'identity' || $errors->has('jabatan') || $errors->has('bagian') || $errors->has('phone');
-        $showSizesForm = !$hasSubmitted || old('mode') === 'sizes';
-        $isInputOpen = $inputPeriodStatus['is_open'] ?? true;
-        $progressClass = !$identityReady ? 'progress-38' : ($isComplete ? 'progress-100' : ($hasSubmitted ? 'progress-82' : 'progress-64'));
-        $summaryItems = [
-            'Kemeja' => $kaporSizes['kemeja'] ?? '-',
-            'Celana/Rok' => $kaporSizes['celana'] ?? '-',
-            'Olahraga' => $kaporSizes['olahraga'] ?? '-',
-            'Jaket' => $kaporSizes['jaket'] ?? '-',
-            'Topi/Baret' => $kaporSizes['topi'] ?? '-',
-            'Sabuk' => $kaporSizes['sabuk'] ?? '-',
-            'Sepatu Dinas' => $kaporSizes['sepatu_dinas'] ?? '-',
-            'Sepatu Olahraga' => $kaporSizes['sepatu_olahraga'] ?? '-',
-        ];
-
-        if ($requiresJilbab) {
-            $summaryItems['Jilbab'] = $kaporSizes['jilbab'] ?? '-';
-        }
-
-        $showReviewHero = $reviewPeriodStatus['is_open'] ?? false;
-    @endphp
-
-    @if (!$personnel)
-        <div class="alert error">Data personel belum tersedia. Hubungi admin sebelum mengisi kaporlap.</div>
-    @else
-        <div class="page">
-            @if ($showReviewHero)
-                <section class="review-card {{ $reviewPrompt['tone'] }}" data-dismissible data-dismiss-key="personil-dashboard-review-hero">
-                    <div class="review-card-body">
-                        <div class="review-card-head">
-                            <div>
-                                <div class="review-card-title-row">
-                                    <strong>{{ $reviewPrompt['title'] }}</strong>
-                                    <div class="status-meta">
-                                        <i class="ri-calendar-check-line"></i>
-                                        Review: {{ $reviewPeriodStatus['period_label'] }}
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" class="dismiss-btn" data-dismiss-trigger aria-label="Sembunyikan kartu review">
-                                <i class="ri-close-line"></i>
-                            </button>
-                        </div>
-                        <p class="review-card-copy">{{ $reviewPrompt['message'] }}</p>
-                        <div class="review-eligible">
-                            <strong>Item Kaporlap Anda <span class="review-inline-count">({{ $eligibleItems }})</span></strong>
-                            <div class="item-chip-row">
-                                @forelse ($eligibleReviewItems as $itemName)
-                                    <span class="item-chip">{{ $itemName }}</span>
-                                @empty
-                                    <span class="note" style="margin-top: 0;">Belum ada item review untuk akun Anda.</span>
-                                @endforelse
-                            </div>
-                        </div>
-                        <div class="review-action-row">
-                            <a href="{{ route('personil.testimoni.index') }}" class="review-cta">
-                                {{ $reviewPrompt['action_label'] }}
-                                <i class="ri-arrow-right-up-line"></i>
-                            </a>
-                        </div>
-                    </div>
-                </section>
-            @else
-                <div class="alert {{ $inputPeriodStatus['tone'] }} status-banner" data-dismissible data-dismiss-key="personil-dashboard-input-status">
-                    <div class="dismiss-row">
-                        <strong>{{ $inputPeriodStatus['title'] }}</strong>
-                        <button type="button" class="dismiss-btn" data-dismiss-trigger aria-label="Sembunyikan status input">
-                            <i class="ri-close-line"></i>
-                        </button>
-                    </div>
-                    <span>{{ $inputPeriodStatus['message'] }}</span>
-                    <div class="status-meta">
-                        <i class="ri-calendar-line"></i>
-                        Periode aktif: {{ $inputPeriodStatus['period_label'] }}
-                    </div>
-                </div>
-            @endif
-
-            <section class="panel">
-                <div class="panel-body">
-                    <div class="profile-row">
-                        <div class="avatar">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
-                        <div>
-                            <h3>{{ $user->name }} • {{ $user->nrp_nip }}</h3>
-                        </div>
-                    </div>
-
-                    <div class="meta-row" style="margin-top: 14px;">
-                        <div class="meta-item"><strong>Satker</strong><span>{{ $personnel->satker->name ?? '-' }}</span></div>
-                        <div class="meta-item"><strong>Tahun Anggaran</strong><span>{{ $fiscalYear }}</span></div>
-                    </div>
-
-                    <div class="progress {{ $progressClass }}"><span></span></div>
-
-                    <div class="step-row" style="margin-top: 12px;">
-                        <div class="step-item {{ $identityReady ? 'done' : 'active' }}">{{ $identityStepLabel }}</div>
-                        <div class="step-item {{ !$identityReady ? '' : ($isComplete ? 'done' : 'active') }}">2. Ukuran Kaporlap
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            @if (session('success'))
-                <div class="alert success">{{ session('success') }}</div>
-            @endif
-
-            @if (session('error'))
-                <div class="alert error">{{ session('error') }}</div>
-            @endif
-
-            @if ($errors->any())
-                <div class="alert error">Masih ada field yang perlu diperbaiki.</div>
-            @endif
-
-            @if ($allocatedKaporItems->isNotEmpty())
-                <section class="panel">
-                    <div class="panel-header">
-                        <h2>Barang yang Anda Dapatkan</h2>
-                        <p>Daftar ini muncul setelah superadmin memfinalkan paket pengadaan untuk periode berjalan.</p>
-                    </div>
-                    <div class="panel-body">
-                        <div class="allocation-list">
-                            @foreach ($allocatedKaporItems as $item)
-                                <div class="allocation-item">
-                                    <div class="allocation-main">
-                                        <strong>{{ $item['item_name'] }}</strong>
-                                        <span>{{ $item['category'] }}</span>
-                                    </div>
-                                    <div class="allocation-size">
-                                        <small>{{ $item['size_label'] }}</small>
-                                        <b>{{ $item['size_value'] }}</b>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </section>
-            @endif
-
-            <section class="panel">
-                <div class="panel-header">
-                    <h2>Data Personel</h2>
-                    <p>Jabatan berasal dari import SDM Polda NTB. Perubahan akan dicatat di log audit.</p>
-                </div>
-                <div class="panel-body">
-                    @if ($identityReady && !$showIdentityForm)
-                    <div data-identity-summary>
-                        <div class="summary-grid">
-                            <div class="summary-item"><strong>Jabatan</strong><span>{{ $personnel->jabatan }}</span></div>
-                            @if ($usesBagianDropdown)
-                                <div class="summary-item"><strong>Bag/Fungsi</strong><span>{{ $personnel->bagian }}</span></div>
-                            @endif
-                            <div class="summary-item"><strong>No. HP (WhatsApp)</strong><span>{{ $currentPhone ?: '-' }}</span></div>
-                        </div>
-
-                        @if ($isInputOpen)
-                            <div style="margin-top: 12px;">
-                                <button type="button" class="button-secondary" data-open-identity style="width: auto;">
-                                    <i class="ri-edit-line"></i> Edit Data Personel
-                                </button>
-                            </div>
-                        @endif
-                    </div>
-                @endif
-
-                <form action="{{ route('personil.kapor.store') }}" method="POST" class="{{ $showIdentityForm ? '' : 'hidden' }}"
-                    data-identity-form style="margin-top: 14px;">
-                    @csrf
-                    <input type="hidden" name="mode" value="identity">
-
-                    <fieldset @disabled(! $isInputOpen) style="border: 0; padding: 0; margin: 0; min-width: 0;">
-                        <div class="identity-grid">
-                            <div class="field">
-                                <label class="label" for="jabatan">Jabatan</label>
-                                <input id="jabatan" type="text" name="jabatan" class="control"
-                                    value="{{ old('jabatan', $personnel->jabatan ?? '') }}" style="text-transform: uppercase;"
-                                    oninput="this.value = this.value.toUpperCase()">
-                                <span class="hint">Referensi SDM Polda NTB.</span>
-                                @error('jabatan')<span class="error">{{ $message }}</span>@enderror
-                            </div>
-
-                            @if ($usesBagianDropdown)
-                                <div class="field">
-                                    <label class="label" for="bagian">Bag/Fungsi</label>
-                                    <select id="bagian" name="bagian" class="control">
-                                        <option value="">Pilih Bagian / Fungsi</option>
-                                        @if ($selectedBagian && ! $bagianOptionsList->contains($selectedBagian))
-                                            <option value="{{ $selectedBagian }}" selected>{{ $selectedBagian }}</option>
-                                        @endif
-                                        @foreach ($bagianOptionsList as $option)
-                                            <option value="{{ $option }}" {{ $selectedBagian === $option ? 'selected' : '' }}>{{ $option }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <span class="hint">Khusus satker kategori polres, bag/fungsi dipilih dari master superadmin.</span>
-                                    @error('bagian')<span class="error">{{ $message }}</span>@enderror
-                                </div>
-                            @endif
-
-                            <div class="field">
-                                <label class="label" for="phone">No. HP (WhatsApp)</label>
-                                <input id="phone" type="text" name="phone" class="control" inputmode="numeric" autocomplete="tel"
-                                    placeholder="Contoh: 08123456789" value="{{ $currentPhone }}"
-                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                                <span class="hint">Nomor ini dipakai admin untuk chat cepat via WhatsApp.</span>
-                                @error('phone')<span class="error">{{ $message }}</span>@enderror
-                            </div>
-                        </div>
-                    </fieldset>
-
-                    <div class="note">{{ $usesBagianDropdown ? 'Simpan jabatan, bag/fungsi, dan no. HP dulu, lalu lanjut ke Isi ukuran.' : 'Simpan jabatan dan no. HP dulu, lalu lanjut ke Isi ukuran.' }}</div>
-
-                    @unless ($isInputOpen)
-                        <div class="note" style="background: #fef2f2; border-color: #fecaca; color: #b91c1c;">
-                            Periode pengisian sedang ditutup. Anda tidak dapat mengubah data personel untuk sementara waktu.
-                        </div>
-                    @endunless
-
-                        <div style="margin-top: 14px;">
-                            <button type="submit" class="button" @disabled(! $isInputOpen)>{{ $isInputOpen ? 'Simpan' : 'Input Ditutup' }}</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-            @if ($identityReady)
-                <section class="panel" id="ukuran-form">
-                    <div class="panel-header">
-                        <h2>Ukuran kaporlap</h2>
-                        <p>Isi seperlunya. Jika sudah pernah menyimpan, data lama tetap tampil sebagai nilai awal.</p>
-                    </div>
-                    <div class="panel-body">
-                        @if ($hasSubmitted && !$showSizesForm)
-                        <div data-sizes-summary>
-                            <div class="summary-grid">
-                                @foreach ($summaryItems as $label => $value)
-                                    <div class="summary-item"><strong>{{ $label }}</strong><span>{{ $value ?: '-' }}</span></div>
-                                @endforeach
-                            </div>
-
-                            @if ($isInputOpen)
-                                <div style="margin-top: 12px;">
-                                    <button type="button" class="button-secondary" data-open-sizes style="width: auto;">
-                                        <i class="ri-edit-line"></i> Edit Ukuran
-                                    </button>
-                                </div>
-                            @endif
-                        </div>
-                    @endif
-
-                    <form action="{{ route('personil.kapor.store') }}" method="POST" class="{{ $showSizesForm ? '' : 'hidden' }}"
-                        data-sizes-form style="margin-top: 14px;">
-                        @csrf
-                        <input type="hidden" name="mode" value="sizes">
-                        <input type="hidden" name="jabatan" value="{{ old('jabatan', $personnel->jabatan ?? '') }}">
-                        <input type="hidden" name="phone" value="{{ $currentPhone }}">
-                        @if ($usesBagianDropdown)
-                            <input type="hidden" name="bagian" value="{{ old('bagian', $personnel->bagian ?? '') }}">
-                        @endif
-
-                        <fieldset @disabled(! $isInputOpen) style="border: 0; padding: 0; margin: 0; min-width: 0;">
-
-                        <div class="field-grid">
-                            <div class="field">
-                                <label class="label" for="kemeja">Kemeja</label>
-                                <select id="kemeja" name="kemeja" class="control" required>
-                                    <option value="">Pilih</option>
-                                    @foreach ($gender === 'L' ? $sShirtMale : $sWomen as $size)
-                                        <option value="{{ $size }}" {{ old('kemeja', $kaporSizes['kemeja'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
-                                    @endforeach
-                                </select>
-                                @error('kemeja')<span class="error">{{ $message }}</span>@enderror
-                            </div>
-                            <div class="field">
-                                <label class="label" for="celana">Celana / Rok</label>
-                                <select id="celana" name="celana" class="control" required>
-                                    <option value="">Pilih</option>
-                                    @foreach ($gender === 'L' ? $sPantsMale : $sWomen as $size)
-                                        <option value="{{ $size }}" {{ old('celana', $kaporSizes['celana'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
-                                    @endforeach
-                                </select>
-                                @error('celana')<span class="error">{{ $message }}</span>@enderror
-                            </div>
-                            <div class="field">
-                                <label class="label" for="olahraga">Olahraga</label>
-                                <select id="olahraga" name="olahraga" class="control" required>
-                                    <option value="">Pilih</option>
-                                    @foreach ($sWomen as $size)
-                                        <option value="{{ $size }}" {{ old('olahraga', $kaporSizes['olahraga'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
-                                    @endforeach
-                                </select>
-                                @error('olahraga')<span class="error">{{ $message }}</span>@enderror
-                            </div>
-                            <div class="field">
-                                <label class="label" for="jaket">Jaket</label>
-                                <select id="jaket" name="jaket" class="control" required>
-                                    <option value="">Pilih</option>
-                                    @foreach ($sWomen as $size)
-                                        <option value="{{ $size }}" {{ old('jaket', $kaporSizes['jaket'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
-                                    @endforeach
-                                </select>
-                                @error('jaket')<span class="error">{{ $message }}</span>@enderror
-                            </div>
-                            <div class="field">
-                                <label class="label" for="topi">Topi / Baret</label>
-                                <select id="topi" name="topi" class="control" required>
-                                    <option value="">Pilih</option>
-                                    @foreach ($sHead as $size)
-                                        <option value="{{ $size }}" {{ old('topi', $kaporSizes['topi'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
-                                    @endforeach
-                                </select>
-                                @error('topi')<span class="error">{{ $message }}</span>@enderror
-                            </div>
-                            <div class="field">
-                                <label class="label" for="sabuk">Sabuk</label>
-                                <select id="sabuk" name="sabuk" class="control" required>
-                                    <option value="">Pilih</option>
-                                    @foreach ($sBelt as $size)
-                                        <option value="{{ $size }}" {{ old('sabuk', $kaporSizes['sabuk'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
-                                    @endforeach
-                                </select>
-                                @error('sabuk')<span class="error">{{ $message }}</span>@enderror
-                            </div>
-                            @if ($requiresJilbab)
-                                <div class="field">
-                                    <label class="label" for="jilbab">Jilbab</label>
-                                    <select id="jilbab" name="jilbab" class="control" required>
-                                        <option value="">Pilih</option>
-                                        @foreach ($sJilbab as $size)
-                                            <option value="{{ $size }}" {{ old('jilbab', $kaporSizes['jilbab'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('jilbab')<span class="error">{{ $message }}</span>@enderror
-                                </div>
-                            @endif
-                            <div class="field">
-                                <label class="label" for="sepatu_dinas">Sepatu Dinas</label>
-                                <select id="sepatu_dinas" name="sepatu_dinas" class="control" required>
-                                    <option value="">Pilih</option>
-                                    @foreach ($sShoes as $size)
-                                        <option value="{{ $size }}" {{ old('sepatu_dinas', $kaporSizes['sepatu_dinas'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
-                                    @endforeach
-                                </select>
-                                @error('sepatu_dinas')<span class="error">{{ $message }}</span>@enderror
-                            </div>
-                            <div class="field">
-                                <label class="label" for="sepatu_olahraga">Sepatu Olahraga</label>
-                                <select id="sepatu_olahraga" name="sepatu_olahraga" class="control" required>
-                                    <option value="">Pilih</option>
-                                    @foreach ($sShoes as $size)
-                                        <option value="{{ $size }}" {{ old('sepatu_olahraga', $kaporSizes['sepatu_olahraga'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
-                                    @endforeach
-                                </select>
-                                @error('sepatu_olahraga')<span class="error">{{ $message }}</span>@enderror
-                            </div>
-                        </div>
-                        </fieldset>
-
-                        @unless ($isInputOpen)
-                            <div class="note" style="background: #fef2f2; border-color: #fecaca; color: #b91c1c;">
-                                Periode pengisian sedang ditutup. Anda hanya bisa melihat ukuran yang ada tanpa bisa mengubahnya.
-                            </div>
-                        @endunless
-
-                            <div style="margin-top: 14px;">
-                                <button type="submit" class="button" @disabled(! $isInputOpen)>{{ $isInputOpen ? 'Simpan Ukuran' : 'Input Ditutup' }}</button>
-                            </div>
-                        </form>
-                    </div>
-                </section>
-            @else
-                <section class="panel" id="ukuran-form">
-                    <div class="panel-header">
-                        <h2>Ukuran kaporlap</h2>
-                        <p>Lengkapi dulu data personel agar data ukuran aktif.</p>
-                    </div>
-                </section>
-            @endif
-
-        </div>
-
-        <footer style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color); text-align: center;">
-            <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
-                <a href="{{ route('personil.kapor.history') }}"
-                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Riwayat Ukuran</a>
-                <span style="color: var(--slate-300);">•</span>
-                <a href="{{ route('personil.testimoni.index') }}"
-                    style="color: var(--text-muted); font-size: 13px; font-weight: 600;">Review Item</a>
-            </div>
-        </footer>
-    @endif
-@endsection
-
 @section('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const positionTomSelectDropdown = (instance) => {

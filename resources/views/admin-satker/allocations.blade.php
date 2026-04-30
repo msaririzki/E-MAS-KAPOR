@@ -214,116 +214,6 @@
 </div>
 @endsection
 
-@section('scripts')
-<script>
-    // Toggle Dropdown
-    function toggleDropdown(element) {
-        const wrapper = element.closest('.custom-select-wrapper');
-        const select = wrapper.querySelector('.custom-select');
-        const wasActive = select.classList.contains('active');
-        
-        document.querySelectorAll('.custom-select').forEach(el => {
-            el.classList.remove('active');
-            const opts = el.querySelector('.custom-options');
-            if (opts) opts.style.display = 'none';
-        });
-        
-        if (!wasActive) {
-            select.classList.add('active');
-            const opts = select.querySelector('.custom-options');
-            if (opts) opts.style.display = 'block';
-        }
-    }
-
-    // Select Option
-    function selectBudgetYearOption(event, element, value, label) {
-        event.stopPropagation();
-        
-        const wrapper = element.closest('.custom-select-wrapper');
-        wrapper.querySelector('#budget_year_id').value = value;
-        wrapper.querySelector('#budget_year_label').innerText = label;
-        
-        wrapper.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
-        element.classList.add('selected');
-        
-        const select = wrapper.querySelector('.custom-select');
-        select.classList.remove('active');
-        select.querySelector('.custom-options').style.display = 'none';
-
-        applyFilter();
-    }
-
-    // Close Dropdown outside click
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.custom-select-wrapper')) {
-            document.querySelectorAll('.custom-select').forEach(select => {
-                select.classList.remove('active');
-                const opts = select.querySelector('.custom-options');
-                if (opts) opts.style.display = 'none';
-            });
-        }
-    });
-
-    // Debounce search
-    let searchTimeout;
-    function debounceSearch() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            applyFilter();
-        }, 500);
-    }
-
-    // Apply Filter (AJAX)
-    function applyFilter() {
-        const form = document.getElementById('filterForm');
-        const url = new URL(form.action);
-        const searchParams = new URLSearchParams(new FormData(form));
-        url.search = searchParams.toString();
-
-        document.getElementById('tableLoader').style.display = 'flex';
-        
-        // Update URL state
-        window.history.pushState({}, '', url);
-
-        fetch(url, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            const newTable = doc.getElementById('tableContainer');
-            if (newTable) document.getElementById('tableContainer').innerHTML = newTable.innerHTML;
-            
-            const newStats = doc.getElementById('statsContainer');
-            if (newStats) document.getElementById('statsContainer').innerHTML = newStats.innerHTML;
-
-            document.getElementById('tableLoader').style.display = 'none';
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById('tableLoader').style.display = 'none';
-        });
-    }
-
-    // Reset filter
-    function resetFilter() {
-        const form = document.getElementById('filterForm');
-        form.querySelector('input[name="search"]').value = '';
-        applyFilter();
-    }
-
-    function exportPdf() {
-        const form = document.getElementById('filterForm');
-        const params = new URLSearchParams(new FormData(form)).toString();
-        window.open("{{ route('admin-satker.allocations.export-pdf') }}?" + params, "_blank");
-    }
-</script>
-@endsection
-
 @section('styles')
 <style>
     .compact-stats-bar {
@@ -632,4 +522,114 @@
         }
     }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    // Toggle Dropdown
+    function toggleDropdown(element) {
+        const wrapper = element.closest('.custom-select-wrapper');
+        const select = wrapper.querySelector('.custom-select');
+        const wasActive = select.classList.contains('active');
+        
+        document.querySelectorAll('.custom-select').forEach(el => {
+            el.classList.remove('active');
+            const opts = el.querySelector('.custom-options');
+            if (opts) opts.style.display = 'none';
+        });
+        
+        if (!wasActive) {
+            select.classList.add('active');
+            const opts = select.querySelector('.custom-options');
+            if (opts) opts.style.display = 'block';
+        }
+    }
+
+    // Select Option
+    function selectBudgetYearOption(event, element, value, label) {
+        event.stopPropagation();
+        
+        const wrapper = element.closest('.custom-select-wrapper');
+        wrapper.querySelector('#budget_year_id').value = value;
+        wrapper.querySelector('#budget_year_label').innerText = label;
+        
+        wrapper.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+        
+        const select = wrapper.querySelector('.custom-select');
+        select.classList.remove('active');
+        select.querySelector('.custom-options').style.display = 'none';
+
+        applyFilter();
+    }
+
+    // Close Dropdown outside click
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.custom-select-wrapper')) {
+            document.querySelectorAll('.custom-select').forEach(select => {
+                select.classList.remove('active');
+                const opts = select.querySelector('.custom-options');
+                if (opts) opts.style.display = 'none';
+            });
+        }
+    });
+
+    // Debounce search
+    let searchTimeout;
+    function debounceSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            applyFilter();
+        }, 500);
+    }
+
+    // Apply Filter (AJAX)
+    function applyFilter() {
+        const form = document.getElementById('filterForm');
+        const url = new URL(form.action);
+        const searchParams = new URLSearchParams(new FormData(form));
+        url.search = searchParams.toString();
+
+        document.getElementById('tableLoader').style.display = 'flex';
+        
+        // Update URL state
+        window.history.pushState({}, '', url);
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            const newTable = doc.getElementById('tableContainer');
+            if (newTable) document.getElementById('tableContainer').innerHTML = newTable.innerHTML;
+            
+            const newStats = doc.getElementById('statsContainer');
+            if (newStats) document.getElementById('statsContainer').innerHTML = newStats.innerHTML;
+
+            document.getElementById('tableLoader').style.display = 'none';
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('tableLoader').style.display = 'none';
+        });
+    }
+
+    // Reset filter
+    function resetFilter() {
+        const form = document.getElementById('filterForm');
+        form.querySelector('input[name="search"]').value = '';
+        applyFilter();
+    }
+
+    function exportPdf() {
+        const form = document.getElementById('filterForm');
+        const params = new URLSearchParams(new FormData(form)).toString();
+        window.open("{{ route('admin-satker.allocations.export-pdf') }}?" + params, "_blank");
+    }
+</script>
 @endsection

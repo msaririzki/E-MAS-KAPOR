@@ -7,7 +7,7 @@
     <a href="{{ route('admin.budget.show-year', $budgetPackage->budgetYear) }}">{{ $budgetPackage->budgetYear->name }}</a>
     <span class="sep">/</span>
     <span class="current">{{ $budgetPackage->name }}</span>
-@endsection
+
 
 @section('content')
 @php

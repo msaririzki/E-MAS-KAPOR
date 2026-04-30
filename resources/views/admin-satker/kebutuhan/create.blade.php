@@ -3,6 +3,131 @@
 @section('title', 'Buat Pengajuan Kebutuhan')
 @section('breadcrumb', 'Buat Pengajuan')
 
+
+
+@section('content')
+<div class="page-header">
+    <div class="page-header-row">
+        <div>
+            <h1>Buat Pengajuan Kebutuhan</h1>
+            <p>Pilih item kapor yang dibutuhkan oleh satker Anda.</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="{{ route('admin-satker.kebutuhan.index') }}" class="btn btn-outline btn-sm"><i class="ri-arrow-left-line"></i> Kembali</a>
+        </div>
+    </div>
+</div>
+
+@if($errors->any())
+    <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger); padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 13px;">
+        <ul style="margin: 0; padding-left: 16px;">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+<form method="POST" action="{{ route('admin-satker.kebutuhan.store') }}" id="kebutuhanForm">
+    @csrf
+
+    <div class="card">
+        <div class="card-head"><h3>Informasi Pengajuan</h3></div>
+        <div class="card-body">
+            <div class="form-group">
+                <label class="form-label">Tahun Anggaran <span style="color: var(--danger);">*</span></label>
+                @php $nextYear = (int) date('Y') + 1; @endphp
+                <input type="hidden" name="fiscal_year" value="{{ $nextYear }}">
+                <div class="form-input" style="background: var(--slate-50); cursor: default; font-weight: 600;">
+                    {{ $nextYear }}
+                </div>
+                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">*) Tahun anggaran otomatis ditetapkan ke tahun depan ({{ date('Y') }} + 1). Judul pengajuan akan di-generate otomatis.</small>
+            </div>
+        </div>
+    </div>
+
+    {{-- Toolbar --}}
+    <div class="toolbar-bar">
+        <div class="search-box">
+            <i class="ri-search-line"></i>
+            <input type="text" id="searchInput" placeholder="Cari nama barang...">
+        </div>
+        <div class="selected-counter">
+            <div class="counter-num" id="counterNum">0</div>
+            <span>Barang terpilih</span>
+        </div>
+    </div>
+
+    {{-- Item Cards by Category --}}
+    <div id="itemsContainer">
+        @php
+            $categoryIcons = [
+                'Tutup_Kepala' => 'ri-shirt-line',
+                'Tutup_Badan' => 'ri-t-shirt-line',
+                'Tutup_Kaki' => 'ri-footprint-line',
+            ];
+            $oldItems = old('items', []);
+        @endphp
+
+        @foreach($kaporItems as $category => $items)
+        <div class="category-section" data-category="{{ $category }}">
+            <div class="category-header">
+                <i class="{{ $categoryIcons[$category] ?? 'ri-box-3-line' }}"></i>
+                <h3>{{ str_replace('_', ' ', $category) }}</h3>
+                <span class="count-badge">{{ $items->count() }} Barang</span>
+            </div>
+            <div class="items-grid">
+                @foreach($items as $item)
+                <div class="item-card {{ in_array($item->id, $oldItems) ? 'selected' : '' }}"
+                     data-id="{{ $item->id }}"
+                     data-name="{{ strtolower($item->item_name) }}"
+                     onclick="toggleItem(this)">
+                    <div class="item-name">{{ $item->item_name }}</div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endforeach
+    </div>
+
+    {{-- Hidden inputs container --}}
+    <div id="hiddenInputs">
+        @foreach($oldItems as $itemId)
+            <input type="hidden" name="items[]" value="{{ $itemId }}">
+        @endforeach
+    </div>
+
+    <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;">
+        <a href="{{ route('admin-satker.kebutuhan.index') }}" class="btn btn-ghost">Batal</a>
+        <button type="button" class="btn btn-primary" onclick="openPreview()"><i class="ri-eye-line"></i> Preview & Kirim</button>
+    </div>
+</form>
+
+{{-- PREVIEW MODAL --}}
+<div class="preview-overlay" id="previewModal">
+    <div class="preview-modal">
+        <div class="preview-header">
+            <div class="preview-header-icon">
+                <i class="ri-file-search-line"></i>
+            </div>
+            <div>
+                <h3>Preview Pengajuan Kebutuhan</h3>
+                <p>Periksa kembali data pengajuan Anda sebelum mengirim.</p>
+            </div>
+        </div>
+        <div class="preview-body" id="previewBody">
+            {{-- Filled dynamically by JS --}}
+        </div>
+        <div class="preview-footer">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="closePreview()"><i class="ri-arrow-left-line"></i> Kembali Edit</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnConfirmSubmit" onclick="confirmSubmit()">
+                <i class="ri-send-plane-fill"></i> Konfirmasi & Kirim
+            </button>
+        </div>
+    </div>
+</div>
+@endsection
+
 @section('styles')
 <style>
     .form-group { margin-bottom: 16px; }
@@ -134,129 +259,6 @@
     @keyframes pvFadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes pvSlideUp { from { opacity: 0; transform: translateY(20px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 </style>
-@endsection
-
-@section('content')
-<div class="page-header">
-    <div class="page-header-row">
-        <div>
-            <h1>Buat Pengajuan Kebutuhan</h1>
-            <p>Pilih item kapor yang dibutuhkan oleh satker Anda.</p>
-        </div>
-        <div class="page-header-actions">
-            <a href="{{ route('admin-satker.kebutuhan.index') }}" class="btn btn-outline btn-sm"><i class="ri-arrow-left-line"></i> Kembali</a>
-        </div>
-    </div>
-</div>
-
-@if($errors->any())
-    <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger); padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 13px;">
-        <ul style="margin: 0; padding-left: 16px;">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
-
-<form method="POST" action="{{ route('admin-satker.kebutuhan.store') }}" id="kebutuhanForm">
-    @csrf
-
-    <div class="card">
-        <div class="card-head"><h3>Informasi Pengajuan</h3></div>
-        <div class="card-body">
-            <div class="form-group">
-                <label class="form-label">Tahun Anggaran <span style="color: var(--danger);">*</span></label>
-                @php $nextYear = (int) date('Y') + 1; @endphp
-                <input type="hidden" name="fiscal_year" value="{{ $nextYear }}">
-                <div class="form-input" style="background: var(--slate-50); cursor: default; font-weight: 600;">
-                    {{ $nextYear }}
-                </div>
-                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">*) Tahun anggaran otomatis ditetapkan ke tahun depan ({{ date('Y') }} + 1). Judul pengajuan akan di-generate otomatis.</small>
-            </div>
-        </div>
-    </div>
-
-    {{-- Toolbar --}}
-    <div class="toolbar-bar">
-        <div class="search-box">
-            <i class="ri-search-line"></i>
-            <input type="text" id="searchInput" placeholder="Cari nama barang...">
-        </div>
-        <div class="selected-counter">
-            <div class="counter-num" id="counterNum">0</div>
-            <span>Barang terpilih</span>
-        </div>
-    </div>
-
-    {{-- Item Cards by Category --}}
-    <div id="itemsContainer">
-        @php
-            $categoryIcons = [
-                'Tutup_Kepala' => 'ri-shirt-line',
-                'Tutup_Badan' => 'ri-t-shirt-line',
-                'Tutup_Kaki' => 'ri-footprint-line',
-            ];
-            $oldItems = old('items', []);
-        @endphp
-
-        @foreach($kaporItems as $category => $items)
-        <div class="category-section" data-category="{{ $category }}">
-            <div class="category-header">
-                <i class="{{ $categoryIcons[$category] ?? 'ri-box-3-line' }}"></i>
-                <h3>{{ str_replace('_', ' ', $category) }}</h3>
-                <span class="count-badge">{{ $items->count() }} Barang</span>
-            </div>
-            <div class="items-grid">
-                @foreach($items as $item)
-                <div class="item-card {{ in_array($item->id, $oldItems) ? 'selected' : '' }}"
-                     data-id="{{ $item->id }}"
-                     data-name="{{ strtolower($item->item_name) }}"
-                     onclick="toggleItem(this)">
-                    <div class="item-name">{{ $item->item_name }}</div>
-                </div>
-                @endforeach
-            </div>
-        </div>
-        @endforeach
-    </div>
-
-    {{-- Hidden inputs container --}}
-    <div id="hiddenInputs">
-        @foreach($oldItems as $itemId)
-            <input type="hidden" name="items[]" value="{{ $itemId }}">
-        @endforeach
-    </div>
-
-    <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;">
-        <a href="{{ route('admin-satker.kebutuhan.index') }}" class="btn btn-ghost">Batal</a>
-        <button type="button" class="btn btn-primary" onclick="openPreview()"><i class="ri-eye-line"></i> Preview & Kirim</button>
-    </div>
-</form>
-
-{{-- PREVIEW MODAL --}}
-<div class="preview-overlay" id="previewModal">
-    <div class="preview-modal">
-        <div class="preview-header">
-            <div class="preview-header-icon">
-                <i class="ri-file-search-line"></i>
-            </div>
-            <div>
-                <h3>Preview Pengajuan Kebutuhan</h3>
-                <p>Periksa kembali data pengajuan Anda sebelum mengirim.</p>
-            </div>
-        </div>
-        <div class="preview-body" id="previewBody">
-            {{-- Filled dynamically by JS --}}
-        </div>
-        <div class="preview-footer">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="closePreview()"><i class="ri-arrow-left-line"></i> Kembali Edit</button>
-            <button type="button" class="btn btn-primary btn-sm" id="btnConfirmSubmit" onclick="confirmSubmit()">
-                <i class="ri-send-plane-fill"></i> Konfirmasi & Kirim
-            </button>
-        </div>
-    </div>
-</div>
 @endsection
 
 @section('scripts')

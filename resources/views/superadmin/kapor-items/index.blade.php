@@ -338,40 +338,6 @@
         </form>
     </div>
 </div>
-
-<script>
-    function openModal(id) {
-        document.getElementById(id).classList.add('open');
-    }
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('open');
-    }
-
-    function openEditModal(item) {
-        document.getElementById('edit_item_name').value = item.item_name;
-        document.getElementById('edit_category').value = item.category;
-        document.getElementById('edit_description').value = item.description || '';
-        document.getElementById('edit_is_active').checked = item.is_active;
-        document.getElementById('edit_for_identifikasi').checked = item.for_identifikasi;
-
-        document.getElementById('editForm').action = "{{ url('superadmin/kapor-items') }}/" + item.id;
-        openModal('editItemModal');
-    }
-
-    function confirmDelete(id, name) {
-        document.getElementById('deleteItemName').innerText = name;
-        document.getElementById('deleteForm').action = "{{ url('superadmin/kapor-items') }}/" + id;
-        openModal('deleteModal');
-    }
-
-    // Close on click outside
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.classList.remove('open');
-        }
-    }
-</script>
-
 @endsection
 
 @section('styles')
@@ -437,4 +403,39 @@
     
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    function openModal(id) {
+        document.getElementById(id).classList.add('open');
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    function openEditModal(item) {
+        document.getElementById('edit_item_name').value = item.item_name;
+        document.getElementById('edit_category').value = item.category;
+        document.getElementById('edit_description').value = item.description || '';
+        document.getElementById('edit_is_active').checked = item.is_active;
+        document.getElementById('edit_for_identifikasi').checked = item.for_identifikasi;
+
+        document.getElementById('editForm').action = "{{ url('superadmin/kapor-items') }}/" + item.id;
+        openModal('editItemModal');
+    }
+
+    function confirmDelete(id, name) {
+        document.getElementById('deleteItemName').innerText = name;
+        document.getElementById('deleteForm').action = "{{ url('superadmin/kapor-items') }}/" + id;
+        openModal('deleteModal');
+    }
+
+    // Close on click outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.classList.remove('open');
+        }
+    }
+</script>
 @endsection

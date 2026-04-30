@@ -4,69 +4,7 @@
 @section('page-title', 'Dashboard - ' . $stats['satker_name'])
 @section('page-subtitle', 'Tahun Anggaran ' . $stats['fiscal_year'])
 
-@section('styles')
-<style>
-    /* Card Hover Animations */
-    .stat-card {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-        border: 1px solid var(--border-color) !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
-    }
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 20px -8px rgba(0,0,0,0.1) !important;
-        border-color: rgba(var(--brand-rgb, 198,40,40), 0.3) !important;
-    }
-    .stat-card::after {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 4px;
-        background: linear-gradient(90deg, var(--brand), var(--brand-light));
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    .stat-card:hover::after {
-        opacity: 1;
-    }
 
-    /* Progress Bar Animation */
-    @keyframes progress-stripes {
-        from { background-position: 1rem 0; }
-        to { background-position: 0 0; }
-    }
-    .progress-bar-animated {
-        animation: progress-stripes 1s linear infinite;
-    }
-
-    /* Table Improvements */
-    .table tbody tr {
-        transition: all 0.2s ease;
-    }
-    .table tbody tr:hover td {
-        background-color: rgba(var(--brand-rgb, 198,40,40), 0.02);
-    }
-
-    /* Glassmorphism accents for headers */
-    .glass-header {
-        background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.4)) !important;
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255,255,255,0.6) !important;
-    }
-    
-    /* Dynamic success badge pulse */
-    @keyframes subtle-pulse {
-        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    }
-    .pulse-success {
-        border-radius: 50%;
-        animation: subtle-pulse 2s infinite;
-    }
-</style>
-@endsection
 
 @section('content')
     <div class="stats-row stats-row-5">
@@ -232,4 +170,68 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('styles')
+<style>
+    /* Card Hover Animations */
+    .stat-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--border-color) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 20px -8px rgba(0,0,0,0.1) !important;
+        border-color: rgba(var(--brand-rgb, 198,40,40), 0.3) !important;
+    }
+    .stat-card::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 4px;
+        background: linear-gradient(90deg, var(--brand), var(--brand-light));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .stat-card:hover::after {
+        opacity: 1;
+    }
+
+    /* Progress Bar Animation */
+    @keyframes progress-stripes {
+        from { background-position: 1rem 0; }
+        to { background-position: 0 0; }
+    }
+    .progress-bar-animated {
+        animation: progress-stripes 1s linear infinite;
+    }
+
+    /* Table Improvements */
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+    .table tbody tr:hover td {
+        background-color: rgba(var(--brand-rgb, 198,40,40), 0.02);
+    }
+
+    /* Glassmorphism accents for headers */
+    .glass-header {
+        background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.4)) !important;
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255,255,255,0.6) !important;
+    }
+    
+    /* Dynamic success badge pulse */
+    @keyframes subtle-pulse {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .pulse-success {
+        border-radius: 50%;
+        animation: subtle-pulse 2s infinite;
+    }
+</style>
 @endsection

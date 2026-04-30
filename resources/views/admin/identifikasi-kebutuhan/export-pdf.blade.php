@@ -104,6 +104,32 @@
             font-weight: bold;
             text-transform: uppercase;
         }
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            page-break-inside: avoid;
+        }
+        .signature-table td {
+            border: none;
+            padding: 0;
+        }
+        .signature-box {
+            width: 330px;
+            text-align: center;
+            font-size: 9pt;
+            line-height: 1.5;
+        }
+        .signature-title {
+            font-weight: bold;
+        }
+        .signature-space {
+            height: 58px;
+        }
+        .signature-name {
+            font-weight: bold;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -155,10 +181,14 @@
                         <td class="text-center main-cell">{{ $loop->iteration }}</td>
                         <td class="text-left main-cell">{{ $item['name'] }}</td>
                         <td class="main-cell">
-                            @php($score = min(100, max(0, $item['percentage'])))
+                            @php
+                                $score = min(100, max(0, $item['percentage']));
+                            @endphp
                             <table class="segment-bar">
                                 <tr>
-                                    @php($filledSegments = (int) round($score / 2.5))
+                                    @php
+                                        $filledSegments = (int) round($score / 2.5);
+                                    @endphp
                                     @for($segment = 1; $segment <= 40; $segment++)
                                         <td style="width: 2.5%; background:{{ $segment <= $filledSegments ? '#2563eb' : '#e5e7eb' }};"></td>
                                     @endfor
@@ -186,6 +216,41 @@
                 </tr>
             @endforelse
         </tbody>
+    </table>
+
+    @php
+        $signatorySettings = $signatorySettings ?? [];
+        $location = $signatorySettings['location'] ?? 'Mataram';
+        $organizationName = strtoupper($signatorySettings['organization_name'] ?? 'KEPALA BIRO LOGISTIK POLDA NTB');
+        $signatoryTitle = strtoupper($signatorySettings['signatory_title'] ?? 'PEJABAT PEMBUAT KOMITMEN');
+        $signatoryName = strtoupper($signatorySettings['signatory_name'] ?? '.............................');
+        $signatoryRank = strtoupper($signatorySettings['signatory_rank'] ?? '');
+        $signatoryNrp = $signatorySettings['signatory_nrp'] ?? '';
+    @endphp
+
+    <table class="signature-table">
+        <tr>
+            <td style="width: 58%;"></td>
+            <td style="width: 42%;" align="center">
+                <div class="signature-box">
+                    <div>{{ $location }}, {{ $generatedAt->translatedFormat('d F Y') }}</div>
+                    @if($organizationName)
+                        <div>a.n. {{ $organizationName }}</div>
+                    @endif
+                    <div class="signature-title">{{ $signatoryTitle }}</div>
+                    <div class="signature-space"></div>
+                    <div class="signature-name">{{ $signatoryName }}</div>
+                    <div>
+                        @if($signatoryRank)
+                            {{ $signatoryRank }}
+                        @endif
+                        @if($signatoryNrp)
+                            NRP/NIP {{ $signatoryNrp }}
+                        @endif
+                    </div>
+                </div>
+            </td>
+        </tr>
     </table>
 
 </body>

@@ -190,16 +190,6 @@
 </div>
 </div>
 </div>
-
-<script>
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        
-        document.getElementById(tabId).classList.add('active');
-        document.querySelector(`[onclick="switchTab('${tabId}')"]`).classList.add('active');
-    }
-</script>
 @endsection
 
 @section('styles')
@@ -276,4 +266,16 @@
         to { opacity: 1; transform: translateY(0); }
     }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        document.querySelector(`[onclick="switchTab('${tabId}')"]`).classList.add('active');
+    }
+</script>
 @endsection

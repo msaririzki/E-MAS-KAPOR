@@ -18,34 +18,7 @@
     <div style="color:#92400E; font-size:14px; font-weight:600;">{{ session('warning') }}</div>
 </div>
 @endif
-<style>
-    .filter-pill {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 6px 14px; border-radius: 40px; cursor: pointer;
-        font-weight: 600; font-size: 13px; border: 2px solid transparent;
-        transition: all 0.18s ease; user-select: none;
-    }
-    .filter-pill.all   { background: #F3F4F6; color: #374151; border-color: #D1D5DB; }
-    .filter-pill.ok    { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
-    .filter-pill.warn  { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
-    .filter-pill.error { background: #FEE2E2; color: #B91C1C; border-color: #FECACA; }
-    .filter-pill.active.all   { background: #374151; color: #fff; border-color: #374151; }
-    .filter-pill.active.ok    { background: #059669; color: #fff; border-color: #059669; }
-    .filter-pill.active.warn  { background: #D97706; color: #fff; border-color: #D97706; }
-    .filter-pill.active.error { background: #DC2626; color: #fff; border-color: #DC2626; }
-    .filter-pill .badge {
-        background: rgba(0,0,0,0.08); border-radius: 20px;
-        padding: 2px 8px; font-size: 12px; font-weight: 700;
-    }
-    .filter-pill.active .badge { background: rgba(255,255,255,0.25); }
-    .row-ok       { }
-    .row-corrected{ background: #FFFDF0 !important; }
-    .row-error    { background: #FFF5F5 !important; }
-    .row-duplicate{ background: #FEE2E2 !important; border-left: 3px solid #EF4444; }
-    .hidden-row   { display: none !important; }
-    .db-dupe-info { font-size: 10px; background: #FEE2E2; color: #B91C1C; padding: 3px 8px; border-radius: 8px; font-weight: 600; margin-top: 3px; display: block; width: fit-content; font-family: sans-serif; line-height: 1.4; }
-    .db-dupe-info i { font-size: 11px; vertical-align: -1px; }
-</style>
+
 
 {{-- FORM BATALKAN — terpisah di luar form utama --}}
 <form action="{{ route('admin.personnel.import-cancel') }}" method="POST" id="cancelForm">
@@ -318,6 +291,51 @@
 
 </form>
 
+
+
+{{-- Global Loader --}}
+<div id="fullScreenLoader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.85); z-index:9999; align-items:center; justify-content:center; flex-direction:column; backdrop-filter: blur(4px);">
+    <div style="width: 50px; height: 50px; border: 4px solid #E5E7EB; border-bottom-color: #059669; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <div style="margin-top: 16px; font-weight: 700; color: #111827; font-size: 16px;" id="loaderMsg">Memproses Data...</div>
+    <div style="margin-top: 4px; font-size: 12px; color: #6B7280;">Mohon jangan tutup atau refresh halaman ini</div>
+</div>
+@endsection
+
+@section('styles')
+<style>
+    .filter-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 14px; border-radius: 40px; cursor: pointer;
+        font-weight: 600; font-size: 13px; border: 2px solid transparent;
+        transition: all 0.18s ease; user-select: none;
+    }
+    .filter-pill.all   { background: #F3F4F6; color: #374151; border-color: #D1D5DB; }
+    .filter-pill.ok    { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
+    .filter-pill.warn  { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
+    .filter-pill.error { background: #FEE2E2; color: #B91C1C; border-color: #FECACA; }
+    .filter-pill.active.all   { background: #374151; color: #fff; border-color: #374151; }
+    .filter-pill.active.ok    { background: #059669; color: #fff; border-color: #059669; }
+    .filter-pill.active.warn  { background: #D97706; color: #fff; border-color: #D97706; }
+    .filter-pill.active.error { background: #DC2626; color: #fff; border-color: #DC2626; }
+    .filter-pill .badge {
+        background: rgba(0,0,0,0.08); border-radius: 20px;
+        padding: 2px 8px; font-size: 12px; font-weight: 700;
+    }
+    .filter-pill.active .badge { background: rgba(255,255,255,0.25); }
+    .row-ok       { }
+    .row-corrected{ background: #FFFDF0 !important; }
+    .row-error    { background: #FFF5F5 !important; }
+    .row-duplicate{ background: #FEE2E2 !important; border-left: 3px solid #EF4444; }
+    .hidden-row   { display: none !important; }
+    .db-dupe-info { font-size: 10px; background: #FEE2E2; color: #B91C1C; padding: 3px 8px; border-radius: 8px; font-weight: 600; margin-top: 3px; display: block; width: fit-content; font-family: sans-serif; line-height: 1.4; }
+    .db-dupe-info i { font-size: 11px; vertical-align: -1px; }
+</style>
+<style>
+@keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+@endsection
+
+@section('scripts')
 <script>
 // Index baris yang berstatus 'error' (belum ada rank_id)
 const errorIndexes = @json(collect($preview)->where('status', 'error')->keys()->values());
@@ -423,16 +441,6 @@ recalcPending();
 // Initialize UI
 setFilter('all');
 </script>
-
-{{-- Global Loader --}}
-<div id="fullScreenLoader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.85); z-index:9999; align-items:center; justify-content:center; flex-direction:column; backdrop-filter: blur(4px);">
-    <div style="width: 50px; height: 50px; border: 4px solid #E5E7EB; border-bottom-color: #059669; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-    <div style="margin-top: 16px; font-weight: 700; color: #111827; font-size: 16px;" id="loaderMsg">Memproses Data...</div>
-    <div style="margin-top: 4px; font-size: 12px; color: #6B7280;">Mohon jangan tutup atau refresh halaman ini</div>
-</div>
-<style>
-@keyframes spin { 100% { transform: rotate(360deg); } }
-</style>
 <script>
 function showGlobalLoader(msg) {
     var loader = document.getElementById('fullScreenLoader');

@@ -4,19 +4,7 @@
 @section('breadcrumb', 'Identifikasi Kebutuhan')
 
 @section('content')
-<style>
-    .km-overlay { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; animation: kmFadeIn .2s ease; }
-    .km-overlay.active { display: flex; }
-    .km-modal { background: #ffffff; border-radius: 16px; width: 100%; max-width: 440px; box-shadow: 0 24px 80px rgba(0,0,0,.4); overflow: hidden; animation: kmSlideUp .25s ease; }
-    .km-modal-icon { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 28px; }
-    .km-modal-body { padding: 28px 24px 20px; text-align: center; }
-    .km-modal-title { font-size: 17px; font-weight: 700; margin: 0 0 6px; color: #1e293b; }
-    .km-modal-desc { font-size: 13px; color: #475569; margin: 0; line-height: 1.5; }
-    .km-modal-footer { padding: 14px 24px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; justify-content: center; background: #f8fafc; }
-    .km-modal-footer .btn { min-width: 120px; justify-content: center; font-weight: 600; }
-    @keyframes kmFadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes kmSlideUp { from { opacity: 0; transform: translateY(20px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
-</style>
+
 <div class="page-header">
     <div class="page-header-row">
         <div>
@@ -143,6 +131,22 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('styles')
+<style>
+    .km-overlay { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; animation: kmFadeIn .2s ease; }
+    .km-overlay.active { display: flex; }
+    .km-modal { background: #ffffff; border-radius: 16px; width: 100%; max-width: 440px; box-shadow: 0 24px 80px rgba(0,0,0,.4); overflow: hidden; animation: kmSlideUp .25s ease; }
+    .km-modal-icon { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 28px; }
+    .km-modal-body { padding: 28px 24px 20px; text-align: center; }
+    .km-modal-title { font-size: 17px; font-weight: 700; margin: 0 0 6px; color: #1e293b; }
+    .km-modal-desc { font-size: 13px; color: #475569; margin: 0; line-height: 1.5; }
+    .km-modal-footer { padding: 14px 24px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; justify-content: center; background: #f8fafc; }
+    .km-modal-footer .btn { min-width: 120px; justify-content: center; font-weight: 600; }
+    @keyframes kmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes kmSlideUp { from { opacity: 0; transform: translateY(20px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+</style>
 @endsection
 
 @section('scripts')

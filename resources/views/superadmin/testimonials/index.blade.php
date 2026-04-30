@@ -259,62 +259,8 @@
     </div>
 @endsection
 
-@section('scripts')
-    <script>
-        // Close on click outside
-        window.onclick = function (event) {
-            if (!event.target.closest('.custom-select')) {
-                document.querySelectorAll('.custom-options').forEach(opt => {
-                    opt.style.display = 'none';
-                });
-                document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
-            }
-        }
-
-        function toggleDropdown(el) {
-            const options = el.querySelector('.custom-options');
-            const isOpen = options.style.display === 'block';
-
-            document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
-            document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
-
-            if (!isOpen) {
-                options.style.display = 'block';
-                el.classList.add('active');
-            }
-
-            event.stopPropagation();
-        }
-
-        function selectOptionSearch(el, inputName, value, label) {
-            const wrapper = el.closest('.custom-select-wrapper');
-            const trigger = wrapper.querySelector('.select-trigger span');
-            const input = wrapper.querySelector('input[type="hidden"]');
-
-            trigger.innerText = label;
-            input.value = value;
-
-            document.getElementById('filterForm').submit();
-        }
-
-        function copyNrp(nrp, btn) {
-            navigator.clipboard.writeText(nrp).then(() => {
-                const icon = btn.querySelector('i');
-                const originalClass = icon.className;
-                icon.className = 'ri-check-line';
-                icon.style.color = '#10B981';
-
-                setTimeout(() => {
-                    icon.className = originalClass;
-                    icon.style.color = '';
-                }, 2000);
-            });
-        }
-    </script>
-@endsection
-
 @section('styles')
-    <style>
+<style>
         .page-header {
             margin-bottom: 24px;
         }
@@ -636,4 +582,58 @@
             color: #fff;
         }
     </style>
+@endsection
+
+@section('scripts')
+<script>
+        // Close on click outside
+        window.onclick = function (event) {
+            if (!event.target.closest('.custom-select')) {
+                document.querySelectorAll('.custom-options').forEach(opt => {
+                    opt.style.display = 'none';
+                });
+                document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+            }
+        }
+
+        function toggleDropdown(el) {
+            const options = el.querySelector('.custom-options');
+            const isOpen = options.style.display === 'block';
+
+            document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
+            document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+
+            if (!isOpen) {
+                options.style.display = 'block';
+                el.classList.add('active');
+            }
+
+            event.stopPropagation();
+        }
+
+        function selectOptionSearch(el, inputName, value, label) {
+            const wrapper = el.closest('.custom-select-wrapper');
+            const trigger = wrapper.querySelector('.select-trigger span');
+            const input = wrapper.querySelector('input[type="hidden"]');
+
+            trigger.innerText = label;
+            input.value = value;
+
+            document.getElementById('filterForm').submit();
+        }
+
+        function copyNrp(nrp, btn) {
+            navigator.clipboard.writeText(nrp).then(() => {
+                const icon = btn.querySelector('i');
+                const originalClass = icon.className;
+                icon.className = 'ri-check-line';
+                icon.style.color = '#10B981';
+
+                setTimeout(() => {
+                    icon.className = originalClass;
+                    icon.style.color = '';
+                }, 2000);
+            });
+        }
+    </script>
 @endsection

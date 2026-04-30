@@ -7,7 +7,7 @@
     <a href="{{ route('admin.budget.show-package', $budgetPackage) }}">{{ $budgetPackage->name }}</a>
     <span class="sep">/</span>
     <span class="current">Invoice HPS</span>
-@endsection
+
 
 @section('content')
 <div class="page-header no-print">

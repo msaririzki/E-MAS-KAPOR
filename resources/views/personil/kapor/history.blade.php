@@ -2,73 +2,7 @@
 
 @section('title', 'Riwayat Ukuran Kaporlap')
 
-@section('styles')
-    <style>
-        .meta,
-        .list {
-            display: grid;
-            gap: 10px;
-            margin-top: 14px;
-        }
 
-        .list {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .meta {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .meta-item,
-        .item {
-            padding: 0;
-            background: transparent;
-            border: none;
-        }
-
-        .meta-item strong,
-        .item strong {
-            display: block;
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        .meta-item span,
-        .item span {
-            display: block;
-            margin-top: 6px;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .button,
-        .button-secondary {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 46px;
-            padding: 0 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 700;
-            border: 1px solid transparent;
-        }
-
-        .button {
-            background: var(--brand);
-            color: #fff;
-        }
-
-        .button-secondary {
-            background: #fff;
-            color: var(--text-main);
-            border-color: var(--border-color);
-        }
-
-        @media (min-width: 768px) {}
-    </style>
-@endsection
 
 @section('content')
     @php
@@ -136,4 +70,72 @@
             </div>
         </footer>
     </div>
+@endsection
+
+@section('styles')
+<style>
+        .meta,
+        .list {
+            display: grid;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .meta {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .meta-item,
+        .item {
+            padding: 0;
+            background: transparent;
+            border: none;
+        }
+
+        .meta-item strong,
+        .item strong {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .meta-item span,
+        .item span {
+            display: block;
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .button,
+        .button-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 46px;
+            padding: 0 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .button {
+            background: var(--brand);
+            color: #fff;
+        }
+
+        .button-secondary {
+            background: #fff;
+            color: var(--text-main);
+            border-color: var(--border-color);
+        }
+
+        @media (min-width: 768px) {}
+    </style>
 @endsection

@@ -11,128 +11,7 @@
 </div>
 @endif
 
-<style>
-    .filter-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        border-radius: 40px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 13px;
-        border: 2px solid transparent;
-        transition: all 0.18s ease;
-        user-select: none;
-    }
-    .filter-pill.all { background: #F3F4F6; color: #374151; border-color: #D1D5DB; }
-    .filter-pill.ok { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
-    .filter-pill.warn { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
-    .filter-pill.error { background: #FEE2E2; color: #B91C1C; border-color: #FECACA; }
-    .filter-pill.active.all { background: #374151; color: #fff; border-color: #374151; }
-    .filter-pill.active.ok { background: #059669; color: #fff; border-color: #059669; }
-    .filter-pill.active.warn { background: #D97706; color: #fff; border-color: #D97706; }
-    .filter-pill.active.error { background: #DC2626; color: #fff; border-color: #DC2626; }
-    .filter-pill .badge {
-        background: rgba(0,0,0,0.08);
-        border-radius: 20px;
-        padding: 2px 8px;
-        font-size: 12px;
-        font-weight: 700;
-    }
-    .filter-pill.active .badge {
-        background: rgba(255,255,255,0.25);
-    }
-    .row-corrected { background: #FFFDF0 !important; }
-    .row-error { background: #FFF5F5 !important; }
-    .hidden-row { display: none !important; }
-    .sdm-progress-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 2600;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        background: rgba(15, 23, 42, 0.55);
-        backdrop-filter: blur(6px);
-    }
-    .sdm-progress-card {
-        width: min(100%, 460px);
-        border-radius: 24px;
-        padding: 28px;
-        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
-        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
-        border: 1px solid rgba(148, 163, 184, 0.22);
-    }
-    .sdm-progress-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 12px;
-        border-radius: 999px;
-        background: #D1FAE5;
-        color: #047857;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-    }
-    .sdm-progress-track {
-        position: relative;
-        overflow: hidden;
-        width: 100%;
-        height: 14px;
-        margin-top: 18px;
-        border-radius: 999px;
-        background: #E5E7EB;
-    }
-    .sdm-progress-fill {
-        position: relative;
-        height: 100%;
-        width: 0;
-        border-radius: inherit;
-        background: linear-gradient(90deg, #059669 0%, #14B8A6 100%);
-        transition: width 0.24s ease;
-    }
-    .sdm-progress-fill::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
-        animation: sdmProgressShimmer 1.3s linear infinite;
-    }
-    .sdm-progress-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        margin-top: 12px;
-    }
-    .sdm-progress-dots {
-        display: inline-flex;
-        gap: 6px;
-        margin-top: 18px;
-    }
-    .sdm-progress-dots span {
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        background: #059669;
-        opacity: 0.25;
-        animation: sdmProgressPulse 1s infinite ease-in-out;
-    }
-    .sdm-progress-dots span:nth-child(2) { animation-delay: 0.18s; }
-    .sdm-progress-dots span:nth-child(3) { animation-delay: 0.36s; }
-    @keyframes sdmProgressShimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-    }
-    @keyframes sdmProgressPulse {
-        0%, 100% { opacity: 0.25; transform: translateY(0); }
-        50% { opacity: 1; transform: translateY(-2px); }
-    }
-</style>
+
 
 <form action="{{ route('admin.personnel.import-sdm-cancel') }}" method="POST" id="cancelForm">
     @csrf
@@ -358,7 +237,134 @@
         </div>
     </div>
 </div>
+@endsection
 
+@section('styles')
+<style>
+    .filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 40px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        border: 2px solid transparent;
+        transition: all 0.18s ease;
+        user-select: none;
+    }
+    .filter-pill.all { background: #F3F4F6; color: #374151; border-color: #D1D5DB; }
+    .filter-pill.ok { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
+    .filter-pill.warn { background: #FEF3C7; color: #92400E; border-color: #FDE68A; }
+    .filter-pill.error { background: #FEE2E2; color: #B91C1C; border-color: #FECACA; }
+    .filter-pill.active.all { background: #374151; color: #fff; border-color: #374151; }
+    .filter-pill.active.ok { background: #059669; color: #fff; border-color: #059669; }
+    .filter-pill.active.warn { background: #D97706; color: #fff; border-color: #D97706; }
+    .filter-pill.active.error { background: #DC2626; color: #fff; border-color: #DC2626; }
+    .filter-pill .badge {
+        background: rgba(0,0,0,0.08);
+        border-radius: 20px;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .filter-pill.active .badge {
+        background: rgba(255,255,255,0.25);
+    }
+    .row-corrected { background: #FFFDF0 !important; }
+    .row-error { background: #FFF5F5 !important; }
+    .hidden-row { display: none !important; }
+    .sdm-progress-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2600;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(6px);
+    }
+    .sdm-progress-card {
+        width: min(100%, 460px);
+        border-radius: 24px;
+        padding: 28px;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+    }
+    .sdm-progress-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: #D1FAE5;
+        color: #047857;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .sdm-progress-track {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 14px;
+        margin-top: 18px;
+        border-radius: 999px;
+        background: #E5E7EB;
+    }
+    .sdm-progress-fill {
+        position: relative;
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #059669 0%, #14B8A6 100%);
+        transition: width 0.24s ease;
+    }
+    .sdm-progress-fill::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+        animation: sdmProgressShimmer 1.3s linear infinite;
+    }
+    .sdm-progress-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+    }
+    .sdm-progress-dots {
+        display: inline-flex;
+        gap: 6px;
+        margin-top: 18px;
+    }
+    .sdm-progress-dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #059669;
+        opacity: 0.25;
+        animation: sdmProgressPulse 1s infinite ease-in-out;
+    }
+    .sdm-progress-dots span:nth-child(2) { animation-delay: 0.18s; }
+    .sdm-progress-dots span:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes sdmProgressShimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    @keyframes sdmProgressPulse {
+        0%, 100% { opacity: 0.25; transform: translateY(0); }
+        50% { opacity: 1; transform: translateY(-2px); }
+    }
+</style>
+@endsection
+
+@section('scripts')
 <script>
 const errorIndexes = @json(collect($preview)->where('status', 'error')->keys()->values());
 const fatalErrorIndexes = @json(collect($preview)->filter(fn ($row) => !empty($row['fatal_error']))->keys()->values());

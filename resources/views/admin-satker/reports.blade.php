@@ -278,7 +278,6 @@
         <div style="font-size: 12px;">NRP/NIP. {{ $ttdNrp }}</div>
     </div>
 </div>
-
 @endsection
 
 @section('styles')

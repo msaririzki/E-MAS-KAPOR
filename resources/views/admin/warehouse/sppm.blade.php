@@ -161,54 +161,6 @@
 </div>
 @endsection
 
-@section('scripts')
-<script>
-    // Custom Select Filtering UI
-    function toggleDropdown(el) {
-        const options = el.querySelector('.custom-options');
-        const isOpen = options.style.display === 'block';
-
-        document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
-        document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
-
-        if (!isOpen) {
-            options.style.display = 'block';
-            el.classList.add('active');
-        } 
-        event.stopPropagation();
-    }
-
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.custom-select')) {
-            document.querySelectorAll('.custom-options').forEach(opt => {
-                opt.style.display = 'none';
-            });
-            document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
-        }
-    });
-
-    function selectCustomOptionFilter(inputId, value, label) {
-        document.getElementById(inputId).value = value;
-        document.querySelector('.filter-form').submit();
-    }
-
-    function filterCustomOptions(input) {
-        const filter = input.value.toLowerCase();
-        const optionsContainer = input.closest('.custom-options');
-        const options = optionsContainer.querySelectorAll('.option:not(.select-search-container)');
-        
-        options.forEach(opt => {
-            const text = (opt.dataset.label || '').toLowerCase();
-            if (text.includes(filter)) {
-                opt.style.display = 'flex';
-            } else {
-                opt.style.display = 'none';
-            }
-        });
-    }
-</script>
-@endsection
-
 @section('styles')
 <style>
     /* Style Overrides and Refinements */
@@ -327,4 +279,52 @@
         .filter-actions .btn { flex: 1; }
     }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    // Custom Select Filtering UI
+    function toggleDropdown(el) {
+        const options = el.querySelector('.custom-options');
+        const isOpen = options.style.display === 'block';
+
+        document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
+        document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+
+        if (!isOpen) {
+            options.style.display = 'block';
+            el.classList.add('active');
+        } 
+        event.stopPropagation();
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-select')) {
+            document.querySelectorAll('.custom-options').forEach(opt => {
+                opt.style.display = 'none';
+            });
+            document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+        }
+    });
+
+    function selectCustomOptionFilter(inputId, value, label) {
+        document.getElementById(inputId).value = value;
+        document.querySelector('.filter-form').submit();
+    }
+
+    function filterCustomOptions(input) {
+        const filter = input.value.toLowerCase();
+        const optionsContainer = input.closest('.custom-options');
+        const options = optionsContainer.querySelectorAll('.option:not(.select-search-container)');
+        
+        options.forEach(opt => {
+            const text = (opt.dataset.label || '').toLowerCase();
+            if (text.includes(filter)) {
+                opt.style.display = 'flex';
+            } else {
+                opt.style.display = 'none';
+            }
+        });
+    }
+</script>
 @endsection

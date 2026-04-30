@@ -371,103 +371,6 @@
         </form>
     </div>
 </div>
-
-<script>
-    function openModal(id) {
-        document.getElementById(id).classList.add('open');
-    }
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('open');
-    }
-
-    function openEditModal(item) {
-        document.getElementById('edit_item_name').value = item.item_name;
-        document.getElementById('edit_category').value = item.category;
-        document.getElementById('edit_is_active').checked = item.is_active;
-        document.getElementById('edit_eligible_satker_count').value = item.eligible_satker_count ?? '';
-
-        document.getElementById('editForm').action = "{{ url('superadmin/identifikasi-items') }}/" + item.id;
-        
-        const catLabels = {!! json_encode($categories) !!};
-        document.getElementById('edit_category_label').innerText = catLabels[item.category] || '-- Pilih --';
-        const options = document.querySelectorAll('#editItemModal .option');
-        options.forEach(opt => opt.classList.remove('selected'));
-        options.forEach(opt => {
-            if(opt.innerText === (catLabels[item.category] || '')) {
-                opt.classList.add('selected');
-            }
-        });
-
-        openModal('editItemModal');
-    }
-
-    function confirmDelete(id, name) {
-        document.getElementById('deleteItemName').innerText = name;
-        document.getElementById('deleteForm').action = "{{ url('superadmin/identifikasi-items') }}/" + id;
-        openModal('deleteModal');
-    }
-
-    // Close on click outside
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.classList.remove('open');
-        }
-    }
-
-    // Add dropdown logic
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.custom-select')) {
-            document.querySelectorAll('.custom-options').forEach(opt => {
-                opt.style.display = 'none';
-            });
-            document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
-        }
-    });
-
-    function toggleDropdown(el) {
-        const options = el.querySelector('.custom-options');
-        const isOpen = options.style.display === 'block';
-
-        document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
-        document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
-
-        if (!isOpen) {
-            options.style.display = 'block';
-            el.classList.add('active');
-        } 
-        
-        event.stopPropagation();
-    }
-
-    function selectOptionSearch(el, inputName, value, label) {
-        const wrapper = el.closest('.custom-select-wrapper');
-        const trigger = wrapper.querySelector('.select-trigger span');
-        const input = wrapper.querySelector('input[type="hidden"]');
-        
-        trigger.innerText = label;
-        input.value = value;
-        
-        document.getElementById('filterForm').submit();
-    }
-
-    function selectOptionManual(el, inputName, value, label, triggerId) {
-        const wrapper = el.closest('.custom-select-wrapper');
-        const trigger = document.getElementById(triggerId);
-        const input = wrapper.querySelector('input[type="hidden"]');
-        
-        trigger.innerText = label;
-        input.value = value;
-        
-        wrapper.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
-        el.classList.add('selected');
-        
-        el.closest('.custom-select').querySelector('.custom-options').style.display = 'none';
-        el.closest('.custom-select').classList.remove('active');
-        
-        event.stopPropagation();
-    }
-</script>
-
 @endsection
 
 @section('styles')
@@ -631,4 +534,102 @@
         font-weight: 600;
     }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    function openModal(id) {
+        document.getElementById(id).classList.add('open');
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    function openEditModal(item) {
+        document.getElementById('edit_item_name').value = item.item_name;
+        document.getElementById('edit_category').value = item.category;
+        document.getElementById('edit_is_active').checked = item.is_active;
+        document.getElementById('edit_eligible_satker_count').value = item.eligible_satker_count ?? '';
+
+        document.getElementById('editForm').action = "{{ url('superadmin/identifikasi-items') }}/" + item.id;
+        
+        const catLabels = {!! json_encode($categories) !!};
+        document.getElementById('edit_category_label').innerText = catLabels[item.category] || '-- Pilih --';
+        const options = document.querySelectorAll('#editItemModal .option');
+        options.forEach(opt => opt.classList.remove('selected'));
+        options.forEach(opt => {
+            if(opt.innerText === (catLabels[item.category] || '')) {
+                opt.classList.add('selected');
+            }
+        });
+
+        openModal('editItemModal');
+    }
+
+    function confirmDelete(id, name) {
+        document.getElementById('deleteItemName').innerText = name;
+        document.getElementById('deleteForm').action = "{{ url('superadmin/identifikasi-items') }}/" + id;
+        openModal('deleteModal');
+    }
+
+    // Close on click outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.classList.remove('open');
+        }
+    }
+
+    // Add dropdown logic
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-select')) {
+            document.querySelectorAll('.custom-options').forEach(opt => {
+                opt.style.display = 'none';
+            });
+            document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+        }
+    });
+
+    function toggleDropdown(el) {
+        const options = el.querySelector('.custom-options');
+        const isOpen = options.style.display === 'block';
+
+        document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
+        document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+
+        if (!isOpen) {
+            options.style.display = 'block';
+            el.classList.add('active');
+        } 
+        
+        event.stopPropagation();
+    }
+
+    function selectOptionSearch(el, inputName, value, label) {
+        const wrapper = el.closest('.custom-select-wrapper');
+        const trigger = wrapper.querySelector('.select-trigger span');
+        const input = wrapper.querySelector('input[type="hidden"]');
+        
+        trigger.innerText = label;
+        input.value = value;
+        
+        document.getElementById('filterForm').submit();
+    }
+
+    function selectOptionManual(el, inputName, value, label, triggerId) {
+        const wrapper = el.closest('.custom-select-wrapper');
+        const trigger = document.getElementById(triggerId);
+        const input = wrapper.querySelector('input[type="hidden"]');
+        
+        trigger.innerText = label;
+        input.value = value;
+        
+        wrapper.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+        el.classList.add('selected');
+        
+        el.closest('.custom-select').querySelector('.custom-options').style.display = 'none';
+        el.closest('.custom-select').classList.remove('active');
+        
+        event.stopPropagation();
+    }
+</script>
 @endsection

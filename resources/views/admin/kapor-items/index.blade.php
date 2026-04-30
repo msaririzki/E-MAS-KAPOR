@@ -97,101 +97,7 @@
     </form>
 </div>
 
-<script>
-    let typingTimer;
-    
-    // AJAX Fetch Function
-    function fetchTable(url) {
-        let container = document.getElementById('tableContainer');
-        container.style.opacity = '0.5'; // Simple loading effect
-        
-        fetch(url, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.text())
-        .then(html => {
-            container.innerHTML = html;
-            container.style.opacity = '1';
-            
-            // Update URL without reload
-            window.history.pushState({}, '', url);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            container.style.opacity = '1';
-            alert('Gagal memuat data. Silakan coba lagi.');
-        });
-    }
 
-    // Intercept Pagination Clicks (using Delegation)
-    document.addEventListener('click', function(e) {
-        let link = e.target.closest('.ajax-link');
-        if (link) {
-            e.preventDefault();
-            if (link.getAttribute('href') && !link.classList.contains('disabled')) {
-                fetchTable(link.getAttribute('href'));
-            }
-        }
-    });
-
-    // Category Filter
-    function selectCategory(val, element) {
-        document.getElementById('categoryInput').value = val;
-        
-        // Update UI
-        document.querySelectorAll('.filter-bar .option').forEach(el => el.classList.remove('selected'));
-        if(element) {
-            element.classList.add('selected');
-             // Update Trigger Text
-            let text = element.innerText;
-            document.querySelector('.filter-bar .select-trigger span').innerText = text;
-        } else {
-             // Fallback if called without element (e.g. direct load)
-        }
-       
-        document.querySelector('.filter-bar .custom-select').classList.remove('active'); // Close dropdown
-
-        let url = new URL(window.location.href);
-        url.searchParams.set('category', val);
-        url.searchParams.set('page', 1); // Reset to page 1
-        
-        fetchTable(url.toString());
-    }
-
-    // Search Filter with Debounce
-    document.addEventListener('input', function(e) {
-        if(e.target.classList.contains('search-field')) {
-            clearTimeout(typingTimer);
-            let val = e.target.value;
-            
-            typingTimer = setTimeout(() => {
-                let url = new URL(window.location.href);
-                if(val) {
-                    url.searchParams.set('search', val);
-                } else {
-                    url.searchParams.delete('search');
-                }
-                url.searchParams.set('page', 1);
-                fetchTable(url.toString());
-            }, 500); // Debounce 500ms
-        }
-    });
-
-    // Per Page Change
-    function changePerPage(val) {
-         let url = new URL(window.location.href);
-         url.searchParams.set('per_page', val);
-         url.searchParams.set('page', 1);
-         fetchTable(url.toString());
-    }
-
-    // Handle Browser Back/Forward buttons
-    window.onpopstate = function(event) {
-        fetchTable(window.location.href);
-    };
-</script>
 
 {{-- Table --}}
     <div class="table-container" id="tableContainer">
@@ -384,48 +290,9 @@
     </div>
 </div>
 
-<script>
-    function openModal(id) {
-        document.getElementById(id).classList.add('open');
-    }
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('open');
-    }
 
-    function openEditModal(item) {
-        document.getElementById('edit_item_name').value = item.item_name;
-        document.getElementById('edit_category').value = item.category;
-        document.getElementById('edit_gender').value = item.gender_specific || '';
-        document.getElementById('edit_price').value = item.price || '';
-        document.getElementById('edit_unit').value = item.unit || 'PCS';
-        document.getElementById('edit_invoice_group').value = item.invoice_group || '';
 
-        // Active Status
-        if(item.is_active) {
-            document.getElementById('edit_active_1').checked = true;
-        } else {
-             document.getElementById('edit_active_0').checked = true;
-        }
 
-        document.getElementById('editForm').action = "/admin/kapor-items/" + item.id;
-        openModal('editItemModal');
-    }
-
-    function confirmDelete(id, name) {
-        document.getElementById('deleteItemName').innerText = name;
-        document.getElementById('deleteForm').action = "/admin/kapor-items/" + id;
-        openModal('deleteModal');
-    }
-
-    // Close on click outside
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.classList.remove('open');
-        }
-    }
-</script>
-
-@endsection
 
 {{-- Modal Kelola Ukuran --}}
 <div id="sizeModal" class="modal">
@@ -483,92 +350,7 @@
         </div>
     </div>
 </div>
-
-<script>
-let currentItemId = null;
-
-function openSizeModal(itemId, itemName) {
-    currentItemId = itemId;
-    document.getElementById('sizeModalItemName').textContent = itemName;
-    document.getElementById('sizeAddError').style.display = 'none';
-    document.getElementById('newSizeLabel').value = '';
-    openModal('sizeModal');
-    loadSizes();
-}
-
-function loadSizes() {
-    document.getElementById('sizeListMale').innerHTML = '<span style="color:#9CA3AF;font-size:13px;">Memuat...</span>';
-    document.getElementById('sizeListFemale').innerHTML = '<span style="color:#9CA3AF;font-size:13px;">Memuat...</span>';
-
-    fetch(`/admin/kapor-items/${currentItemId}/sizes`, {
-        headers: {'X-Requested-With': 'XMLHttpRequest'}
-    })
-    .then(r => r.json())
-    .then(sizes => {
-        const males   = sizes.filter(s => s.gender === 'L');
-        const females = sizes.filter(s => s.gender === 'P');
-        renderSizes('sizeListMale',   males,   '#1D4ED8', '#EFF6FF');
-        renderSizes('sizeListFemale', females, '#9D174D', '#FDF2F8');
-    })
-    .catch(() => {
-        document.getElementById('sizeListMale').innerHTML = '<span style="color:#DC2626;">Gagal memuat.</span>';
-        document.getElementById('sizeListFemale').innerHTML = '<span style="color:#DC2626;">Gagal memuat.</span>';
-    });
-}
-
-function renderSizes(containerId, sizes, color, bg) {
-    const container = document.getElementById(containerId);
-    if (!sizes.length) {
-        container.innerHTML = '<span style="color:#9CA3AF;font-size:13px;">Belum ada ukuran.</span>';
-        return;
-    }
-    container.innerHTML = sizes.map(s =>
-        `<span style="display:inline-flex;align-items:center;gap:6px;background:${bg};color:${color};border:1px solid ${color}33;padding:4px 10px;border-radius:20px;font-size:13px;font-weight:600;">
-            ${s.size_label}
-            <button onclick="deleteSize(${s.id})" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:14px;line-height:1;padding:0;" title="Hapus">&#10005;</button>
-        </span>`
-    ).join('');
-}
-
-function addSize() {
-    const label  = document.getElementById('newSizeLabel').value.trim();
-    const gender = document.getElementById('newSizeGender').value;
-    const errEl  = document.getElementById('sizeAddError');
-
-    if (!label) { errEl.textContent = 'Label ukuran tidak boleh kosong.'; errEl.style.display='block'; return; }
-    errEl.style.display = 'none';
-
-    fetch(`/admin/kapor-items/${currentItemId}/sizes`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({ size_label: label, gender: gender })
-    })
-    .then(async r => {
-        const data = await r.json();
-        if (!r.ok) { errEl.textContent = data.error || 'Gagal menambah ukuran.'; errEl.style.display='block'; return; }
-        document.getElementById('newSizeLabel').value = '';
-        loadSizes();
-    })
-    .catch(() => { errEl.textContent = 'Terjadi kesalahan.'; errEl.style.display='block'; });
-}
-
-function deleteSize(sizeId) {
-    if (!confirm('Hapus ukuran ini?')) return;
-    fetch(`/admin/kapor-items/${currentItemId}/sizes/${sizeId}`, {
-        method: 'DELETE',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(() => loadSizes())
-    .catch(() => alert('Gagal menghapus ukuran.'));
-}
-</script>
+@endsection
 
 @section('styles')
 {{-- Reuse styles from index.blade.php by keeping structure or defining here --}}
@@ -807,4 +589,229 @@ function deleteSize(sizeId) {
     .page-info { font-size: 13px; color: #4B5563; margin: 0 12px; }
     .page-info strong { color: #111827; }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+
+    let typingTimer;
+    
+    // AJAX Fetch Function
+    function fetchTable(url) {
+        let container = document.getElementById('tableContainer');
+        container.style.opacity = '0.5'; // Simple loading effect
+        
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            container.innerHTML = html;
+            container.style.opacity = '1';
+            
+            // Update URL without reload
+            window.history.pushState({}, '', url);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.style.opacity = '1';
+            alert('Gagal memuat data. Silakan coba lagi.');
+        });
+    }
+
+    // Intercept Pagination Clicks (using Delegation)
+    document.addEventListener('click', function(e) {
+        let link = e.target.closest('.ajax-link');
+        if (link) {
+            e.preventDefault();
+            if (link.getAttribute('href') && !link.classList.contains('disabled')) {
+                fetchTable(link.getAttribute('href'));
+            }
+        }
+    });
+
+    // Category Filter
+    function selectCategory(val, element) {
+        document.getElementById('categoryInput').value = val;
+        
+        // Update UI
+        document.querySelectorAll('.filter-bar .option').forEach(el => el.classList.remove('selected'));
+        if(element) {
+            element.classList.add('selected');
+             // Update Trigger Text
+            let text = element.innerText;
+            document.querySelector('.filter-bar .select-trigger span').innerText = text;
+        } else {
+             // Fallback if called without element (e.g. direct load)
+        }
+       
+        document.querySelector('.filter-bar .custom-select').classList.remove('active'); // Close dropdown
+
+        let url = new URL(window.location.href);
+        url.searchParams.set('category', val);
+        url.searchParams.set('page', 1); // Reset to page 1
+        
+        fetchTable(url.toString());
+    }
+
+    // Search Filter with Debounce
+    document.addEventListener('input', function(e) {
+        if(e.target.classList.contains('search-field')) {
+            clearTimeout(typingTimer);
+            let val = e.target.value;
+            
+            typingTimer = setTimeout(() => {
+                let url = new URL(window.location.href);
+                if(val) {
+                    url.searchParams.set('search', val);
+                } else {
+                    url.searchParams.delete('search');
+                }
+                url.searchParams.set('page', 1);
+                fetchTable(url.toString());
+            }, 500); // Debounce 500ms
+        }
+    });
+
+    // Per Page Change
+    function changePerPage(val) {
+         let url = new URL(window.location.href);
+         url.searchParams.set('per_page', val);
+         url.searchParams.set('page', 1);
+         fetchTable(url.toString());
+    }
+
+    // Handle Browser Back/Forward buttons
+    window.onpopstate = function(event) {
+        fetchTable(window.location.href);
+    };
+
+
+    function openModal(id) {
+        document.getElementById(id).classList.add('open');
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+    function openEditModal(item) {
+        document.getElementById('edit_item_name').value = item.item_name;
+        document.getElementById('edit_category').value = item.category;
+        document.getElementById('edit_gender').value = item.gender_specific || '';
+        document.getElementById('edit_price').value = item.price || '';
+        document.getElementById('edit_unit').value = item.unit || 'PCS';
+        document.getElementById('edit_invoice_group').value = item.invoice_group || '';
+
+        // Active Status
+        if(item.is_active) {
+            document.getElementById('edit_active_1').checked = true;
+        } else {
+             document.getElementById('edit_active_0').checked = true;
+        }
+
+        document.getElementById('editForm').action = "/admin/kapor-items/" + item.id;
+        openModal('editItemModal');
+    }
+
+    function confirmDelete(id, name) {
+        document.getElementById('deleteItemName').innerText = name;
+        document.getElementById('deleteForm').action = "/admin/kapor-items/" + id;
+        openModal('deleteModal');
+    }
+
+    // Close on click outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.classList.remove('open');
+        }
+    }
+
+
+let currentItemId = null;
+
+function openSizeModal(itemId, itemName) {
+    currentItemId = itemId;
+    document.getElementById('sizeModalItemName').textContent = itemName;
+    document.getElementById('sizeAddError').style.display = 'none';
+    document.getElementById('newSizeLabel').value = '';
+    openModal('sizeModal');
+    loadSizes();
+}
+
+function loadSizes() {
+    document.getElementById('sizeListMale').innerHTML = '<span style="color:#9CA3AF;font-size:13px;">Memuat...</span>';
+    document.getElementById('sizeListFemale').innerHTML = '<span style="color:#9CA3AF;font-size:13px;">Memuat...</span>';
+
+    fetch(`/admin/kapor-items/${currentItemId}/sizes`, {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(r => r.json())
+    .then(sizes => {
+        const males   = sizes.filter(s => s.gender === 'L');
+        const females = sizes.filter(s => s.gender === 'P');
+        renderSizes('sizeListMale',   males,   '#1D4ED8', '#EFF6FF');
+        renderSizes('sizeListFemale', females, '#9D174D', '#FDF2F8');
+    })
+    .catch(() => {
+        document.getElementById('sizeListMale').innerHTML = '<span style="color:#DC2626;">Gagal memuat.</span>';
+        document.getElementById('sizeListFemale').innerHTML = '<span style="color:#DC2626;">Gagal memuat.</span>';
+    });
+}
+
+function renderSizes(containerId, sizes, color, bg) {
+    const container = document.getElementById(containerId);
+    if (!sizes.length) {
+        container.innerHTML = '<span style="color:#9CA3AF;font-size:13px;">Belum ada ukuran.</span>';
+        return;
+    }
+    container.innerHTML = sizes.map(s =>
+        `<span style="display:inline-flex;align-items:center;gap:6px;background:${bg};color:${color};border:1px solid ${color}33;padding:4px 10px;border-radius:20px;font-size:13px;font-weight:600;">
+            ${s.size_label}
+            <button onclick="deleteSize(${s.id})" style="background:none;border:none;cursor:pointer;color:#DC2626;font-size:14px;line-height:1;padding:0;" title="Hapus">&#10005;</button>
+        </span>`
+    ).join('');
+}
+
+function addSize() {
+    const label  = document.getElementById('newSizeLabel').value.trim();
+    const gender = document.getElementById('newSizeGender').value;
+    const errEl  = document.getElementById('sizeAddError');
+
+    if (!label) { errEl.textContent = 'Label ukuran tidak boleh kosong.'; errEl.style.display='block'; return; }
+    errEl.style.display = 'none';
+
+    fetch(`/admin/kapor-items/${currentItemId}/sizes`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ size_label: label, gender: gender })
+    })
+    .then(async r => {
+        const data = await r.json();
+        if (!r.ok) { errEl.textContent = data.error || 'Gagal menambah ukuran.'; errEl.style.display='block'; return; }
+        document.getElementById('newSizeLabel').value = '';
+        loadSizes();
+    })
+    .catch(() => { errEl.textContent = 'Terjadi kesalahan.'; errEl.style.display='block'; });
+}
+
+function deleteSize(sizeId) {
+    if (!confirm('Hapus ukuran ini?')) return;
+    fetch(`/admin/kapor-items/${currentItemId}/sizes/${sizeId}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(() => loadSizes())
+    .catch(() => alert('Gagal menghapus ukuran.'));
+}
+
+</script>
 @endsection

@@ -226,26 +226,7 @@
     </div>
 </div>
 
-<script>
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-    function openEditYearModal(year) {
-        document.getElementById('edit_year').value = year.year;
-        document.getElementById('edit_year_name').value = year.name;
-        document.getElementById('edit_year_active').value = year.is_active ? '1' : '0';
-        document.getElementById('editYearForm').action = "/admin/budget/years/" + year.id;
-        openModal('editYearModal');
-    }
-
-    window.onclick = function(e) {
-        if (e.target.classList.contains('modal')) e.target.classList.remove('open');
-    }
-
-    @if($errors->has('year') || $errors->has('name'))
-        openModal('addYearModal');
-    @endif
-</script>
 @endif
 @endsection
 
@@ -593,4 +574,27 @@
 
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function openEditYearModal(year) {
+        document.getElementById('edit_year').value = year.year;
+        document.getElementById('edit_year_name').value = year.name;
+        document.getElementById('edit_year_active').value = year.is_active ? '1' : '0';
+        document.getElementById('editYearForm').action = "/admin/budget/years/" + year.id;
+        openModal('editYearModal');
+    }
+
+    window.onclick = function(e) {
+        if (e.target.classList.contains('modal')) e.target.classList.remove('open');
+    }
+
+    @if($errors->has('year') || $errors->has('name'))
+        openModal('addYearModal');
+    @endif
+</script>
 @endsection

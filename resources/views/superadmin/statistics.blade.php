@@ -3,8 +3,393 @@
 @section('title', 'Statistik Review Item')
 @section('breadcrumb', 'Statistik')
 
+
+
+@section('content')
+    <div class="admin-stats-wrapper">
+        <div class="page-header">
+            <div class="page-header-row" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>Statistik Review Item</h1>
+                    <p>Panel evaluasi kualitas layanan E-MAS KAPOR berdasarkan ulasan dan apresiasi personel yang login menggunakan
+                        NRP/NIP.</p>
+                </div>
+
+                {{-- Filter Tahun Anggaran --}}
+                <div
+                    style="display:flex;align-items:center;gap:10px;background:#fff;padding:8px 16px;border-radius:14px;border:1px solid #E2E8F0;box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-family: 'Outfit', sans-serif;">
+                    <i class="ri-calendar-line" style="color:#B91C1C; font-size: 18px;"></i>
+                    <select
+                        onchange="const url = new URL(window.location.href); url.searchParams.set('year', this.value); window.location.href = url.href;"
+                        style="border:none;outline:none;font-size:14px;font-weight:700;color:#1e293b;cursor:pointer;background:transparent;">
+                        @foreach($availableYears as $year)
+                            <option value="{{ $year }}" {{ $fiscal_year == $year ? 'selected' : '' }}>
+                                TA {{ $year }} {{ (string) $year === (string) $active_year ? '(Aktif)' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-panel">
+            <div class="hero-grid">
+                <div>
+                    <div class="hero-score">
+                        <div class="score-badge">
+                            <strong>{{ $serviceScore }}</strong>
+                            <span>Service Score</span>
+                        </div>
+                        <div>
+                            <div
+                                style="font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brand);">
+                                Executive Pulse</div>
+                            <div
+                                style="font-size: 34px; font-weight: 800; color: var(--text-main); line-height: 1.1; margin-top: 6px;">
+                                {{ number_format($averageRating, 1) }} / 5
+                            </div>
+                            <div class="hero-stars"
+                                aria-label="Rata-rata rating {{ number_format($averageRating, 1) }} dari 5">
+                                @for($star = 1; $star <= 5; $star++)
+                                    <i class="{{ $averageRating >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
+                                @endfor
+                            </div>
+                            <div style="font-size: 15px; color: var(--text-muted); max-width: 620px;">
+                                {{ $totalTestimonials > 0 ? 'Ringkasan ini memudahkan admin dan pimpinan melihat kualitas pengalaman pengguna secara cepat tanpa harus membuka data mentah satu per satu.' : 'Belum ada data masuk, tetapi panel ini sudah siap menjadi tempat evaluasi saat testimoni pertama mulai terkumpul.' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hero-meta">
+                        <div class="hero-pill">
+                            <i class="ri-message-3-line" style="color: var(--brand);"></i>
+                            {{ number_format($totalTestimonials) }} testimoni total
+                        </div>
+                        <div class="hero-pill">
+                            <i class="ri-time-line" style="color: var(--info);"></i>
+                            {{ number_format($recentTestimonialsCount) }} ulasan 30 hari terakhir
+                        </div>
+                        <div class="hero-pill">
+                            <i class="ri-checkbox-circle-line" style="color: var(--success);"></i>
+                            {{ number_format($receivedRate, 1) }}% sudah diterima
+                        </div>
+                        <div class="hero-pill">
+                            <i class="ri-calendar-check-line" style="color: var(--success);"></i>
+                            {{ $lastSubmittedAt ? 'Ulasan terakhir ' . $lastSubmittedAt->format('d M Y, H:i') : 'Belum ada ulasan' }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="insight-panel">
+                    <div>
+                        <div class="insight-label"
+                            style="background: {{ $serviceInsight['background'] }}; color: {{ $serviceInsight['tone'] }};">
+                            <i class="ri-focus-3-line"></i> {{ $serviceInsight['label'] }}
+                        </div>
+                        <div style="font-size: 22px; font-weight: 800; color: var(--text-main); margin-top: 14px;">
+                            Sinyal layanan untuk pimpinan
+                        </div>
+                        <p style="font-size: 14px; color: var(--text-muted); line-height: 1.7; margin-top: 10px;">
+                            {{ $serviceInsight['message'] }}
+                        </p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+                        <div
+                            style="padding: 14px; border-radius: 14px; background: var(--bg-body); border: 1px solid var(--border-color);">
+                            <div style="font-size: 12px; color: var(--text-muted);">Rerata 30 hari</div>
+                            <div style="font-size: 22px; font-weight: 800; color: var(--text-main); margin-top: 6px;">
+                                {{ number_format($recentAverageRating, 1) }}
+                            </div>
+                        </div>
+                        <div
+                            style="padding: 14px; border-radius: 14px; background: var(--bg-body); border: 1px solid var(--border-color);">
+                            <div style="font-size: 12px; color: var(--text-muted);">Perlu atensi</div>
+                            <div style="font-size: 22px; font-weight: 800; color: var(--danger); margin-top: 6px;">
+                                {{ number_format($attentionCount) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if($totalTestimonials === 0)
+            <div class="empty-showcase">
+                <div class="empty-icon">
+                    <i class="ri-feedback-line"></i>
+                </div>
+                <h2 style="font-size: 28px; font-weight: 800; color: var(--text-main); margin-bottom: 10px;">Belum ada testimoni
+                    masuk</h2>
+                <p style="max-width: 720px; margin: 0 auto; color: var(--text-muted); line-height: 1.8;">
+                    Begitu personel mulai mengirim ulasan dari dashboard mereka, halaman ini otomatis berubah menjadi panel
+                    statistik untuk admin dan para atasan: rata-rata bintang, distribusi kepuasan, satker paling aktif, dan
+                    pesan
+                    terbaru.
+                </p>
+            </div>
+        @else
+                <div class="stats-row stats-row-5" style="margin-bottom: 24px;">
+                    <div class="stat-card premium">
+                        <div class="stat-top">
+                            <span class="stat-label">Total Testimoni</span>
+                            <div class="stat-icon-sm" style="background: var(--brand-bg); color: var(--brand);">
+                                <i class="ri-chat-quote-line"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">{{ number_format($totalTestimonials) }}</div>
+                        <div class="metric-subtext">Aduan, saran, dan apresiasi yang sudah terekam.</div>
+                    </div>
+
+                    <div class="stat-card premium">
+                        <div class="stat-top">
+                            <span class="stat-label">Rata-rata Bintang</span>
+                            <div class="stat-icon-sm" style="background: #fff7ed; color: #f59e0b;">
+                                <i class="ri-star-line"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">{{ number_format($averageRating, 1) }}</div>
+                        <div class="metric-subtext">Skor mutu layanan dari seluruh testimoni.</div>
+                    </div>
+
+                    <div class="stat-card premium">
+                        <div class="stat-top">
+                            <span class="stat-label">Sudah Diterima</span>
+                            <div class="stat-icon-sm" style="background: var(--success-bg); color: var(--success);">
+                                <i class="ri-checkbox-circle-line"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">{{ number_format($receivedRate, 1) }}%</div>
+                        <div class="metric-subtext">Proporsi item sudah diterima berdasarkan testimoni yang sudah diisi.</div>
+                    </div>
+
+                    <div class="stat-card premium">
+                        <div class="stat-top">
+                            <span class="stat-label">Belum Diterima</span>
+                            <div class="stat-icon-sm" style="background: var(--warning-bg); color: var(--warning);">
+                                <i class="ri-truck-line"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" style="color: var(--warning);">{{ number_format($notReceivedCount) }}</div>
+                        <div class="metric-subtext">Laporan personel yang menyatakan item belum sampai.</div>
+                    </div>
+
+                </div>
+
+
+                {{-- Per-Category Rating Breakdown --}}
+                @if(isset($categoryStats) && count($categoryStats) > 0)
+                    <div class="category-stats-row">
+                        @foreach($categoryStats as $catKey => $catStat)
+                            <div class="category-stat-card" style="border-top: 0;">
+                                <div style="position:absolute; top:0; left:0; right:0; height:4px; background: {{ $catStat['color'] }};">
+                                </div>
+                                <div class="category-stat-head">
+                                    <div class="category-stat-label">
+                                        <div class="category-stat-icon"
+                                            style="background: {{ $catStat['bg'] }}; color: {{ $catStat['color'] }};">
+                                            <i class="{{ $catStat['icon'] }}"></i>
+                                        </div>
+                                        {{ $catStat['label'] }}
+                                    </div>
+                                </div>
+                                @if($catStat['type'] === 'report')
+                                    <div class="category-stat-body">
+                                        <div class="category-stat-value" style="color: {{ $catStat['color'] }};">
+                                            {{ number_format($catStat['count']) }}
+                                        </div>
+                                    </div>
+                                    <div class="category-stat-count">laporan belum menerima item</div>
+                                @else
+                                    <div class="category-stat-body">
+                                        <div class="category-stat-value">{{ number_format($catStat['average_rating'], 1) }}</div>
+                                        <div style="margin-left: 4px;">
+                                            <div class="category-stat-stars">
+                                                @for($star = 1; $star <= 5; $star++)
+                                                    <i class="{{ $catStat['average_rating'] >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
+                                                @endfor
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="category-stat-count">{{ number_format($catStat['count']) }} total ulasan</div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 24px;">
+
+                    @if(isset($categoryStats))
+                        @foreach($categoryStats as $catKey => $catStat)
+                            <div>
+                                <div
+                                    style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-color);">
+                                    <i class="{{ $catStat['icon'] }}" style="color: {{ $catStat['color'] }}; margin-right: 4px;"></i>
+                                    {{ $catStat['label'] }}
+                                </div>
+                                <div class="breakdown-list">
+                                    @foreach($catStat['ratingBreakdown'] as $bucket)
+                                        <div class="breakdown-item" style="margin-bottom: 12px;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                                <div
+                                                    style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--text-main);">
+                                                    <span>{{ $bucket['stars'] }} <i class="ri-star-fill" style="color: #f59e0b;"></i></span>
+                                                </div>
+                                                <div style="font-size: 12px; color: var(--text-muted);">
+                                                    {{ number_format($bucket['count']) }} ulasan
+                                                    <strong
+                                                        style="color: var(--text-main); margin-left: 6px;">{{ number_format($bucket['percentage'], 1) }}%</strong>
+                                                </div>
+                                            </div>
+                                            <div class="bar-track" style="height: 8px; margin-top: 6px;">
+                                                <div class="bar-fill" style="width: {{ $bucket['percentage'] }}%;"></div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
+
+
+                <div class="card">
+                    <div class="card-head">
+                        <h3><i class="ri-building-line" style="margin-right: 8px; color: var(--brand);"></i>Satker Paling Aktif
+                            Memberi
+                            Ulasan</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="satker-list">
+                            @forelse($topSatkers as $index => $satker)
+                                <div class="satker-item">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <div
+                                                style="width: 36px; height: 36px; border-radius: 12px; background: var(--bg-body); color: var(--brand); display: flex; align-items: center; justify-content: center; font-weight: 800;">
+                                                {{ $index + 1 }}
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 700; color: var(--text-main);">{{ $satker->satker_name }}</div>
+                                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                                                    {{ number_format($satker->total_feedback) }} testimoni
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div style="font-size: 18px; font-weight: 800; color: var(--text-main);">
+                                                {{ number_format((float) $satker->average_rating, 1) }}
+                                            </div>
+                                            <div style="font-size: 12px; color: #f59e0b;">rata-rata bintang</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div
+                                    style="padding: 24px; text-align: center; color: var(--text-muted); background: var(--bg-body); border-radius: 16px; border: 1px dashed var(--border-color);">
+                                    Belum ada satker yang tercatat mengirim masukan.
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="card">
+                <div class="card-head">
+                    <h3><i class="ri-equalizer-line" style="margin-right: 8px; color: var(--brand);"></i>Perbandingan Distribusi
+                        Bintang antar Item</h3>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ route('superadmin.statistics') }}" id="comparisonFilterForm">
+                        <input type="hidden" name="year" value="{{ $fiscal_year }}">
+                        <input type="hidden" name="distribution_group" value="{{ $distributionFilters['group'] }}">
+                        @if($distributionFilters['rating'] !== null)
+                            <input type="hidden" name="distribution_rating" value="{{ $distributionFilters['rating'] }}">
+                        @endif
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px;">
+                            @for($i = 0; $i < 3; $i++)
+                                <select name="compare_items[]" class="comparison-select" style="width: 100%;">
+                                    <option value="">Pilih Item Kapor...</option>
+                                    @php
+                                        $groupedItems = $availableItems->groupBy('group');
+                                    @endphp
+                                    @foreach($groupedItems as $groupName => $items)
+                                        <optgroup label="Tutup {{ $groupName }}">
+                                            @foreach($items as $item)
+                                                <option value="{{ $item->id }}" {{ ($comparisonStats[$i]['id'] ?? null) == $item->id ? 'selected' : '' }} data-category="{{ $item->group }}">
+                                                    {{ $item->item_name }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endforeach
+                                </select>
+                            @endfor
+                        </div>
+                    </form>
+
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;">
+                        @foreach($comparisonStats as $stat)
+                            <div style="padding: 24px; border-radius: 20px; background: #f8fafc; border: 1px solid #f1f5f9;">
+                                <div style="margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #fff;">
+                                    <div style="font-size: 16px; font-weight: 800; color: var(--text-main); line-height: 1.3;">
+                                        {{ $stat['name'] }}
+                                    </div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+                                        <div style="font-size: 24px; font-weight: 800; color: var(--text-main);">
+                                            {{ $stat['average_rating'] }} <i class="ri-star-fill"
+                                                style="color: #f59e0b; font-size: 20px;"></i>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div style="font-size: 12px; font-weight: 700; color: var(--text-muted);">
+                                                {{ number_format($stat['total_reviewed']) }} review
+                                            </div>
+                                            <div style="font-size: 12px; font-weight: 700; color: var(--danger); margin-top: 2px;">
+                                                {{ number_format($stat['not_received_count']) }} belum diterima
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="breakdown-list">
+                                    @foreach($stat['rating_breakdown'] as $bucket)
+                                        <div class="breakdown-item" style="margin-bottom: 12px;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                                <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">
+                                                    {{ $bucket['stars'] }} <i class="ri-star-fill" style="color: #f59e0b;"></i>
+                                                </div>
+                                                <div style="font-size: 11px; color: var(--text-muted);">
+                                                    {{ number_format($bucket['count']) }} masukan ({{ $bucket['percentage'] }}%)
+                                                </div>
+                                            </div>
+                                            <div class="bar-track" style="height: 6px; margin-top: 4px;">
+                                                <div class="bar-fill" style="width: {{ $bucket['percentage'] }}%;"></div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+
+                        @for($i = count($comparisonStats); $i < 3; $i++)
+                            <div
+                                style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; border-radius: 20px; background: #fff; border: 2px dashed #e2e8f0; color: var(--text-muted); font-style: italic;">
+                                <i class="ri-add-circle-line" style="font-size: 32px; margin-bottom: 12px;"></i>
+                                <div style="font-size: 14px; text-align: center;">Pilih item di atas untuk mulai membandingkan data.
+                                </div>
+                            </div>
+                        @endfor
+                    </div>
+                </div>
+            </div>
+        @endif
+@endsection
+
 @section('styles')
-    <style>
+<style>
         /* Google Fonts & Modern Variables */
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -731,391 +1116,8 @@
     </style>
 @endsection
 
-@section('content')
-    <div class="admin-stats-wrapper">
-        <div class="page-header">
-            <div class="page-header-row" style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h1>Statistik Review Item</h1>
-                    <p>Panel evaluasi kualitas layanan E-MAS KAPOR berdasarkan ulasan dan apresiasi personel yang login menggunakan
-                        NRP/NIP.</p>
-                </div>
-
-                {{-- Filter Tahun Anggaran --}}
-                <div
-                    style="display:flex;align-items:center;gap:10px;background:#fff;padding:8px 16px;border-radius:14px;border:1px solid #E2E8F0;box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-family: 'Outfit', sans-serif;">
-                    <i class="ri-calendar-line" style="color:#B91C1C; font-size: 18px;"></i>
-                    <select
-                        onchange="const url = new URL(window.location.href); url.searchParams.set('year', this.value); window.location.href = url.href;"
-                        style="border:none;outline:none;font-size:14px;font-weight:700;color:#1e293b;cursor:pointer;background:transparent;">
-                        @foreach($availableYears as $year)
-                            <option value="{{ $year }}" {{ $fiscal_year == $year ? 'selected' : '' }}>
-                                TA {{ $year }} {{ (string) $year === (string) $active_year ? '(Aktif)' : '' }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="hero-panel">
-            <div class="hero-grid">
-                <div>
-                    <div class="hero-score">
-                        <div class="score-badge">
-                            <strong>{{ $serviceScore }}</strong>
-                            <span>Service Score</span>
-                        </div>
-                        <div>
-                            <div
-                                style="font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brand);">
-                                Executive Pulse</div>
-                            <div
-                                style="font-size: 34px; font-weight: 800; color: var(--text-main); line-height: 1.1; margin-top: 6px;">
-                                {{ number_format($averageRating, 1) }} / 5
-                            </div>
-                            <div class="hero-stars"
-                                aria-label="Rata-rata rating {{ number_format($averageRating, 1) }} dari 5">
-                                @for($star = 1; $star <= 5; $star++)
-                                    <i class="{{ $averageRating >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
-                                @endfor
-                            </div>
-                            <div style="font-size: 15px; color: var(--text-muted); max-width: 620px;">
-                                {{ $totalTestimonials > 0 ? 'Ringkasan ini memudahkan admin dan pimpinan melihat kualitas pengalaman pengguna secara cepat tanpa harus membuka data mentah satu per satu.' : 'Belum ada data masuk, tetapi panel ini sudah siap menjadi tempat evaluasi saat testimoni pertama mulai terkumpul.' }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="hero-meta">
-                        <div class="hero-pill">
-                            <i class="ri-message-3-line" style="color: var(--brand);"></i>
-                            {{ number_format($totalTestimonials) }} testimoni total
-                        </div>
-                        <div class="hero-pill">
-                            <i class="ri-time-line" style="color: var(--info);"></i>
-                            {{ number_format($recentTestimonialsCount) }} ulasan 30 hari terakhir
-                        </div>
-                        <div class="hero-pill">
-                            <i class="ri-checkbox-circle-line" style="color: var(--success);"></i>
-                            {{ number_format($receivedRate, 1) }}% sudah diterima
-                        </div>
-                        <div class="hero-pill">
-                            <i class="ri-calendar-check-line" style="color: var(--success);"></i>
-                            {{ $lastSubmittedAt ? 'Ulasan terakhir ' . $lastSubmittedAt->format('d M Y, H:i') : 'Belum ada ulasan' }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="insight-panel">
-                    <div>
-                        <div class="insight-label"
-                            style="background: {{ $serviceInsight['background'] }}; color: {{ $serviceInsight['tone'] }};">
-                            <i class="ri-focus-3-line"></i> {{ $serviceInsight['label'] }}
-                        </div>
-                        <div style="font-size: 22px; font-weight: 800; color: var(--text-main); margin-top: 14px;">
-                            Sinyal layanan untuk pimpinan
-                        </div>
-                        <p style="font-size: 14px; color: var(--text-muted); line-height: 1.7; margin-top: 10px;">
-                            {{ $serviceInsight['message'] }}
-                        </p>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
-                        <div
-                            style="padding: 14px; border-radius: 14px; background: var(--bg-body); border: 1px solid var(--border-color);">
-                            <div style="font-size: 12px; color: var(--text-muted);">Rerata 30 hari</div>
-                            <div style="font-size: 22px; font-weight: 800; color: var(--text-main); margin-top: 6px;">
-                                {{ number_format($recentAverageRating, 1) }}
-                            </div>
-                        </div>
-                        <div
-                            style="padding: 14px; border-radius: 14px; background: var(--bg-body); border: 1px solid var(--border-color);">
-                            <div style="font-size: 12px; color: var(--text-muted);">Perlu atensi</div>
-                            <div style="font-size: 22px; font-weight: 800; color: var(--danger); margin-top: 6px;">
-                                {{ number_format($attentionCount) }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        @if($totalTestimonials === 0)
-            <div class="empty-showcase">
-                <div class="empty-icon">
-                    <i class="ri-feedback-line"></i>
-                </div>
-                <h2 style="font-size: 28px; font-weight: 800; color: var(--text-main); margin-bottom: 10px;">Belum ada testimoni
-                    masuk</h2>
-                <p style="max-width: 720px; margin: 0 auto; color: var(--text-muted); line-height: 1.8;">
-                    Begitu personel mulai mengirim ulasan dari dashboard mereka, halaman ini otomatis berubah menjadi panel
-                    statistik untuk admin dan para atasan: rata-rata bintang, distribusi kepuasan, satker paling aktif, dan
-                    pesan
-                    terbaru.
-                </p>
-            </div>
-        @else
-                <div class="stats-row stats-row-5" style="margin-bottom: 24px;">
-                    <div class="stat-card premium">
-                        <div class="stat-top">
-                            <span class="stat-label">Total Testimoni</span>
-                            <div class="stat-icon-sm" style="background: var(--brand-bg); color: var(--brand);">
-                                <i class="ri-chat-quote-line"></i>
-                            </div>
-                        </div>
-                        <div class="stat-value">{{ number_format($totalTestimonials) }}</div>
-                        <div class="metric-subtext">Aduan, saran, dan apresiasi yang sudah terekam.</div>
-                    </div>
-
-                    <div class="stat-card premium">
-                        <div class="stat-top">
-                            <span class="stat-label">Rata-rata Bintang</span>
-                            <div class="stat-icon-sm" style="background: #fff7ed; color: #f59e0b;">
-                                <i class="ri-star-line"></i>
-                            </div>
-                        </div>
-                        <div class="stat-value">{{ number_format($averageRating, 1) }}</div>
-                        <div class="metric-subtext">Skor mutu layanan dari seluruh testimoni.</div>
-                    </div>
-
-                    <div class="stat-card premium">
-                        <div class="stat-top">
-                            <span class="stat-label">Sudah Diterima</span>
-                            <div class="stat-icon-sm" style="background: var(--success-bg); color: var(--success);">
-                                <i class="ri-checkbox-circle-line"></i>
-                            </div>
-                        </div>
-                        <div class="stat-value">{{ number_format($receivedRate, 1) }}%</div>
-                        <div class="metric-subtext">Proporsi item sudah diterima berdasarkan testimoni yang sudah diisi.</div>
-                    </div>
-
-                    <div class="stat-card premium">
-                        <div class="stat-top">
-                            <span class="stat-label">Belum Diterima</span>
-                            <div class="stat-icon-sm" style="background: var(--warning-bg); color: var(--warning);">
-                                <i class="ri-truck-line"></i>
-                            </div>
-                        </div>
-                        <div class="stat-value" style="color: var(--warning);">{{ number_format($notReceivedCount) }}</div>
-                        <div class="metric-subtext">Laporan personel yang menyatakan item belum sampai.</div>
-                    </div>
-
-                </div>
-
-
-                {{-- Per-Category Rating Breakdown --}}
-                @if(isset($categoryStats) && count($categoryStats) > 0)
-                    <div class="category-stats-row">
-                        @foreach($categoryStats as $catKey => $catStat)
-                            <div class="category-stat-card" style="border-top: 0;">
-                                <div style="position:absolute; top:0; left:0; right:0; height:4px; background: {{ $catStat['color'] }};">
-                                </div>
-                                <div class="category-stat-head">
-                                    <div class="category-stat-label">
-                                        <div class="category-stat-icon"
-                                            style="background: {{ $catStat['bg'] }}; color: {{ $catStat['color'] }};">
-                                            <i class="{{ $catStat['icon'] }}"></i>
-                                        </div>
-                                        {{ $catStat['label'] }}
-                                    </div>
-                                </div>
-                                @if($catStat['type'] === 'report')
-                                    <div class="category-stat-body">
-                                        <div class="category-stat-value" style="color: {{ $catStat['color'] }};">
-                                            {{ number_format($catStat['count']) }}
-                                        </div>
-                                    </div>
-                                    <div class="category-stat-count">laporan belum menerima item</div>
-                                @else
-                                    <div class="category-stat-body">
-                                        <div class="category-stat-value">{{ number_format($catStat['average_rating'], 1) }}</div>
-                                        <div style="margin-left: 4px;">
-                                            <div class="category-stat-stars">
-                                                @for($star = 1; $star <= 5; $star++)
-                                                    <i class="{{ $catStat['average_rating'] >= $star ? 'ri-star-fill' : 'ri-star-line' }}"></i>
-                                                @endfor
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="category-stat-count">{{ number_format($catStat['count']) }} total ulasan</div>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 24px;">
-
-                    @if(isset($categoryStats))
-                        @foreach($categoryStats as $catKey => $catStat)
-                            <div>
-                                <div
-                                    style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-color);">
-                                    <i class="{{ $catStat['icon'] }}" style="color: {{ $catStat['color'] }}; margin-right: 4px;"></i>
-                                    {{ $catStat['label'] }}
-                                </div>
-                                <div class="breakdown-list">
-                                    @foreach($catStat['ratingBreakdown'] as $bucket)
-                                        <div class="breakdown-item" style="margin-bottom: 12px;">
-                                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                                                <div
-                                                    style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--text-main);">
-                                                    <span>{{ $bucket['stars'] }} <i class="ri-star-fill" style="color: #f59e0b;"></i></span>
-                                                </div>
-                                                <div style="font-size: 12px; color: var(--text-muted);">
-                                                    {{ number_format($bucket['count']) }} ulasan
-                                                    <strong
-                                                        style="color: var(--text-main); margin-left: 6px;">{{ number_format($bucket['percentage'], 1) }}%</strong>
-                                                </div>
-                                            </div>
-                                            <div class="bar-track" style="height: 8px; margin-top: 6px;">
-                                                <div class="bar-fill" style="width: {{ $bucket['percentage'] }}%;"></div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endforeach
-                    @endif
-                </div>
-
-
-                <div class="card">
-                    <div class="card-head">
-                        <h3><i class="ri-building-line" style="margin-right: 8px; color: var(--brand);"></i>Satker Paling Aktif
-                            Memberi
-                            Ulasan</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="satker-list">
-                            @forelse($topSatkers as $index => $satker)
-                                <div class="satker-item">
-                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                        <div style="display: flex; align-items: center; gap: 12px;">
-                                            <div
-                                                style="width: 36px; height: 36px; border-radius: 12px; background: var(--bg-body); color: var(--brand); display: flex; align-items: center; justify-content: center; font-weight: 800;">
-                                                {{ $index + 1 }}
-                                            </div>
-                                            <div>
-                                                <div style="font-weight: 700; color: var(--text-main);">{{ $satker->satker_name }}</div>
-                                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                                                    {{ number_format($satker->total_feedback) }} testimoni
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div style="text-align: right;">
-                                            <div style="font-size: 18px; font-weight: 800; color: var(--text-main);">
-                                                {{ number_format((float) $satker->average_rating, 1) }}
-                                            </div>
-                                            <div style="font-size: 12px; color: #f59e0b;">rata-rata bintang</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div
-                                    style="padding: 24px; text-align: center; color: var(--text-muted); background: var(--bg-body); border-radius: 16px; border: 1px dashed var(--border-color);">
-                                    Belum ada satker yang tercatat mengirim masukan.
-                                </div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="card">
-                <div class="card-head">
-                    <h3><i class="ri-equalizer-line" style="margin-right: 8px; color: var(--brand);"></i>Perbandingan Distribusi
-                        Bintang antar Item</h3>
-                </div>
-                <div class="card-body">
-                    <form method="GET" action="{{ route('superadmin.statistics') }}" id="comparisonFilterForm">
-                        <input type="hidden" name="year" value="{{ $fiscal_year }}">
-                        <input type="hidden" name="distribution_group" value="{{ $distributionFilters['group'] }}">
-                        @if($distributionFilters['rating'] !== null)
-                            <input type="hidden" name="distribution_rating" value="{{ $distributionFilters['rating'] }}">
-                        @endif
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px;">
-                            @for($i = 0; $i < 3; $i++)
-                                <select name="compare_items[]" class="comparison-select" style="width: 100%;">
-                                    <option value="">Pilih Item Kapor...</option>
-                                    @php
-                                        $groupedItems = $availableItems->groupBy('group');
-                                    @endphp
-                                    @foreach($groupedItems as $groupName => $items)
-                                        <optgroup label="Tutup {{ $groupName }}">
-                                            @foreach($items as $item)
-                                                <option value="{{ $item->id }}" {{ ($comparisonStats[$i]['id'] ?? null) == $item->id ? 'selected' : '' }} data-category="{{ $item->group }}">
-                                                    {{ $item->item_name }}
-                                                </option>
-                                            @endforeach
-                                        </optgroup>
-                                    @endforeach
-                                </select>
-                            @endfor
-                        </div>
-                    </form>
-
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;">
-                        @foreach($comparisonStats as $stat)
-                            <div style="padding: 24px; border-radius: 20px; background: #f8fafc; border: 1px solid #f1f5f9;">
-                                <div style="margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #fff;">
-                                    <div style="font-size: 16px; font-weight: 800; color: var(--text-main); line-height: 1.3;">
-                                        {{ $stat['name'] }}
-                                    </div>
-                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
-                                        <div style="font-size: 24px; font-weight: 800; color: var(--text-main);">
-                                            {{ $stat['average_rating'] }} <i class="ri-star-fill"
-                                                style="color: #f59e0b; font-size: 20px;"></i>
-                                        </div>
-                                        <div style="text-align: right;">
-                                            <div style="font-size: 12px; font-weight: 700; color: var(--text-muted);">
-                                                {{ number_format($stat['total_reviewed']) }} review
-                                            </div>
-                                            <div style="font-size: 12px; font-weight: 700; color: var(--danger); margin-top: 2px;">
-                                                {{ number_format($stat['not_received_count']) }} belum diterima
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="breakdown-list">
-                                    @foreach($stat['rating_breakdown'] as $bucket)
-                                        <div class="breakdown-item" style="margin-bottom: 12px;">
-                                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                                                <div style="font-size: 13px; font-weight: 700; color: var(--text-main);">
-                                                    {{ $bucket['stars'] }} <i class="ri-star-fill" style="color: #f59e0b;"></i>
-                                                </div>
-                                                <div style="font-size: 11px; color: var(--text-muted);">
-                                                    {{ number_format($bucket['count']) }} masukan ({{ $bucket['percentage'] }}%)
-                                                </div>
-                                            </div>
-                                            <div class="bar-track" style="height: 6px; margin-top: 4px;">
-                                                <div class="bar-fill" style="width: {{ $bucket['percentage'] }}%;"></div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endforeach
-
-                        @for($i = count($comparisonStats); $i < 3; $i++)
-                            <div
-                                style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; border-radius: 20px; background: #fff; border: 2px dashed #e2e8f0; color: var(--text-muted); font-style: italic;">
-                                <i class="ri-add-circle-line" style="font-size: 32px; margin-bottom: 12px;"></i>
-                                <div style="font-size: 14px; text-align: center;">Pilih item di atas untuk mulai membandingkan data.
-                                </div>
-                            </div>
-                        @endfor
-                    </div>
-                </div>
-            </div>
-        @endif
-@endsection
-
 @section('scripts')
-    <script>
+<script>
         document.addEventListener('DOMContentLoaded', () => {
             const comparisonForm = document.getElementById('comparisonFilterForm');
             if (!comparisonForm) {

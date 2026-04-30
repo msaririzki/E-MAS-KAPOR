@@ -32,85 +32,7 @@
 </div>
 @endif
 
-<style>
-    .issue-group {
-        background: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        margin-bottom: 24px;
-        overflow: hidden;
-        border: 1px solid #E5E7EB;
-    }
-    .issue-group-header {
-        background: #F9FAFB;
-        padding: 16px 20px;
-        border-bottom: 1px solid #E5E7EB;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .issue-group-body {
-        padding: 0;
-    }
-    .issue-item {
-        padding: 16px 20px;
-        display: grid;
-        grid-template-columns: 2fr 2fr 1.5fr 1.5fr;
-        gap: 16px;
-        align-items: center;
-        border-bottom: 1px solid #F3F4F6;
-        transition: background-color 0.2s;
-    }
-    .issue-item:last-child {
-        border-bottom: none;
-    }
-    .issue-item:hover {
-        background-color: #F8FAFC;
-    }
-    .avatar-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    .avatar-circle {
-        width: 40px; 
-        height: 40px; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        border-radius: 50%; 
-        color: white; 
-        flex-shrink: 0; 
-        font-weight: 700; 
-        font-size: 15px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .nrp-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 14px;
-        background: #FEF2F2;
-        border: 1px solid #FECACA;
-        border-radius: 8px;
-        color: #991B1B;
-        font-weight: 700;
-        font-size: 14px;
-    }
-    .btn-action-sm {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 6px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        border-radius: 6px;
-        transition: all 0.2s;
-        text-decoration: none;
-        border: none;
-        cursor: pointer;
-    }
-</style>
+
 
 @if(isset($stats) && isset($topSatkers) && $stats['total_groups'] > 0)
 <div style="max-width: 1200px; margin: 0 auto 24px auto;">
@@ -281,4 +203,86 @@
         </div>
     @endif
 </div>
+@endsection
+
+@section('styles')
+<style>
+    .issue-group {
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        margin-bottom: 24px;
+        overflow: hidden;
+        border: 1px solid #E5E7EB;
+    }
+    .issue-group-header {
+        background: #F9FAFB;
+        padding: 16px 20px;
+        border-bottom: 1px solid #E5E7EB;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .issue-group-body {
+        padding: 0;
+    }
+    .issue-item {
+        padding: 16px 20px;
+        display: grid;
+        grid-template-columns: 2fr 2fr 1.5fr 1.5fr;
+        gap: 16px;
+        align-items: center;
+        border-bottom: 1px solid #F3F4F6;
+        transition: background-color 0.2s;
+    }
+    .issue-item:last-child {
+        border-bottom: none;
+    }
+    .issue-item:hover {
+        background-color: #F8FAFC;
+    }
+    .avatar-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .avatar-circle {
+        width: 40px; 
+        height: 40px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        border-radius: 50%; 
+        color: white; 
+        flex-shrink: 0; 
+        font-weight: 700; 
+        font-size: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .nrp-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        background: #FEF2F2;
+        border: 1px solid #FECACA;
+        border-radius: 8px;
+        color: #991B1B;
+        font-weight: 700;
+        font-size: 14px;
+    }
+    .btn-action-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+</style>
 @endsection

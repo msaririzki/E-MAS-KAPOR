@@ -4,7 +4,158 @@
 @section('breadcrumb', 'Pengeluaran Barang')
 
 @section('content')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+
+<div class="dispense-page">
+    @if(session('error'))
+        <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; color: #991B1B; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+            <i class="ri-error-warning-fill" style="font-size: 18px; color: #EF4444;"></i>
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <div class="dispense-card">
+        <div class="dispense-card-header">
+            <h2><i class="ri-send-plane-line"></i> Pengeluaran Barang</h2>
+            <p>Form pengeluaran barang gudang — data tersimpan di Laporan Pengeluaran</p>
+        </div>
+
+        <form action="{{ route('admin.warehouse-items.dispense') }}" method="POST" id="dispenseForm">
+            @csrf
+            <input type="hidden" name="dispense_method" id="dispense_method" value="method_1">
+
+            <div class="dispense-card-body">
+                <div class="method-tabs">
+                    <div class="method-tab active" id="tab_method_1" onclick="switchMethod('method_1')">
+                        <i class="ri-user-smile-line"></i> Metode 1: Per Satker
+                    </div>
+                    <div class="method-tab" id="tab_method_2" onclick="switchMethod('method_2')">
+                        <i class="ri-community-line"></i> Metode 2: Per Barang (Multi Satker)
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tanggal Surat <span class="req">*</span></label>
+                        <input type="date" name="letter_date" class="f-input" value="{{ old('letter_date', date('Y-m-d')) }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Nomor Surat / Referensi <span class="req">*</span></label>
+                        <input type="text" name="letter_number" class="f-input" placeholder="Contoh: B/123/III/2026" value="{{ old('letter_number', '-') }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tanggal Pengeluaran <span class="req">*</span></label>
+                    <input type="date" name="outflow_date" class="f-input" required value="{{ old('outflow_date', date('Y-m-d')) }}">
+                </div>
+
+                <hr class="section-divider">
+
+                {{-- WRAPPER METHOD 1 --}}
+                <div id="wrapper_method_1">
+                    <div class="section-label"><i class="ri-user-received-line"></i> Satker Penerima</div>
+                    <div class="form-group">
+                        <div class="ss-wrap" id="satkerSelect_m1">
+                            <div class="ss-trigger" onclick="ssToggle('satkerSelect_m1')">
+                                <span class="ss-text ss-placeholder" id="satker_text_m1">-- Pilih Satker --</span>
+                                <i class="ri-arrow-down-s-line ss-arrow"></i>
+                            </div>
+                            <div class="ss-dropdown" id="satkerSelect_m1_dd">
+                                <div class="ss-search">
+                                    <input type="text" placeholder="Cari satker..." oninput="ssFilter(this, 'satkerSelect_m1')">
+                                </div>
+                                <div class="ss-list">
+                                    @foreach($satkers as $satker)
+                                        <div class="ss-opt" data-val="{{ $satker->id }}" data-label="{{ $satker->name }}" onclick="ssSelect('satkerSelect_m1', '{{ $satker->id }}', '{{ $satker->name }}')">
+                                            {{ $satker->name }}
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <input type="hidden" name="satker_id" id="satkerSelect_m1_val">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label>Nama Penerima Pihak Satker <span class="req">*</span></label>
+                        <input type="text" name="recipient_name" id="m1_recipient_name" class="f-input" placeholder="Nama penerima barang" value="{{ old('recipient_name') }}">
+                    </div>
+
+                    <div class="section-label"><i class="ri-archive-line"></i> Daftar Barang</div>
+                    <div class="item-rows" id="itemRowsContainer_m1"></div>
+                    <button type="button" class="btn-add-item" onclick="addItemRowM1()" style="margin-top: 16px;">
+                        <i class="ri-add-circle-line"></i> Tambah Barang Lain
+                    </button>
+                    <p class="stock-warning" id="globalStockWarn_m1" style="margin-top:20px; text-align:center;"><i class="ri-error-warning-line"></i> Ada barang yang melebihi stok!</p>
+                </div>
+
+                {{-- WRAPPER METHOD 2 --}}
+                <div id="wrapper_method_2" style="display: none;">
+                    
+                    <div class="section-label"><i class="ri-archive-line"></i> Daftar Barang</div>
+                    <div class="m2-checkbox-list-wrapper">
+                        <input type="text" class="m2-search-input" placeholder="Cari nama barang..." oninput="filterM2List(this, 'm2_item_list')">
+                        <div class="m2-list-container" id="m2_item_list">
+                            {{-- Dynamic contents --}}
+                        </div>
+                    </div>
+                    
+                    <hr class="section-divider" style="margin-top:30px;">
+                    
+                    <div class="section-label"><i class="ri-community-line"></i> Daftar Satker Penerima</div>
+                    <div class="m2-checkbox-list-wrapper">
+                        <div class="m2-action-btns">
+                            <button type="button" class="btn-m2-small" onclick="toggleAllM2Checkboxes('m2_satker_list', true)">Pilih Semua</button>
+                            <button type="button" class="btn-m2-small" onclick="toggleAllM2Checkboxes('m2_satker_list', false)">Hapus Semua</button>
+                        </div>
+                        <input type="text" class="m2-search-input" placeholder="Cari satuan kerja..." oninput="filterM2List(this, 'm2_satker_list')">
+                        <div class="m2-list-container" id="m2_satker_list">
+                            {{-- Dynamic contents --}}
+                        </div>
+                    </div>
+
+                    <hr class="section-divider" style="margin-top:30px;">
+                    
+                    <div class="section-label"><i class="ri-equalizer-line"></i> Jumlah Per Barang (Otomatis)</div>
+                    <p style="font-size: 13px; color: #6B7280; margin-bottom: 12px; margin-top:-10px;">
+                        Isi angka 0 jika satker tersebut tidak menerima barang yang bersangkutan.
+                    </p>
+                    <div class="qty-grid-wrapper" id="m2_grid_wrapper">
+                        <table class="qty-grid-table" id="m2_table">
+                            <thead>
+                                <tr id="m2_table_head">
+                                    <th>Satker Penerima</th>
+                                    <th>Pilih barang & satker di atas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="m2_table_body">
+                                <tr>
+                                    <td colspan="2" style="text-align:center; color:#9CA3AF; padding:20px;">Belum ada data barang dan satker yang dipilih lengkap.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="stock-warning" id="globalStockWarn_m2" style="margin-top:12px; text-align:center;"><i class="ri-error-warning-line"></i> Total kebutuhan dari semua satker melebihi stok gudang!</p>
+                </div>
+
+            </div>
+
+            <div class="submit-section">
+                <a href="{{ route('admin.warehouse-items.index') }}" class="btn-back-link">
+                    <i class="ri-arrow-left-line"></i> Kembali ke Data Gudang
+                </a>
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <i class="ri-save-line"></i> Simpan Pengeluaran
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
+
+@section('styles')
 <style>
     .dispense-page { max-width: 860px; margin: 0 auto; }
     .dispense-card {
@@ -229,154 +380,9 @@
         .submit-section { flex-direction: column; gap: 12px; }
     }
 </style>
+@endsection
 
-<div class="dispense-page">
-    @if(session('error'))
-        <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; color: #991B1B; font-size: 13px; display: flex; align-items: center; gap: 8px;">
-            <i class="ri-error-warning-fill" style="font-size: 18px; color: #EF4444;"></i>
-            {{ session('error') }}
-        </div>
-    @endif
-
-    <div class="dispense-card">
-        <div class="dispense-card-header">
-            <h2><i class="ri-send-plane-line"></i> Pengeluaran Barang</h2>
-            <p>Form pengeluaran barang gudang — data tersimpan di Laporan Pengeluaran</p>
-        </div>
-
-        <form action="{{ route('admin.warehouse-items.dispense') }}" method="POST" id="dispenseForm">
-            @csrf
-            <input type="hidden" name="dispense_method" id="dispense_method" value="method_1">
-
-            <div class="dispense-card-body">
-                <div class="method-tabs">
-                    <div class="method-tab active" id="tab_method_1" onclick="switchMethod('method_1')">
-                        <i class="ri-user-smile-line"></i> Metode 1: Per Satker
-                    </div>
-                    <div class="method-tab" id="tab_method_2" onclick="switchMethod('method_2')">
-                        <i class="ri-community-line"></i> Metode 2: Per Barang (Multi Satker)
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Tanggal Surat <span class="req">*</span></label>
-                        <input type="date" name="letter_date" class="f-input" value="{{ old('letter_date', date('Y-m-d')) }}">
-                    </div>
-                    <div class="form-group">
-                        <label>Nomor Surat / Referensi <span class="req">*</span></label>
-                        <input type="text" name="letter_number" class="f-input" placeholder="Contoh: B/123/III/2026" value="{{ old('letter_number', '-') }}">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Tanggal Pengeluaran <span class="req">*</span></label>
-                    <input type="date" name="outflow_date" class="f-input" required value="{{ old('outflow_date', date('Y-m-d')) }}">
-                </div>
-
-                <hr class="section-divider">
-
-                {{-- WRAPPER METHOD 1 --}}
-                <div id="wrapper_method_1">
-                    <div class="section-label"><i class="ri-user-received-line"></i> Satker Penerima</div>
-                    <div class="form-group">
-                        <div class="ss-wrap" id="satkerSelect_m1">
-                            <div class="ss-trigger" onclick="ssToggle('satkerSelect_m1')">
-                                <span class="ss-text ss-placeholder" id="satker_text_m1">-- Pilih Satker --</span>
-                                <i class="ri-arrow-down-s-line ss-arrow"></i>
-                            </div>
-                            <div class="ss-dropdown" id="satkerSelect_m1_dd">
-                                <div class="ss-search">
-                                    <input type="text" placeholder="Cari satker..." oninput="ssFilter(this, 'satkerSelect_m1')">
-                                </div>
-                                <div class="ss-list">
-                                    @foreach($satkers as $satker)
-                                        <div class="ss-opt" data-val="{{ $satker->id }}" data-label="{{ $satker->name }}" onclick="ssSelect('satkerSelect_m1', '{{ $satker->id }}', '{{ $satker->name }}')">
-                                            {{ $satker->name }}
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            <input type="hidden" name="satker_id" id="satkerSelect_m1_val">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group" style="margin-bottom: 24px;">
-                        <label>Nama Penerima Pihak Satker <span class="req">*</span></label>
-                        <input type="text" name="recipient_name" id="m1_recipient_name" class="f-input" placeholder="Nama penerima barang" value="{{ old('recipient_name') }}">
-                    </div>
-
-                    <div class="section-label"><i class="ri-archive-line"></i> Daftar Barang</div>
-                    <div class="item-rows" id="itemRowsContainer_m1"></div>
-                    <button type="button" class="btn-add-item" onclick="addItemRowM1()" style="margin-top: 16px;">
-                        <i class="ri-add-circle-line"></i> Tambah Barang Lain
-                    </button>
-                    <p class="stock-warning" id="globalStockWarn_m1" style="margin-top:20px; text-align:center;"><i class="ri-error-warning-line"></i> Ada barang yang melebihi stok!</p>
-                </div>
-
-                {{-- WRAPPER METHOD 2 --}}
-                <div id="wrapper_method_2" style="display: none;">
-                    
-                    <div class="section-label"><i class="ri-archive-line"></i> Daftar Barang</div>
-                    <div class="m2-checkbox-list-wrapper">
-                        <input type="text" class="m2-search-input" placeholder="Cari nama barang..." oninput="filterM2List(this, 'm2_item_list')">
-                        <div class="m2-list-container" id="m2_item_list">
-                            {{-- Dynamic contents --}}
-                        </div>
-                    </div>
-                    
-                    <hr class="section-divider" style="margin-top:30px;">
-                    
-                    <div class="section-label"><i class="ri-community-line"></i> Daftar Satker Penerima</div>
-                    <div class="m2-checkbox-list-wrapper">
-                        <div class="m2-action-btns">
-                            <button type="button" class="btn-m2-small" onclick="toggleAllM2Checkboxes('m2_satker_list', true)">Pilih Semua</button>
-                            <button type="button" class="btn-m2-small" onclick="toggleAllM2Checkboxes('m2_satker_list', false)">Hapus Semua</button>
-                        </div>
-                        <input type="text" class="m2-search-input" placeholder="Cari satuan kerja..." oninput="filterM2List(this, 'm2_satker_list')">
-                        <div class="m2-list-container" id="m2_satker_list">
-                            {{-- Dynamic contents --}}
-                        </div>
-                    </div>
-
-                    <hr class="section-divider" style="margin-top:30px;">
-                    
-                    <div class="section-label"><i class="ri-equalizer-line"></i> Jumlah Per Barang (Otomatis)</div>
-                    <p style="font-size: 13px; color: #6B7280; margin-bottom: 12px; margin-top:-10px;">
-                        Isi angka 0 jika satker tersebut tidak menerima barang yang bersangkutan.
-                    </p>
-                    <div class="qty-grid-wrapper" id="m2_grid_wrapper">
-                        <table class="qty-grid-table" id="m2_table">
-                            <thead>
-                                <tr id="m2_table_head">
-                                    <th>Satker Penerima</th>
-                                    <th>Pilih barang & satker di atas</th>
-                                </tr>
-                            </thead>
-                            <tbody id="m2_table_body">
-                                <tr>
-                                    <td colspan="2" style="text-align:center; color:#9CA3AF; padding:20px;">Belum ada data barang dan satker yang dipilih lengkap.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <p class="stock-warning" id="globalStockWarn_m2" style="margin-top:12px; text-align:center;"><i class="ri-error-warning-line"></i> Total kebutuhan dari semua satker melebihi stok gudang!</p>
-                </div>
-
-            </div>
-
-            <div class="submit-section">
-                <a href="{{ route('admin.warehouse-items.index') }}" class="btn-back-link">
-                    <i class="ri-arrow-left-line"></i> Kembali ke Data Gudang
-                </a>
-                <button type="submit" class="btn-submit" id="submitBtn">
-                    <i class="ri-save-line"></i> Simpan Pengeluaran
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
+@section('scripts')
 <script>
     // Data setup
     const itemsData = @json(collect($items)->map(fn($i) => ['id' => $i->id, 'name' => $i->name, 'stock' => $i->sizes_sum_stock ?? 0]));
@@ -788,4 +794,5 @@
     });
 
 </script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @endsection

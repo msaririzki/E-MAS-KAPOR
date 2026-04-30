@@ -223,7 +223,7 @@
 @endsection
 
 @section('styles')
-    <style>
+<style>
         .review-page {
             gap: 16px;
         }
@@ -855,7 +855,7 @@
 @endsection
 
 @section('scripts')
-    <script>     document.addEventListener('DOMContentLoaded', () => {         const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));         const panels = Array.from(document.querySelectorAll('.tab-panel'));         const searchInput = document.getElementById('reviewSearch');
+<script>     document.addEventListener('DOMContentLoaded', () => {         const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));         const panels = Array.from(document.querySelectorAll('.tab-panel'));         const searchInput = document.getElementById('reviewSearch');
              tabButtons.forEach((button) => {             button.addEventListener('click', () => {                 tabButtons.forEach((tab) => tab.classList.remove('active'));                 panels.forEach((panel) => panel.classList.remove('active'));
                      button.classList.add('active');                 document.querySelector(`[data-panel="${button.dataset.tab}"]`)?.classList.add('active');                 applySearch();             });         });
              document.querySelectorAll('.review-card-item').forEach((card) => {             card.querySelectorAll('[data-response-input]').forEach((input) => {                 input.addEventListener('change', () => toggleRatingField(card));             });

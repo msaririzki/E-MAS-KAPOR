@@ -4,136 +4,7 @@
 @section('breadcrumb', 'Identifikasi Kebutuhan')
 
 @section('content')
-<style>
-    /* ── Top Items List ── */
-    .top-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
-    .top-item:last-child { border-bottom: none; }
-    .top-rank { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
-    .top-rank.gold { background: #fef3c7; color: #92400e; }
-    .top-rank.silver { background: #e2e8f0; color: #475569; }
-    .top-rank.bronze { background: #fed7aa; color: #9a3412; }
-    .top-rank.normal { background: var(--slate-100); color: var(--text-muted); }
-    .top-info { flex: 1; min-width: 0; }
-    .top-name { font-size: 13px; font-weight: 600; color: var(--text-main); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .top-count { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; }
 
-    /* ── View More Link ── */
-    .view-more-link {
-        display: flex; align-items: center; justify-content: center; gap: 6px;
-        padding: 10px 0 2px; margin-top: 4px; border-top: 1px dashed var(--border-color);
-        font-size: 12px; font-weight: 600; cursor: pointer;
-        text-decoration: none; transition: all .2s;
-    }
-    .view-more-link:hover { opacity: .8; }
-    .view-more-link i { font-size: 14px; }
-
-    /* ── Detail Modal ── */
-    .detail-modal-overlay {
-        position: fixed; inset: 0; z-index: 9999;
-        background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
-        display: none; align-items: center; justify-content: center; padding: 20px;
-    }
-    .detail-modal-overlay.active { display: flex; }
-    .detail-modal {
-        background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 560px;
-        max-height: 85vh; display: flex; flex-direction: column;
-        box-shadow: 0 25px 50px rgba(0,0,0,.2); overflow: hidden;
-    }
-    .detail-modal-header {
-        display: flex; align-items: center; gap: 12px; padding: 20px 24px;
-        border-bottom: 1px solid var(--border-color);
-    }
-    .detail-modal-header .modal-icon {
-        width: 40px; height: 40px; border-radius: 10px;
-        display: flex; align-items: center; justify-content: center; font-size: 20px;
-    }
-    .detail-modal-header .modal-title { font-size: 16px; font-weight: 700; color: var(--text-main); }
-    .detail-modal-header .modal-subtitle { font-size: 12px; color: var(--text-muted); }
-    .detail-modal-close {
-        margin-left: auto; width: 32px; height: 32px; border-radius: 8px;
-        border: 1px solid var(--border-color); background: transparent;
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; font-size: 18px; color: var(--text-muted); transition: all .2s;
-    }
-    .detail-modal-close:hover { background: var(--slate-100); color: var(--text-main); }
-    .detail-modal-body { padding: 16px 24px; overflow-y: auto; flex: 1; }
-    .detail-modal-body .modal-item {
-        display: flex; align-items: center; gap: 12px; padding: 10px 0;
-        border-bottom: 1px solid var(--border-color);
-    }
-    .detail-modal-body .modal-item:last-child { border-bottom: none; }
-    .detail-modal-body .modal-item-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text-main); line-height: 1.4; }
-    .detail-modal-body .modal-item-pct { font-size: 14px; font-weight: 800; min-width: 55px; text-align: right; }
-    .top-pct { font-size: 14px; font-weight: 800; min-width: 50px; text-align: right; }
-    .top-bar-mini { width: 80px; height: 6px; background: var(--slate-100); border-radius: 99px; overflow: hidden; }
-    .top-bar-mini-fill { height: 100%; border-radius: 99px; }
-
-    /* ── Per-Category Cards Grid ── */
-    .category-cards-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 16px;
-        margin-bottom: 16px;
-    }
-    .cat-top-card { border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); overflow: hidden; }
-    .cat-top-card-head {
-        display: flex; align-items: center; gap: 10px; padding: 14px 20px;
-        border-bottom: 1px solid var(--border-color);
-    }
-    .cat-top-card-head .cat-icon {
-        width: 36px; height: 36px; border-radius: 10px;
-        display: flex; align-items: center; justify-content: center; font-size: 18px;
-    }
-    .cat-top-card-head .cat-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
-    .cat-top-card-head .cat-count { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-left: auto; }
-    .cat-top-card-body { padding: 8px 20px 16px; }
-    .btn-export-pdf {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        height: 38px;
-        padding: 0 14px;
-        border-radius: 10px;
-        background: #B91C1C;
-        color: #fff;
-        font-size: 13px;
-        font-weight: 700;
-        text-decoration: none;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-    }
-    .btn-export-pdf:hover { background: #991B1B; color: #fff; }
-
-    @media (max-width: 768px) {
-        .stats-row { grid-template-columns: 1fr !important; }
-        .category-cards-grid { grid-template-columns: 1fr !important; }
-        .responsive-filter { flex-direction: column !important; align-items: stretch !important; }
-        .responsive-filter > * { width: 100% !important; flex: none !important; margin-bottom: 8px; }
-        .responsive-filter > .btn { justify-content: center; }
-        .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
-        .table-wrap table { min-width: 700px; }
-        .top-item {
-            display: grid !important;
-            grid-template-columns: auto 1fr;
-            gap: 4px 12px;
-            padding: 12px 0;
-            align-items: center;
-        }
-        .top-rank { grid-column: 1; grid-row: 1; align-self: flex-start; margin-top: 2px; }
-        .top-info { grid-column: 2; grid-row: 1; min-width: 0; display: block; }
-        .top-name { white-space: normal; line-height: 1.3; margin-bottom: 4px; display: block; overflow: visible; }
-        .top-percent-wrap {
-            grid-column: 2;
-            grid-row: 2;
-            width: 100%;
-            justify-content: space-between !important;
-            margin-top: 4px;
-            background: transparent;
-            padding: 0;
-        }
-        .top-bar-mini { flex: 1; margin-right: 12px; }
-        .card { min-width: 0; }
-    }
-</style>
 <div class="page-header">
     <div class="page-header-row">
         <div>
@@ -366,133 +237,6 @@
 </div>
 @endsection
 
-@section('scripts')
-<!-- SweetAlert2 Plugin -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    // ── Category detail data (from server) ──
-    @php
-        $modalData = [];
-        foreach ($itemStatsByCategory as $cat => $catItems) {
-            $modalData[$cat] = $catItems->map(function($stat, $idx) {
-                return [
-                    'rank' => $idx + 1,
-                    'name' => $stat['item_name'],
-                    'percentage' => $stat['percentage'],
-                    'count' => $stat['satker_count'],
-                ];
-            })->values()->toArray();
-        }
-    @endphp
-    const categoryData = @json($modalData);
-
-    const catStyles = {
-        'Tutup_Kepala': { icon: 'ri-shirt-line', color: '#3b82f6', bg: '#dbeafe' },
-        'Tutup_Badan':  { icon: 'ri-t-shirt-line', color: '#f59e0b', bg: '#fef3c7' },
-        'Tutup_Kaki':   { icon: 'ri-footprint-line', color: '#10b981', bg: '#d1fae5' },
-    };
-    const defaultCatStyle = { icon: 'ri-box-3-line', color: '#8b5cf6', bg: '#ede9fe' };
-
-    function openDetailModal(category) {
-        const items = categoryData[category] || [];
-        const style = catStyles[category] || defaultCatStyle;
-        const displayName = category.replace(/_/g, ' ');
-
-        document.getElementById('modalIcon').innerHTML = `<i class="${style.icon}"></i>`;
-        document.getElementById('modalIcon').style.background = style.bg;
-        document.getElementById('modalIcon').style.color = style.color;
-        document.getElementById('modalTitle').textContent = `Top ${items.length} — ${displayName}`;
-        document.getElementById('modalSubtitle').textContent = `Persentase berdasarkan jumlah seluruh satker terdaftar`;
-
-        let html = '';
-        items.forEach(item => {
-            const rankClass = item.rank === 1 ? 'gold' : (item.rank === 2 ? 'silver' : (item.rank === 3 ? 'bronze' : 'normal'));
-            html += `
-            <div class="modal-item">
-                <div class="top-rank ${rankClass}">${item.rank}</div>
-                <div class="modal-item-name">${item.name}<div style="font-size:11px;color:var(--text-muted);font-weight:500;margin-top:2px;">${item.count} satker memilih</div></div>
-                <div class="modal-item-pct" style="color: ${style.color};">${item.percentage}%</div>
-            </div>`;
-        });
-        document.getElementById('modalBody').innerHTML = html;
-        document.getElementById('detailModalOverlay').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeDetailModal() {
-        document.getElementById('detailModalOverlay').classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    // Close on Escape key
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetailModal(); });
-
-    // ── Dropdown Logic ──
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.custom-select')) {
-            document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
-            document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
-        }
-    });
-
-    function toggleDropdown(el) {
-        const options = el.querySelector('.custom-options');
-        const isOpen = options.style.display === 'block';
-
-        document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
-        document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
-
-        if (!isOpen) {
-            options.style.display = 'block';
-            el.classList.add('active');
-        } 
-        
-        event.stopPropagation();
-    }
-
-    function selectOptionSearch(el, inputName, value, label) {
-        const wrapper = el.closest('.custom-select-wrapper');
-        const trigger = wrapper.querySelector('.select-trigger span');
-        const input = wrapper.querySelector('input[type="hidden"]');
-        
-        trigger.innerText = label;
-        input.value = value;
-        
-        document.getElementById('filterForm').submit();
-    }
-
-    // ── Delete confirmation ──
-    document.addEventListener('DOMContentLoaded', function () {
-        const deleteButtons = document.querySelectorAll('.btn-delete-kebutuhan');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function () {
-                const form = this.closest('form');
-                Swal.fire({
-                    title: 'Hapus Pengajuan?',
-                    text: 'Apakah Anda yakin ingin menghapus data pengajuan ini secara permanen?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#DC2626',
-                    cancelButtonColor: '#6B7280',
-                    confirmButtonText: '<i class="ri-delete-bin-line" style="margin-right:4px;"></i> Ya, Hapus!',
-                    cancelButtonText: 'Batal',
-                    reverseButtons: true,
-                    customClass: {
-                        popup: 'modern-swal-popup',
-                        title: 'modern-swal-title',
-                        confirmButton: 'modern-swal-btn btn-danger',
-                        cancelButton: 'modern-swal-btn btn-secondary',
-                        actions: 'modern-swal-actions'
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
-    });
-</script>
-@endsection
-
 @section('styles')
 <style>
     /* Modern SweetAlert Custom Styles */
@@ -650,4 +394,262 @@
     }
     .page-info strong { color: #111827; font-weight: 600; margin: 0 4px; }
 </style>
+
+<style>
+    /* ── Top Items List ── */
+    .top-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-color); }
+    .top-item:last-child { border-bottom: none; }
+    .top-rank { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+    .top-rank.gold { background: #fef3c7; color: #92400e; }
+    .top-rank.silver { background: #e2e8f0; color: #475569; }
+    .top-rank.bronze { background: #fed7aa; color: #9a3412; }
+    .top-rank.normal { background: var(--slate-100); color: var(--text-muted); }
+    .top-info { flex: 1; min-width: 0; }
+    .top-name { font-size: 13px; font-weight: 600; color: var(--text-main); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top-count { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; }
+
+    /* ── View More Link ── */
+    .view-more-link {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        padding: 10px 0 2px; margin-top: 4px; border-top: 1px dashed var(--border-color);
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        text-decoration: none; transition: all .2s;
+    }
+    .view-more-link:hover { opacity: .8; }
+    .view-more-link i { font-size: 14px; }
+
+    /* ── Detail Modal ── */
+    .detail-modal-overlay {
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
+        display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .detail-modal-overlay.active { display: flex; }
+    .detail-modal {
+        background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 560px;
+        max-height: 85vh; display: flex; flex-direction: column;
+        box-shadow: 0 25px 50px rgba(0,0,0,.2); overflow: hidden;
+    }
+    .detail-modal-header {
+        display: flex; align-items: center; gap: 12px; padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .detail-modal-header .modal-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .detail-modal-header .modal-title { font-size: 16px; font-weight: 700; color: var(--text-main); }
+    .detail-modal-header .modal-subtitle { font-size: 12px; color: var(--text-muted); }
+    .detail-modal-close {
+        margin-left: auto; width: 32px; height: 32px; border-radius: 8px;
+        border: 1px solid var(--border-color); background: transparent;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; font-size: 18px; color: var(--text-muted); transition: all .2s;
+    }
+    .detail-modal-close:hover { background: var(--slate-100); color: var(--text-main); }
+    .detail-modal-body { padding: 16px 24px; overflow-y: auto; flex: 1; }
+    .detail-modal-body .modal-item {
+        display: flex; align-items: center; gap: 12px; padding: 10px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .detail-modal-body .modal-item:last-child { border-bottom: none; }
+    .detail-modal-body .modal-item-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text-main); line-height: 1.4; }
+    .detail-modal-body .modal-item-pct { font-size: 14px; font-weight: 800; min-width: 55px; text-align: right; }
+    .top-pct { font-size: 14px; font-weight: 800; min-width: 50px; text-align: right; }
+    .top-bar-mini { width: 80px; height: 6px; background: var(--slate-100); border-radius: 99px; overflow: hidden; }
+    .top-bar-mini-fill { height: 100%; border-radius: 99px; }
+
+    /* ── Per-Category Cards Grid ── */
+    .category-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    .cat-top-card { border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); overflow: hidden; }
+    .cat-top-card-head {
+        display: flex; align-items: center; gap: 10px; padding: 14px 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .cat-top-card-head .cat-icon {
+        width: 36px; height: 36px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .cat-top-card-head .cat-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
+    .cat-top-card-head .cat-count { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-left: auto; }
+    .cat-top-card-body { padding: 8px 20px 16px; }
+    .btn-export-pdf {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 14px;
+        border-radius: 10px;
+        background: #B91C1C;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+    .btn-export-pdf:hover { background: #991B1B; color: #fff; }
+
+    @media (max-width: 768px) {
+        .stats-row { grid-template-columns: 1fr !important; }
+        .category-cards-grid { grid-template-columns: 1fr !important; }
+        .responsive-filter { flex-direction: column !important; align-items: stretch !important; }
+        .responsive-filter > * { width: 100% !important; flex: none !important; margin-bottom: 8px; }
+        .responsive-filter > .btn { justify-content: center; }
+        .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+        .table-wrap table { min-width: 700px; }
+        .top-item {
+            display: grid !important;
+            grid-template-columns: auto 1fr;
+            gap: 4px 12px;
+            padding: 12px 0;
+            align-items: center;
+        }
+        .top-rank { grid-column: 1; grid-row: 1; align-self: flex-start; margin-top: 2px; }
+        .top-info { grid-column: 2; grid-row: 1; min-width: 0; display: block; }
+        .top-name { white-space: normal; line-height: 1.3; margin-bottom: 4px; display: block; overflow: visible; }
+        .top-percent-wrap {
+            grid-column: 2;
+            grid-row: 2;
+            width: 100%;
+            justify-content: space-between !important;
+            margin-top: 4px;
+            background: transparent;
+            padding: 0;
+        }
+        .top-bar-mini { flex: 1; margin-right: 12px; }
+        .card { min-width: 0; }
+    }
+</style>
+@endsection
+
+@section('scripts')
+<!-- SweetAlert2 Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // ── Category detail data (from server) ──
+    @php
+        $modalData = [];
+        foreach ($itemStatsByCategory as $cat => $catItems) {
+            $modalData[$cat] = $catItems->map(function($stat, $idx) {
+                return [
+                    'rank' => $idx + 1,
+                    'name' => $stat['item_name'],
+                    'percentage' => $stat['percentage'],
+                    'count' => $stat['satker_count'],
+                ];
+            })->values()->toArray();
+        }
+    @endphp
+    const categoryData = @json($modalData);
+
+    const catStyles = {
+        'Tutup_Kepala': { icon: 'ri-shirt-line', color: '#3b82f6', bg: '#dbeafe' },
+        'Tutup_Badan':  { icon: 'ri-t-shirt-line', color: '#f59e0b', bg: '#fef3c7' },
+        'Tutup_Kaki':   { icon: 'ri-footprint-line', color: '#10b981', bg: '#d1fae5' },
+    };
+    const defaultCatStyle = { icon: 'ri-box-3-line', color: '#8b5cf6', bg: '#ede9fe' };
+
+    function openDetailModal(category) {
+        const items = categoryData[category] || [];
+        const style = catStyles[category] || defaultCatStyle;
+        const displayName = category.replace(/_/g, ' ');
+
+        document.getElementById('modalIcon').innerHTML = `<i class="${style.icon}"></i>`;
+        document.getElementById('modalIcon').style.background = style.bg;
+        document.getElementById('modalIcon').style.color = style.color;
+        document.getElementById('modalTitle').textContent = `Top ${items.length} — ${displayName}`;
+        document.getElementById('modalSubtitle').textContent = `Persentase berdasarkan jumlah seluruh satker terdaftar`;
+
+        let html = '';
+        items.forEach(item => {
+            const rankClass = item.rank === 1 ? 'gold' : (item.rank === 2 ? 'silver' : (item.rank === 3 ? 'bronze' : 'normal'));
+            html += `
+            <div class="modal-item">
+                <div class="top-rank ${rankClass}">${item.rank}</div>
+                <div class="modal-item-name">${item.name}<div style="font-size:11px;color:var(--text-muted);font-weight:500;margin-top:2px;">${item.count} satker memilih</div></div>
+                <div class="modal-item-pct" style="color: ${style.color};">${item.percentage}%</div>
+            </div>`;
+        });
+        document.getElementById('modalBody').innerHTML = html;
+        document.getElementById('detailModalOverlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDetailModal() {
+        document.getElementById('detailModalOverlay').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetailModal(); });
+
+    // ── Dropdown Logic ──
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-select')) {
+            document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
+            document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+        }
+    });
+
+    function toggleDropdown(el) {
+        const options = el.querySelector('.custom-options');
+        const isOpen = options.style.display === 'block';
+
+        document.querySelectorAll('.custom-options').forEach(opt => opt.style.display = 'none');
+        document.querySelectorAll('.custom-select').forEach(sel => sel.classList.remove('active'));
+
+        if (!isOpen) {
+            options.style.display = 'block';
+            el.classList.add('active');
+        } 
+        
+        event.stopPropagation();
+    }
+
+    function selectOptionSearch(el, inputName, value, label) {
+        const wrapper = el.closest('.custom-select-wrapper');
+        const trigger = wrapper.querySelector('.select-trigger span');
+        const input = wrapper.querySelector('input[type="hidden"]');
+        
+        trigger.innerText = label;
+        input.value = value;
+        
+        document.getElementById('filterForm').submit();
+    }
+
+    // ── Delete confirmation ──
+    document.addEventListener('DOMContentLoaded', function () {
+        const deleteButtons = document.querySelectorAll('.btn-delete-kebutuhan');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const form = this.closest('form');
+                Swal.fire({
+                    title: 'Hapus Pengajuan?',
+                    text: 'Apakah Anda yakin ingin menghapus data pengajuan ini secara permanen?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#DC2626',
+                    cancelButtonColor: '#6B7280',
+                    confirmButtonText: '<i class="ri-delete-bin-line" style="margin-right:4px;"></i> Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'modern-swal-popup',
+                        title: 'modern-swal-title',
+                        confirmButton: 'modern-swal-btn btn-danger',
+                        cancelButton: 'modern-swal-btn btn-secondary',
+                        actions: 'modern-swal-actions'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+    });
+</script>
 @endsection

@@ -705,7 +705,6 @@
     </div>
 
 </div>
-
 @endsection
 
 @section('styles')

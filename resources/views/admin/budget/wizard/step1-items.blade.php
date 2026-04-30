@@ -9,7 +9,7 @@
     <a href="{{ route('admin.budget.show-package', $budgetPackage) }}">{{ $budgetPackage->name }}</a>
     <span class="sep">/</span>
     <span class="current">Tahap 1: Pilih Barang</span>
-@endsection
+
 
 @section('content')
 
@@ -201,208 +201,6 @@
         </div>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-<script>
-    const toggleUrl = "{{ route('admin.budget.wizard.toggle-item', $budgetPackage, false) }}";
-    const csrfToken = "{{ csrf_token() }}";
-    
-    // Track sorted kapor item ids
-    let sortedSelectedKaporIds = @json($selectedIds);
-
-    async function toggleItem(itemId, el) {
-        // Prevent multiple clicks while loading
-        if(el.classList.contains('loading')) return;
-        
-        el.classList.add('loading');
-
-        try {
-            const resp = await fetch(toggleUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ kapor_item_id: itemId })
-            });
-
-            if (!resp.ok) {
-                let errorMsg = 'Server error: ' + resp.status;
-                try {
-                    const errData = await resp.json();
-                    errorMsg = errData.message || errorMsg;
-                } catch(e) {}
-                throw new Error(errorMsg);
-            }
-
-            const data = await resp.json();
-
-            // Update Class and ID
-            if (data.action === 'added') {
-                el.classList.add('selected');
-                if(data.package_item_id) {
-                    el.setAttribute('data-package-item-id', data.package_item_id);
-                }
-                
-                // Add to tracked sorted array
-                if (!sortedSelectedKaporIds.includes(itemId)) {
-                    sortedSelectedKaporIds.push(itemId);
-                }
-                
-                // Add pop animation effect
-                el.style.transform = 'scale(0.97)';
-                setTimeout(() => el.style.transform = '', 150);
-            } else {
-                el.classList.remove('selected');
-                el.setAttribute('data-package-item-id', '');
-                
-                // Remove from tracked array
-                sortedSelectedKaporIds = sortedSelectedKaporIds.filter(id => id !== itemId);
-            }
-
-            // Update Counters
-            document.getElementById('selectedCount').textContent = data.count;
-            document.getElementById('statSelectedCount').textContent = data.count;
-
-            // Update Next & Step 2 Links
-            const nextBtn = document.getElementById('nextBtn');
-            const step2Link = document.getElementById('step2Link');
-            const step2Icon = document.getElementById('step2Icon');
-            
-            if (data.count > 0) {
-                nextBtn.classList.remove('disabled');
-                step2Link.classList.remove('disabled-link');
-                step2Link.classList.remove('pending');
-                step2Link.style.opacity = '1';
-                step2Icon.className = 'ri-arrow-right-circle-line wizard-step-arrow';
-                step2Icon.style.color = '#C62828';
-            } else {
-                nextBtn.classList.add('disabled');
-                step2Link.classList.add('disabled-link');
-                step2Link.classList.add('pending');
-                step2Link.style.opacity = '0.6';
-                step2Icon.className = 'ri-lock-line wizard-step-arrow';
-                step2Icon.style.color = '#CBD5E1';
-            }
-        } catch (err) {
-            console.error('Toggle error:', err);
-            alert('Gagal menyimpan perubahan: ' + err.message);
-        } finally {
-            el.classList.remove('loading');
-        }
-    }
-
-    // Search Filtering Function
-    function filterItems() {
-        const input = document.getElementById('searchInput');
-        const filter = input.value.toLowerCase();
-        const cards = document.querySelectorAll('.item-card');
-        const categories = document.querySelectorAll('.category-section');
-
-        cards.forEach(card => {
-            const itemName = card.querySelector('.item-name').innerText.toLowerCase();
-            if (itemName.includes(filter)) {
-                card.style.display = "";
-            } else {
-                card.style.display = "none";
-            }
-        });
-
-        // Hide category header if all items inside are hidden
-        categories.forEach(category => {
-            const visibleCards = category.querySelectorAll('.item-card[style="display: ;"], .item-card:not([style*="display: none"])');
-            if (visibleCards.length === 0) {
-                category.style.display = "none";
-            } else {
-                category.style.display = "";
-            }
-        });
-    }
-
-    // --- REORDER MODAL LOGIC ---
-    let sortableInstance = null;
-
-    function openReorderModal() {
-        if(document.getElementById('nextBtn').classList.contains('disabled')) return;
-        
-        const modal = document.getElementById('reorderModal');
-        const list = document.getElementById('sortableList');
-        list.innerHTML = ''; // Clear previous
-
-        // Kumpulkan item terpilih berdasarkan urutan sortedSelectedKaporIds
-        sortedSelectedKaporIds.forEach(kaporId => {
-            const card = document.querySelector(`.item-card[data-item-id="${kaporId}"]`);
-            if(!card) return;
-
-            const packageItemId = card.getAttribute('data-package-item-id');
-            const name = card.querySelector('.item-name').innerText;
-            const category = card.closest('.category-section').querySelector('.category-title').innerText.trim().replace(/\s*\d+\s*Barang$/, '');
-            const infoTopHtml = card.querySelector('.info-top').innerHTML;
-            
-            const listItem = document.createElement('div');
-            listItem.className = 'sortable-item';
-            listItem.setAttribute('data-package-item-id', packageItemId);
-            listItem.innerHTML = `
-                <div class="drag-handle"><i class="ri-draggable"></i></div>
-                <div class="sortable-content">
-                    <div style="font-size: 11px; color:#64748B; font-weight:600;">${category}</div>
-                    <div style="font-weight: 700; color: #1E293B;">${name}</div>
-                </div>
-            `;
-            list.appendChild(listItem);
-        });
-
-        modal.style.display = 'flex';
-        
-        // Initialize Sortable
-        if(sortableInstance) sortableInstance.destroy();
-        sortableInstance = new Sortable(list, {
-            handle: '.drag-handle',
-            animation: 150,
-            ghostClass: 'sortable-ghost'
-        });
-    }
-
-    function closeReorderModal() {
-        document.getElementById('reorderModal').style.display = 'none';
-    }
-
-    async function saveOrder() {
-        const btn = document.getElementById('btnSaveOrder');
-        btn.innerHTML = '<i class="ri-loader-4-line spinner"></i> Menyimpan...';
-        btn.disabled = true;
-
-        const items = document.querySelectorAll('.sortable-item');
-        const orderedPackageItemIds = Array.from(items).map(item => item.getAttribute('data-package-item-id')).filter(id => id);
-
-        try {
-            const resp = await fetch('{{ route('admin.budget.wizard.reorder-items', $budgetPackage) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ ordered_ids: orderedPackageItemIds })
-            });
-
-            if (!resp.ok) {
-                let errLog = await resp.text();
-                throw new Error('Gagal menyimpan urutan');
-            }
-            
-            // Success, proceed to step 2
-            window.location.href = '{{ route('admin.budget.wizard.step2', $budgetPackage) }}';
-
-        } catch (err) {
-            console.error(err);
-            alert(err.message);
-            btn.innerHTML = 'Simpan & Lanjut <i class="ri-arrow-right-line"></i>';
-            btn.disabled = false;
-        }
-    }
-</script>
 @endsection
 
 @section('styles')
@@ -702,4 +500,208 @@
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    const toggleUrl = "{{ route('admin.budget.wizard.toggle-item', $budgetPackage, false) }}";
+    const csrfToken = "{{ csrf_token() }}";
+    
+    // Track sorted kapor item ids
+    let sortedSelectedKaporIds = @json($selectedIds);
+
+    async function toggleItem(itemId, el) {
+        // Prevent multiple clicks while loading
+        if(el.classList.contains('loading')) return;
+        
+        el.classList.add('loading');
+
+        try {
+            const resp = await fetch(toggleUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ kapor_item_id: itemId })
+            });
+
+            if (!resp.ok) {
+                let errorMsg = 'Server error: ' + resp.status;
+                try {
+                    const errData = await resp.json();
+                    errorMsg = errData.message || errorMsg;
+                } catch(e) {}
+                throw new Error(errorMsg);
+            }
+
+            const data = await resp.json();
+
+            // Update Class and ID
+            if (data.action === 'added') {
+                el.classList.add('selected');
+                if(data.package_item_id) {
+                    el.setAttribute('data-package-item-id', data.package_item_id);
+                }
+                
+                // Add to tracked sorted array
+                if (!sortedSelectedKaporIds.includes(itemId)) {
+                    sortedSelectedKaporIds.push(itemId);
+                }
+                
+                // Add pop animation effect
+                el.style.transform = 'scale(0.97)';
+                setTimeout(() => el.style.transform = '', 150);
+            } else {
+                el.classList.remove('selected');
+                el.setAttribute('data-package-item-id', '');
+                
+                // Remove from tracked array
+                sortedSelectedKaporIds = sortedSelectedKaporIds.filter(id => id !== itemId);
+            }
+
+            // Update Counters
+            document.getElementById('selectedCount').textContent = data.count;
+            document.getElementById('statSelectedCount').textContent = data.count;
+
+            // Update Next & Step 2 Links
+            const nextBtn = document.getElementById('nextBtn');
+            const step2Link = document.getElementById('step2Link');
+            const step2Icon = document.getElementById('step2Icon');
+            
+            if (data.count > 0) {
+                nextBtn.classList.remove('disabled');
+                step2Link.classList.remove('disabled-link');
+                step2Link.classList.remove('pending');
+                step2Link.style.opacity = '1';
+                step2Icon.className = 'ri-arrow-right-circle-line wizard-step-arrow';
+                step2Icon.style.color = '#C62828';
+            } else {
+                nextBtn.classList.add('disabled');
+                step2Link.classList.add('disabled-link');
+                step2Link.classList.add('pending');
+                step2Link.style.opacity = '0.6';
+                step2Icon.className = 'ri-lock-line wizard-step-arrow';
+                step2Icon.style.color = '#CBD5E1';
+            }
+        } catch (err) {
+            console.error('Toggle error:', err);
+            alert('Gagal menyimpan perubahan: ' + err.message);
+        } finally {
+            el.classList.remove('loading');
+        }
+    }
+
+    // Search Filtering Function
+    function filterItems() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const cards = document.querySelectorAll('.item-card');
+        const categories = document.querySelectorAll('.category-section');
+
+        cards.forEach(card => {
+            const itemName = card.querySelector('.item-name').innerText.toLowerCase();
+            if (itemName.includes(filter)) {
+                card.style.display = "";
+            } else {
+                card.style.display = "none";
+            }
+        });
+
+        // Hide category header if all items inside are hidden
+        categories.forEach(category => {
+            const visibleCards = category.querySelectorAll('.item-card[style="display: ;"], .item-card:not([style*="display: none"])');
+            if (visibleCards.length === 0) {
+                category.style.display = "none";
+            } else {
+                category.style.display = "";
+            }
+        });
+    }
+
+    // --- REORDER MODAL LOGIC ---
+    let sortableInstance = null;
+
+    function openReorderModal() {
+        if(document.getElementById('nextBtn').classList.contains('disabled')) return;
+        
+        const modal = document.getElementById('reorderModal');
+        const list = document.getElementById('sortableList');
+        list.innerHTML = ''; // Clear previous
+
+        // Kumpulkan item terpilih berdasarkan urutan sortedSelectedKaporIds
+        sortedSelectedKaporIds.forEach(kaporId => {
+            const card = document.querySelector(`.item-card[data-item-id="${kaporId}"]`);
+            if(!card) return;
+
+            const packageItemId = card.getAttribute('data-package-item-id');
+            const name = card.querySelector('.item-name').innerText;
+            const category = card.closest('.category-section').querySelector('.category-title').innerText.trim().replace(/\s*\d+\s*Barang$/, '');
+            const infoTopHtml = card.querySelector('.info-top').innerHTML;
+            
+            const listItem = document.createElement('div');
+            listItem.className = 'sortable-item';
+            listItem.setAttribute('data-package-item-id', packageItemId);
+            listItem.innerHTML = `
+                <div class="drag-handle"><i class="ri-draggable"></i></div>
+                <div class="sortable-content">
+                    <div style="font-size: 11px; color:#64748B; font-weight:600;">${category}</div>
+                    <div style="font-weight: 700; color: #1E293B;">${name}</div>
+                </div>
+            `;
+            list.appendChild(listItem);
+        });
+
+        modal.style.display = 'flex';
+        
+        // Initialize Sortable
+        if(sortableInstance) sortableInstance.destroy();
+        sortableInstance = new Sortable(list, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost'
+        });
+    }
+
+    function closeReorderModal() {
+        document.getElementById('reorderModal').style.display = 'none';
+    }
+
+    async function saveOrder() {
+        const btn = document.getElementById('btnSaveOrder');
+        btn.innerHTML = '<i class="ri-loader-4-line spinner"></i> Menyimpan...';
+        btn.disabled = true;
+
+        const items = document.querySelectorAll('.sortable-item');
+        const orderedPackageItemIds = Array.from(items).map(item => item.getAttribute('data-package-item-id')).filter(id => id);
+
+        try {
+            const resp = await fetch('{{ route('admin.budget.wizard.reorder-items', $budgetPackage) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ ordered_ids: orderedPackageItemIds })
+            });
+
+            if (!resp.ok) {
+                let errLog = await resp.text();
+                throw new Error('Gagal menyimpan urutan');
+            }
+            
+            // Success, proceed to step 2
+            window.location.href = '{{ route('admin.budget.wizard.step2', $budgetPackage) }}';
+
+        } catch (err) {
+            console.error(err);
+            alert(err.message);
+            btn.innerHTML = 'Simpan & Lanjut <i class="ri-arrow-right-line"></i>';
+            btn.disabled = false;
+        }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 @endsection

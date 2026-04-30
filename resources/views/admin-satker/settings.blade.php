@@ -156,7 +156,6 @@
     </div>
 
 </div>
-
 @endsection
 
 @section('styles')
@@ -395,4 +394,3 @@
     }
 </script>
 @endsection
-

@@ -158,22 +158,7 @@
 <div id="toastContainer" class="toast-container"></div>
 
 @if(session('success') || session('error') || session('warning') || $errors->any())
-<script>
-    window.addEventListener('DOMContentLoaded', () => {
-        @if(session('success'))
-            showToast("{{ session('success') }}", 'success');
-        @endif
-        @if(session('warning'))
-            showToast("{{ session('warning') }}", 'warning');
-        @endif
-        @if(session('error'))
-            showToast("{{ session('error') }}", 'error');
-        @endif
-        @if($errors->any())
-            showToast("Gagal menyimpan! Mohon periksa kembali inputan Anda.", 'error');
-        @endif
-    });
-</script>
+
 @endif
 
 @if(session('bulk_admin_satker_credentials'))
@@ -480,7 +465,6 @@ Password: {{ $credential['password'] }}
 </div>
 
 @include('admin.users.modals')
-
 @endsection
 
 @section('styles')
@@ -1469,5 +1453,22 @@ Password: {{ $credential['password'] }}
             return uri + separator + key + "=" + value;
         }
     }
+</script>
+
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        @if(session('success'))
+            showToast("{{ session('success') }}", 'success');
+        @endif
+        @if(session('warning'))
+            showToast("{{ session('warning') }}", 'warning');
+        @endif
+        @if(session('error'))
+            showToast("{{ session('error') }}", 'error');
+        @endif
+        @if($errors->any())
+            showToast("Gagal menyimpan! Mohon periksa kembali inputan Anda.", 'error');
+        @endif
+    });
 </script>
 @endsection

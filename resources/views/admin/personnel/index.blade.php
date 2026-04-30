@@ -147,163 +147,9 @@
     </div>
 </div>
 
-<script>
-    // Tutup semua dropdown ketika klik di luar
-    document.addEventListener('click', function(e) {
-        ['importExportDropdown', 'moreActionsDropdown'].forEach(function(id) {
-            var dd = document.getElementById(id);
-            if (dd && !dd.contains(e.target)) dd.classList.remove('open');
-        });
-    });
-</script>
 
-<style>
-.compact-stats-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 20px;
-    padding: 16px 24px;
-    gap: 20px;
-    margin-bottom: 24px;
-    margin-top: 8px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-}
 
-.compact-stat-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
 
-.compact-stat-divider {
-    width: 1px;
-    height: 36px;
-    background: #e2e8f0;
-}
-
-.compact-stat-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    font-size: 22px;
-    transition: transform 0.2s ease;
-}
-
-.compact-stat-item:hover .compact-stat-icon {
-    transform: scale(1.05);
-}
-
-.compact-stat-icon.blue { background: #eff6ff; color: #3b82f6; }
-.compact-stat-icon.indigo { background: #eef2ff; color: #6366f1; }
-.compact-stat-icon.purple { background: #f5f3ff; color: #8b5cf6; }
-.compact-stat-icon.emerald { background: #ecfdf5; color: #10b981; }
-
-.compact-stat-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.compact-stat-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-bottom: 2px;
-}
-
-.compact-stat-value {
-    font-size: 18px;
-    font-weight: 800;
-    color: #0f172a;
-    line-height: 1.1;
-    letter-spacing: -0.5px;
-}
-
-.compact-actions-container {
-    display: flex; 
-    gap: 12px; 
-    flex-wrap: wrap; 
-    flex: 1; 
-    justify-content: flex-end;
-}
-
-.compact-action-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 700;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    text-decoration: none;
-    border: 1px solid transparent;
-}
-
-.compact-action-pill i {
-    font-size: 16px;
-}
-
-.compact-action-pill i.arrow {
-    font-size: 18px;
-    margin-left: -4px;
-    transition: transform 0.2s;
-}
-
-.compact-action-pill:hover i.arrow {
-    transform: translateX(3px);
-}
-
-.compact-action-pill.red {
-    background: #fef2f2;
-    color: #dc2626;
-    border-color: #fee2e2;
-}
-.compact-action-pill.red:hover {
-    background: #dc2626;
-    color: white;
-    border-color: #dc2626;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
-}
-
-.compact-action-pill.amber {
-    background: #fffbeb;
-    color: #d97706;
-    border-color: #fef3c7;
-}
-.compact-action-pill.amber:hover {
-    background: #d97706;
-    color: white;
-    border-color: #d97706;
-    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
-}
-
-@media (max-width: 1024px) {
-    .compact-actions-container {
-        justify-content: flex-start;
-        width: 100%;
-        margin-top: 8px;
-    }
-}
-
-@media (max-width: 768px) {
-    .compact-stats-bar {
-        padding: 16px;
-        gap: 16px;
-        border-radius: 16px;
-    }
-    .compact-stat-divider { display: none; }
-    .compact-stat-item { flex-basis: calc(50% - 8px); }
-    .compact-action-pill { flex: 1; justify-content: center; }
-}
-</style>
 
 <div class="compact-stats-bar">
     <div class="compact-stat-item" title="{{ $stats['scope_label'] }}">
@@ -827,94 +673,7 @@
 
 {{-- Import SDM Modal (Superadmin) --}}
 @if(auth()->user()->hasRole('superadmin'))
-<style>
-    .sdm-progress-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 2500;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        background: rgba(15, 23, 42, 0.55);
-        backdrop-filter: blur(6px);
-    }
-    .sdm-progress-card {
-        width: min(100%, 460px);
-        border-radius: 24px;
-        padding: 28px;
-        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
-        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
-        border: 1px solid rgba(148, 163, 184, 0.22);
-    }
-    .sdm-progress-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 12px;
-        border-radius: 999px;
-        background: #EDE9FE;
-        color: #6D28D9;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-    }
-    .sdm-progress-track {
-        position: relative;
-        overflow: hidden;
-        width: 100%;
-        height: 14px;
-        margin-top: 18px;
-        border-radius: 999px;
-        background: #E5E7EB;
-    }
-    .sdm-progress-fill {
-        position: relative;
-        height: 100%;
-        width: 0;
-        border-radius: inherit;
-        background: linear-gradient(90deg, #8B5CF6 0%, #06B6D4 100%);
-        transition: width 0.24s ease;
-    }
-    .sdm-progress-fill::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
-        animation: sdmProgressShimmer 1.3s linear infinite;
-    }
-    .sdm-progress-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        margin-top: 12px;
-    }
-    .sdm-progress-dots {
-        display: inline-flex;
-        gap: 6px;
-        margin-top: 18px;
-    }
-    .sdm-progress-dots span {
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        background: #8B5CF6;
-        opacity: 0.25;
-        animation: sdmProgressPulse 1s infinite ease-in-out;
-    }
-    .sdm-progress-dots span:nth-child(2) { animation-delay: 0.18s; }
-    .sdm-progress-dots span:nth-child(3) { animation-delay: 0.36s; }
-    @keyframes sdmProgressShimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-    }
-    @keyframes sdmProgressPulse {
-        0%, 100% { opacity: 0.25; transform: translateY(0); }
-        50% { opacity: 1; transform: translateY(-2px); }
-    }
-</style>
+
 <div id="importKeteranganModal" class="modal">
     <div class="modal-content" style="max-width: 760px;">
         <div class="modal-header">
@@ -1089,52 +848,7 @@
                 </div>
                 @endif
                 
-                <script>
-                    function openCustomSatkerDropdown() {
-                        const dropdown = document.getElementById('import_satker_dropdown');
-                        dropdown.style.display = 'block';
-                        filterCustomSatkerDropdown();
-                    }
-                    
-                    function filterCustomSatkerDropdown() {
-                        const input = document.getElementById('import_satker_input');
-                        const filterVal = input.value.toUpperCase();
-                        const dropdown = document.getElementById('import_satker_dropdown');
-                        const options = dropdown.querySelectorAll('.custom-dropdown-option');
-                        let hasVisible = false;
-
-                        options.forEach(opt => {
-                            const txtValue = opt.getAttribute('data-name').toUpperCase();
-                            if (txtValue.indexOf(filterVal) > -1) {
-                                opt.style.display = 'block';
-                                hasVisible = true;
-                            } else {
-                                opt.style.display = 'none';
-                            }
-                        });
-
-                        dropdown.style.display = hasVisible ? 'block' : 'none';
-                        
-                        const hiddenId = document.getElementById('import_satker_id');
-                        if(input.value.trim() === "") {
-                            hiddenId.value = '';
-                        }
-                    }
-
-                    function selectCustomSatker(id, name) {
-                        document.getElementById('import_satker_input').value = name;
-                        document.getElementById('import_satker_id').value = id;
-                        document.getElementById('import_satker_dropdown').style.display = 'none';
-                    }
-
-                    document.addEventListener('click', function(e) {
-                        const container = document.querySelector('.custom-search-select');
-                        const dropdown = document.getElementById('import_satker_dropdown');
-                        if (container && !container.contains(e.target) && dropdown) {
-                            dropdown.style.display = 'none';
-                        }
-                    });
-                </script>
+                
 
                 <div class="form-group" style="margin-bottom: 24px;">
                     <label style="font-weight: 700; color: #374151;">Pilih File Excel/CSV Hasil Pengisian <span style="color: #EF4444;">*</span></label>
@@ -1300,78 +1014,7 @@
     </div>
 </div>
 
-<script>
-    // ─── Export Personel (Admin) ───────────────────────────────
-    var _exportScope = 'all';
-    var _exportSatkerId = '';
 
-    function setExportScope(scope, labelEl) {
-        _exportScope = scope;
-        // Reset radio visual
-        ['all', 'selected'].forEach(function(s) {
-            document.getElementById('export_radio_' + s).style.borderColor = s === scope ? '#059669' : '#D1D5DB';
-            document.getElementById('export_dot_' + s).style.display = s === scope ? 'block' : 'none';
-            if (labelEl.parentElement) {
-                var labels = labelEl.parentElement.querySelectorAll('label');
-                labels.forEach(function(l) { l.style.borderColor = '#E5E7EB'; });
-            }
-        });
-        labelEl.style.borderColor = '#059669';
-        document.getElementById('export_satker_select').style.display = scope === 'selected' ? 'block' : 'none';
-        if (scope === 'all') _exportSatkerId = '';
-    }
-
-    function selectExportSatker(id, name) {
-        _exportSatkerId = id;
-        document.getElementById('export_satker_label').textContent = name;
-    }
-
-    function doExportPersonnel() {
-        if (_exportScope === 'selected' && !_exportSatkerId) {
-            alert('Pilih satker terlebih dahulu.');
-            return;
-        }
-        var url = "{{ route('admin.personnel.export-personnel') }}";
-        if (_exportScope === 'selected' && _exportSatkerId) {
-            url += '?satker_id=' + _exportSatkerId;
-        }
-        window.location.href = url;
-        closeModal('exportPersonnelModal');
-    }
-
-    // ─── Import Update Satker Dropdown ──────────────────────────
-    function openUpdateSatkerDropdown() {
-        document.getElementById('import_update_satker_dropdown').style.display = 'block';
-        filterUpdateSatkerDropdown();
-    }
-    function filterUpdateSatkerDropdown() {
-        var input = document.getElementById('import_update_satker_input');
-        var filter = input.value.toUpperCase();
-        var dropdown = document.getElementById('import_update_satker_dropdown');
-        var options = dropdown.querySelectorAll('div[data-id]');
-        var hasVisible = false;
-        options.forEach(function(opt) {
-            var name = opt.getAttribute('data-name').toUpperCase();
-            var show = name.indexOf(filter) > -1;
-            opt.style.display = show ? 'block' : 'none';
-            if (show) hasVisible = true;
-        });
-        dropdown.style.display = hasVisible ? 'block' : 'none';
-        if (input.value.trim() === '') document.getElementById('import_update_satker_id').value = '';
-    }
-    function selectUpdateSatker(id, name) {
-        document.getElementById('import_update_satker_input').value = name;
-        document.getElementById('import_update_satker_id').value = id;
-        document.getElementById('import_update_satker_dropdown').style.display = 'none';
-    }
-    document.addEventListener('click', function(e) {
-        var container = document.getElementById('import_update_satker_input');
-        var dropdown = document.getElementById('import_update_satker_dropdown');
-        if (container && dropdown && !container.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.style.display = 'none';
-        }
-    });
-</script>
 
 {{-- Add Personnel Modal --}}
 <div id="addPersonnelModal" class="modal">
@@ -2419,7 +2062,6 @@
         </div>
     </div>
 </div>
-
 @endsection
 
 @section('styles')
@@ -3284,6 +2926,242 @@
     }
 
 
+</style>
+
+<style>
+.compact-stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 16px 24px;
+    gap: 20px;
+    margin-bottom: 24px;
+    margin-top: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+}
+
+.compact-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.compact-stat-divider {
+    width: 1px;
+    height: 36px;
+    background: #e2e8f0;
+}
+
+.compact-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    font-size: 22px;
+    transition: transform 0.2s ease;
+}
+
+.compact-stat-item:hover .compact-stat-icon {
+    transform: scale(1.05);
+}
+
+.compact-stat-icon.blue { background: #eff6ff; color: #3b82f6; }
+.compact-stat-icon.indigo { background: #eef2ff; color: #6366f1; }
+.compact-stat-icon.purple { background: #f5f3ff; color: #8b5cf6; }
+.compact-stat-icon.emerald { background: #ecfdf5; color: #10b981; }
+
+.compact-stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.compact-stat-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 2px;
+}
+
+.compact-stat-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+
+.compact-actions-container {
+    display: flex; 
+    gap: 12px; 
+    flex-wrap: wrap; 
+    flex: 1; 
+    justify-content: flex-end;
+}
+
+.compact-action-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    border: 1px solid transparent;
+}
+
+.compact-action-pill i {
+    font-size: 16px;
+}
+
+.compact-action-pill i.arrow {
+    font-size: 18px;
+    margin-left: -4px;
+    transition: transform 0.2s;
+}
+
+.compact-action-pill:hover i.arrow {
+    transform: translateX(3px);
+}
+
+.compact-action-pill.red {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fee2e2;
+}
+.compact-action-pill.red:hover {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+.compact-action-pill.amber {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fef3c7;
+}
+.compact-action-pill.amber:hover {
+    background: #d97706;
+    color: white;
+    border-color: #d97706;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+}
+
+@media (max-width: 1024px) {
+    .compact-actions-container {
+        justify-content: flex-start;
+        width: 100%;
+        margin-top: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .compact-stats-bar {
+        padding: 16px;
+        gap: 16px;
+        border-radius: 16px;
+    }
+    .compact-stat-divider { display: none; }
+    .compact-stat-item { flex-basis: calc(50% - 8px); }
+    .compact-action-pill { flex: 1; justify-content: center; }
+}
+</style>
+<style>
+    .sdm-progress-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2500;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(6px);
+    }
+    .sdm-progress-card {
+        width: min(100%, 460px);
+        border-radius: 24px;
+        padding: 28px;
+        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+    }
+    .sdm-progress-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: #EDE9FE;
+        color: #6D28D9;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .sdm-progress-track {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 14px;
+        margin-top: 18px;
+        border-radius: 999px;
+        background: #E5E7EB;
+    }
+    .sdm-progress-fill {
+        position: relative;
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #8B5CF6 0%, #06B6D4 100%);
+        transition: width 0.24s ease;
+    }
+    .sdm-progress-fill::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+        animation: sdmProgressShimmer 1.3s linear infinite;
+    }
+    .sdm-progress-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+    }
+    .sdm-progress-dots {
+        display: inline-flex;
+        gap: 6px;
+        margin-top: 18px;
+    }
+    .sdm-progress-dots span {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #8B5CF6;
+        opacity: 0.25;
+        animation: sdmProgressPulse 1s infinite ease-in-out;
+    }
+    .sdm-progress-dots span:nth-child(2) { animation-delay: 0.18s; }
+    .sdm-progress-dots span:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes sdmProgressShimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    @keyframes sdmProgressPulse {
+        0%, 100% { opacity: 0.25; transform: translateY(0); }
+        50% { opacity: 1; transform: translateY(-2px); }
+    }
 </style>
 @endsection
 
@@ -4484,5 +4362,133 @@ function showGlobalLoader(msg) {
         loader.style.display = 'flex';
     }
 }
+</script>
+
+<script>
+    // Tutup semua dropdown ketika klik di luar
+    document.addEventListener('click', function(e) {
+        ['importExportDropdown', 'moreActionsDropdown'].forEach(function(id) {
+            var dd = document.getElementById(id);
+            if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+        });
+    });
+</script>
+<script>
+                    function openCustomSatkerDropdown() {
+                        const dropdown = document.getElementById('import_satker_dropdown');
+                        dropdown.style.display = 'block';
+                        filterCustomSatkerDropdown();
+                    }
+                    
+                    function filterCustomSatkerDropdown() {
+                        const input = document.getElementById('import_satker_input');
+                        const filterVal = input.value.toUpperCase();
+                        const dropdown = document.getElementById('import_satker_dropdown');
+                        const options = dropdown.querySelectorAll('.custom-dropdown-option');
+                        let hasVisible = false;
+
+                        options.forEach(opt => {
+                            const txtValue = opt.getAttribute('data-name').toUpperCase();
+                            if (txtValue.indexOf(filterVal) > -1) {
+                                opt.style.display = 'block';
+                                hasVisible = true;
+                            } else {
+                                opt.style.display = 'none';
+                            }
+                        });
+
+                        dropdown.style.display = hasVisible ? 'block' : 'none';
+                        
+                        const hiddenId = document.getElementById('import_satker_id');
+                        if(input.value.trim() === "") {
+                            hiddenId.value = '';
+                        }
+                    }
+
+                    function selectCustomSatker(id, name) {
+                        document.getElementById('import_satker_input').value = name;
+                        document.getElementById('import_satker_id').value = id;
+                        document.getElementById('import_satker_dropdown').style.display = 'none';
+                    }
+
+                    document.addEventListener('click', function(e) {
+                        const container = document.querySelector('.custom-search-select');
+                        const dropdown = document.getElementById('import_satker_dropdown');
+                        if (container && !container.contains(e.target) && dropdown) {
+                            dropdown.style.display = 'none';
+                        }
+                    });
+                </script>
+<script>
+    // ─── Export Personel (Admin) ───────────────────────────────
+    var _exportScope = 'all';
+    var _exportSatkerId = '';
+
+    function setExportScope(scope, labelEl) {
+        _exportScope = scope;
+        // Reset radio visual
+        ['all', 'selected'].forEach(function(s) {
+            document.getElementById('export_radio_' + s).style.borderColor = s === scope ? '#059669' : '#D1D5DB';
+            document.getElementById('export_dot_' + s).style.display = s === scope ? 'block' : 'none';
+            if (labelEl.parentElement) {
+                var labels = labelEl.parentElement.querySelectorAll('label');
+                labels.forEach(function(l) { l.style.borderColor = '#E5E7EB'; });
+            }
+        });
+        labelEl.style.borderColor = '#059669';
+        document.getElementById('export_satker_select').style.display = scope === 'selected' ? 'block' : 'none';
+        if (scope === 'all') _exportSatkerId = '';
+    }
+
+    function selectExportSatker(id, name) {
+        _exportSatkerId = id;
+        document.getElementById('export_satker_label').textContent = name;
+    }
+
+    function doExportPersonnel() {
+        if (_exportScope === 'selected' && !_exportSatkerId) {
+            alert('Pilih satker terlebih dahulu.');
+            return;
+        }
+        var url = "{{ route('admin.personnel.export-personnel') }}";
+        if (_exportScope === 'selected' && _exportSatkerId) {
+            url += '?satker_id=' + _exportSatkerId;
+        }
+        window.location.href = url;
+        closeModal('exportPersonnelModal');
+    }
+
+    // ─── Import Update Satker Dropdown ──────────────────────────
+    function openUpdateSatkerDropdown() {
+        document.getElementById('import_update_satker_dropdown').style.display = 'block';
+        filterUpdateSatkerDropdown();
+    }
+    function filterUpdateSatkerDropdown() {
+        var input = document.getElementById('import_update_satker_input');
+        var filter = input.value.toUpperCase();
+        var dropdown = document.getElementById('import_update_satker_dropdown');
+        var options = dropdown.querySelectorAll('div[data-id]');
+        var hasVisible = false;
+        options.forEach(function(opt) {
+            var name = opt.getAttribute('data-name').toUpperCase();
+            var show = name.indexOf(filter) > -1;
+            opt.style.display = show ? 'block' : 'none';
+            if (show) hasVisible = true;
+        });
+        dropdown.style.display = hasVisible ? 'block' : 'none';
+        if (input.value.trim() === '') document.getElementById('import_update_satker_id').value = '';
+    }
+    function selectUpdateSatker(id, name) {
+        document.getElementById('import_update_satker_input').value = name;
+        document.getElementById('import_update_satker_id').value = id;
+        document.getElementById('import_update_satker_dropdown').style.display = 'none';
+    }
+    document.addEventListener('click', function(e) {
+        var container = document.getElementById('import_update_satker_input');
+        var dropdown = document.getElementById('import_update_satker_dropdown');
+        if (container && dropdown && !container.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
 </script>
 @endsection

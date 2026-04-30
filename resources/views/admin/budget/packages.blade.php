@@ -5,7 +5,7 @@
     <a href="{{ route('admin.budget.index') }}">Rencana Anggaran</a>
     <span class="sep">/</span>
     <span class="current">{{ $budgetYear->name }}</span>
-@endsection
+
 
 @section('content')
 @php
@@ -198,22 +198,7 @@
     </div>
 </div>
 
-<script>
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-    function openEditPackageModal(pkg) {
-        document.getElementById('edit_pkg_name').value = pkg.name;
-        document.getElementById('edit_pkg_desc').value = pkg.description || '';
-        document.getElementById('edit_pkg_status').value = pkg.status;
-        document.getElementById('editPackageForm').action = "/admin/budget/packages/" + pkg.id;
-        openModal('editPackageModal');
-    }
-
-    window.onclick = function(e) {
-        if (e.target.classList.contains('modal')) e.target.classList.remove('open');
-    }
-</script>
 @endif
 @endsection
 
@@ -400,4 +385,23 @@
 
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function openEditPackageModal(pkg) {
+        document.getElementById('edit_pkg_name').value = pkg.name;
+        document.getElementById('edit_pkg_desc').value = pkg.description || '';
+        document.getElementById('edit_pkg_status').value = pkg.status;
+        document.getElementById('editPackageForm').action = "/admin/budget/packages/" + pkg.id;
+        openModal('editPackageModal');
+    }
+
+    window.onclick = function(e) {
+        if (e.target.classList.contains('modal')) e.target.classList.remove('open');
+    }
+</script>
 @endsection

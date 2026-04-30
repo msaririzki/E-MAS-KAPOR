@@ -388,7 +388,10 @@
         </div>
 
     </div>
-    <style>
+@endsection
+
+@section('styles')
+<style>
         .satisfaction-card {
             background:
                 radial-gradient(circle at top right, rgba(212, 175, 55, 0.14), transparent 30%),
@@ -1355,7 +1358,7 @@
 @endsection
 
 @section('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <script>
