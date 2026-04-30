@@ -208,11 +208,14 @@
                     </tr>
                     @if($hasSatkers)
                         <tr>
-                            <td colspan="5" style="border-top: none; padding-top: 2px; padding-bottom: 8px;">
-                                <div style="font-size: 7.5pt; color: #374151; line-height: 1.5;">
-                                    <strong style="color: #111827;">Daftar Satker Memilih:</strong> {{ implode(', ', $item['satkers']) }}
+                            <td style="border-top: none;"></td>
+                            <td colspan="2" style="border-top: none; padding: 2px 5px 8px 5px;">
+                                <div style="font-size: 7pt; color: #4b5563; line-height: 1.4; text-align: justify;">
+                                    <span style="font-weight: bold; color: #111827;">Daftar Satker Memilih:</span> {{ implode(', ', $item['satkers']) }}
                                 </div>
                             </td>
+                            <td style="border-top: none;"></td>
+                            <td style="border-top: none;"></td>
                         </tr>
                     @endif
                 @endforeach
