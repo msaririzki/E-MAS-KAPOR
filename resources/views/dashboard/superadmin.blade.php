@@ -16,7 +16,7 @@
                 <div
                     style="display:flex;align-items:center;gap:8px;margin-right:8px;background:var(--input-bg);padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);">
                     <i class="ri-calendar-line" style="color:var(--brand);"></i>
-                    <select onchange="window.location.href='?year='+this.value"
+                    <select onchange="window.spaNavigate('?year='+this.value)"
                         style="border:none;outline:none;font-size:13px;font-weight:600;color:var(--text-main);cursor:pointer;background:transparent;">
                         @foreach($availableYears as $year)
                             <option value="{{ $year }}" {{ $fiscalYear == $year ? 'selected' : '' }}>

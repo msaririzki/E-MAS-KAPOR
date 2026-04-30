@@ -20,7 +20,7 @@
                     style="display:flex;align-items:center;gap:10px;background:#fff;padding:8px 16px;border-radius:14px;border:1px solid #E2E8F0;box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-family: 'Outfit', sans-serif;">
                     <i class="ri-calendar-line" style="color:#B91C1C; font-size: 18px;"></i>
                     <select
-                        onchange="const url = new URL(window.location.href); url.searchParams.set('year', this.value); window.location.href = url.href;"
+                        onchange="const url = new URL(window.location.href); url.searchParams.set('year', this.value); window.spaNavigate(url.href);"
                         style="border:none;outline:none;font-size:14px;font-weight:700;color:#1e293b;cursor:pointer;background:transparent;">
                         @foreach($availableYears as $year)
                             <option value="{{ $year }}" {{ $fiscal_year == $year ? 'selected' : '' }}>

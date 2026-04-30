@@ -2443,121 +2443,136 @@
             group.classList.toggle('open');
         }
 
-        // ── Global AJAX Pagination ──
-        document.addEventListener('click', function (e) {
-            const btn = e.target.closest('.page-btn');
-            if (!btn || btn.classList.contains('disabled')) return;
+        // ── Global SPA Navigate Function ──
+        window.spaNavigate = function(url, isPagination = false) {
+            // Jika rute adalah export, download, atau logout, fallback ke standar
+            if (url.includes('logout') || url.includes('export')) {
+                window.location.href = url;
+                return;
+            }
 
-            // Cari container card terdekat yang menampung tabel ini
-            // Mayoritas tabel dalam aplikasi dibungkus dengan .card
-            const container = btn.closest('.card') || btn.closest('.table-wrap');
-            if (!container) return; // Fallback ke default refresh jika bukan di dalam tabel yang didukung
+            const contentContainer = document.getElementById('main-content');
+            if (!contentContainer) {
+                window.location.href = url;
+                return;
+            }
 
-            e.preventDefault();
-            const url = btn.getAttribute('href');
+            // Simpan status fokus elemen (terutama untuk input pencarian)
+            const activeEl = document.activeElement;
+            const focusState = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') ? {
+                id: activeEl.id,
+                name: activeEl.name,
+                start: activeEl.selectionStart,
+                end: activeEl.selectionEnd
+            } : null;
 
-            // Tampilkan efek loading tipis
-            container.style.opacity = '0.5';
-            container.style.pointerEvents = 'none';
-            container.style.transition = 'opacity 0.2s';
+            contentContainer.style.opacity = '0.4';
+            contentContainer.style.pointerEvents = 'none';
 
             fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(response => response.text())
+            .then(res => res.text())
             .then(html => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
-                // Cari container yang bersesuaian di response
-                // Cara teraman: cari .pagination-controls di response, lalu ambil .card terdekatnya
-                const newPagination = doc.querySelector('.pagination-controls');
-                if (newPagination) {
-                    const newContainer = newPagination.closest('.card') || newPagination.closest('.table-wrap');
-                    if (newContainer) {
-                        container.innerHTML = newContainer.innerHTML;
-                        window.history.pushState({}, '', url);
+                const newContent = doc.getElementById('main-content');
+                if (newContent) {
+                    contentContainer.innerHTML = newContent.innerHTML;
+                }
+                
+                if (doc.title) document.title = doc.title;
+                
+                const oldScripts = document.getElementById('dynamic-scripts');
+                const newScripts = doc.getElementById('dynamic-scripts');
+                if (oldScripts && newScripts) {
+                    oldScripts.innerHTML = '';
+                    Array.from(newScripts.querySelectorAll('script')).forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                        newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                        oldScripts.appendChild(newScript);
+                    });
+                }
+
+                window.history.pushState({}, '', url);
+
+                // Kembalikan fokus input jika tadi sedang mengetik
+                if (focusState) {
+                    const elToFocus = focusState.id ? document.getElementById(focusState.id) : document.querySelector(`[name="${focusState.name}"]`);
+                    if (elToFocus) {
+                        elToFocus.focus();
+                        if (elToFocus.setSelectionRange && focusState.start !== null) {
+                            try { elToFocus.setSelectionRange(focusState.start, focusState.end); } catch(e) {}
+                        }
                     }
                 }
             })
-            .catch(error => console.error('Error fetching page:', error))
+            .catch(err => {
+                console.error('SPA Error:', err);
+                window.location.href = url;
+            })
             .finally(() => {
-                container.style.opacity = '1';
-                container.style.pointerEvents = 'auto';
+                contentContainer.style.opacity = '1';
+                contentContainer.style.pointerEvents = 'auto';
             });
-        });
-        // ── SPA Sidebar Navigation ──
-        document.addEventListener('click', function(e) {
-            const link = e.target.closest('a.nav-link');
-            
-            // Cek apakah klik berasal dari sidebar link internal
-            if (link && link.href && !link.target && link.hostname === window.location.hostname && !link.href.includes('#')) {
-                // Jika route adalah logout atau tidak bisa di AJAX, skip
-                if (link.href.includes('logout') || link.href.includes('export')) return;
+        };
 
+        // ── Global Interceptors ──
+        document.addEventListener('click', function(e) {
+            // 1. Pagination Interceptor
+            const pageBtn = e.target.closest('.page-btn');
+            if (pageBtn && !pageBtn.classList.contains('disabled')) {
+                e.preventDefault();
+                window.spaNavigate(pageBtn.getAttribute('href'), true);
+                return;
+            }
+
+            // 2. Sidebar Link Interceptor
+            const navLink = e.target.closest('a.nav-link');
+            if (navLink && navLink.href && !navLink.target && navLink.hostname === window.location.hostname && !navLink.href.includes('#')) {
                 e.preventDefault();
                 
-                // 1. Update status active di sidebar
                 document.querySelectorAll('a.nav-link').forEach(el => el.classList.remove('active'));
-                link.classList.add('active');
+                navLink.classList.add('active');
 
-                // 2. Beri efek loading di konten
-                const contentContainer = document.getElementById('main-content');
-                if (!contentContainer) return;
-                contentContainer.style.opacity = '0.4';
-                contentContainer.style.pointerEvents = 'none';
-
-                // Tutup overlay mobile jika terbuka
                 if (window.innerWidth <= 1024) {
                     document.getElementById('sidebar').classList.remove('open');
                     document.getElementById('overlay').classList.remove('open');
                 }
 
-                // 3. Fetch data via AJAX
-                fetch(link.href)
-                .then(res => res.text())
-                .then(html => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    
-                    // 4. Replace content
-                    const newContent = doc.getElementById('main-content');
-                    if (newContent) {
-                        contentContainer.innerHTML = newContent.innerHTML;
-                    }
-                    
-                    // 5. Update browser tab title
-                    if (doc.title) document.title = doc.title;
-                    
-                    // 6. Ganti dan jalankan ulang tag scripts dari halaman baru
-                    const oldScripts = document.getElementById('dynamic-scripts');
-                    const newScripts = doc.getElementById('dynamic-scripts');
-                    
-                    if (oldScripts && newScripts) {
-                        oldScripts.innerHTML = '';
-                        // Eksekusi ulang setiap tag <script> di dalam dynamic-scripts
-                        Array.from(newScripts.querySelectorAll('script')).forEach(oldScript => {
-                            const newScript = document.createElement('script');
-                            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-                            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                            oldScripts.appendChild(newScript);
-                        });
-                    }
-
-                    // 7. Update browser history/URL
-                    window.history.pushState({}, '', link.href);
-
-                    // Re-inisialisasi event listeners global bila perlu
-                    // (Kosong karena sebagian besar sudah pakai event delegation)
-                })
-                .catch(err => {
-                    console.error('SPA Error:', err);
-                    window.location.href = link.href; // Fallback jika gagal
-                })
-                .finally(() => {
-                    contentContainer.style.opacity = '1';
-                    contentContainer.style.pointerEvents = 'auto';
-                });
+                window.spaNavigate(navLink.href);
             }
         });
+
+        // 3. Form Submit Interceptor (Khusus GET filter form)
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (form.method && form.method.toLowerCase() === 'get' && form.classList.contains('filter-form')) {
+                e.preventDefault();
+                
+                const url = new URL(form.action || window.location.href);
+                const formData = new FormData(form);
+                
+                const newUrl = new URL(url.origin + url.pathname);
+                for (const [key, value] of formData.entries()) {
+                    if (value !== '') {
+                        newUrl.searchParams.append(key, value);
+                    }
+                }
+                window.spaNavigate(newUrl.href);
+            }
+        });
+
+        // 4. Override form.submit() agar ter-intercept oleh listener di atas
+        const originalSubmit = HTMLFormElement.prototype.submit;
+        HTMLFormElement.prototype.submit = function() {
+            if (this.method && this.method.toLowerCase() === 'get' && this.classList.contains('filter-form')) {
+                const event = new Event('submit', { cancelable: true, bubbles: true });
+                this.dispatchEvent(event);
+            } else {
+                originalSubmit.call(this);
+            }
+        };
 
         // Handle back/forward button in browser
         window.addEventListener('popstate', function() {

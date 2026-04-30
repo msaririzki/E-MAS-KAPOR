@@ -427,10 +427,10 @@ Password: {{ $credential['password'] }}
                             </div>
                             <div class="custom-options" style="background: #fff !important; bottom: calc(100% + 8px); top: auto;">
                                 <div class="options-scroll">
-                                    <div class="option {{ $perPage == 10 ? 'selected' : '' }}" onclick="window.location.href=updateQueryStringParameter(window.location.href, 'per_page', '10')">10</div>
-                                    <div class="option {{ $perPage == 25 ? 'selected' : '' }}" onclick="window.location.href=updateQueryStringParameter(window.location.href, 'per_page', '25')">25</div>
-                                    <div class="option {{ $perPage == 50 ? 'selected' : '' }}" onclick="window.location.href=updateQueryStringParameter(window.location.href, 'per_page', '50')">50</div>
-                                    <div class="option {{ $perPage == 100 ? 'selected' : '' }}" onclick="window.location.href=updateQueryStringParameter(window.location.href, 'per_page', '100')">100</div>
+                                    <div class="option {{ $perPage == 10 ? 'selected' : '' }}" onclick="window.spaNavigate()">10</div>
+                                    <div class="option {{ $perPage == 25 ? 'selected' : '' }}" onclick="window.spaNavigate()">25</div>
+                                    <div class="option {{ $perPage == 50 ? 'selected' : '' }}" onclick="window.spaNavigate()">50</div>
+                                    <div class="option {{ $perPage == 100 ? 'selected' : '' }}" onclick="window.spaNavigate()">100</div>
                                 </div>
                             </div>
                         </div>

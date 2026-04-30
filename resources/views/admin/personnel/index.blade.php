@@ -397,7 +397,7 @@
         @endif
 
         <div>
-            <button type="button" class="btn" style="background: var(--slate-600); color: white;" onclick="window.location.href=updateQueryStringParameter(window.location.href, 'export', '1')">
+            <button type="button" class="btn" style="background: var(--slate-600); color: white;" onclick="window.spaNavigate()">
                 <i class="ri-download-line"></i> Ekspor
             </button>
         </div>
@@ -417,7 +417,7 @@
                         $nextDir = $dir === 'asc' ? 'desc' : 'asc';
                         $iconClass = $dir === 'asc' ? 'ri-sort-asc' : 'ri-sort-desc';
                     @endphp
-                    <th style="border-top-left-radius: 12px; cursor: pointer;" onclick="window.location.href=updateSort('full_name', '{{ $sort == 'full_name' ? $nextDir : 'asc' }}')">
+                    <th style="border-top-left-radius: 12px; cursor: pointer;" onclick="window.spaNavigate(updateSort('full_name', '{{ $sort == 'full_name' ? $nextDir : 'asc' }}')">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             PERSONEL 
                             @if($sort == 'full_name')
@@ -427,7 +427,7 @@
                             @endif
                         </div>
                     </th>
-                    <th style="cursor: pointer;" onclick="window.location.href=updateSort('rank', '{{ $sort == 'rank' ? $nextDir : 'asc' }}')">
+                    <th style="cursor: pointer;" onclick="window.spaNavigate(updateSort('rank', '{{ $sort == 'rank' ? $nextDir : 'asc' }}')">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             PANGKAT / GOL
                             @if($sort == 'rank')
@@ -437,7 +437,7 @@
                             @endif
                         </div>
                     </th>
-                    <th style="cursor: pointer;" onclick="window.location.href=updateSort('jabatan', '{{ $sort == 'jabatan' ? $nextDir : 'asc' }}')">
+                    <th style="cursor: pointer;" onclick="window.spaNavigate(updateSort('jabatan', '{{ $sort == 'jabatan' ? $nextDir : 'asc' }}')">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             JABATAN / BAGIAN
                             @if($sort == 'jabatan')
@@ -447,7 +447,7 @@
                             @endif
                         </div>
                     </th>
-                    <th style="cursor: pointer;" onclick="window.location.href=updateSort('satker', '{{ $sort == 'satker' ? $nextDir : 'asc' }}')">
+                    <th style="cursor: pointer;" onclick="window.spaNavigate(updateSort('satker', '{{ $sort == 'satker' ? $nextDir : 'asc' }}')">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             SATUAN KERJA
                             @if($sort == 'satker')
@@ -576,10 +576,10 @@
                             </div>
                             <div class="custom-options" style="background: #fff !important; bottom: calc(100% + 8px); top: auto;">
                                 <div class="options-scroll">
-                                    <div class="option {{ $perPage == 10 ? 'selected' : '' }}" onclick="window.location.href=updateQueryStringParameter(window.location.href, 'per_page', '10')">10</div>
-                                    <div class="option {{ $perPage == 25 ? 'selected' : '' }}" onclick="window.location.href=updateQueryStringParameter(window.location.href, 'per_page', '25')">25</div>
-                                    <div class="option {{ $perPage == 50 ? 'selected' : '' }}" onclick="window.location.href=updateQueryStringParameter(window.location.href, 'per_page', '50')">50</div>
-                                    <div class="option {{ $perPage == 100 ? 'selected' : '' }}" onclick="window.location.href=updateQueryStringParameter(window.location.href, 'per_page', '100')">100</div>
+                                    <div class="option {{ $perPage == 10 ? 'selected' : '' }}" onclick="window.spaNavigate()">10</div>
+                                    <div class="option {{ $perPage == 25 ? 'selected' : '' }}" onclick="window.spaNavigate()">25</div>
+                                    <div class="option {{ $perPage == 50 ? 'selected' : '' }}" onclick="window.spaNavigate()">50</div>
+                                    <div class="option {{ $perPage == 100 ? 'selected' : '' }}" onclick="window.spaNavigate()">100</div>
                                 </div>
                             </div>
                         </div>
@@ -4454,7 +4454,7 @@ function showGlobalLoader(msg) {
         if (_exportScope === 'selected' && _exportSatkerId) {
             url += '?satker_id=' + _exportSatkerId;
         }
-        window.location.href = url;
+        window.spaNavigate(url);
         closeModal('exportPersonnelModal');
     }
 
