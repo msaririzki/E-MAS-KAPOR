@@ -226,12 +226,21 @@
 
     <!-- Footer -->
     <footer class="bg-slate-900 py-10 border-t border-slate-800 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row justify-between items-center gap-8">
+            <!-- Logo -->
             <div class="flex items-center gap-4">
                 <img src="{{ asset('e-mas-kapor.png') }}" alt="Logo" class="h-12 w-auto">
             </div>
             
-            <div class="text-center md:text-right">
+            <!-- Social Media -->
+            <div class="flex items-center gap-4">
+                <a href="https://www.instagram.com/birologistik_ntb/" target="_blank" rel="noopener noreferrer" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-gradient-to-tr hover:from-yellow-500 hover:via-red-500 hover:to-purple-500 hover:text-white transition-all duration-300" title="Instagram Biro Logistik Polda NTB">
+                    <i class="ri-instagram-line text-xl"></i>
+                </a>
+            </div>
+
+            <!-- Copyright & SEO -->
+            <div class="text-center lg:text-right">
                 <p class="text-slate-400 font-medium">&copy; {{ date('Y') }} Biro Logistik Polda NTB.</p>
                 <p class="text-slate-500 text-sm mt-1">Hak Cipta Dilindungi Undang-Undang.</p>
                 <p class="text-slate-600 text-xs mt-2 max-w-xl">
