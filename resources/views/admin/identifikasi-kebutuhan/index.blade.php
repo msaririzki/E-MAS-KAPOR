@@ -52,7 +52,7 @@
     </div>
 @endif
 
-{{-- ═══ Top 10 Per-Category Cards ═══ --}}
+{{-- Top item per kategori --}}
 @if($itemStatsByCategory->count() > 0)
 @php
     $catStyles = [
@@ -74,11 +74,11 @@
                 <div class="cat-title">{{ str_replace('_', ' ', $category) }}</div>
             </div>
             <div class="cat-count" style="background: {{ $style['bg'] }}; color: {{ $style['color'] }};">
-                Top {{ $items->count() }}
+                Top {{ min(5, $items->count()) }}
             </div>
         </div>
         <div class="cat-top-card-body">
-            @foreach($items as $idx => $stat)
+            @foreach($items->take(5) as $idx => $stat)
             <div class="top-item">
                 <div class="top-rank {{ $idx === 0 ? 'gold' : ($idx === 1 ? 'silver' : ($idx === 2 ? 'bronze' : 'normal')) }}">
                     {{ $idx + 1 }}
@@ -134,22 +134,15 @@
             <div style="flex: 1; min-width: 180px;">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari Satker" class="search-input" style="width: 100%;">
             </div>
-            <div class="custom-select-wrapper" style="width: 200px; z-index: 10;">
-                <div class="custom-select" onclick="toggleDropdown(this)" style="height: 38px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg);">
-                    <div class="select-trigger" style="padding: 0 12px; color: var(--text-main);">
-                        <span>{{ request('satker_id') ? $satkers->firstWhere('id', request('satker_id'))->name ?? 'Semua Satker' : 'Semua Satker' }}</span>
-                        <i class="ri-arrow-down-s-line" style="font-size: 16px;"></i>
-                    </div>
-                    <div class="custom-options">
-                        <div class="options-scroll">
-                            <div class="option {{ !request('satker_id') ? 'selected' : '' }}" onclick="selectOptionSearch(this, 'satker_id', '', 'Semua Satker')">Semua Satker</div>
-                            @foreach($satkers as $satker)
-                                <div class="option {{ request('satker_id') == $satker->id ? 'selected' : '' }}" onclick="selectOptionSearch(this, 'satker_id', '{{ $satker->id }}', '{{ $satker->name }}')">{{ $satker->name }}</div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-                <input type="hidden" name="satker_id" value="{{ request('satker_id') }}">
+            <div style="width: 220px;">
+                <select name="satker_id" class="filter-select">
+                    <option value="">Semua Satker</option>
+                    @foreach($satkers as $satker)
+                        <option value="{{ $satker->id }}" @selected((string) request('satker_id') === (string) $satker->id)>
+                            {{ $satker->name }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
             <button type="submit" class="btn btn-primary btn-sm"><i class="ri-search-line"></i> Filter</button>
             @if(request()->hasAny(['search', 'satker_id']))
@@ -372,6 +365,25 @@
         background-color: #FEF2F2;
         color: #B91C1C;
         font-weight: 600;
+    }
+
+    .filter-select {
+        width: 100%;
+        height: 38px;
+        padding: 0 12px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--input-bg);
+        color: var(--text-main);
+        font-size: 13px;
+        font-weight: 500;
+        outline: none;
+    }
+
+    .filter-select:focus {
+        border-color: #B91C1C;
+        box-shadow: 0 0 0 4px #FEF2F2;
+        background: #fff;
     }
 
     /* ── Table Footer (Pagination) ────────────────────── */
@@ -650,6 +662,8 @@
                         form.submit();
                     }
                 });
+            });
+        });
     });
 </script>
 @endsection

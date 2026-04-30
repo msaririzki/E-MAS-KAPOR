@@ -172,15 +172,11 @@
                                         @endfor
                                     </tr>
                                     <tr>
-                                        @for($i = 1; $i <= 40; $i++)
-                                            <td class="scale-lbl" style="text-align: {{ $i == 1 ? 'left' : 'right' }}; padding: 2px 0 0 0 !important; overflow: visible;">
-                                                @if($i == 1)
-                                                    <span style="white-space: nowrap; display: inline-block;">0</span>
-                                                @elseif(in_array($i, [10, 20, 30, 40]))
-                                                    <span style="white-space: nowrap; display: inline-block;">{{ $i * 2.5 }}</span>
-                                                @endif
-                                            </td>
-                                        @endfor
+                                        <td colspan="5" class="scale-lbl" style="text-align: left; padding: 2px 0 0 0 !important;">0</td>
+                                        <td colspan="5" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">25</td>
+                                        <td colspan="10" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">50</td>
+                                        <td colspan="10" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">75</td>
+                                        <td colspan="10" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">100</td>
                                     </tr>
                                 </table>
                             @else
@@ -233,15 +229,11 @@
                                     @endfor
                                 </tr>
                                 <tr>
-                                    @for($i = 1; $i <= 40; $i++)
-                                        <td class="scale-lbl" style="text-align: {{ $i == 1 ? 'left' : 'right' }}; padding: 2px 0 0 0 !important; overflow: visible;">
-                                            @if($i == 1)
-                                                <span style="white-space: nowrap; display: inline-block;">0</span>
-                                            @elseif(in_array($i, [10, 20, 30, 40]))
-                                                <span style="white-space: nowrap; display: inline-block;">{{ $i * 2.5 }}</span>
-                                            @endif
-                                        </td>
-                                    @endfor
+                                    <td colspan="5" class="scale-lbl" style="text-align: left; padding: 2px 0 0 0 !important;">0</td>
+                                    <td colspan="5" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">25</td>
+                                    <td colspan="10" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">50</td>
+                                    <td colspan="10" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">75</td>
+                                    <td colspan="10" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">100</td>
                                 </tr>
                             </table>
                         @else
