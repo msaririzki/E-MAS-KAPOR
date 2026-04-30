@@ -74,13 +74,12 @@
         }
         
         .hero-overlay {
-            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95));
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.70), rgba(15, 23, 42, 0.88));
         }
         
         .features-bg {
-            background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.93), rgba(248, 250, 252, 0.97)), url('{{ asset("bg_polda.jpg") }}');
+            background-image: linear-gradient(to bottom, rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.94)), url('{{ asset("bg_polda.jpg") }}');
             background-size: cover;
-            background-position: center;
             background-attachment: fixed;
         }
         
@@ -183,7 +182,7 @@
     </section>
 
     <!-- Features Section -->
-    <section id="fitur" class="py-20 features-bg flex-grow relative">
+    <section id="fitur" class="py-20 features-bg bg-[47.5%_top] md:bg-center flex-grow relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="reveal-item text-center max-w-3xl mx-auto mb-16">
                 <h2 class="text-3xl font-bold text-slate-900 mb-4">Fitur Utama Sistem</h2>
