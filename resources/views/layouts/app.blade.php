@@ -2127,7 +2127,6 @@
             }
         }
     </style>
-    @yield('styles')
 </head>
 
 <body
@@ -2389,6 +2388,7 @@
         </header>
 
         <div class="content" id="main-content">
+            @yield('styles')
             @yield('content')
         </div>
     </div>
