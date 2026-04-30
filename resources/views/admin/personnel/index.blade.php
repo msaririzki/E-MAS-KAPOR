@@ -4192,7 +4192,7 @@
             }
 
             document.getElementById('filterForm').submit();
-        }, 500);
+        }, 1000);
     }
 
     function handleSearchKeydown(event) {

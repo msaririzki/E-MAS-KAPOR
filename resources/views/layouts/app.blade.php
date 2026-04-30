@@ -2457,21 +2457,23 @@
                 return;
             }
 
-            // Simpan status fokus elemen (terutama untuk input pencarian)
-            const activeEl = document.activeElement;
-            const focusState = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') ? {
-                id: activeEl.id,
-                name: activeEl.name,
-                start: activeEl.selectionStart,
-                end: activeEl.selectionEnd
-            } : null;
-
             contentContainer.style.opacity = '0.4';
             contentContainer.style.pointerEvents = 'none';
 
             fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(res => res.text())
             .then(html => {
+                // TANGKAP FOKUS & VALUE TERAKHIR TEPAT SEBELUM DOM DITIMPA
+                // Ini mencegah ketikan user hilang jika dia mengetik saat loading fetch
+                const activeEl = document.activeElement;
+                const focusState = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') ? {
+                    id: activeEl.id,
+                    name: activeEl.name,
+                    value: activeEl.value, // Ambil ketikan terakhir
+                    start: activeEl.selectionStart,
+                    end: activeEl.selectionEnd
+                } : null;
+
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
@@ -2496,10 +2498,11 @@
 
                 window.history.pushState({}, '', url);
 
-                // Kembalikan fokus input jika tadi sedang mengetik
+                // Kembalikan fokus input dan nilai ketikan terakhir
                 if (focusState) {
                     const elToFocus = focusState.id ? document.getElementById(focusState.id) : document.querySelector(`[name="${focusState.name}"]`);
                     if (elToFocus) {
+                        elToFocus.value = focusState.value; // Timpa nilai dari server dengan ketikan terakhir user!
                         elToFocus.focus();
                         if (elToFocus.setSelectionRange && focusState.start !== null) {
                             try { elToFocus.setSelectionRange(focusState.start, focusState.end); } catch(e) {}
