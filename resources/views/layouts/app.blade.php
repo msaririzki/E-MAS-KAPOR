@@ -2388,7 +2388,7 @@
             </div>
         </header>
 
-        <div class="content">
+        <div class="content" id="main-content">
             @yield('content')
         </div>
     </div>
@@ -2484,8 +2484,89 @@
                 container.style.pointerEvents = 'auto';
             });
         });
+        // ── SPA Sidebar Navigation ──
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a.nav-link');
+            
+            // Cek apakah klik berasal dari sidebar link internal
+            if (link && link.href && !link.target && link.hostname === window.location.hostname && !link.href.includes('#')) {
+                // Jika route adalah logout atau tidak bisa di AJAX, skip
+                if (link.href.includes('logout') || link.href.includes('export')) return;
+
+                e.preventDefault();
+                
+                // 1. Update status active di sidebar
+                document.querySelectorAll('a.nav-link').forEach(el => el.classList.remove('active'));
+                link.classList.add('active');
+
+                // 2. Beri efek loading di konten
+                const contentContainer = document.getElementById('main-content');
+                if (!contentContainer) return;
+                contentContainer.style.opacity = '0.4';
+                contentContainer.style.pointerEvents = 'none';
+
+                // Tutup overlay mobile jika terbuka
+                if (window.innerWidth <= 1024) {
+                    document.getElementById('sidebar').classList.remove('open');
+                    document.getElementById('overlay').classList.remove('open');
+                }
+
+                // 3. Fetch data via AJAX
+                fetch(link.href)
+                .then(res => res.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // 4. Replace content
+                    const newContent = doc.getElementById('main-content');
+                    if (newContent) {
+                        contentContainer.innerHTML = newContent.innerHTML;
+                    }
+                    
+                    // 5. Update browser tab title
+                    if (doc.title) document.title = doc.title;
+                    
+                    // 6. Ganti dan jalankan ulang tag scripts dari halaman baru
+                    const oldScripts = document.getElementById('dynamic-scripts');
+                    const newScripts = doc.getElementById('dynamic-scripts');
+                    
+                    if (oldScripts && newScripts) {
+                        oldScripts.innerHTML = '';
+                        // Eksekusi ulang setiap tag <script> di dalam dynamic-scripts
+                        Array.from(newScripts.querySelectorAll('script')).forEach(oldScript => {
+                            const newScript = document.createElement('script');
+                            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                            oldScripts.appendChild(newScript);
+                        });
+                    }
+
+                    // 7. Update browser history/URL
+                    window.history.pushState({}, '', link.href);
+
+                    // Re-inisialisasi event listeners global bila perlu
+                    // (Kosong karena sebagian besar sudah pakai event delegation)
+                })
+                .catch(err => {
+                    console.error('SPA Error:', err);
+                    window.location.href = link.href; // Fallback jika gagal
+                })
+                .finally(() => {
+                    contentContainer.style.opacity = '1';
+                    contentContainer.style.pointerEvents = 'auto';
+                });
+            }
+        });
+
+        // Handle back/forward button in browser
+        window.addEventListener('popstate', function() {
+            window.location.reload(); 
+        });
     </script>
-    @yield('scripts')
+    <div id="dynamic-scripts">
+        @yield('scripts')
+    </div>
 </body>
 
 </html>
