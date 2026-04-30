@@ -47,8 +47,8 @@ class IdentifikasiKebutuhanController extends Controller
         // Stats
         $stats = [
             'totalPengajuan' => Kebutuhan::count(),
-            'totalSatker' => Kebutuhan::distinct('satker_id')->count('satker_id'),
-            'totalItem' => \App\Models\KebutuhanItem::count(),
+            'totalSatker'    => Kebutuhan::distinct('satker_id')->count('satker_id'),
+            'totalItem'      => \App\Models\KebutuhanItem::distinct('identifikasi_item_id')->count('identifikasi_item_id'),
         ];
 
         // ── Item Popularity Statistics ─────────────────────────────
