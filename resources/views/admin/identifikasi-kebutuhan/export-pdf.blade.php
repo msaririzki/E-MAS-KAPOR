@@ -128,14 +128,21 @@
         Dicetak: {{ $generatedAt->translatedFormat('d F Y H:i') }}
     </div>
 
-    <table>
+    <table style="table-layout: fixed;">
         <thead>
+            <tr style="height: 0; line-height: 0;">
+                <td style="width: 3%; border: none !important; padding: 0 !important;"></td>
+                <td style="width: 25%; border: none !important; padding: 0 !important;"></td>
+                <td style="width: 54%; border: none !important; padding: 0 !important;"></td>
+                <td style="width: 12%; border: none !important; padding: 0 !important;"></td>
+                <td style="width: 6%; border: none !important; padding: 0 !important;"></td>
+            </tr>
             <tr>
-                <th style="width: 28px;">NO</th>
-                <th class="text-left" style="width: 30%;">ITEM</th>
+                <th>NO</th>
+                <th class="text-left">ITEM</th>
                 <th>GRAFIK PERSENTASE</th>
-                <th style="width: 90px;">SATKER MEMILIH</th>
-                <th style="width: 62px;">NILAI</th>
+                <th>SATKER MEMILIH</th>
+                <th>NILAI</th>
             </tr>
         </thead>
         <tbody>
@@ -157,13 +164,15 @@
                                     @endfor
                                 </tr>
                                 <tr>
-                                    <td colspan="10" class="scale-lbl" style="padding: 2px 0 0 0 !important;">
-                                        <span style="float: left;">0</span>
-                                        <span style="float: right;">25</span>
-                                    </td>
-                                    <td colspan="10" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">50</td>
-                                    <td colspan="10" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">75</td>
-                                    <td colspan="10" class="scale-lbl" style="text-align: right; padding: 2px 0 0 0 !important;">100</td>
+                                    @for($i = 1; $i <= 40; $i++)
+                                        <td class="scale-lbl" style="text-align: {{ $i == 1 ? 'left' : 'right' }}; padding: 2px 0 0 0 !important; overflow: visible;">
+                                            @if($i == 1)
+                                                <span style="white-space: nowrap; display: inline-block;">0</span>
+                                            @elseif(in_array($i, [10, 20, 30, 40]))
+                                                <span style="white-space: nowrap; display: inline-block;">{{ $i * 2.5 }}</span>
+                                            @endif
+                                        </td>
+                                    @endfor
                                 </tr>
                             </table>
                         </td>

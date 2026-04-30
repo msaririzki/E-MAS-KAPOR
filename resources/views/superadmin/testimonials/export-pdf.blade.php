@@ -173,8 +173,12 @@
                                     </tr>
                                     <tr>
                                         @for($i = 1; $i <= 40; $i++)
-                                            <td class="scale-lbl" style="text-align: {{ $i == 1 ? 'left' : 'right' }}; padding: 2px 0 0 0 !important; max-width: 0; overflow: visible; white-space: nowrap;">
-                                                @if($i == 1) 0 @elseif($i == 10) 25 @elseif($i == 20) 50 @elseif($i == 30) 75 @elseif($i == 40) 100 @endif
+                                            <td class="scale-lbl" style="text-align: {{ $i == 1 ? 'left' : 'right' }}; padding: 2px 0 0 0 !important; overflow: visible;">
+                                                @if($i == 1)
+                                                    <span style="white-space: nowrap; display: inline-block;">0</span>
+                                                @elseif(in_array($i, [10, 20, 30, 40]))
+                                                    <span style="white-space: nowrap; display: inline-block;">{{ $i * 2.5 }}</span>
+                                                @endif
                                             </td>
                                         @endfor
                                     </tr>
@@ -230,8 +234,12 @@
                                 </tr>
                                 <tr>
                                     @for($i = 1; $i <= 40; $i++)
-                                        <td class="scale-lbl" style="text-align: {{ $i == 1 ? 'left' : 'right' }}; padding: 2px 0 0 0 !important; max-width: 0; overflow: visible; white-space: nowrap;">
-                                            @if($i == 1) 0 @elseif($i == 10) 25 @elseif($i == 20) 50 @elseif($i == 30) 75 @elseif($i == 40) 100 @endif
+                                        <td class="scale-lbl" style="text-align: {{ $i == 1 ? 'left' : 'right' }}; padding: 2px 0 0 0 !important; overflow: visible;">
+                                            @if($i == 1)
+                                                <span style="white-space: nowrap; display: inline-block;">0</span>
+                                            @elseif(in_array($i, [10, 20, 30, 40]))
+                                                <span style="white-space: nowrap; display: inline-block;">{{ $i * 2.5 }}</span>
+                                            @endif
                                         </td>
                                     @endfor
                                 </tr>
