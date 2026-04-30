@@ -94,6 +94,21 @@
         .gold-accent {
             color: #eab308; /* Tailwind yellow-500 */
         }
+        
+        /* Reveal Animations */
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal-item.is-revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .delay-100 { transition-delay: 100ms; }
+        .delay-200 { transition-delay: 200ms; }
+        .delay-300 { transition-delay: 300ms; }
+        .delay-400 { transition-delay: 400ms; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased flex flex-col min-h-screen">
@@ -132,15 +147,15 @@
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex flex-col items-center text-center">
             
-            <h1 class="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-4 md:mb-6 drop-shadow-lg leading-tight mt-8 md:mt-0">
+            <h1 class="reveal-item text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tight mb-4 md:mb-6 drop-shadow-lg leading-tight mt-8 md:mt-0">
                 <span class="block">E-MAS KAPOR</span>
                 <span class="block text-lg sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-slate-300 mt-2 md:mt-3">Electronic Measurement <span class="gold-accent block sm:inline mt-1 sm:mt-0">Perlengkapan Perorangan</span></span>
             </h1>
             
-            <p class="mt-2 md:mt-4 text-sm md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-8 md:mb-10 drop-shadow px-2">
+            <p class="reveal-item delay-100 mt-2 md:mt-4 text-sm md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-8 md:mb-10 drop-shadow px-2">
                 Sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan, perencanaan, dan distribusi yang lebih terintegrasi.
             </p>
-            <div class="flex flex-col sm:flex-row gap-4 items-center justify-center">
+            <div class="reveal-item delay-200 flex flex-col sm:flex-row gap-4 items-center justify-center">
                 <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-base transition-all duration-300 bg-red-700 hover:bg-red-600 text-white shadow-xl shadow-red-900/40 border border-red-500/50 hover:-translate-y-0.5 w-full sm:w-auto">
                     Masuk ke Sistem
                     <i class="ri-arrow-right-line"></i>
@@ -151,7 +166,7 @@
                 </a>
             </div>
             
-            <div class="mt-12">
+            <div class="reveal-item delay-300 mt-12">
                 <p class="text-slate-400 text-sm flex items-center gap-2 justify-center">
                     <i class="ri-information-line"></i>
                     Khusus untuk personel dan operator terdaftar
@@ -170,7 +185,7 @@
     <!-- Features Section -->
     <section id="fitur" class="py-20 features-bg flex-grow relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-16">
+            <div class="reveal-item text-center max-w-3xl mx-auto mb-16">
                 <h2 class="text-3xl font-bold text-slate-900 mb-4">Fitur Utama Sistem</h2>
                 <div class="h-1 w-20 bg-red-700 mx-auto rounded-full mb-6"></div>
                 <p class="text-slate-600 text-lg">E-MAS KAPOR mengintegrasikan seluruh alur manajemen logistik dari perencanaan hingga distribusi kepada personel.</p>
@@ -178,7 +193,7 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <!-- Feature 1 -->
-                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
+                <div class="reveal-item bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="w-12 h-12 shrink-0 rounded-xl bg-red-50 text-red-700 flex items-center justify-center text-xl group-hover:bg-red-700 group-hover:text-white transition-colors duration-300">
                             <i class="ri-shirt-line"></i>
@@ -189,7 +204,7 @@
                 </div>
                 
                 <!-- Feature 2 -->
-                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
+                <div class="reveal-item delay-100 bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="w-12 h-12 shrink-0 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-xl group-hover:bg-slate-700 group-hover:text-white transition-colors duration-300">
                             <i class="ri-git-repository-line"></i>
@@ -200,7 +215,7 @@
                 </div>
                 
                 <!-- Feature 3 -->
-                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
+                <div class="reveal-item delay-200 bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="w-12 h-12 shrink-0 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
                             <i class="ri-pie-chart-box-line"></i>
@@ -211,7 +226,7 @@
                 </div>
                 
                 <!-- Feature 4 -->
-                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
+                <div class="reveal-item delay-300 bg-white rounded-2xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="w-12 h-12 shrink-0 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-xl group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
                             <i class="ri-truck-line"></i>
@@ -264,6 +279,26 @@
             
             window.addEventListener('scroll', handleScroll, { passive: true });
             handleScroll(); // Initial check
+            
+            // Scroll Reveal Animation
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.15
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-revealed');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.reveal-item').forEach((el) => {
+                observer.observe(el);
+            });
         });
     </script>
 </body>
