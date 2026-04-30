@@ -78,7 +78,14 @@
         }
         
         .features-overlay {
-            background: linear-gradient(to bottom, rgba(248, 250, 252, 0.88), rgba(248, 250, 252, 0.94));
+            background: linear-gradient(
+                to bottom,
+                rgba(248, 250, 252, 1.0)  0%,
+                rgba(248, 250, 252, 0.55) 25%,
+                rgba(248, 250, 252, 0.50) 50%,
+                rgba(248, 250, 252, 0.55) 75%,
+                rgba(248, 250, 252, 0.88) 100%
+            );
         }
         
         .glass-panel {
