@@ -1,2 +1,9 @@
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /admin-satker
+Disallow: /superadmin
+Disallow: /personil
+Disallow: /login
+Disallow: /dashboard
+
+Sitemap: https://emaskapor.birologistikpoldantb.id/sitemap.xml

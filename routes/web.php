@@ -11,8 +11,9 @@ use Illuminate\Support\Facades\Route;
 /* |-------------------------------------------------------------------------- | SI-KAPOR Polda NTB — Web Routes |-------------------------------------------------------------------------- */
 
 // ── Public / Auth Routes ──────────────────────────────────────────────
-
-Route::get('/', fn () => redirect()->route('login'))->name('home');
+Route::get('/', function () {
+    return view('public.index');
+})->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
