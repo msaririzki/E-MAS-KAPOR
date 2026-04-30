@@ -15,19 +15,27 @@
                         NRP/NIP.</p>
                 </div>
 
-                {{-- Filter Tahun Anggaran --}}
-                <div
-                    style="display:flex;align-items:center;gap:10px;background:#fff;padding:8px 16px;border-radius:14px;border:1px solid #E2E8F0;box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-family: 'Outfit', sans-serif;">
-                    <i class="ri-calendar-line" style="color:#B91C1C; font-size: 18px;"></i>
-                    <select
-                        onchange="const url = new URL(window.location.href); url.searchParams.set('year', this.value); window.spaNavigate(url.href);"
-                        style="border:none;outline:none;font-size:14px;font-weight:700;color:#1e293b;cursor:pointer;background:transparent;">
-                        @foreach($availableYears as $year)
-                            <option value="{{ $year }}" {{ $fiscal_year == $year ? 'selected' : '' }}>
-                                TA {{ $year }} {{ (string) $year === (string) $active_year ? '(Aktif)' : '' }}
-                            </option>
-                        @endforeach
-                    </select>
+                <div class="page-header-actions" style="display: flex; align-items: center; gap: 12px;">
+                    <a href="{{ route('superadmin.testimonials.export-pdf', request()->query()) }}"
+                        class="btn-export-pdf" style="height: 40px; padding: 0 16px; border-radius: 14px; font-family: 'Outfit', sans-serif; font-size: 14px;">
+                        <i class="ri-file-pdf-2-line" style="font-size: 18px;"></i>
+                        Export PDF
+                    </a>
+
+                    {{-- Filter Tahun Anggaran --}}
+                    <div
+                        style="display:flex;align-items:center;gap:10px;background:#fff;padding:8px 16px;border-radius:14px;border:1px solid #E2E8F0;box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-family: 'Outfit', sans-serif;">
+                        <i class="ri-calendar-line" style="color:#B91C1C; font-size: 18px;"></i>
+                        <select
+                            onchange="const url = new URL(window.location.href); url.searchParams.set('year', this.value); window.spaNavigate(url.href);"
+                            style="border:none;outline:none;font-size:14px;font-weight:700;color:#1e293b;cursor:pointer;background:transparent;">
+                            @foreach($availableYears as $year)
+                                <option value="{{ $year }}" {{ $fiscal_year == $year ? 'selected' : '' }}>
+                                    TA {{ $year }} {{ (string) $year === (string) $active_year ? '(Aktif)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -427,6 +435,27 @@
             font-family: 'Outfit', sans-serif;
             color: var(--text-muted);
             font-size: 14px;
+        }
+
+        .btn-export-pdf {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 38px;
+            padding: 0 14px;
+            border-radius: 10px;
+            background: #B91C1C;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s;
+        }
+
+        .btn-export-pdf:hover {
+            background: #991B1B;
+            color: #fff;
         }
 
         .admin-stats-wrapper {
