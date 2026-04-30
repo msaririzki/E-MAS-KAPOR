@@ -171,16 +171,11 @@
             </div>
         </div>
         
-        <!-- Shape divider -->
-        <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10">
-            <svg class="relative block w-full h-[50px] md:h-[80px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                <path d="M1200,120 L0,120 L0,16 C400,16 800,120 1200,120 Z" class="fill-slate-50 opacity-[0.88]"></path>
-            </svg>
-        </div>
+        <!-- Removed SVG Shape divider for modern overlapping card transition -->
     </section>
 
     <!-- Features Section -->
-    <section id="fitur" class="py-24 flex-grow relative overflow-hidden">
+    <section id="fitur" class="py-24 flex-grow relative overflow-hidden rounded-t-[2.5rem] md:rounded-t-[4rem] shadow-[0_-15px_40px_rgba(0,0,0,0.3)] -mt-10 md:-mt-16 z-20 border-t border-white/20">
         <!-- Animated Background -->
         <div class="absolute inset-0 z-0 animate-ken-burns bg-cover bg-[47.5%_top] md:bg-center" style="background-image: url('{{ asset("bg_polda.jpg") }}');"></div>
         <div class="absolute inset-0 features-overlay z-0"></div>
