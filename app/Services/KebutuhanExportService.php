@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\IdentifikasiItem;
+use App\Models\Kebutuhan;
+use App\Models\KebutuhanItem;
+use App\Models\Satker;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+
+class KebutuhanExportService
+{
+    public function build(?int $fiscalYear = null): array
+    {
+        $fiscalYear ??= (int) (Kebutuhan::max('fiscal_year') ?: ((int) date('Y') + 1));
+        $totalSatkers = Satker::count();
+
+        $itemCounts = KebutuhanItem::query()
+            ->select('identifikasi_item_id', DB::raw('COUNT(DISTINCT kebutuhans.satker_id) as satker_count'))
+            ->join('kebutuhans', 'kebutuhans.id', '=', 'kebutuhan_items.kebutuhan_id')
+            ->where('kebutuhans.fiscal_year', (string) $fiscalYear)
+            ->whereIn('kebutuhans.status', ['diajukan', 'disetujui'])
+            ->groupBy('identifikasi_item_id')
+            ->pluck('satker_count', 'identifikasi_item_id');
+
+        $categoryGroups = IdentifikasiItem::query()
+            ->where('is_active', true)
+            ->orderByRaw("CASE
+                WHEN category = 'Tutup_Kepala' THEN 1
+                WHEN category = 'Tutup_Badan' THEN 2
+                WHEN category = 'Tutup_Kaki' THEN 3
+                ELSE 999 END")
+            ->orderBy('item_name')
+            ->get()
+            ->groupBy('category')
+            ->map(function (Collection $items, string $category) use ($itemCounts, $totalSatkers): array {
+                $mappedItems = $items
+                    ->map(function (IdentifikasiItem $item) use ($itemCounts, $totalSatkers): array {
+                        $satkerCount = (int) ($itemCounts[$item->id] ?? 0);
+
+                        return [
+                            'name' => $item->item_name,
+                            'satker_count' => $satkerCount,
+                            'percentage' => $this->percentage($satkerCount, $totalSatkers),
+                        ];
+                    })
+                    ->filter(fn (array $item): bool => $item['satker_count'] > 0)
+                    ->sortByDesc('satker_count')
+                    ->values();
+
+                return [
+                    'name' => str_replace('_', ' ', $category),
+                    'items' => $mappedItems,
+                    'satker_count' => (int) $mappedItems->sum('satker_count'),
+                    'percentage' => $mappedItems->isNotEmpty()
+                        ? (int) round($mappedItems->avg('percentage'))
+                        : 0,
+                ];
+            })
+            ->filter(fn (array $category): bool => $category['items']->isNotEmpty())
+            ->values();
+
+        $submittedSatkers = Kebutuhan::query()
+            ->where('fiscal_year', (string) $fiscalYear)
+            ->whereIn('status', ['diajukan', 'disetujui'])
+            ->distinct('satker_id')
+            ->count('satker_id');
+
+        return [
+            'fiscalYear' => $fiscalYear,
+            'generatedAt' => now(),
+            'totalSatkers' => $totalSatkers,
+            'submittedSatkers' => $submittedSatkers,
+            'totalItems' => (int) $categoryGroups->sum(fn (array $category): int => $category['items']->count()),
+            'categoryGroups' => $categoryGroups,
+        ];
+    }
+
+    private function percentage(int $count, int $total): int
+    {
+        return (int) round(($count / max($total, 1)) * 100);
+    }
+}

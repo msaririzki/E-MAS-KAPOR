@@ -7,6 +7,7 @@ use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
 use App\Models\KebutuhanItem;
 use App\Models\Satker;
+use App\Services\KebutuhanExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -51,7 +52,7 @@ class IdentifikasiKebutuhanController extends Controller
         ];
 
         // ── Item Popularity Statistics ─────────────────────────────
-        $totalKebutuhans = $stats['totalPengajuan'];
+        $totalKebutuhans = Satker::count();
 
         // Top 10 items per category
         $itemStatsByCategory = collect();
@@ -72,11 +73,12 @@ class IdentifikasiKebutuhanController extends Controller
                     ->pluck('id');
 
                 $topItems = KebutuhanItem::query()
-                    ->select('identifikasi_item_id', DB::raw('COUNT(DISTINCT kebutuhan_id) as submission_count'))
+                    ->select('identifikasi_item_id', DB::raw('COUNT(DISTINCT kebutuhans.satker_id) as satker_count'))
+                    ->join('kebutuhans', 'kebutuhans.id', '=', 'kebutuhan_items.kebutuhan_id')
                     ->whereIn('identifikasi_item_id', $categoryItemIds)
-                    ->whereHas('kebutuhan', fn ($q) => $q->whereIn('status', ['diajukan', 'disetujui']))
+                    ->whereIn('kebutuhans.status', ['diajukan', 'disetujui'])
                     ->groupBy('identifikasi_item_id')
-                    ->orderByDesc('submission_count')
+                    ->orderByDesc('satker_count')
                     ->limit(10)
                     ->get()
                     ->map(function ($row) use ($totalKebutuhans) {
@@ -84,8 +86,8 @@ class IdentifikasiKebutuhanController extends Controller
 
                         return [
                             'item_name' => $item->item_name ?? '-',
-                            'submission_count' => $row->submission_count,
-                            'percentage' => round(($row->submission_count / $totalKebutuhans) * 100, 1),
+                            'satker_count' => (int) $row->satker_count,
+                            'percentage' => (int) round(($row->satker_count / max($totalKebutuhans, 1)) * 100),
                         ];
                     });
 
@@ -112,6 +114,24 @@ class IdentifikasiKebutuhanController extends Controller
         $kebutuhan->load(['satker', 'user', 'reviewer', 'items.identifikasiItem']);
 
         return view('admin.identifikasi-kebutuhan.show', compact('kebutuhan'));
+    }
+
+    public function exportPdf(Request $request, KebutuhanExportService $exportService)
+    {
+        $data = $exportService->build($request->integer('year') ?: null);
+
+        $pdf = \Mccarlosen\LaravelMpdf\Facades\LaravelMpdf::loadView('admin.identifikasi-kebutuhan.export-pdf', $data, [], [
+            'format' => 'A4',
+            'orientation' => 'L',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'default_font' => 'DejaVu Sans',
+            'shrink_tables_to_fit' => 0,
+        ]);
+
+        return $pdf->download('Identifikasi_Kebutuhan_Kapor_TA_'.$data['fiscalYear'].'.pdf');
     }
 
     /**

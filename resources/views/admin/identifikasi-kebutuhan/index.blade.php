@@ -15,6 +15,7 @@
     .top-rank.normal { background: var(--slate-100); color: var(--text-muted); }
     .top-info { flex: 1; min-width: 0; }
     .top-name { font-size: 13px; font-weight: 600; color: var(--text-main); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top-count { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; }
 
     /* ── View More Link ── */
     .view-more-link {
@@ -86,6 +87,21 @@
     .cat-top-card-head .cat-title { font-size: 14px; font-weight: 700; color: var(--text-main); }
     .cat-top-card-head .cat-count { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-left: auto; }
     .cat-top-card-body { padding: 8px 20px 16px; }
+    .btn-export-pdf {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 14px;
+        border-radius: 10px;
+        background: #B91C1C;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+    .btn-export-pdf:hover { background: #991B1B; color: #fff; }
 
     @media (max-width: 768px) {
         .stats-row { grid-template-columns: 1fr !important; }
@@ -123,6 +139,12 @@
         <div>
             <h1>Identifikasi Kebutuhan</h1>
             <p>Data pengajuan kebutuhan kapor dari seluruh satker.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <a href="{{ route('admin.identifikasi-kebutuhan.export-pdf') }}" class="btn-export-pdf">
+                <i class="ri-file-pdf-2-line"></i>
+                Export PDF
+            </a>
         </div>
     </div>
 </div>
@@ -190,9 +212,10 @@
                 <div class="top-rank {{ $idx === 0 ? 'gold' : ($idx === 1 ? 'silver' : ($idx === 2 ? 'bronze' : 'normal')) }}">
                     {{ $idx + 1 }}
                 </div>
-                <div class="top-info">
-                    <div class="top-name" title="{{ $stat['item_name'] }}">{{ $stat['item_name'] }}</div>
-                </div>
+            <div class="top-info">
+                <div class="top-name" title="{{ $stat['item_name'] }}">{{ $stat['item_name'] }}</div>
+                <div class="top-count">{{ $stat['satker_count'] }} satker memilih</div>
+            </div>
                 <div class="top-percent-wrap" style="display: flex; align-items: center; gap: 8px;">
                     <div class="top-bar-mini"><div class="top-bar-mini-fill" style="width: {{ $stat['percentage'] }}%; background: {{ $style['barColor'] }};"></div></div>
                     <div class="top-pct" style="color: {{ $style['color'] }};">{{ $stat['percentage'] }}%</div>
@@ -336,7 +359,7 @@
                     'rank' => $idx + 1,
                     'name' => $stat['item_name'],
                     'percentage' => $stat['percentage'],
-                    'count' => $stat['submission_count'],
+                    'count' => $stat['satker_count'],
                 ];
             })->values()->toArray();
         }
@@ -359,7 +382,7 @@
         document.getElementById('modalIcon').style.background = style.bg;
         document.getElementById('modalIcon').style.color = style.color;
         document.getElementById('modalTitle').textContent = `Top ${items.length} — ${displayName}`;
-        document.getElementById('modalSubtitle').textContent = `Item terpopuler di kategori ${displayName}`;
+        document.getElementById('modalSubtitle').textContent = `Persentase berdasarkan jumlah seluruh satker terdaftar`;
 
         let html = '';
         items.forEach(item => {
@@ -367,7 +390,7 @@
             html += `
             <div class="modal-item">
                 <div class="top-rank ${rankClass}">${item.rank}</div>
-                <div class="modal-item-name">${item.name}</div>
+                <div class="modal-item-name">${item.name}<div style="font-size:11px;color:var(--text-muted);font-weight:500;margin-top:2px;">${item.count} satker memilih</div></div>
                 <div class="modal-item-pct" style="color: ${style.color};">${item.percentage}%</div>
             </div>`;
         });

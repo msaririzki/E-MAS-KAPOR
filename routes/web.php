@@ -133,6 +133,7 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
 
     // Identifikasi Kebutuhan (Admin View)
     Route::get('/identifikasi-kebutuhan', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'index'])->name('identifikasi-kebutuhan.index');
+    Route::get('/identifikasi-kebutuhan/export-pdf', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'exportPdf'])->name('identifikasi-kebutuhan.export-pdf');
     Route::get('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'show'])->name('identifikasi-kebutuhan.show');
     Route::post('/identifikasi-kebutuhan/{kebutuhan}/reject', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'reject'])->name('identifikasi-kebutuhan.reject');
     Route::delete('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'destroy'])->name('identifikasi-kebutuhan.destroy');
@@ -239,6 +240,7 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::post('/settings/next-year', [\App\Http\Controllers\SettingsController::class, 'nextYear'])->name('settings.next-year');
 
     Route::get('/statistik', [StatisticsController::class, 'index'])->name('statistics');
+    Route::get('/testimonials/export-pdf', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'exportPdf'])->name('testimonials.export-pdf');
     Route::get('/testimonials', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'index'])->name('testimonials.index');
 
     Route::resource('identifikasi-items', \App\Http\Controllers\Superadmin\IdentifikasiItemController::class)

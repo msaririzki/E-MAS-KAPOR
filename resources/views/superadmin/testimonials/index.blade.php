@@ -13,6 +13,12 @@
             </div>
 
             <div class="page-header-actions" style="display: flex; align-items: center; gap: 12px;">
+                <a href="{{ route('superadmin.testimonials.export-pdf', request()->query()) }}"
+                    class="btn-export-pdf">
+                    <i class="ri-file-pdf-2-line"></i>
+                    Export PDF
+                </a>
+
                 {{-- Filter Tahun Anggaran --}}
                 <div
                     style="display:flex;align-items:center;gap:8px;background:#fff;padding:6px 12px;border-radius:10px;border:1px solid #E5E7EB;box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
@@ -608,6 +614,26 @@
         .btn-ghost:hover {
             background: #F3F4F6;
             color: #111827;
+        }
+
+        .btn-export-pdf {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 38px;
+            padding: 0 14px;
+            border-radius: 10px;
+            background: #B91C1C;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-export-pdf:hover {
+            background: #991B1B;
+            color: #fff;
         }
     </style>
 @endsection

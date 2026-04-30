@@ -796,8 +796,8 @@
                             {{ number_format($recentTestimonialsCount) }} ulasan 30 hari terakhir
                         </div>
                         <div class="hero-pill">
-                            <i class="ri-star-smile-line" style="color: #f59e0b;"></i>
-                            {{ number_format($fiveStarRate, 1) }}% memberi 5 bintang
+                            <i class="ri-checkbox-circle-line" style="color: var(--success);"></i>
+                            {{ number_format($receivedRate, 1) }}% sudah diterima
                         </div>
                         <div class="hero-pill">
                             <i class="ri-calendar-check-line" style="color: var(--success);"></i>
@@ -879,13 +879,13 @@
 
                     <div class="stat-card premium">
                         <div class="stat-top">
-                            <span class="stat-label">5 Bintang</span>
+                            <span class="stat-label">Sudah Diterima</span>
                             <div class="stat-icon-sm" style="background: var(--success-bg); color: var(--success);">
-                                <i class="ri-medal-line"></i>
+                                <i class="ri-checkbox-circle-line"></i>
                             </div>
                         </div>
-                        <div class="stat-value">{{ number_format($fiveStarRate, 1) }}%</div>
-                        <div class="metric-subtext">Proporsi testimoni yang benar-benar sangat puas.</div>
+                        <div class="stat-value">{{ number_format($receivedRate, 1) }}%</div>
+                        <div class="metric-subtext">Proporsi item sudah diterima berdasarkan testimoni yang sudah diisi.</div>
                     </div>
 
                     <div class="stat-card premium">

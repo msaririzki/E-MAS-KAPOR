@@ -119,7 +119,7 @@ class TestimonialInsightService
         ]);
 
         $serviceScore = $totalReviewed > 0 ? (int) round(($averageRating / 5) * 100) : 0;
-        $fiveStarRate = $this->percentage((int) ($ratingCounts[5] ?? 0), $totalReviewed);
+        $receivedRate = $this->percentage($totalReviewed, $totalTestimonials);
 
         $topSatkers = (clone $baseQuery)
             ->leftJoin('personnel_item_allocations', 'personnel_item_allocations.id', '=', 'item_reviews.personnel_item_allocation_id')
@@ -189,7 +189,7 @@ class TestimonialInsightService
             'distributionStats' => $distributionStats,
             'distributionFilters' => $distributionFilters,
             'distributionGroups' => self::DISTRIBUTION_GROUPS,
-            'fiveStarRate' => $fiveStarRate,
+            'receivedRate' => $receivedRate,
             'lastSubmittedAt' => $lastSubmittedAt,
             'latestNeedsAttention' => $latestNeedsAttention,
             'latestPositive' => $latestPositive,

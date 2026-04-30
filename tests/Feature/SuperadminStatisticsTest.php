@@ -11,6 +11,7 @@ use App\Models\PersonnelItemAllocation;
 use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\TestimonialExportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -272,6 +273,62 @@ class SuperadminStatisticsTest extends TestCase
             return $reviews->count() === 1
                 && $reviews->first()->comment === 'Review lama masih harus bisa dibuka.';
         });
+    }
+
+    public function test_testimonial_export_groups_percentages_by_category_item_and_satker(): void
+    {
+        Setting::setValue('fiscal_year', '2026');
+
+        $satkerA = Satker::create([
+            'name' => 'Biro SDM',
+            'code' => 'BIRO-SDM',
+            'sort_order' => 1,
+        ]);
+        $satkerB = Satker::create([
+            'name' => 'Dit Samapta',
+            'code' => 'DIT-SAMAPTA',
+            'sort_order' => 2,
+        ]);
+
+        $userA = User::factory()->create(['satker_id' => $satkerA->id, 'name' => 'User A']);
+        $userA->assignRole('personil');
+        $userB = User::factory()->create(['satker_id' => $satkerB->id, 'name' => 'User B']);
+        $userB->assignRole('personil');
+        $userC = User::factory()->create(['satker_id' => $satkerA->id, 'name' => 'User C']);
+        $userC->assignRole('personil');
+        $userD = User::factory()->create(['satker_id' => $satkerA->id, 'name' => 'User D']);
+        $userD->assignRole('personil');
+
+        $allocationA = $this->createAllocation($userA, $satkerA, 'BARET LAPANGAN', 'Tutup Kepala', 'Tutup_Kepala');
+        $allocationB = $this->createAllocation($userB, $satkerB, 'BARET LAPANGAN', 'Tutup Kepala', 'Tutup_Kepala');
+        $allocationC = $this->createAllocation($userC, $satkerA, 'BARET LAPANGAN', 'Tutup Kepala', 'Tutup_Kepala');
+        $allocationD = $this->createAllocation($userD, $satkerA, 'BARET LAPANGAN', 'Tutup Kepala', 'Tutup_Kepala');
+
+        foreach ([
+            [$allocationA, $userA, 4, 'Kualitas bagus dan nyaman.'],
+            [$allocationB, $userB, 5, 'Sangat baik untuk dinas.'],
+            [$allocationC, $userC, 4, 'Ukuran pas dan rapi.'],
+            [$allocationD, $userD, 4, 'Komentar ketiga tidak masuk batas export.'],
+        ] as [$allocation, $user, $rating, $comment]) {
+            ItemReview::create([
+                'personnel_item_allocation_id' => $allocation->id,
+                'user_id' => $user->id,
+                'kapor_item_id' => $allocation->kapor_item_id,
+                'fiscal_year' => 2026,
+                'response_status' => ItemReview::STATUS_REVIEWED,
+                'comment' => $comment,
+                'rating' => $rating,
+                'submitted_at' => now(),
+            ]);
+        }
+
+        $data = app(TestimonialExportService::class)->build(2026);
+        $category = $data['categoryGroups']->firstWhere('name', 'Tutup Kepala');
+        $item = $category['items']->firstWhere('name', 'BARET LAPANGAN');
+
+        $this->assertSame(80.0, $item['satker_scores']['Biro SDM']);
+        $this->assertSame(100.0, $item['satker_scores']['Dit Samapta']);
+        $this->assertSame(2, $data['commentsByRating'][4]->count());
     }
 
     private function createAllocation(User $user, Satker $satker, string $itemName, string $snapshotCategory = 'Tutup Kepala', string $dbCategory = 'Tutup_Kepala', int $fiscalYear = 2026): PersonnelItemAllocation

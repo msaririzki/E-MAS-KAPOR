@@ -26,6 +26,8 @@ class DatabaseSeeder extends Seeder
 
         if (app()->environment(['local', 'testing'])) {
             $seeders[] = DemoUserSeeder::class;
+            $seeders[] = PolrestaMataramKebutuhanSeeder::class;
+            $seeders[] = ManySatkerKebutuhanSeeder::class;
         }
 
         $seeders[] = ItemReviewSeeder::class;

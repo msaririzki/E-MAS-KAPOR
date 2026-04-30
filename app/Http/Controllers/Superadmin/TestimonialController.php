@@ -5,10 +5,15 @@ namespace App\Http\Controllers\Superadmin;
 use App\Http\Controllers\Controller;
 use App\Models\ItemReview;
 use App\Models\Setting;
+use App\Services\TestimonialExportService;
 use Illuminate\Http\Request;
 
 class TestimonialController extends Controller
 {
+    public function __construct(
+        private readonly TestimonialExportService $testimonialExportService
+    ) {}
+
     public function index(Request $request)
     {
         $query = ItemReview::with(['user.satker', 'kaporItem', 'allocation']);
@@ -91,5 +96,25 @@ class TestimonialController extends Controller
             ->withQueryString();
 
         return view('superadmin.testimonials.index', compact('testimonials', 'availableYears', 'fiscalYear', 'activeYear'));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $activeYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $fiscalYear = (int) $request->query('year', $activeYear);
+        $data = $this->testimonialExportService->build($fiscalYear);
+
+        $pdf = \Mccarlosen\LaravelMpdf\Facades\LaravelMpdf::loadView('superadmin.testimonials.export-pdf', $data, [], [
+            'format' => 'A4',
+            'orientation' => 'L',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'default_font' => 'DejaVu Sans',
+            'shrink_tables_to_fit' => 0,
+        ]);
+
+        return $pdf->download('Hasil_Review_Kapor_TA_'.$fiscalYear.'.pdf');
     }
 }
