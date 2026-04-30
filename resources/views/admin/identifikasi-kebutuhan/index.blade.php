@@ -289,7 +289,7 @@
 </div>
 
 {{-- Table --}}
-<div class="card">
+<div class="card" id="table-container">
     <div class="card-head"><h3>Daftar Pengajuan Kebutuhan</h3></div>
     <div class="card-body flush table-wrap">
         <table>
@@ -491,6 +491,43 @@
                 });
             });
         });
+    });
+    // ── AJAX Pagination ──
+    document.addEventListener('click', function (e) {
+        // Intercept clicks on pagination links
+        const btn = e.target.closest('.page-btn');
+        if (btn && !btn.classList.contains('disabled')) {
+            e.preventDefault();
+            const url = btn.getAttribute('href');
+            if (url) {
+                // Show loading state (optional)
+                const container = document.getElementById('table-container');
+                container.style.opacity = '0.5';
+                container.style.pointerEvents = 'none';
+
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Parse the returned HTML
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTable = doc.getElementById('table-container');
+                    
+                    if (newTable) {
+                        container.innerHTML = newTable.innerHTML;
+                        // Update URL without refreshing
+                        window.history.pushState({}, '', url);
+                    }
+                })
+                .catch(error => console.error('Error fetching page:', error))
+                .finally(() => {
+                    container.style.opacity = '1';
+                    container.style.pointerEvents = 'auto';
+                });
+            }
+        }
     });
 </script>
 @endsection
