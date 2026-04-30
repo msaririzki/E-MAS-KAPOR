@@ -2442,6 +2442,48 @@
             var group = btn.closest('.nav-group');
             group.classList.toggle('open');
         }
+
+        // ── Global AJAX Pagination ──
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.page-btn');
+            if (!btn || btn.classList.contains('disabled')) return;
+
+            // Cari container card terdekat yang menampung tabel ini
+            // Mayoritas tabel dalam aplikasi dibungkus dengan .card
+            const container = btn.closest('.card') || btn.closest('.table-wrap');
+            if (!container) return; // Fallback ke default refresh jika bukan di dalam tabel yang didukung
+
+            e.preventDefault();
+            const url = btn.getAttribute('href');
+
+            // Tampilkan efek loading tipis
+            container.style.opacity = '0.5';
+            container.style.pointerEvents = 'none';
+            container.style.transition = 'opacity 0.2s';
+
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Cari container yang bersesuaian di response
+                // Cara teraman: cari .pagination-controls di response, lalu ambil .card terdekatnya
+                const newPagination = doc.querySelector('.pagination-controls');
+                if (newPagination) {
+                    const newContainer = newPagination.closest('.card') || newPagination.closest('.table-wrap');
+                    if (newContainer) {
+                        container.innerHTML = newContainer.innerHTML;
+                        window.history.pushState({}, '', url);
+                    }
+                }
+            })
+            .catch(error => console.error('Error fetching page:', error))
+            .finally(() => {
+                container.style.opacity = '1';
+                container.style.pointerEvents = 'auto';
+            });
+        });
     </script>
     @yield('scripts')
 </body>
