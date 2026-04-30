@@ -11,10 +11,14 @@
             <h1>Identifikasi Kebutuhan</h1>
             <p>Data pengajuan kebutuhan kapor dari seluruh satker.</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <a href="{{ route('admin.identifikasi-kebutuhan.export-pdf') }}" class="btn-export-pdf">
-                <i class="ri-file-pdf-2-line"></i>
-                Export PDF
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <a href="{{ route('admin.identifikasi-kebutuhan.export-pdf') }}" class="btn-export-pdf" title="Ekspor Rekapitulasi">
+                <i class="ri-file-chart-line"></i>
+                Rekap PDF
+            </a>
+            <a href="{{ route('admin.identifikasi-kebutuhan.export-detail-pdf') }}" class="btn-export-pdf btn-export-detail" title="Ekspor Detail Satker">
+                <i class="ri-file-list-3-line"></i>
+                Detail PDF
             </a>
         </div>
     </div>
@@ -505,6 +509,8 @@
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
     }
     .btn-export-pdf:hover { background: #991B1B; color: #fff; }
+    .btn-export-detail { background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; box-shadow: none; }
+    .btn-export-detail:hover { background: #e5e7eb; color: #111827; }
 
     @media (max-width: 768px) {
         .stats-row { grid-template-columns: 1fr !important; }

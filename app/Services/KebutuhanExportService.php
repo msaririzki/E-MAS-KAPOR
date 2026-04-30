@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class KebutuhanExportService
 {
-    public function build(?int $fiscalYear = null): array
+    public function build(?int $fiscalYear = null, bool $includeSatkers = false): array
     {
         $fiscalYear ??= (int) (Kebutuhan::max('fiscal_year') ?: ((int) date('Y') + 1));
         $totalSatkers = Satker::count();
@@ -24,6 +24,27 @@ class KebutuhanExportService
             ->groupBy('identifikasi_item_id')
             ->pluck('satker_count', 'identifikasi_item_id');
 
+        $itemSatkers = [];
+        if ($includeSatkers) {
+            $satkerRows = KebutuhanItem::query()
+                ->select('identifikasi_item_id', 'satkers.name as satker_name')
+                ->join('kebutuhans', 'kebutuhans.id', '=', 'kebutuhan_items.kebutuhan_id')
+                ->join('satkers', 'satkers.id', '=', 'kebutuhans.satker_id')
+                ->where('kebutuhans.fiscal_year', (string) $fiscalYear)
+                ->whereIn('kebutuhans.status', ['diajukan', 'disetujui'])
+                ->get();
+                
+            foreach ($satkerRows as $row) {
+                $itemSatkers[$row->identifikasi_item_id][] = $row->satker_name;
+            }
+            
+            foreach ($itemSatkers as $itemId => $names) {
+                $uniqueNames = array_unique($names);
+                sort($uniqueNames);
+                $itemSatkers[$itemId] = $uniqueNames;
+            }
+        }
+
         $categoryGroups = IdentifikasiItem::query()
             ->where('is_active', true)
             ->orderByRaw("CASE
@@ -34,9 +55,9 @@ class KebutuhanExportService
             ->orderBy('item_name')
             ->get()
             ->groupBy('category')
-            ->map(function (Collection $items, string $category) use ($itemCounts, $totalSatkers): array {
+            ->map(function (Collection $items, string $category) use ($itemCounts, $totalSatkers, $includeSatkers, $itemSatkers): array {
                 $mappedItems = $items
-                    ->map(function (IdentifikasiItem $item) use ($itemCounts, $totalSatkers): array {
+                    ->map(function (IdentifikasiItem $item) use ($itemCounts, $totalSatkers, $includeSatkers, $itemSatkers): array {
                         $satkerCount = (int) ($itemCounts[$item->id] ?? 0);
                         // Gunakan eligible_satker_count jika diisi, jika tidak pakai total satker aplikasi
                         $eligible = $item->eligible_satker_count ?? $totalSatkers;
@@ -46,6 +67,7 @@ class KebutuhanExportService
                             'satker_count'    => $satkerCount,
                             'eligible_count'  => $eligible,
                             'percentage'      => $this->percentage($satkerCount, $eligible),
+                            'satkers'         => $includeSatkers ? ($itemSatkers[$item->id] ?? []) : [],
                         ];
                     })
                     ->filter(fn (array $item): bool => $item['satker_count'] > 0)

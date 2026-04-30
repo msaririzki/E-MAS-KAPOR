@@ -140,6 +140,28 @@ class IdentifikasiKebutuhanController extends Controller
         return $pdf->download('Identifikasi_Kebutuhan_Kapor_TA_'.$data['fiscalYear'].'.pdf');
     }
 
+    public function exportDetailPdf(
+        Request $request,
+        KebutuhanExportService $exportService,
+        ExportSignatorySettingService $signatoryService
+    ) {
+        $data = $exportService->build($request->integer('year') ?: null, true); // true for $includeSatkers
+        $data['signatorySettings'] = $signatoryService->resolveForCurrentUser();
+
+        $pdf = \Mccarlosen\LaravelMpdf\Facades\LaravelMpdf::loadView('admin.identifikasi-kebutuhan.export-detail-pdf', $data, [], [
+            'format' => 'A4',
+            'orientation' => 'L',
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'default_font' => 'DejaVu Sans',
+            'shrink_tables_to_fit' => 0,
+        ]);
+
+        return $pdf->download('Detail_Identifikasi_Kebutuhan_Kapor_TA_'.$data['fiscalYear'].'.pdf');
+    }
+
     /**
      * Setujui pengajuan.
      */
