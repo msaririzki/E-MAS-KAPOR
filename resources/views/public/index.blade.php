@@ -4,25 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="index, follow">
-    <title>E-MAS KAPOR | Biro Logistik Polda NTB</title>
-    <meta name="description" content="E-MAS KAPOR atau E Mas Kapor adalah sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
+    <title>E-MAS KAPOR | Kapor Biro Logistik Polda NTB</title>
+    <meta name="description" content="E-MAS KAPOR atau E Mas Kapor adalah sistem kapor Biro Logistik Polda NTB untuk pendataan perlengkapan perorangan, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
     <link rel="canonical" href="{{ url('/') }}">
     
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url('/') }}">
-    <meta property="og:title" content="E-MAS KAPOR | Biro Logistik Polda NTB">
-    <meta property="og:description" content="E-MAS KAPOR atau E Mas Kapor adalah sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
+    <meta property="og:title" content="E-MAS KAPOR | Kapor Biro Logistik Polda NTB">
+    <meta property="og:description" content="E-MAS KAPOR atau E Mas Kapor adalah sistem kapor Biro Logistik Polda NTB untuk pendataan perlengkapan perorangan, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
     <meta property="og:image" content="{{ asset('e-mas-kapor.png') }}">
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:url" content="{{ url('/') }}">
-    <meta name="twitter:title" content="E-MAS KAPOR | Biro Logistik Polda NTB">
-    <meta name="twitter:description" content="E-MAS KAPOR atau E Mas Kapor adalah sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
+    <meta name="twitter:title" content="E-MAS KAPOR | Kapor Biro Logistik Polda NTB">
+    <meta name="twitter:description" content="E-MAS KAPOR atau E Mas Kapor adalah sistem kapor Biro Logistik Polda NTB untuk pendataan perlengkapan perorangan, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.">
     <meta name="twitter:image" content="{{ asset('e-mas-kapor.png') }}">
     
-    <link rel="icon" href="{{ asset('e-mas-kapor.png') }}" type="image/png">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" href="{{ asset('favicon-48x48.png') }}" type="image/png" sizes="48x48">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,10 +41,15 @@
       "alternateName": [
         "EMAS KAPOR",
         "E Mas Kapor",
+        "Kapor Polda",
+        "Kapor Polda NTB",
+        "Logistik Polda",
+        "Logistik Polda NTB",
         "Kapor Logistik Polda NTB",
-        "E-MAS KAPOR Biro Logistik Polda NTB"
+        "E-MAS KAPOR Biro Logistik Polda NTB",
+        "Biro Logistik Polda Nusa Tenggara Barat"
       ],
-      "description": "Sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan kapor, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.",
+      "description": "Sistem kapor Biro Logistik Polda NTB untuk pendataan perlengkapan perorangan, kebutuhan satker, pengadaan, gudang, distribusi, dan pelaporan.",
       "provider": {
         "@@type": "GovernmentOrganization",
         "name": "Biro Logistik Polda NTB",
@@ -79,9 +86,9 @@
         
         .features-overlay {
             background: linear-gradient(to bottom,
-                rgba(248, 250, 252, 0.75)  0%,
-                rgba(248, 250, 252, 0.88) 25%,
-                rgba(248, 250, 252, 0.93) 100%
+                rgba(248, 250, 252, 1.00)  0%,
+                rgba(248, 250, 252, 0.75) 15%,
+                rgba(248, 250, 252, 0.70) 100%
             );
         }
         
@@ -154,7 +161,7 @@
             </h1>
             
             <p class="reveal-item delay-100 mt-2 md:mt-4 text-sm md:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-8 md:mb-10 drop-shadow px-2">
-                Sistem informasi manajemen perlengkapan perorangan Biro Logistik Polda NTB untuk pendataan, perencanaan, dan distribusi yang lebih terintegrasi.
+                Sistem kapor Biro Logistik Polda NTB untuk pendataan perlengkapan perorangan, perencanaan, gudang, distribusi, dan pelaporan yang lebih terintegrasi.
             </p>
             <div class="reveal-item delay-200 flex flex-col sm:flex-row gap-4 items-center justify-center">
                 <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-base transition-all duration-300 bg-red-700 hover:bg-red-600 text-white shadow-xl shadow-red-900/40 border border-red-500/50 hover:-translate-y-0.5 w-full sm:w-auto">
@@ -261,7 +268,7 @@
                 <p class="text-slate-400 font-medium">&copy; {{ date('Y') }} Biro Logistik Polda NTB.</p>
                 <p class="text-slate-500 text-sm mt-1">Hak Cipta Dilindungi Undang-Undang.</p>
                 <p class="text-slate-600 text-xs mt-3 max-w-xl mx-auto md:ml-auto md:mr-0">
-                    Portal resmi E Mas Kapor, EMAS KAPOR Logistik, Kapor Biro Logistik Polda NTB, dan E-MAS KAPOR Polda Nusa Tenggara Barat.
+                    Portal resmi E Mas Kapor, EMAS KAPOR Logistik, Kapor Polda NTB, Kapor Biro Logistik Polda NTB, Logistik Polda NTB, dan E-MAS KAPOR Polda Nusa Tenggara Barat.
                 </p>
             </div>
         </div>
