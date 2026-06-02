@@ -100,39 +100,6 @@
             </div>
         </div>
 
-        <section class="d-panel hero-panel reveal" style="animation-delay: 0.1s;">
-            <div class="d-panel-body hero-body">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
-                    <div>
-                        <div class="eyebrow">{{ $isHistoricalYear ? 'Arsip Review Personil' : 'Portal Review Personil' }}</div>
-                        <h2 class="d-panel-title" style="margin: 8px 0 0;">Informasi Review</h2>
-                        <p>
-                            @if ($isHistoricalYear)
-                                Riwayat review item kapor untuk T.A. {{ $fiscalYear }} ditampilkan sebagai arsip baca-saja.
-                            @else
-                                Laporkan item yang belum diterima atau beri penilaian untuk item kapor yang sudah Anda terima
-                                pada T.A. {{ $fiscalYear }}.
-                            @endif
-                        </p>
-                    </div>
-
-                    {{-- Filter Tahun --}}
-                    <div class="year-filter-wrapper"
-                        style="background: var(--slate-50); padding: 6px 14px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px;">
-                        <i class="ri-calendar-line" style="color: var(--brand); font-size: 16px;"></i>
-                        <select onchange="window.spaNavigate('?year='+this.value)"
-                            style="border: none; background: transparent; font-size: 13px; font-weight: 700; color: var(--text-main); outline: none; cursor: pointer;">
-                            @foreach ($availableYears as $year)
-                                <option value="{{ $year }}" {{ $fiscalYear == $year ? 'selected' : '' }}>
-                                    TA {{ $year }} {{ $year == $activeYear ? '(Aktif)' : '' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </section>
-
         @if (session('error_testimoni') || session('error'))
             <div class="alert error">
                 <i class="ri-error-warning-fill"></i>
@@ -690,17 +657,21 @@
         }
 
         .empty-state {
-            text-align: center;
             display: grid;
             gap: 10px;
             color: var(--text-muted);
             justify-items: center;
+            text-align: center;
             padding: 12px 0;
         }
 
         .empty-state i {
             font-size: 28px;
             color: var(--slate-400);
+        }
+
+        .empty-state.compact {
+            padding: 32px 20px;
         }
 
         .orphan-review-body {
@@ -758,6 +729,7 @@
         .field-group {
             display: grid;
             gap: 12px;
+            transition: all 0.3s ease;
         }
 
         .review-card-item .d-panel-body {
@@ -845,6 +817,7 @@
         .status-choice:hover {
             border-color: var(--slate-300);
             background: var(--slate-50);
+            transform: translateY(-2px);
         }
 
         .status-choice input {
@@ -858,7 +831,7 @@
             background: var(--brand-gradient);
             color: #fff;
             box-shadow: 0 4px 12px rgba(198,40,40,0.25);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
         }
 
         .status-choice-title {
@@ -956,7 +929,10 @@
         
         .submit-button:hover {
             box-shadow: 0 6px 16px rgba(198,40,40,0.3);
-            transform: translateY(-1px);
+        }
+
+        .submit-button:active {
+            transform: scale(0.98);
         }
 
         .submit-button:disabled {
@@ -1113,7 +1089,15 @@
                  activePanel?.querySelectorAll('.review-card-item').forEach((card) => {                 const haystack = String(card.dataset.searchable || '').toLowerCase();                 card.style.display = haystack.includes(term) ? '' : 'none';             });         }
              function toggleRatingField(card) {             const ratingWrap = card?.querySelector('[data-rating-wrap]');             const checkedResponse = card?.querySelector('[data-response-input]:checked');             const needsRating = checkedResponse?.value === '{{ \App\Models\ItemReview::STATUS_REVIEWED }}';
                  if (!ratingWrap) {                 return;             }
-                 ratingWrap.style.display = needsRating ? '' : 'none';
+            if (needsRating) {
+                ratingWrap.style.opacity = '1';
+                ratingWrap.style.pointerEvents = 'auto';
+                ratingWrap.style.filter = 'none';
+            } else {
+                ratingWrap.style.opacity = '0.35';
+                ratingWrap.style.pointerEvents = 'none';
+                ratingWrap.style.filter = 'grayscale(100%)';
+            }
                  card.querySelectorAll('.status-choice').forEach((choice) => {                 const input = choice.querySelector('[data-response-input]');                 choice.classList.toggle('active', Boolean(input?.checked));             });
                  card.querySelectorAll('[data-rating-input]').forEach((input) => {                 input.required = needsRating;             });         }
              function toggleEditMode(card) {             const fieldset = card.querySelector('.review-fieldset');             const editToggle = card.querySelector('[data-edit-toggle]');             const submitButton = card.querySelector('.submit-button');             const isEditing = card.dataset.editing === 'true';
