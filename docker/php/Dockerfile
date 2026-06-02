@@ -53,7 +53,9 @@ RUN set -eux; \
         intl \
         mbstring \
         pdo_mysql \
-        zip
+        zip; \
+    pecl install redis; \
+    docker-php-ext-enable redis
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
