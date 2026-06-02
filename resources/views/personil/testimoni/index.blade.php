@@ -10,17 +10,80 @@
     @endphp
 
     <div class="page review-page">
-        @if (session('success_testimoni'))
-            <div class="toast-success" id="reviewToast" role="status" aria-live="polite">
-                <div class="toast-success-body">
-                    <i class="ri-checkbox-circle-fill"></i>
-                    <span>{{ session('success_testimoni') }}</span>
+        {{-- ── HEADER TITLE ──────────────────────────────── --}}
+        <div class="page-full reveal" style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+            <a href="{{ route('dashboard') }}" class="btn-outline" style="height: 40px; border-radius: 12px; padding: 0 16px;">
+                <i class="ri-arrow-left-line"></i> Kembali
+            </a>
+            <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: var(--text-main);">Review Item Kapor</h1>
+        </div>
+
+        {{-- ── SIDEBAR (profil card) ────────────────────── --}}
+        <div class="page-sidebar">
+            <section class="profile-card reveal">
+                <div class="profile-card-top">
+                    <div class="profile-avatar">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
+                    <div class="profile-info">
+                        <h2 class="profile-name">{{ $user->name }}</h2>
+                        <p class="profile-nrp">
+                            <i class="ri-fingerprint-line"></i>
+                            {{ $user->nrp_nip }}
+                        </p>
+                    </div>
                 </div>
-                <button type="button" class="toast-close" data-close-toast aria-label="Tutup notifikasi">
-                    <i class="ri-close-line"></i>
-                </button>
-            </div>
-        @endif
+
+                <div class="profile-stats">
+                    <div class="profile-stat">
+                        <span class="profile-stat-label"><i class="ri-building-4-line"></i> Satker</span>
+                        <span class="profile-stat-value">{{ $personnel->satker->name ?? '-' }}</span>
+                    </div>
+                    <div class="profile-stat">
+                        <span class="profile-stat-label"><i class="ri-calendar-line"></i> Tahun Anggaran</span>
+                        <span class="profile-stat-value">{{ $fiscalYear }}</span>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span class="progress-label">Progres Pengisian</span>
+                        <span class="progress-pct" id="progressPct">{{ $progressPct }}%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" style="width: {{ $progressPct }}%;"></div>
+                    </div>
+                </div>
+
+                <div class="stepper">
+                    <div class="stepper-item {{ $identityReady ? 'done' : 'active' }}">
+                        <div class="stepper-dot">
+                            @if($identityReady) <i class="ri-check-line"></i> @else <span>1</span> @endif
+                        </div>
+                        <span class="stepper-label">{{ $identityStepLabel }}</span>
+                    </div>
+                    <div class="stepper-connector"></div>
+                    <div class="stepper-item {{ !$identityReady ? '' : ($isComplete ? 'done' : 'active') }}">
+                        <div class="stepper-dot">
+                            @if($identityReady && $isComplete) <i class="ri-check-line"></i> @else <span>2</span> @endif
+                        </div>
+                        <span class="stepper-label">2. Ukuran</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        {{-- ── MAIN CONTENT ──────────────────────────────── --}}
+        <div class="page-main">
+            @if (session('success_testimoni'))
+                <div class="toast-success" id="reviewToast" role="status" aria-live="polite">
+                    <div class="toast-success-body">
+                        <i class="ri-checkbox-circle-fill"></i>
+                        <span>{{ session('success_testimoni') }}</span>
+                    </div>
+                    <button type="button" class="toast-close" data-close-toast aria-label="Tutup notifikasi">
+                        <i class="ri-close-line"></i>
+                    </button>
+                </div>
+            @endif
 
         <div class="alert {{ $reviewPeriodStatus['tone'] }} status-banner" data-dismissible
             data-dismiss-key="personil-review-period-banner">
@@ -37,12 +100,12 @@
             </div>
         </div>
 
-        <section class="panel hero-panel">
-            <div class="panel-body hero-body">
+        <section class="d-panel hero-panel reveal" style="animation-delay: 0.1s;">
+            <div class="d-panel-body hero-body">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
                     <div>
                         <div class="eyebrow">{{ $isHistoricalYear ? 'Arsip Review Personil' : 'Portal Review Personil' }}</div>
-                        <h1>Review Item Kapor</h1>
+                        <h2 class="d-panel-title" style="margin: 8px 0 0;">Informasi Review</h2>
                         <p>
                             @if ($isHistoricalYear)
                                 Riwayat review item kapor untuk T.A. {{ $fiscalYear }} ditampilkan sebagai arsip baca-saja.
@@ -84,8 +147,8 @@
             </div>
         @endif
 
-        <section class="panel">
-            <div class="panel-body toolbar-stack">
+        <section class="d-panel reveal" style="animation-delay: 0.2s;">
+            <div class="d-panel-body toolbar-stack">
                 <div class="compact-summary">
                     <strong>
                         @if ($isHistoricalYear)
@@ -127,8 +190,8 @@
 
         <section class="tab-panel {{ $defaultReviewTab === 'pending' ? 'active' : '' }}" data-panel="pending">
             @if ($pendingCards->isEmpty())
-                <section class="panel">
-                    <div class="panel-body empty-state">
+                <section class="d-panel">
+                    <div class="d-panel-body empty-state">
                         <i class="ri-inbox-archive-line"></i>
                         <strong>{{ $isHistoricalYear ? 'Tidak ada item arsip tanpa respons' : 'Tidak ada item yang menunggu respons' }}</strong>
                         <span>
@@ -151,8 +214,8 @@
 
         <section class="tab-panel {{ $defaultReviewTab === 'reviewed' ? 'active' : '' }}" data-panel="reviewed">
             @if ($reviewedCards->isEmpty())
-                <section class="panel">
-                    <div class="panel-body empty-state">
+                <section class="d-panel">
+                    <div class="d-panel-body empty-state">
                         <i class="ri-chat-check-line"></i>
                         <strong>{{ $isHistoricalYear ? 'Belum ada hasil review tersimpan' : 'Belum ada review atau laporan penerimaan' }}</strong>
                         <span>
@@ -175,8 +238,8 @@
 
         <section class="tab-panel" data-panel="history">
             @if ($orphanReviews->isEmpty())
-                <section class="panel">
-                    <div class="panel-body empty-state compact">
+                <section class="d-panel">
+                    <div class="d-panel-body empty-state compact">
                         <i class="ri-file-list-3-line"></i>
                         <strong>Tidak ada riwayat tambahan</strong>
                         <span>
@@ -191,9 +254,9 @@
             @else
                 <div class="review-list">
                     @foreach ($orphanReviews as $review)
-                        <section class="panel review-card-item"
+                        <section class="d-panel review-card-item"
                             data-searchable="{{ strtolower(($review->kaporItem?->item_name ?? 'item') . ' ' . ($review->kaporItem?->category ?? '') . ' ' . ($review->allocation?->budget_package_name_snapshot ?? '')) }}">
-                            <div class="panel-body orphan-review-body">
+                            <div class="d-panel-body orphan-review-body">
                                 <div class="review-head">
                                     <div>
                                         <strong class="review-item-name">{{ $review->item_name_snapshot }}</strong>
@@ -212,26 +275,126 @@
             @endif
         </section>
 
-        <footer class="personil-footer-links">
-            <a href="{{ route('dashboard') }}">Data Kapor</a>
-            <span>•</span>
-            <a href="{{ route('personil.kapor.history') }}">Riwayat Ukuran</a>
-            <span>•</span>
-            <a href="{{ route('personil.testimoni.index') }}">Review Item</a>
-        </footer>
+        </div>
     </div>
 @endsection
 
 @section('styles')
 <style>
-        .review-page {
-            gap: 16px;
-        }
+    /* ── CORE & REVEAL ──────────────────────────────────── */
+    .page {
+        padding: 24px 20px;
+        min-height: calc(100vh - 64px);
+    }
+    @media (min-width: 1024px) {
+        .page { padding: 40px; }
+    }
+    
+    .reveal {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeUp {
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-        .hero-panel {
-            background: #ffffff;
-            border-color: var(--border-color);
-        }
+    /* ── PANELS ─────────────────────────────────────────── */
+    .d-panel {
+        background: #fff;
+        border-radius: var(--dp-radius-xl, 20px);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 24px rgba(15,23,42,0.07);
+        overflow: hidden;
+    }
+
+    /* ── PROFILE CARD ───────────────────────────────────── */
+    .profile-card {
+        background: #fff;
+        border-radius: var(--dp-radius-xl, 20px);
+        border: 1px solid var(--border-color);
+        padding: 24px;
+        color: var(--text-main);
+        box-shadow: 0 4px 24px rgba(15,23,42,0.07);
+        position: relative;
+        overflow: hidden;
+    }
+    .profile-card::before {
+        content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(198,40,40,0.05) 0%, transparent 70%); pointer-events: none;
+    }
+    .profile-card::after {
+        content: ''; position: absolute; bottom: -40px; left: -40px; width: 160px; height: 160px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(15,23,42,0.02) 0%, transparent 70%); pointer-events: none;
+    }
+
+    .profile-card-top { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+    .profile-avatar { width: 60px; height: 60px; border-radius: 16px; background: linear-gradient(135deg, #c62828, #e53935); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; color: #fff; flex-shrink: 0; box-shadow: 0 4px 16px rgba(198,40,40,0.2); }
+    .profile-name { margin: 0; font-size: 17px; font-weight: 800; color: var(--text-main); line-height: 1.2; }
+    .profile-nrp { margin: 6px 0 0; font-size: 13px; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 5px; }
+
+    .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .profile-stat { background: var(--slate-50); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 14px; }
+    .profile-stat-label { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+    .profile-stat-value { font-size: 14px; font-weight: 800; color: var(--text-main); line-height: 1.3;}
+
+    .progress-section { margin-bottom: 16px; }
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .progress-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .progress-pct { font-size: 13px; font-weight: 800; color: var(--text-main); }
+    .progress-track { height: 6px; border-radius: 999px; background: var(--slate-200); overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #c62828, #f97316); box-shadow: 0 0 8px rgba(198,40,40,0.3); transition: width 0.8s ease; }
+
+    .stepper { display: flex; align-items: center; background: var(--slate-50); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px 16px; }
+    .stepper-item { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+    .stepper-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; background: #fff; color: var(--text-muted); border: 2px solid var(--border-color); }
+    .stepper-dot i { font-weight: normal; font-size: 15px; }
+    .stepper-item.active .stepper-dot { background: var(--brand); border-color: var(--brand); color: #fff; box-shadow: 0 0 12px rgba(198,40,40,0.3); }
+    .stepper-item.done .stepper-dot { background: #16a34a; border-color: #16a34a; color: #fff; }
+    .stepper-label { font-size: 12px; font-weight: 600; color: var(--text-muted); line-height: 1.3; }
+    .stepper-item.active .stepper-label { color: var(--text-main); font-weight: 700; }
+    .stepper-item.done .stepper-label { color: var(--text-main); }
+    .stepper-connector { width: 24px; height: 2px; background: var(--border-color); flex-shrink: 0; margin: 0 8px; }
+
+    .d-panel-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 24px;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+    }
+    .d-panel-header-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #fef2f2, #fee2e2);
+        color: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+    .d-panel-header-icon--muted {
+        background: var(--slate-100);
+        color: var(--slate-500);
+    }
+    .d-panel-title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--text-main);
+        line-height: 1.2;
+    }
+    .d-panel-subtitle {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.5;
+    }
+    .d-panel-body {
+        padding: 24px;
+    }
 
         .hero-body {
             display: grid;
@@ -565,7 +728,7 @@
             gap: 10px;
         }
 
-        .review-card-item .panel-body {
+        .review-card-item .d-panel-body {
             padding: 14px 16px 16px;
         }
 
@@ -850,6 +1013,25 @@
                 right: 12px;
                 width: min(420px, calc(100vw - 24px));
             }
+        }
+        /* ── BUTTONS ────────────────────────────────────────── */
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            text-decoration: none;
+        }
+        .btn-outline:hover {
+            border-color: #fca5a5;
+            color: var(--brand);
+            background: #fef2f2;
         }
     </style>
 @endsection

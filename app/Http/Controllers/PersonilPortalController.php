@@ -119,17 +119,46 @@ class PersonilPortalController extends Controller
 
     public function showHistory(Request $request, KaporRequirementService $kaporRequirementService): View
     {
-        $personnel = $request->user()?->personnel;
+        $user = $request->user();
+        $personnel = $user?->personnel;
         $kaporSizes = $personnel ? ($personnel->kapor_sizes ?? []) : [];
         $hasSubmitted = ! empty(array_filter((array) $kaporSizes));
         $isComplete = $personnel ? $kaporRequirementService->personnelHasAllRequiredSizes($personnel) : false;
 
-        return view('personil.kapor.history', compact('kaporSizes', 'hasSubmitted', 'isComplete', 'personnel'));
+        $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
+        
+        $requiresBagian = ($personnel->satker ?? $user->satker)?->recipientScope() === 'polres';
+        $contactPhone = User::normalizePhone($personnel->phone ?? $user->phone);
+        $identityReady = $personnel && filled(trim((string) $personnel->jabatan))
+            && (! $requiresBagian || filled(trim((string) $personnel->bagian)))
+            && filled(trim((string) $contactPhone));
+            
+        $identityStepLabel = $requiresBagian ? '1. Jabatan, Bag/Fungsi + No. WA' : '1. Jabatan + No. WA';
+        $progressPct = ($identityReady ? 50 : 0) + ($isComplete ? 50 : ($hasSubmitted ? 14 : 0));
+
+        return view('personil.kapor.history', compact(
+            'kaporSizes', 'hasSubmitted', 'isComplete', 'personnel',
+            'user', 'fiscalYear', 'progressPct', 'identityReady', 'identityStepLabel'
+        ));
     }
 
-    public function showTestimoni(Request $request): View
+    public function showTestimoni(Request $request, KaporRequirementService $kaporRequirementService): View
     {
         $user = $request->user();
+        $personnel = $user?->personnel;
+        $kaporSizes = $personnel ? ($personnel->kapor_sizes ?? []) : [];
+        $hasSubmitted = ! empty(array_filter((array) $kaporSizes));
+        $isComplete = $personnel ? $kaporRequirementService->personnelHasAllRequiredSizes($personnel) : false;
+
+        $requiresBagian = ($personnel->satker ?? $user->satker)?->recipientScope() === 'polres';
+        $contactPhone = User::normalizePhone($personnel->phone ?? $user->phone);
+        $identityReady = $personnel && filled(trim((string) $personnel->jabatan))
+            && (! $requiresBagian || filled(trim((string) $personnel->bagian)))
+            && filled(trim((string) $contactPhone));
+            
+        $identityStepLabel = $requiresBagian ? '1. Jabatan, Bag/Fungsi + No. WA' : '1. Jabatan + No. WA';
+        $progressPct = ($identityReady ? 50 : 0) + ($isComplete ? 50 : ($hasSubmitted ? 14 : 0));
+
         $activeYear = (int) Setting::getValue('fiscal_year', date('Y'));
         $fiscalYear = (int) $request->get('year', $activeYear);
         $reviewPeriodStatus = PeriodGate::resolveReviewStatus();
@@ -182,7 +211,7 @@ class PersonilPortalController extends Controller
             ->get()
             ->keyBy('kapor_item_id');
 
-        $personnel = $user->personnel;
+        // $personnel already loaded at the top
         $allocationCards = $allocations
             ->groupBy('kapor_item_id')
             ->map(function ($group) use ($existingReviews, $personnel) {
@@ -228,6 +257,12 @@ class PersonilPortalController extends Controller
             'availableYears',
             'activeYear',
             'isHistoricalYear',
+            'personnel',
+            'user',
+            'progressPct',
+            'identityReady',
+            'isComplete',
+            'identityStepLabel',
         ));
     }
 

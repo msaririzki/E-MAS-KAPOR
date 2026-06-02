@@ -22,8 +22,8 @@
             : 'Anda dapat memperbarui respons ini selama periode review masih berjalan.');
 @endphp
 
-<section class="panel review-card-item" data-searchable="{{ strtolower($card['item_name'].' '.$card['item_category'].' '.$card['package_name'].' '.($review?->response_label ?? '')) }}" data-editing="false">
-    <div class="panel-body review-card-body">
+<section class="d-panel review-card-item" data-searchable="{{ strtolower($card['item_name'].' '.$card['item_category'].' '.$card['package_name'].' '.($review?->response_label ?? '')) }}" data-editing="false">
+    <div class="d-panel-body review-card-body">
         <div class="review-head">
             <div>
                 <div class="review-item-name">{{ $card['item_name'] }}</div>

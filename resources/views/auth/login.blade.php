@@ -20,7 +20,9 @@
     <meta name="twitter:description" content="{{ $loginDescription }}">
     <meta name="twitter:image" content="{{ $siteUrl }}/e-mas-kapor.png">
     <title>Login E-MAS KAPOR | Biro Logistik Polda NTB</title>
-    <link rel="icon" href="{{ asset('e-mas-kapor.png') }}" type="image/png">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" href="{{ asset('favicon-48x48.png') }}" type="image/png" sizes="48x48">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
