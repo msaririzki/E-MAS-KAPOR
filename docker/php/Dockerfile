@@ -52,10 +52,11 @@ RUN set -eux; \
         gd \
         intl \
         mbstring \
+        opcache \
         pdo_mysql \
         zip; \
     pecl install redis; \
-    docker-php-ext-enable redis
+    docker-php-ext-enable opcache redis
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -64,6 +65,7 @@ WORKDIR /var/www/html
 COPY . .
 
 COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
+COPY docker/php/www.conf /usr/local/etc/php-fpm.d/zz-kapor.conf
 
 COPY --from=node-builder /app/public/build ./public/build
 

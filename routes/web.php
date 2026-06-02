@@ -6,14 +6,25 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PersonilPortalController;
 use App\Http\Controllers\SatkerController;
 use App\Http\Controllers\Superadmin\StatisticsController;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 /* |-------------------------------------------------------------------------- | SI-KAPOR Polda NTB — Web Routes |-------------------------------------------------------------------------- */
 
 // ── Public / Auth Routes ──────────────────────────────────────────────
 Route::get('/', function () {
-    return view('public.index');
-})->name('home');
+    return response()
+        ->view('public.index')
+        ->header('Cache-Control', 'public, max-age=300, s-maxage=3600');
+})->withoutMiddleware([
+    AddQueuedCookiesToResponse::class,
+    ValidateCsrfToken::class,
+    StartSession::class,
+    ShareErrorsFromSession::class,
+])->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
