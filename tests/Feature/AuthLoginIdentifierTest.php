@@ -83,6 +83,30 @@ class AuthLoginIdentifierTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_personil_login_does_not_rehash_existing_import_password(): void
+    {
+        config(['hashing.bcrypt.rounds' => 12]);
+
+        $satker = $this->createSatker();
+        $passwordHash = password_hash('198501012010011002', PASSWORD_BCRYPT, ['cost' => User::IMPORT_PASSWORD_ROUNDS]);
+        $user = User::factory()->create([
+            'email' => null,
+            'nrp_nip' => '198501012010011002',
+            'password' => $passwordHash,
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        $response = $this->post(route('login'), [
+            'login' => '198501012010011002',
+            'password' => '198501012010011002',
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame($passwordHash, $user->fresh()->password);
+    }
+
     public function test_login_is_rate_limited_after_five_failed_attempts(): void
     {
         $satker = $this->createSatker();

@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
@@ -96,11 +97,7 @@ class AuthController extends Controller
             return null;
         }
 
-        return $this->attemptLogin($request, [
-            'email' => $user->email,
-            'password' => $password,
-            'is_active' => true,
-        ], $remember);
+        return $this->attemptLogin($request, $user, $password, $remember);
     }
 
     private function authenticateByNrpNip(Request $request, string $nrpNip, string $password, bool $remember): ?RedirectResponse
@@ -117,19 +114,16 @@ class AuthController extends Controller
             return null;
         }
 
-        return $this->attemptLogin($request, [
-            'nrp_nip' => $user->nrp_nip,
-            'password' => $password,
-            'is_active' => true,
-        ], $remember);
+        return $this->attemptLogin($request, $user, $password, $remember);
     }
 
-    private function attemptLogin(Request $request, array $credentials, bool $remember): ?RedirectResponse
+    private function attemptLogin(Request $request, User $user, string $password, bool $remember): ?RedirectResponse
     {
-        if (! Auth::attempt($credentials, $remember)) {
+        if (! $user->is_active || ! Hash::check($password, $user->password)) {
             return null;
         }
 
+        Auth::login($user, $remember);
         $request->session()->regenerate();
         RateLimiter::clear($this->throttleKey($request, (string) $request->input('login')));
 
