@@ -1867,6 +1867,10 @@
 
         /* ── Tablet / Layar ≤1024px — Sidebar hidden ── */
         @media (max-width: 1024px) {
+            .breadcrumb {
+                display: none !important;
+            }
+
             .sidebar {
                 transform: translateX(-100%);
             }
@@ -2353,6 +2357,15 @@
         <header class="header">
             <div class="header-left">
                 <button class="btn-menu-toggle" onclick="toggleSidebar()"><i class="ri-menu-line"></i></button>
+                <div class="breadcrumb">
+                    <a href="{{ route('dashboard') }}">E-MAS KAPOR</a>
+                    <span class="sep">/</span>
+                    @hasSection('breadcrumb')
+                        @yield('breadcrumb')
+                    @else
+                        <span class="current">Dashboard</span>
+                    @endif
+                </div>
             </div>
 
 

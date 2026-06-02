@@ -248,7 +248,11 @@
                                     </div>
                                     <div class="allocation-badge-row">
                                         <span class="allocation-size-label">{{ $item['size_label'] }}</span>
-                                        <span class="allocation-size-badge">{{ $item['size_value'] }}</span>
+                                        <div class="allocation-badge-group">
+                                            @foreach(explode('/', $item['size_value']) as $val)
+                                                <span class="allocation-size-badge">{{ trim($val) }}</span>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 </div>
                             @endforeach
@@ -1100,6 +1104,12 @@
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.04em;
+    }
+    .allocation-badge-group {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
     }
     .allocation-size-badge {
         display: inline-flex;
