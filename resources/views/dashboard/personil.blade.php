@@ -1114,6 +1114,8 @@
         font-size: 14px;
         font-weight: 900;
         box-shadow: 0 2px 8px rgba(198,40,40,0.3);
+        white-space: nowrap;
+        flex-shrink: 0;
     }
 
     /* ── SUMMARY GRID ───────────────────────────────────── */
