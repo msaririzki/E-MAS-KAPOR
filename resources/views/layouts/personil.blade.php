@@ -450,13 +450,13 @@
                    class="personil-nav-link {{ request()->routeIs('dashboard') || request()->routeIs('personil.kapor.index') ? 'active' : '' }}">
                     <i class="ri-edit-box-line"></i> Data
                 </a>
-                <a href="{{ route('personil.kapor.history') }}"
-                   class="personil-nav-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
-                    <i class="ri-history-line"></i> Riwayat
-                </a>
                 <a href="{{ route('personil.testimoni.index') }}"
                    class="personil-nav-link {{ request()->routeIs('personil.testimoni.*') ? 'active' : '' }}">
                     <i class="ri-feedback-line"></i> Review
+                </a>
+                <a href="{{ route('personil.kapor.history') }}"
+                   class="personil-nav-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
+                    <i class="ri-history-line"></i> Riwayat
                 </a>
                 <div class="nav-divider"></div>
                 <form method="POST" action="{{ route('logout') }}" style="display:inline;">
@@ -498,15 +498,15 @@
                 <i class="ri-edit-box-line"></i>
                 <span>Data Kaporlap</span>
             </a>
-            <a href="{{ route('personil.kapor.history') }}"
-               class="mobile-drawer-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
-                <i class="ri-history-line"></i>
-                <span>Riwayat Ukuran</span>
-            </a>
             <a href="{{ route('personil.testimoni.index') }}"
                class="mobile-drawer-link {{ request()->routeIs('personil.testimoni.*') ? 'active' : '' }}">
                 <i class="ri-feedback-line"></i>
                 <span>Review Item</span>
+            </a>
+            <a href="{{ route('personil.kapor.history') }}"
+               class="mobile-drawer-link {{ request()->routeIs('personil.kapor.history') ? 'active' : '' }}">
+                <i class="ri-history-line"></i>
+                <span>Riwayat Ukuran</span>
             </a>
         </nav>
 

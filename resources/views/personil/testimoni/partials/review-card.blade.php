@@ -25,14 +25,17 @@
 <section class="d-panel review-card-item" data-searchable="{{ strtolower($card['item_name'].' '.$card['item_category'].' '.$card['package_name'].' '.($review?->response_label ?? '')) }}" data-editing="false">
     <div class="d-panel-body review-card-body">
         <div class="review-head">
-            <div>
+            <div class="review-item-icon">
+                <i class="ri-box-3-line"></i>
+            </div>
+            <div class="review-head-content">
                 <div class="review-item-name">{{ $card['item_name'] }}</div>
-                <div class="review-meta">{{ $card['item_category'] ?: 'Tanpa kategori' }} • TA {{ $allocation->fiscal_year }} • {{ $card['size_label'] ?? 'Ukuran' }} {{ $card['size_value'] ?? '-' }}</div>
+                <div class="review-meta">{{ $card['item_category'] ?: 'Tanpa kategori' }} &bull; TA {{ $allocation->fiscal_year }} &bull; {{ $card['size_label'] ?? 'Ukuran' }} {{ $card['size_value'] ?? '-' }}</div>
                 @if($review?->updated_at)
                     <div class="review-meta">Diperbarui {{ $review->updated_at->translatedFormat('d M Y H:i') }}</div>
                 @endif
             </div>
-            <div style="display:grid;gap:6px;justify-items:start;">
+            <div class="review-head-status">
                 <span class="status-badge {{ $statusClass }}">
                     {{ $review?->response_label ?? 'Belum Direview' }}
                 </span>
