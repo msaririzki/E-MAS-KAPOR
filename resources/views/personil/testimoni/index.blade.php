@@ -1017,11 +1017,6 @@
             .tab-row {
                 overflow: visible;
             }
-
-            .review-head {
-                grid-template-columns: 1fr auto;
-                align-items: start;
-            }
         }
 
         @media (max-width: 640px) {
@@ -1034,7 +1029,14 @@
             }
 
             .review-head {
-                grid-template-columns: 1fr;
+                display: grid;
+                grid-template-columns: auto 1fr;
+                gap: 12px;
+            }
+
+            .review-head-status {
+                grid-column: 1 / -1;
+                align-items: flex-start;
             }
 
             .status-choice-grid {
