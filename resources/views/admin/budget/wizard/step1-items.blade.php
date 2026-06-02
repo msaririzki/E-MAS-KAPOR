@@ -9,7 +9,7 @@
     <a href="{{ route('admin.budget.show-package', $budgetPackage) }}">{{ $budgetPackage->name }}</a>
     <span class="sep">/</span>
     <span class="current">Tahap 1: Pilih Barang</span>
-
+@endsection
 
 @section('content')
 

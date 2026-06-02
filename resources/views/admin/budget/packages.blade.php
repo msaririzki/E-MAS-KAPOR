@@ -5,7 +5,7 @@
     <a href="{{ route('admin.budget.index') }}">Rencana Anggaran</a>
     <span class="sep">/</span>
     <span class="current">{{ $budgetYear->name }}</span>
-
+@endsection
 
 @section('content')
 @php

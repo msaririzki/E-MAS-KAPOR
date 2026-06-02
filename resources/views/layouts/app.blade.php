@@ -2356,7 +2356,11 @@
                 <div class="breadcrumb">
                     <a href="{{ route('dashboard') }}">E-MAS KAPOR</a>
                     <span class="sep">/</span>
-                    <span class="current">@yield('breadcrumb', 'Dashboard')</span>
+                    @hasSection('breadcrumb')
+                        @yield('breadcrumb')
+                    @else
+                        <span class="current">Dashboard</span>
+                    @endif
                 </div>
             </div>
 
