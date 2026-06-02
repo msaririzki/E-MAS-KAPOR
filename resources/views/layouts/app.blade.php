@@ -2526,21 +2526,7 @@
                 return;
             }
 
-            // 2. Sidebar Link Interceptor
-            const navLink = e.target.closest('a.nav-link');
-            if (navLink && navLink.href && !navLink.target && navLink.hostname === window.location.hostname && !navLink.href.includes('#')) {
-                e.preventDefault();
-                
-                document.querySelectorAll('a.nav-link').forEach(el => el.classList.remove('active'));
-                navLink.classList.add('active');
-
-                if (window.innerWidth <= 1024) {
-                    document.getElementById('sidebar').classList.remove('open');
-                    document.getElementById('overlay').classList.remove('open');
-                }
-
-                window.spaNavigate(navLink.href);
-            }
+            // Sidebar links use normal navigation so each module gets a clean DOM and page script state.
         });
 
         // 3. Form Submit Interceptor (Khusus GET filter form)
