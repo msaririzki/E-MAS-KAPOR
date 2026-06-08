@@ -78,15 +78,15 @@
         <div class="filter-divider"></div>
 
         <div class="custom-select-wrapper" style="width: 200px;">
-           <div class="custom-select" onclick="this.classList.toggle('active')">
+           <div class="custom-select" onclick="toggleCustomSelect(this, event)">
                 <div class="select-trigger">
                     <span>{{ request('category') ? str_replace('_', ' ', request('category')) : 'Semua Kategori' }}</span>
                     <i class="ri-arrow-down-s-line"></i>
                 </div>
                 <div class="custom-options">
-                    <div class="option {{ !request('category') ? 'selected' : '' }}" onclick="selectCategory('', this)">Semua Kategori</div>
+                    <div class="option {{ !request('category') ? 'selected' : '' }}" onclick="selectCategory('', this, event)">Semua Kategori</div>
                     @foreach($categories as $key => $label)
-                        <div class="option {{ request('category') == $key ? 'selected' : '' }}" onclick="selectCategory('{{ $key }}', this)">{{ $label }}</div>
+                        <div class="option {{ request('category') == $key ? 'selected' : '' }}" onclick="selectCategory('{{ $key }}', this, event)">{{ $label }}</div>
                     @endforeach
                 </div>
             </div>
@@ -103,6 +103,12 @@
     <div class="table-container" id="tableContainer">
         @include('admin.kapor-items.partials.table')
     </div>
+
+@php
+    $kaporCategoryOptions = $categories + ['Lainnya' => 'Lainnya'];
+    $genderOptions = ['' => 'Semua Gender', 'L' => 'Pria', 'P' => 'Wanita'];
+    $statusOptions = ['1' => 'Aktif', '0' => 'Non-Aktif'];
+@endphp
 
 {{-- Add Modal --}}
 <div id="addItemModal" class="modal">
@@ -122,40 +128,62 @@
                     <div class="form-group">
                         <label>KATEGORI</label>
                         <div class="custom-select-wrapper">
-                            <select name="category" class="form-input" required style="appearance: auto;">
-                                <option value="">-- Pilih --</option>
-                                <option value="Tutup_Kepala">Tutup Kepala</option>
-                                <option value="Tutup_Badan">Tutup Badan</option>
-                                <option value="Tutup_Kaki">Tutup Kaki</option>
-                                <option value="Atribut">Atribut</option>
-                                <option value="Lainnya">Lainnya</option>
-                            </select>
+                            <div class="custom-select" onclick="toggleCustomSelect(this, event)">
+                                <div class="select-trigger">
+                                    <span>Pilih Kategori</span>
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </div>
+                                <div class="custom-options">
+                                    @foreach($kaporCategoryOptions as $key => $label)
+                                        <div class="option" data-value="{{ $key }}" onclick="selectFormOption(this, event)">{{ $label }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <input type="hidden" name="category" id="add_category" required>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>KHUSUS GENDER</label>
                         <div class="custom-select-wrapper">
-                            <select name="gender_specific" class="form-input" style="appearance: auto;">
-                                <option value="">Semua Gender</option>
-                                <option value="L">Pria</option>
-                                <option value="P">Wanita</option>
-                            </select>
+                            <div class="custom-select" onclick="toggleCustomSelect(this, event)">
+                                <div class="select-trigger">
+                                    <span>Semua Gender</span>
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </div>
+                                <div class="custom-options">
+                                    @foreach($genderOptions as $key => $label)
+                                        <div class="option {{ $key === '' ? 'selected' : '' }}" data-value="{{ $key }}" onclick="selectFormOption(this, event)">{{ $label }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <input type="hidden" name="gender_specific" id="add_gender" value="">
                         </div>
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div class="form-group">
                         <label>HARGA SATUAN (Rp)</label>
-                        <input type="number" name="price" class="form-input" placeholder="748000" min="0" step="1000">
+                        <div class="price-input-wrapper">
+                            <span>Rp</span>
+                            <input type="text" name="price" class="form-input js-price-input" placeholder="135.000,00" inputmode="decimal" autocomplete="off">
+                        </div>
+                        <p class="field-hint">Boleh ketik 135000 atau 135.000,00.</p>
                     </div>
                     <div class="form-group">
                         <label>SATUAN</label>
                         <div class="custom-select-wrapper">
-                            <select name="unit" class="form-input" style="appearance: auto;">
-                                @foreach($unitOptions as $key => $label)
-                                    <option value="{{ $key }}" {{ $key == 'PCS' ? 'selected' : '' }}>{{ $label }}</option>
-                                @endforeach
-                            </select>
+                            <div class="custom-select" onclick="toggleCustomSelect(this, event)">
+                                <div class="select-trigger">
+                                    <span>PCS (Pieces)</span>
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </div>
+                                <div class="custom-options">
+                                    @foreach($unitOptions as $key => $label)
+                                        <div class="option {{ $key == 'PCS' ? 'selected' : '' }}" data-value="{{ $key }}" onclick="selectFormOption(this, event)">{{ $label }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <input type="hidden" name="unit" id="add_unit" value="PCS">
                         </div>
                     </div>
                 </div>
@@ -198,39 +226,62 @@
                     <div class="form-group">
                         <label>KATEGORI</label>
                         <div class="custom-select-wrapper">
-                            <select name="category" id="edit_category" class="form-input" required style="appearance: auto;">
-                                <option value="Tutup_Kepala">Tutup Kepala</option>
-                                <option value="Tutup_Badan">Tutup Badan</option>
-                                <option value="Tutup_Kaki">Tutup Kaki</option>
-                                <option value="Atribut">Atribut</option>
-                                <option value="Lainnya">Lainnya</option>
-                            </select>
+                            <div class="custom-select" onclick="toggleCustomSelect(this, event)">
+                                <div class="select-trigger">
+                                    <span>Pilih Kategori</span>
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </div>
+                                <div class="custom-options">
+                                    @foreach($kaporCategoryOptions as $key => $label)
+                                        <div class="option" data-value="{{ $key }}" onclick="selectFormOption(this, event)">{{ $label }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <input type="hidden" name="category" id="edit_category" required>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>KHUSUS GENDER</label>
                         <div class="custom-select-wrapper">
-                            <select name="gender_specific" id="edit_gender" class="form-input" style="appearance: auto;">
-                                <option value="">Semua Gender</option>
-                                <option value="L">Pria</option>
-                                <option value="P">Wanita</option>
-                            </select>
+                            <div class="custom-select" onclick="toggleCustomSelect(this, event)">
+                                <div class="select-trigger">
+                                    <span>Semua Gender</span>
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </div>
+                                <div class="custom-options">
+                                    @foreach($genderOptions as $key => $label)
+                                        <div class="option" data-value="{{ $key }}" onclick="selectFormOption(this, event)">{{ $label }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <input type="hidden" name="gender_specific" id="edit_gender" value="">
                         </div>
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div class="form-group">
                         <label>HARGA SATUAN (Rp)</label>
-                        <input type="number" name="price" id="edit_price" class="form-input" placeholder="748000" min="0" step="1000">
+                        <div class="price-input-wrapper">
+                            <span>Rp</span>
+                            <input type="text" name="price" id="edit_price" class="form-input js-price-input" placeholder="135.000,00" inputmode="decimal" autocomplete="off">
+                        </div>
+                        <p class="field-hint">Format otomatis mengikuti angka Indonesia.</p>
                     </div>
                     <div class="form-group">
                         <label>SATUAN</label>
                         <div class="custom-select-wrapper">
-                            <select name="unit" id="edit_unit" class="form-input" style="appearance: auto;">
-                                @foreach($unitOptions as $key => $label)
-                                    <option value="{{ $key }}">{{ $label }}</option>
-                                @endforeach
-                            </select>
+                            <div class="custom-select" onclick="toggleCustomSelect(this, event)">
+                                <div class="select-trigger">
+                                    <span>PCS (Pieces)</span>
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </div>
+                                <div class="custom-options">
+                                    @foreach($unitOptions as $key => $label)
+                                        <div class="option" data-value="{{ $key }}" onclick="selectFormOption(this, event)">{{ $label }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <input type="hidden" name="unit" id="edit_unit" value="PCS">
                         </div>
                     </div>
                 </div>
@@ -242,21 +293,22 @@
                 </div>
                 <div class="form-group">
                     <label>STATUS</label>
-                    <div class="selection-grid">
-                         <label class="selection-card">
-                            <input type="radio" name="is_active" value="1" id="edit_active_1">
-                            <div class="card-content">
-                                <span class="card-title">Aktif</span>
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select status-select" onclick="toggleCustomSelect(this, event)">
+                            <div class="select-trigger">
+                                <span>Aktif</span>
+                                <i class="ri-arrow-down-s-line"></i>
                             </div>
-                            <div class="card-check"><i class="ri-check-line"></i></div>
-                        </label>
-                        <label class="selection-card">
-                            <input type="radio" name="is_active" value="0" id="edit_active_0">
-                            <div class="card-content">
-                                <span class="card-title">Non-Aktif</span>
+                            <div class="custom-options">
+                                @foreach($statusOptions as $key => $label)
+                                    <div class="option {{ $key === '1' ? 'selected' : '' }}" data-value="{{ $key }}" onclick="selectFormOption(this, event)">
+                                        <span>{{ $label }}</span>
+                                        <i class="ri-{{ $key === '1' ? 'checkbox-circle' : 'close-circle' }}-line"></i>
+                                    </div>
+                                @endforeach
                             </div>
-                            <div class="card-check"><i class="ri-check-line"></i></div>
-                        </label>
+                        </div>
+                        <input type="hidden" name="is_active" id="edit_is_active" value="1">
                     </div>
                 </div>
             </div>
@@ -400,7 +452,33 @@
     .form-group label { display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 6px; text-transform: uppercase; }
     .form-input { width: 100%; padding: 10px 14px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 14px; outline: none; }
     .form-input:focus { border-color: #3B82F6; ring: 2px solid #3B82F6; }
-
+    .field-hint { font-size: 11px; color: #6B7280; margin-top: 5px; }
+    .price-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        background: #fff;
+        padding: 0 12px;
+        transition: all 0.2s ease;
+    }
+    .price-input-wrapper:focus-within {
+        border-color: #B91C1C;
+        box-shadow: 0 0 0 4px #FEF2F2;
+    }
+    .price-input-wrapper span {
+        color: #059669;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .price-input-wrapper .form-input {
+        border: none;
+        padding: 11px 0;
+        text-align: right;
+        font-weight: 600;
+        color: #111827;
+    }
     /* ── Custom Select UI (Base) ───────────────────── */
     .custom-select-wrapper { position: relative; width: 100%; }
     .custom-select {
@@ -571,11 +649,12 @@
         border: 1px solid #D1D5DB;
         background: #fff;
         border-radius: 8px;
-        height: auto;
-        padding: 10px 14px;
+        min-height: 44px;
+        padding: 0;
     }
     .modal .select-trigger { justify-content: space-between; }
-    .modal .custom-options { width: 100%; left: 0; right: auto; margin-top: 4px; }
+    .modal .custom-options { width: 100%; left: 0; right: auto; margin-top: 4px; max-height: 230px; overflow-y: auto; }
+    .modal .status-select .option i { font-size: 16px; color: #9CA3AF; }
     
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
@@ -595,6 +674,102 @@
 <script>
 
     let typingTimer;
+
+    const rupiahFormatter = new Intl.NumberFormat('id-ID', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    function parseIndonesianCurrency(value) {
+        if (value === null || value === undefined) {
+            return '';
+        }
+
+        let price = String(value).trim().replace(/[^\d,.-]/g, '');
+
+        if (!price) {
+            return '';
+        }
+
+        if (price.includes(',')) {
+            price = price.replace(/\./g, '').replace(',', '.');
+        } else if (price.includes('.')) {
+            const parts = price.split('.');
+            const looksLikeThousands = parts.length > 1
+                && parts[parts.length - 1].length === 3
+                && parts.slice(1, -1).every(part => part.length === 3);
+
+            if (looksLikeThousands) {
+                price = parts.join('');
+            }
+        }
+
+        const number = Number(price);
+
+        return Number.isFinite(number) ? number : '';
+    }
+
+    function formatIndonesianCurrency(value) {
+        const number = parseIndonesianCurrency(value);
+
+        return number === '' ? '' : rupiahFormatter.format(number);
+    }
+
+    function toggleCustomSelect(select, event) {
+        event.stopPropagation();
+
+        document.querySelectorAll('.custom-select.active').forEach(activeSelect => {
+            if (activeSelect !== select) {
+                activeSelect.classList.remove('active');
+            }
+        });
+
+        select.classList.toggle('active');
+    }
+
+    function selectFormOption(option, event) {
+        event.stopPropagation();
+
+        const wrapper = option.closest('.custom-select-wrapper');
+        const select = wrapper.querySelector('.custom-select');
+        const input = wrapper.querySelector('input[type="hidden"]');
+        const trigger = wrapper.querySelector('.select-trigger span');
+
+        if (input) {
+            input.value = option.dataset.value ?? '';
+        }
+
+        if (trigger) {
+            trigger.innerText = option.innerText.trim();
+        }
+
+        wrapper.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+        option.classList.add('selected');
+        select.classList.remove('active');
+    }
+
+    function setCustomSelectValue(inputId, value) {
+        const input = document.getElementById(inputId);
+
+        if (!input) {
+            return;
+        }
+
+        const wrapper = input.closest('.custom-select-wrapper');
+        const option = Array.from(wrapper.querySelectorAll('.option'))
+            .find(el => String(el.dataset.value ?? '') === String(value ?? ''))
+            || wrapper.querySelector('.option');
+
+        if (!option) {
+            input.value = value ?? '';
+            return;
+        }
+
+        input.value = option.dataset.value ?? '';
+        wrapper.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+        option.classList.add('selected');
+        wrapper.querySelector('.select-trigger span').innerText = option.innerText.trim();
+    }
     
     // AJAX Fetch Function
     function fetchTable(url) {
@@ -633,7 +808,11 @@
     });
 
     // Category Filter
-    function selectCategory(val, element) {
+    function selectCategory(val, element, event) {
+        if (event) {
+            event.stopPropagation();
+        }
+
         document.getElementById('categoryInput').value = val;
         
         // Update UI
@@ -673,6 +852,22 @@
                 fetchTable(url.toString());
             }, 500); // Debounce 500ms
         }
+
+        if (e.target.classList.contains('js-price-input')) {
+            e.target.value = e.target.value.replace(/[^\d.,]/g, '');
+        }
+    });
+
+    document.addEventListener('blur', function(e) {
+        if (e.target.classList.contains('js-price-input')) {
+            e.target.value = formatIndonesianCurrency(e.target.value);
+        }
+    }, true);
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.custom-select')) {
+            document.querySelectorAll('.custom-select.active').forEach(select => select.classList.remove('active'));
+        }
     });
 
     // Per Page Change
@@ -698,18 +893,12 @@
 
     function openEditModal(item) {
         document.getElementById('edit_item_name').value = item.item_name;
-        document.getElementById('edit_category').value = item.category;
-        document.getElementById('edit_gender').value = item.gender_specific || '';
-        document.getElementById('edit_price').value = item.price || '';
-        document.getElementById('edit_unit').value = item.unit || 'PCS';
+        setCustomSelectValue('edit_category', item.category);
+        setCustomSelectValue('edit_gender', item.gender_specific || '');
+        document.getElementById('edit_price').value = formatIndonesianCurrency(item.price || '');
+        setCustomSelectValue('edit_unit', item.unit || 'PCS');
         document.getElementById('edit_invoice_group').value = item.invoice_group || '';
-
-        // Active Status
-        if(item.is_active) {
-            document.getElementById('edit_active_1').checked = true;
-        } else {
-             document.getElementById('edit_active_0').checked = true;
-        }
+        setCustomSelectValue('edit_is_active', item.is_active ? '1' : '0');
 
         document.getElementById('editForm').action = "/admin/kapor-items/" + item.id;
         openModal('editItemModal');

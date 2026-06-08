@@ -51,6 +51,8 @@ class KaporItemController extends Controller
 
     public function store(Request $request)
     {
+        $this->normalizePriceInput($request);
+
         $validated = $request->validate([
             'item_name' => 'required|string|max:255',
             'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut,Lainnya',
@@ -71,6 +73,8 @@ class KaporItemController extends Controller
 
     public function update(Request $request, KaporItem $kaporItem)
     {
+        $this->normalizePriceInput($request);
+
         $validated = $request->validate([
             'item_name' => 'required|string|max:255',
             'category' => 'required|in:Tutup_Kepala,Tutup_Badan,Tutup_Kaki,Atribut,Lainnya',
@@ -152,5 +156,55 @@ class KaporItemController extends Controller
         $size->delete();
 
         return response()->json(['message' => 'Ukuran berhasil dihapus.']);
+    }
+
+    private function normalizePriceInput(Request $request): void
+    {
+        if (! $request->has('price')) {
+            return;
+        }
+
+        $request->merge([
+            'price' => $this->normalizeIndonesianCurrency($request->input('price')),
+        ]);
+    }
+
+    private function normalizeIndonesianCurrency(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $price = trim((string) $value);
+
+        if ($price === '') {
+            return null;
+        }
+
+        $price = preg_replace('/[^\d,.\-]/', '', $price);
+
+        if (str_contains($price, ',')) {
+            $price = str_replace('.', '', $price);
+            $price = str_replace(',', '.', $price);
+        } else {
+            $parts = explode('.', $price);
+
+            if (count($parts) > 1) {
+                $looksLikeThousands = strlen((string) end($parts)) === 3;
+
+                foreach (array_slice($parts, 1, -1) as $part) {
+                    if (strlen($part) !== 3) {
+                        $looksLikeThousands = false;
+                        break;
+                    }
+                }
+
+                if ($looksLikeThousands) {
+                    $price = implode('', $parts);
+                }
+            }
+        }
+
+        return is_numeric($price) ? $price : (string) $value;
     }
 }
