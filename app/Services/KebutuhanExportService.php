@@ -33,11 +33,11 @@ class KebutuhanExportService
                 ->where('kebutuhans.fiscal_year', (string) $fiscalYear)
                 ->whereIn('kebutuhans.status', ['diajukan', 'disetujui'])
                 ->get();
-                
+
             foreach ($satkerRows as $row) {
                 $itemSatkers[$row->identifikasi_item_id][] = $row->satker_name;
             }
-            
+
             foreach ($itemSatkers as $itemId => $names) {
                 $uniqueNames = array_unique($names);
                 sort($uniqueNames);
@@ -59,15 +59,15 @@ class KebutuhanExportService
                 $mappedItems = $items
                     ->map(function (IdentifikasiItem $item) use ($itemCounts, $totalSatkers, $includeSatkers, $itemSatkers): array {
                         $satkerCount = (int) ($itemCounts[$item->id] ?? 0);
-                        // Gunakan eligible_satker_count jika diisi, jika tidak pakai total satker aplikasi
+                        // Gunakan eligible_satker_count sebagai penyebut statistik, jika tidak diisi pakai total satker.
                         $eligible = $item->eligible_satker_count ?? $totalSatkers;
 
                         return [
-                            'name'            => $item->item_name,
-                            'satker_count'    => $satkerCount,
-                            'eligible_count'  => $eligible,
-                            'percentage'      => $this->percentage($satkerCount, $eligible),
-                            'satkers'         => $includeSatkers ? ($itemSatkers[$item->id] ?? []) : [],
+                            'name' => $item->item_name,
+                            'satker_count' => $satkerCount,
+                            'eligible_count' => $eligible,
+                            'percentage' => $this->percentage($satkerCount, $eligible),
+                            'satkers' => $includeSatkers ? ($itemSatkers[$item->id] ?? []) : [],
                         ];
                     })
                     ->filter(fn (array $item): bool => $item['satker_count'] > 0)
@@ -75,10 +75,10 @@ class KebutuhanExportService
                     ->values();
 
                 return [
-                    'name'         => str_replace('_', ' ', $category),
-                    'items'        => $mappedItems,
+                    'name' => str_replace('_', ' ', $category),
+                    'items' => $mappedItems,
                     'satker_count' => (int) $mappedItems->sum('satker_count'),
-                    'percentage'   => $mappedItems->isNotEmpty()
+                    'percentage' => $mappedItems->isNotEmpty()
                         ? (int) round($mappedItems->avg('percentage'))
                         : 0,
                 ];

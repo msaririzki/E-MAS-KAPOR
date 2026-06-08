@@ -7,7 +7,8 @@ use App\Services\KebutuhanEligibilityService;
 use Illuminate\Database\Seeder;
 
 /**
- * Mengisi eligible_satker_count berdasarkan aturan eligibility item kebutuhan.
+ * Mengisi eligible_satker_count sebagai penyebut statistik/laporan.
+ * Angka ini tidak membatasi item yang tampil di admin satker.
  *
  * - Lantas: 11 satker (DIT LANTAS + 10 Polres)
  * - Polair: 11 satker (DIT POLAIRUD + 10 Polres)
@@ -15,7 +16,7 @@ use Illuminate\Database\Seeder;
  * - TIK: 11 satker (BID TIK + 10 Polres)
  * - Humas: 11 satker (BID HUMAS + 10 Polres)
  * - Primod/khusus polda: 1 satker
- * - NULL: item umum, semua satker bisa memilih
+ * - NULL: laporan memakai total semua satker
  */
 class EligibleSatkerCountSeeder extends Seeder
 {
@@ -33,12 +34,12 @@ class EligibleSatkerCountSeeder extends Seeder
             }
 
             $item->update(['eligible_satker_count' => $eligibleSatkerCount]);
-            $this->command->line("  <fg=green>✓</> [{$eligibleSatkerCount} satker] {$item->item_name}");
+            $this->command->line("  <fg=green>OK</> [{$eligibleSatkerCount} satker] {$item->item_name}");
             $updated++;
         }
 
-        $this->command->info("Selesai. {$updated} item diperbarui dengan eligible satker spesifik.");
+        $this->command->info("Selesai. {$updated} item diperbarui dengan penyebut statistik spesifik.");
         $this->command->newLine();
-        $this->command->comment('Item lainnya tetap NULL (berlaku untuk semua satker).');
+        $this->command->comment('Item lainnya tetap NULL (laporan memakai total semua satker).');
     }
 }

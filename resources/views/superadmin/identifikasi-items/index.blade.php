@@ -136,7 +136,7 @@
                     <th style="width: 60px;">NO</th>
                     <th>NAMA ITEM</th>
                     <th>KATEGORI</th>
-                    <th style="text-align: center;">ELIGIBLE SATKER</th>
+                    <th style="text-align: center;">PENYEBUT STATISTIK</th>
                     <th>STATUS AKTIF</th>
                     <th style="text-align: center;">AKSI</th>
                 </tr>
@@ -161,10 +161,10 @@
                     <td style="text-align: center;">
                         @if($item->eligible_satker_count)
                             <span class="role-pill" style="background: #FFF7ED; color: #C2410C;">
-                                <i class="ri-group-line" style="margin-right: 3px;"></i>{{ $item->eligible_satker_count }} satker
+                                <i class="ri-bar-chart-box-line" style="margin-right: 3px;"></i>{{ $item->eligible_satker_count }} satker
                             </span>
                         @else
-                            <span style="font-size: 12px; color: #9CA3AF;">Semua satker</span>
+                            <span style="font-size: 12px; color: #9CA3AF;">Total semua satker</span>
                         @endif
                     </td>
                     <td>
@@ -281,8 +281,9 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>JUMLAH SATKER ELIGIBLE <span style="font-weight:400; color:#9CA3AF; text-transform:none;">(opsional — kosongkan jika berlaku untuk semua satker)</span></label>
+                    <label>PENYEBUT STATISTIK <span style="font-weight:400; color:#9CA3AF; text-transform:none;">(opsional - kosongkan jika memakai total semua satker)</span></label>
                     <input type="number" name="eligible_satker_count" class="form-input" placeholder="Contoh: 11" min="1" max="9999">
+                    <p style="font-size:11px; color:#6B7280; margin-top:4px;">Tidak membatasi tampilan item. Dipakai hanya untuk persentase laporan/statistik.</p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -329,8 +330,9 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>JUMLAH SATKER ELIGIBLE <span style="font-weight:400; color:#9CA3AF; text-transform:none;">(opsional — kosongkan jika semua satker)</span></label>
+                    <label>PENYEBUT STATISTIK <span style="font-weight:400; color:#9CA3AF; text-transform:none;">(opsional - kosongkan jika memakai total semua satker)</span></label>
                     <input type="number" name="eligible_satker_count" id="edit_eligible_satker_count" class="form-input" placeholder="Contoh: 11" min="1" max="9999">
+                    <p style="font-size:11px; color:#6B7280; margin-top:4px;">Semua satker tetap bisa melihat item ini. Angka ini hanya untuk laporan.</p>
                 </div>
 
                 <div style="margin-top: 16px;">
@@ -550,7 +552,6 @@
         document.getElementById('edit_category').value = item.category;
         document.getElementById('edit_is_active').checked = item.is_active;
         document.getElementById('edit_eligible_satker_count').value = item.eligible_satker_count ?? '';
-
         document.getElementById('editForm').action = "{{ url('superadmin/identifikasi-items') }}/" + item.id;
         
         const catLabels = {!! json_encode($categories) !!};

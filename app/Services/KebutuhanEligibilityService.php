@@ -24,42 +24,12 @@ class KebutuhanEligibilityService
             ->orderByRaw(self::CATEGORY_ORDER_SQL)
             ->orderBy('item_name')
             ->get()
-            ->filter(fn (IdentifikasiItem $item): bool => $this->canSatkerChooseItem($satker, $item))
             ->values();
     }
 
     public function canSatkerChooseItem(?Satker $satker, IdentifikasiItem $item): bool
     {
-        $group = $this->itemGroup($item);
-
-        if ($group === null) {
-            return true;
-        }
-
-        if (! $satker) {
-            return false;
-        }
-
-        $satkerName = strtoupper($satker->name.' '.$satker->code);
-
-        return match ($group) {
-            'lantas' => $this->satkerMatches($satkerName, ['LANTAS', 'POLRES']),
-            'polair' => $this->satkerMatches($satkerName, ['POLAIR', 'AIRUD', 'POLRES']),
-            'reskrim' => $this->satkerMatches($satkerName, [
-                'INTEL',
-                'RESKRIM',
-                'RESNARKOBA',
-                'PPA',
-                'PPO',
-                'KUM',
-                'PAMOBVIT',
-                'POLRES',
-            ]),
-            'tik' => $this->satkerMatches($satkerName, ['TIK', 'POLRES']),
-            'humas' => $this->satkerMatches($satkerName, ['HUMAS', 'POLRES']),
-            'primod' => $this->satkerMatches($satkerName, ['BRIMOB', 'PROPAM', 'PROVOS', 'PROVOST']),
-            default => false,
-        };
+        return $item->is_active;
     }
 
     public function eligibleSatkerCountForItem(IdentifikasiItem $item): ?int
@@ -107,20 +77,6 @@ class KebutuhanEligibilityService
      * @param  array<int, string>  $needles
      */
     private function itemMatches(string $name, array $needles): bool
-    {
-        foreach ($needles as $needle) {
-            if ($this->containsToken($name, $needle)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * @param  array<int, string>  $needles
-     */
-    private function satkerMatches(string $name, array $needles): bool
     {
         foreach ($needles as $needle) {
             if ($this->containsToken($name, $needle)) {
