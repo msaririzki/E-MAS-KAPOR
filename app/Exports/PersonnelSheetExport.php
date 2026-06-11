@@ -203,6 +203,8 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
 
     private function applyUpdateTemplateSheet(Worksheet $sheet, int $lastDataRow): void
     {
+        $this->normalizeDataRows($sheet, $lastDataRow);
+
         for ($row = 11; $row <= $lastDataRow; $row++) {
             $cell = $sheet->getCell('E'.$row);
             $rawValue = ltrim((string) $cell->getValue(), "\t");
@@ -281,6 +283,8 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
 
     private function applyMonitoringSheet(Worksheet $sheet, int $lastDataRow): void
     {
+        $this->normalizeDataRows($sheet, $lastDataRow);
+
         for ($row = 11; $row <= $lastDataRow; $row++) {
             $cell = $sheet->getCell('E'.$row);
             $rawValue = ltrim((string) $cell->getValue(), "\t");
@@ -363,6 +367,21 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
 
         if (! empty($this->signatorySettings)) {
             $this->renderSignatory($sheet, $lastDataRow);
+        }
+    }
+
+    private function normalizeDataRows(Worksheet $sheet, int $lastDataRow): void
+    {
+        $sequence = 1;
+
+        for ($row = 11; $row <= $lastDataRow; $row++) {
+            $rowDimension = $sheet->getRowDimension($row);
+            $rowDimension->setVisible(true);
+            $rowDimension->setZeroHeight(false);
+            $rowDimension->setOutlineLevel(0);
+            $rowDimension->setCollapsed(false);
+
+            $sheet->setCellValue('A'.$row, $sequence++);
         }
     }
 
