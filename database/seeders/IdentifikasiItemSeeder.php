@@ -16,8 +16,6 @@ class IdentifikasiItemSeeder extends Seeder
         WHEN category = 'Tutup_Kaki' THEN 3
         ELSE 999 END";
 
-    private const MERGE_SUFFIX_PATTERN = '/\b(PRIA|WANITA|BINTARA|PAMA|PAMEN|PATI|TAMTAMA|TAMATAMA|PNS)\b/i';
-
     /**
      * Run the database seeds.
      */
@@ -58,7 +56,7 @@ class IdentifikasiItemSeeder extends Seeder
             ->orderBy('item_name')
             ->get()
             ->each(function (KaporItem $item) use (&$items): void {
-                $itemName = $this->normalizeItemName($item->item_name);
+                $itemName = trim($item->item_name);
                 $key = $this->itemKey($item->category, $itemName);
 
                 $items[$key] ??= [
@@ -69,42 +67,6 @@ class IdentifikasiItemSeeder extends Seeder
             });
 
         return $items;
-    }
-
-    /**
-     * Menggabungkan variasi gender/pangkat dari item kapor menjadi item identifikasi standar.
-     */
-    private function normalizeItemName(string $itemName): string
-    {
-        $fixedNames = [
-            'JILBAB POLRI DAN PNS' => 'JILBAB POLRI/PNS',
-            'SEPATU PDL II PAMEN, PAMA, BINTARA DAN TAMATAMA' => 'SEPATU PDL II PAMEN/PAMA/BINTARA/TAMTAMA',
-        ];
-
-        if (isset($fixedNames[$itemName])) {
-            return $fixedNames[$itemName];
-        }
-
-        $itemName = preg_replace(self::MERGE_SUFFIX_PATTERN, '', $itemName) ?? $itemName;
-
-        $itemName = preg_replace('/\s+/', ' ', $itemName) ?? $itemName;
-        $itemName = preg_replace('/\s+([,\/])\s+/', '$1 ', $itemName) ?? $itemName;
-        $itemName = preg_replace('/\s*,\s*,+/', ',', $itemName) ?? $itemName;
-        $itemName = str_replace(
-            [
-                'JILBAB POLRI DAN',
-                'SEPATU PDL II, , DAN',
-                'SEPATU PDL II , , DAN',
-            ],
-            [
-                'JILBAB POLRI/PNS',
-                'SEPATU PDL II PAMEN/PAMA/BINTARA/TAMTAMA',
-                'SEPATU PDL II PAMEN/PAMA/BINTARA/TAMTAMA',
-            ],
-            $itemName,
-        );
-
-        return trim($itemName, " \t\n\r\0\x0B,");
     }
 
     /**
