@@ -4,6 +4,7 @@ namespace App\Http\Controllers\AdminSatker;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kebutuhan;
+use App\Models\Setting;
 use App\Services\ExportSignatorySettingService;
 use App\Services\KebutuhanEligibilityService;
 use Illuminate\Http\Request;
@@ -38,7 +39,7 @@ class KebutuhanController extends Controller
         ];
 
         // Cek apakah sudah ada pengajuan untuk tahun anggaran berikutnya
-        $nextFiscalYear = (int) date('Y') + 1;
+        $nextFiscalYear = $this->nextFiscalYear();
         $hasSubmissionThisYear = Kebutuhan::where('satker_id', $satkerId)
             ->where('fiscal_year', $nextFiscalYear)
             ->exists();
@@ -52,7 +53,7 @@ class KebutuhanController extends Controller
     public function create(KebutuhanEligibilityService $eligibilityService)
     {
         // Cek apakah satker sudah mengajukan untuk tahun anggaran ini
-        $nextFiscalYear = (int) date('Y') + 1;
+        $nextFiscalYear = $this->nextFiscalYear();
         $existing = Kebutuhan::where('satker_id', auth()->user()->satker_id)
             ->where('fiscal_year', $nextFiscalYear)
             ->exists();
@@ -84,8 +85,8 @@ class KebutuhanController extends Controller
 
         $this->validateEligibleItems($request, $eligibilityService);
 
-        // Tahun anggaran otomatis = tahun sekarang + 1
-        $fiscalYear = (int) date('Y') + 1;
+        // Tahun anggaran kebutuhan mengikuti tahun sistem aktif + 1.
+        $fiscalYear = $this->nextFiscalYear();
 
         // Cek duplikasi: 1 satker hanya boleh 1 pengajuan per tahun anggaran
         $existing = Kebutuhan::where('satker_id', $request->user()->satker_id)
@@ -174,8 +175,8 @@ class KebutuhanController extends Controller
 
         $this->validateEligibleItems($request, $eligibilityService);
 
-        // Tahun anggaran otomatis = tahun sekarang + 1
-        $fiscalYear = (int) date('Y') + 1;
+        // Tahun anggaran kebutuhan mengikuti tahun sistem aktif + 1.
+        $fiscalYear = $this->nextFiscalYear();
 
         DB::transaction(function () use ($request, $kebutuhan, $fiscalYear) {
             $kebutuhan->update([
@@ -308,5 +309,10 @@ class KebutuhanController extends Controller
                 'items' => 'Terdapat item yang tidak sesuai kewenangan satker Anda.',
             ]);
         }
+    }
+
+    private function nextFiscalYear(): int
+    {
+        return (int) Setting::getValue('fiscal_year', date('Y')) + 1;
     }
 }
