@@ -29,9 +29,8 @@ class DatabaseSeeder extends Seeder
             $seeders[] = DemoUserSeeder::class;
             $seeders[] = PolrestaMataramKebutuhanSeeder::class;
             $seeders[] = ManySatkerKebutuhanSeeder::class;
+            $seeders[] = ItemReviewSeeder::class;
         }
-
-        $seeders[] = ItemReviewSeeder::class;
 
         $this->call($seeders);
     }
