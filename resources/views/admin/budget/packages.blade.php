@@ -140,7 +140,7 @@
             <h2 class="modal-title">Tambah Paket Baru</h2>
             <button class="modal-close" onclick="closeModal('addPackageModal')"><i class="ri-close-line"></i></button>
         </div>
-        <form action="{{ route('admin.budget.store-package', $budgetYear) }}" method="POST">
+        <form action="{{ route('admin.budget.store-package', $budgetYear) }}" method="POST" class="js-budget-save-form">
             @csrf
             <div class="modal-body">
                 <div class="form-group">
@@ -154,7 +154,10 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('addPackageModal')">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
+                <button type="submit" class="btn btn-primary btn-loading-submit" data-loading-text="Menyimpan...">
+                    <span class="btn-loading-spinner" aria-hidden="true"></span>
+                    <span class="btn-loading-label">Simpan</span>
+                </button>
             </div>
         </form>
     </div>
@@ -167,7 +170,7 @@
             <h2 class="modal-title">Edit Paket</h2>
             <button class="modal-close" onclick="closeModal('editPackageModal')"><i class="ri-close-line"></i></button>
         </div>
-        <form id="editPackageForm" method="POST">
+        <form id="editPackageForm" method="POST" class="js-budget-save-form">
             @csrf @method('PUT')
             <div class="modal-body">
                 <div class="form-group">
@@ -192,7 +195,10 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('editPackageModal')">Batal</button>
-                <button type="submit" class="btn btn-primary">Simpan</button>
+                <button type="submit" class="btn btn-primary btn-loading-submit" data-loading-text="Menyimpan...">
+                    <span class="btn-loading-spinner" aria-hidden="true"></span>
+                    <span class="btn-loading-label">Simpan</span>
+                </button>
             </div>
         </form>
     </div>
@@ -370,6 +376,36 @@
     .form-input { width: 100%; padding: 10px 14px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 14px; outline: none; font-family: inherit; }
     .form-input:focus { border-color: #B91C1C; box-shadow: 0 0 0 3px #FEF2F2; }
     textarea.form-input { resize: vertical; }
+    .btn-loading-submit {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-width: 98px;
+    }
+    .btn-loading-submit .btn-loading-spinner {
+        display: none;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.45);
+        border-top-color: #FFFFFF;
+        border-radius: 999px;
+        animation: budgetSaveSpin 0.75s linear infinite;
+        flex-shrink: 0;
+    }
+    .btn-loading-submit.is-loading {
+        cursor: wait;
+        opacity: 0.85;
+    }
+    .btn-loading-submit.is-loading .btn-loading-spinner {
+        display: inline-block;
+    }
+    .js-budget-save-form.is-submitting .modal-footer .btn-outline,
+    .js-budget-save-form.is-submitting .modal-close {
+        pointer-events: none;
+        opacity: 0.55;
+    }
 
     @media (max-width: 768px) {
         .page-header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
@@ -384,6 +420,7 @@
     }
 
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes budgetSaveSpin { to { transform: rotate(360deg); } }
 </style>
 @endsection
 
@@ -399,6 +436,33 @@
         document.getElementById('editPackageForm').action = "/admin/budget/packages/" + pkg.id;
         openModal('editPackageModal');
     }
+
+    document.querySelectorAll('.js-budget-save-form').forEach((form) => {
+        form.addEventListener('submit', function(event) {
+            if (form.dataset.submitting === 'true') {
+                event.preventDefault();
+                return;
+            }
+
+            form.dataset.submitting = 'true';
+            form.classList.add('is-submitting');
+
+            const submitButton = form.querySelector('.btn-loading-submit');
+            if (submitButton) {
+                const label = submitButton.querySelector('.btn-loading-label');
+                submitButton.classList.add('is-loading');
+                submitButton.disabled = true;
+
+                if (label) {
+                    label.textContent = submitButton.dataset.loadingText || 'Menyimpan...';
+                }
+            }
+
+            form.querySelectorAll('button[type="button"], .modal-close').forEach((button) => {
+                button.disabled = true;
+            });
+        });
+    });
 
     window.onclick = function(e) {
         if (e.target.classList.contains('modal')) e.target.classList.remove('open');
