@@ -154,7 +154,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('addPackageModal')">Batal</button>
-                <button type="submit" class="btn btn-primary btn-loading-submit" data-loading-text="Menyimpan...">
+                <button type="submit" class="btn btn-primary btn-loading-submit" data-loading-text="Menyimpan..." onclick="return handleBudgetSaveButtonClick(event, this)">
                     <span class="btn-loading-spinner" aria-hidden="true"></span>
                     <span class="btn-loading-label">Simpan</span>
                 </button>
@@ -199,7 +199,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('editPackageModal')">Batal</button>
-                <button type="submit" class="btn btn-primary btn-loading-submit" data-loading-text="Menyimpan..." data-final-loading-text="Memfinalkan...">
+                <button type="submit" class="btn btn-primary btn-loading-submit" data-loading-text="Menyimpan..." data-final-loading-text="Memfinalkan..." onclick="return handleBudgetSaveButtonClick(event, this)">
                     <span class="btn-loading-spinner" aria-hidden="true"></span>
                     <span class="btn-loading-label">Simpan</span>
                 </button>
@@ -404,7 +404,9 @@
     }
     .btn-loading-submit.is-loading {
         cursor: wait;
-        opacity: 0.85;
+        opacity: 1;
+        filter: brightness(0.92);
+        box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.18);
     }
     .btn-loading-submit.is-loading .btn-loading-spinner {
         display: inline-block;
@@ -467,6 +469,15 @@
         openModal('editPackageModal');
     }
 
+    window.handleBudgetSaveButtonClick = function(event, button) {
+        const form = button.closest('form');
+        if (!form) {
+            return true;
+        }
+
+        return window.handleBudgetSaveFormSubmit(event, form);
+    };
+
     window.handleBudgetSaveFormSubmit = function(event, form) {
         if (form.dataset.submitting === 'true') {
             event.preventDefault();
@@ -484,7 +495,8 @@
         if (submitButton) {
             const label = submitButton.querySelector('.btn-loading-label');
             submitButton.classList.add('is-loading');
-            submitButton.disabled = true;
+            submitButton.setAttribute('aria-disabled', 'true');
+            submitButton.style.pointerEvents = 'none';
 
             if (label) {
                 label.textContent = isFinalizing
@@ -507,7 +519,7 @@
         });
 
         requestAnimationFrame(() => {
-            setTimeout(() => HTMLFormElement.prototype.submit.call(form), 250);
+            setTimeout(() => HTMLFormElement.prototype.submit.call(form), 600);
         });
 
         return false;
