@@ -6,6 +6,7 @@ use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
 use App\Models\KebutuhanItem;
 use App\Models\Satker;
+use App\Models\Setting;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -13,7 +14,7 @@ class KebutuhanExportService
 {
     public function build(?int $fiscalYear = null, bool $includeSatkers = false): array
     {
-        $fiscalYear ??= (int) (Kebutuhan::max('fiscal_year') ?: ((int) date('Y') + 1));
+        $fiscalYear ??= $this->targetFiscalYear();
         $totalSatkers = Satker::count();
 
         $itemCounts = KebutuhanItem::query()
@@ -105,5 +106,19 @@ class KebutuhanExportService
     private function percentage(int $count, int $total): int
     {
         return (int) round(($count / max($total, 1)) * 100);
+    }
+
+    private function targetFiscalYear(): int
+    {
+        $targetYear = (int) Setting::getValue('kebutuhan_target_year', 0);
+
+        if ($targetYear > 0) {
+            return $targetYear;
+        }
+
+        return max(
+            (int) Setting::getValue('fiscal_year', date('Y')) + 1,
+            (int) date('Y') + 1,
+        );
     }
 }

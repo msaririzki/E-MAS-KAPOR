@@ -36,12 +36,11 @@
         <div class="card-body">
             <div class="form-group">
                 <label class="form-label">Tahun Anggaran <span style="color: var(--danger);">*</span></label>
-                @php $nextYear = (int) date('Y') + 1; @endphp
-                <input type="hidden" name="fiscal_year" value="{{ $nextYear }}">
+                <input type="hidden" name="fiscal_year" value="{{ $nextFiscalYear }}">
                 <div class="form-input" style="background: var(--slate-50); cursor: default; font-weight: 600;">
-                    {{ $nextYear }}
+                    {{ $nextFiscalYear }}
                 </div>
-                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">*) Tahun anggaran otomatis ditetapkan ke tahun depan ({{ date('Y') }} + 1). Judul pengajuan akan di-generate otomatis.</small>
+                <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">*) Tahun anggaran identifikasi kebutuhan ditetapkan otomatis oleh sistem. Judul pengajuan akan di-generate otomatis.</small>
             </div>
         </div>
     </div>

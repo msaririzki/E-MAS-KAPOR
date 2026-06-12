@@ -67,7 +67,9 @@ class KebutuhanController extends Controller
             ->eligibleItemsForSatker(auth()->user()->satker)
             ->groupBy('category');
 
-        return view('admin-satker.kebutuhan.create', compact('kaporItems'));
+        $nextFiscalYear = $this->nextFiscalYear();
+
+        return view('admin-satker.kebutuhan.create', compact('kaporItems', 'nextFiscalYear'));
     }
 
     /**
@@ -153,8 +155,9 @@ class KebutuhanController extends Controller
             ->groupBy('category');
 
         $selectedIds = $kebutuhan->items->pluck('identifikasi_item_id')->toArray();
+        $nextFiscalYear = $this->nextFiscalYear();
 
-        return view('admin-satker.kebutuhan.edit', compact('kebutuhan', 'kaporItems', 'selectedIds'));
+        return view('admin-satker.kebutuhan.edit', compact('kebutuhan', 'kaporItems', 'selectedIds', 'nextFiscalYear'));
     }
 
     /**
@@ -313,6 +316,15 @@ class KebutuhanController extends Controller
 
     private function nextFiscalYear(): int
     {
-        return (int) Setting::getValue('fiscal_year', date('Y')) + 1;
+        $targetYear = (int) Setting::getValue('kebutuhan_target_year', 0);
+
+        if ($targetYear > 0) {
+            return $targetYear;
+        }
+
+        return max(
+            (int) Setting::getValue('fiscal_year', date('Y')) + 1,
+            (int) date('Y') + 1,
+        );
     }
 }
