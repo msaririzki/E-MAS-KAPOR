@@ -140,7 +140,7 @@
             <h2 class="modal-title">Tambah Paket Baru</h2>
             <button class="modal-close" onclick="closeModal('addPackageModal')"><i class="ri-close-line"></i></button>
         </div>
-        <form action="{{ route('admin.budget.store-package', $budgetYear) }}" method="POST" class="js-budget-save-form">
+        <form action="{{ route('admin.budget.store-package', $budgetYear) }}" method="POST" class="js-budget-save-form" onsubmit="return handleBudgetSaveFormSubmit(event, this)">
             @csrf
             <div class="modal-body">
                 <div class="form-group">
@@ -174,7 +174,7 @@
             <h2 class="modal-title">Edit Paket</h2>
             <button class="modal-close" onclick="closeModal('editPackageModal')"><i class="ri-close-line"></i></button>
         </div>
-        <form id="editPackageForm" method="POST" class="js-budget-save-form">
+        <form id="editPackageForm" method="POST" class="js-budget-save-form" onsubmit="return handleBudgetSaveFormSubmit(event, this)">
             @csrf @method('PUT')
             <div class="modal-body">
                 <div class="form-group">
@@ -467,50 +467,51 @@
         openModal('editPackageModal');
     }
 
-    document.querySelectorAll('.js-budget-save-form').forEach((form) => {
-        form.addEventListener('submit', function(event) {
-            if (form.dataset.submitting === 'true') {
-                event.preventDefault();
-                return;
-            }
-
+    window.handleBudgetSaveFormSubmit = function(event, form) {
+        if (form.dataset.submitting === 'true') {
             event.preventDefault();
-            form.dataset.submitting = 'true';
-            form.classList.add('is-submitting');
+            return false;
+        }
 
-            const submitButton = form.querySelector('.btn-loading-submit');
-            const isFinalizing = form.querySelector('[name="status"]')?.value === 'finalized';
-            const loadingHint = form.querySelector('.save-loading-hint');
-            if (submitButton) {
-                const label = submitButton.querySelector('.btn-loading-label');
-                submitButton.classList.add('is-loading');
-                submitButton.disabled = true;
+        event.preventDefault();
+        form.dataset.submitting = 'true';
+        form.classList.add('is-submitting');
 
-                if (label) {
-                    label.textContent = isFinalizing
-                        ? (submitButton.dataset.finalLoadingText || 'Memfinalkan...')
-                        : (submitButton.dataset.loadingText || 'Menyimpan...');
-                }
+        const submitButton = form.querySelector('.btn-loading-submit');
+        const isFinalizing = form.querySelector('[name="status"]')?.value === 'finalized';
+        const loadingHint = form.querySelector('.save-loading-hint');
+
+        if (submitButton) {
+            const label = submitButton.querySelector('.btn-loading-label');
+            submitButton.classList.add('is-loading');
+            submitButton.disabled = true;
+
+            if (label) {
+                label.textContent = isFinalizing
+                    ? (submitButton.dataset.finalLoadingText || 'Memfinalkan...')
+                    : (submitButton.dataset.loadingText || 'Menyimpan...');
             }
+        }
 
-            if (loadingHint) {
-                const hintText = loadingHint.querySelector('span');
-                if (hintText) {
-                    hintText.textContent = isFinalizing
-                        ? (loadingHint.dataset.finalText || loadingHint.dataset.defaultText || 'Memproses data. Mohon tunggu...')
-                        : (loadingHint.dataset.defaultText || 'Memproses data. Mohon tunggu...');
-                }
+        if (loadingHint) {
+            const hintText = loadingHint.querySelector('span');
+            if (hintText) {
+                hintText.textContent = isFinalizing
+                    ? (loadingHint.dataset.finalText || loadingHint.dataset.defaultText || 'Memproses data. Mohon tunggu...')
+                    : (loadingHint.dataset.defaultText || 'Memproses data. Mohon tunggu...');
             }
+        }
 
-            form.querySelectorAll('button[type="button"], .modal-close').forEach((button) => {
-                button.disabled = true;
-            });
-
-            requestAnimationFrame(() => {
-                setTimeout(() => form.submit(), 120);
-            });
+        form.querySelectorAll('button[type="button"], .modal-close').forEach((button) => {
+            button.disabled = true;
         });
-    });
+
+        requestAnimationFrame(() => {
+            setTimeout(() => HTMLFormElement.prototype.submit.call(form), 250);
+        });
+
+        return false;
+    };
 
     window.onclick = function(e) {
         if (e.target.classList.contains('modal')) e.target.classList.remove('open');
