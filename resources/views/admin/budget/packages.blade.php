@@ -474,6 +474,7 @@
                 return;
             }
 
+            event.preventDefault();
             form.dataset.submitting = 'true';
             form.classList.add('is-submitting');
 
@@ -503,6 +504,10 @@
 
             form.querySelectorAll('button[type="button"], .modal-close').forEach((button) => {
                 button.disabled = true;
+            });
+
+            requestAnimationFrame(() => {
+                setTimeout(() => form.submit(), 120);
             });
         });
     });
