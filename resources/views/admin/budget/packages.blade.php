@@ -159,6 +159,10 @@
                     <span class="btn-loading-label">Simpan</span>
                 </button>
             </div>
+            <div class="save-loading-hint" data-default-text="Menyimpan paket. Mohon tunggu...">
+                <i class="ri-loader-4-line"></i>
+                <span>Menyimpan paket. Mohon tunggu...</span>
+            </div>
         </form>
     </div>
 </div>
@@ -195,10 +199,14 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('editPackageModal')">Batal</button>
-                <button type="submit" class="btn btn-primary btn-loading-submit" data-loading-text="Menyimpan...">
+                <button type="submit" class="btn btn-primary btn-loading-submit" data-loading-text="Menyimpan..." data-final-loading-text="Memfinalkan...">
                     <span class="btn-loading-spinner" aria-hidden="true"></span>
                     <span class="btn-loading-label">Simpan</span>
                 </button>
+            </div>
+            <div class="save-loading-hint" data-default-text="Menyimpan perubahan paket. Mohon tunggu..." data-final-text="Memfinalkan paket dan memproses snapshot penerima. Mohon tunggu sampai selesai...">
+                <i class="ri-loader-4-line"></i>
+                <span>Menyimpan perubahan paket. Mohon tunggu...</span>
             </div>
         </form>
     </div>
@@ -406,6 +414,28 @@
         pointer-events: none;
         opacity: 0.55;
     }
+    .save-loading-hint {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px 16px;
+        color: #92400E;
+        background: #FFFBEB;
+        border-top: 1px solid #FDE68A;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.5;
+        border-bottom-left-radius: 16px;
+        border-bottom-right-radius: 16px;
+    }
+    .save-loading-hint i {
+        font-size: 16px;
+        animation: budgetSaveSpin 0.75s linear infinite;
+        flex-shrink: 0;
+    }
+    .js-budget-save-form.is-submitting .save-loading-hint {
+        display: flex;
+    }
 
     @media (max-width: 768px) {
         .page-header-row { flex-direction: column; align-items: flex-start; gap: 12px; }
@@ -448,13 +478,26 @@
             form.classList.add('is-submitting');
 
             const submitButton = form.querySelector('.btn-loading-submit');
+            const isFinalizing = form.querySelector('[name="status"]')?.value === 'finalized';
+            const loadingHint = form.querySelector('.save-loading-hint');
             if (submitButton) {
                 const label = submitButton.querySelector('.btn-loading-label');
                 submitButton.classList.add('is-loading');
                 submitButton.disabled = true;
 
                 if (label) {
-                    label.textContent = submitButton.dataset.loadingText || 'Menyimpan...';
+                    label.textContent = isFinalizing
+                        ? (submitButton.dataset.finalLoadingText || 'Memfinalkan...')
+                        : (submitButton.dataset.loadingText || 'Menyimpan...');
+                }
+            }
+
+            if (loadingHint) {
+                const hintText = loadingHint.querySelector('span');
+                if (hintText) {
+                    hintText.textContent = isFinalizing
+                        ? (loadingHint.dataset.finalText || loadingHint.dataset.defaultText || 'Memproses data. Mohon tunggu...')
+                        : (loadingHint.dataset.defaultText || 'Memproses data. Mohon tunggu...');
                 }
             }
 
