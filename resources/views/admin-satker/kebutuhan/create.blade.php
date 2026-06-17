@@ -27,6 +27,11 @@
         </ul>
     </div>
 @endif
+@if(session('error'))
+    <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger); padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 13px;">
+        <i class="ri-error-warning-fill"></i> {{ session('error') }}
+    </div>
+@endif
 
 <form method="POST" action="{{ route('admin-satker.kebutuhan.store') }}" id="kebutuhanForm">
     @csrf
