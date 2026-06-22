@@ -335,11 +335,10 @@
                                 </div>
 
                                 <div style="font-size:13px; color:var(--text-main); line-height:1.5;">
-                                    <span style="font-weight:600;">{{ $activity->causer->name ?? 'System' }}</span>
-                                    {{ $activity->description }}
-                                    @if($activity->subject_type)
-                                        <span
-                                            style="color:var(--brand); font-weight:500;">({{ class_basename($activity->subject_type) }})</span>
+                                    <span style="font-weight:600;">{{ $activity->user->name ?? 'Sistem' }}</span>
+                                    {{ $activity->action }}
+                                    @if($activity->details)
+                                        <span style="color:var(--text-muted);">- {{ $activity->details }}</span>
                                     @endif
                                 </div>
                                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
@@ -349,38 +348,8 @@
                             </div>
                         @endforeach
                     @else
-                        {{-- Mockup Data if no Spatie Activity --}}
-                        <div style="position:relative; margin-bottom:20px; padding-left:16px;">
-                            <div
-                                style="position:absolute; left:-22px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--brand); border:2px solid var(--bg-card); box-shadow:0 0 0 1px var(--border-color);">
-                            </div>
-                            <div style="font-size:13px; color:var(--text-main); line-height:1.5;">
-                                <span style="font-weight:600;">Superadmin</span> baru saja login ke dalam sistem.
-                            </div>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;"><i class="ri-time-line"></i>
-                                Baru saja</div>
-                        </div>
-                        <div style="position:relative; margin-bottom:20px; padding-left:16px;">
-                            <div
-                                style="position:absolute; left:-22px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--info); border:2px solid var(--bg-card); box-shadow:0 0 0 1px var(--border-color);">
-                            </div>
-                            <div style="font-size:13px; color:var(--text-main); line-height:1.5;">
-                                <span style="font-weight:600;">Bripda Rizky</span> berhasil mengimpor 150 data personil baru
-                                untuk Polres Bima.
-                            </div>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;"><i class="ri-time-line"></i> 2
-                                jam yang lalu</div>
-                        </div>
-                        <div style="position:relative; padding-left:16px;">
-                            <div
-                                style="position:absolute; left:-22px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--success); border:2px solid var(--bg-card); box-shadow:0 0 0 1px var(--border-color);">
-                            </div>
-                            <div style="font-size:13px; color:var(--text-main); line-height:1.5;">
-                                <span style="font-weight:600;">Kombes Pol Satria</span> membuat <strong>Paket Anggaran TA
-                                    2026</strong>.
-                            </div>
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;"><i class="ri-time-line"></i>
-                                Kemarin</div>
+                        <div style="padding:16px; text-align:center; color:var(--text-muted); font-size:13px;">
+                            Belum ada aktivitas yang tercatat.
                         </div>
                     @endif
                 </div>

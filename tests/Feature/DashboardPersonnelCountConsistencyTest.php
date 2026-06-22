@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
@@ -73,6 +74,37 @@ class DashboardPersonnelCountConsistencyTest extends TestCase
                 && $stats['total_pns'] === 1
                 && $stats['total_personnel'] === 4;
         });
+    }
+
+    public function test_dashboard_displays_real_audit_activity_without_mock_entries(): void
+    {
+        $polda = Satker::create([
+            'name' => 'Polda NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        $superadmin = User::factory()->create([
+            'name' => 'Admin Nyata',
+            'satker_id' => $polda->id,
+        ]);
+        $superadmin->assignRole('superadmin');
+
+        AuditLog::create([
+            'user_id' => $superadmin->id,
+            'action' => 'Memperbarui Data Uji',
+            'category' => 'Pengujian',
+            'status' => 'success',
+            'details' => 'Aktivitas ini berasal dari audit log.',
+        ]);
+
+        $response = $this->actingAs($superadmin)->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertSeeText('Admin Nyata');
+        $response->assertSeeText('Memperbarui Data Uji');
+        $response->assertDontSeeText('Kombes Pol Satria');
+        $response->assertDontSeeText('Bripda Rizky');
     }
 
     private function createPersonnel(Rank $rank, Satker $satker, string $nrp, string $personnelType): void

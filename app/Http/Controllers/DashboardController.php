@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\BagianOption;
 use App\Models\ItemReview;
 use App\Models\KaporItem;
@@ -114,15 +115,11 @@ class DashboardController extends Controller
             ->take(5)
             ->values();
 
-        // Activity Log (Spatie)
-        $activities = [];
-        $activityModel = '\\Spatie\\Activitylog\\Models\\Activity';
-        if (class_exists($activityModel)) {
-            $activities = $activityModel::with('causer')
-                ->latest()
-                ->limit(6)
-                ->get();
-        }
+        $activities = AuditLog::query()
+            ->with('user:id,name')
+            ->latest()
+            ->limit(6)
+            ->get();
 
         $testimonialInsights = $this->testimonialInsightService->getStatistics(['year' => $fiscalYear]);
 
