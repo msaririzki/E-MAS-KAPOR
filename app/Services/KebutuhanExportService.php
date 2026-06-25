@@ -72,7 +72,11 @@ class KebutuhanExportService
                         ];
                     })
                     ->filter(fn (array $item): bool => $item['satker_count'] > 0)
-                    ->sortByDesc('satker_count')
+                    ->sort(function (array $a, array $b): int {
+                        return $b['percentage'] <=> $a['percentage']
+                            ?: $b['satker_count'] <=> $a['satker_count']
+                            ?: strnatcasecmp($a['name'], $b['name']);
+                    })
                     ->values();
 
                 return [

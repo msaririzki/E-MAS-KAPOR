@@ -79,7 +79,6 @@ class IdentifikasiKebutuhanController extends Controller
                     ->whereIn('identifikasi_item_id', $categoryItemIds)
                     ->whereIn('kebutuhans.status', ['diajukan', 'disetujui'])
                     ->groupBy('identifikasi_item_id')
-                    ->orderByDesc('satker_count')
                     ->get()
                     ->map(function ($row) use ($totalKebutuhans) {
                         $item = IdentifikasiItem::find($row->identifikasi_item_id);
@@ -91,7 +90,13 @@ class IdentifikasiKebutuhanController extends Controller
                             'satker_count' => (int) $row->satker_count,
                             'percentage' => (int) round(($row->satker_count / max($eligible, 1)) * 100),
                         ];
-                    });
+                    })
+                    ->sort(function (array $a, array $b): int {
+                        return $b['percentage'] <=> $a['percentage']
+                            ?: $b['satker_count'] <=> $a['satker_count']
+                            ?: strnatcasecmp($a['item_name'], $b['item_name']);
+                    })
+                    ->values();
 
                 if ($topItems->isNotEmpty()) {
                     $itemStatsByCategory[$category] = $topItems;
