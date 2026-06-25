@@ -129,6 +129,8 @@
     <div class="meta">
         Total data testimoni: <strong>{{ number_format($totalReviews) }}</strong>
         &nbsp;|&nbsp;
+        Komentar per bintang: <strong>{{ number_format($commentsPerRating ?? 2) }}</strong>
+        &nbsp;|&nbsp;
         Dicetak: {{ $generatedAt->translatedFormat('d F Y H:i') }}
     </div>
 

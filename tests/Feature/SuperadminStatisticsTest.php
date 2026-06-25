@@ -329,6 +329,11 @@ class SuperadminStatisticsTest extends TestCase
         $this->assertSame(80.0, $item['satker_scores']['Biro SDM']);
         $this->assertSame(100.0, $item['satker_scores']['Dit Samapta']);
         $this->assertSame(2, $data['commentsByRating'][4]->count());
+
+        $customData = app(TestimonialExportService::class)->build(2026, 3);
+
+        $this->assertSame(3, $customData['commentsPerRating']);
+        $this->assertSame(3, $customData['commentsByRating'][4]->count());
     }
 
     private function createAllocation(User $user, Satker $satker, string $itemName, string $snapshotCategory = 'Tutup Kepala', string $dbCategory = 'Tutup_Kepala', int $fiscalYear = 2026): PersonnelItemAllocation

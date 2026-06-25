@@ -102,7 +102,8 @@ class TestimonialController extends Controller
     {
         $activeYear = (int) Setting::getValue('fiscal_year', date('Y'));
         $fiscalYear = (int) $request->query('year', $activeYear);
-        $data = $this->testimonialExportService->build($fiscalYear);
+        $commentsPerRating = min(max($request->integer('comments_per_rating', 2), 1), 50);
+        $data = $this->testimonialExportService->build($fiscalYear, $commentsPerRating);
 
         $pdf = \Mccarlosen\LaravelMpdf\Facades\LaravelMpdf::loadView('superadmin.testimonials.export-pdf', $data, [], [
             'format' => 'A4',

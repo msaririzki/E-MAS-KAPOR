@@ -13,8 +13,13 @@
             </div>
 
             <div class="page-header-actions" style="display: flex; align-items: center; gap: 12px;">
-                <a href="{{ route('superadmin.testimonials.export-pdf', request()->query()) }}"
-                    class="btn-export-pdf">
+                <label class="export-comment-control">
+                    <span>Komentar/bintang</span>
+                    <input type="number" id="testimonialCommentLimit" min="1" max="50"
+                        value="{{ request('comments_per_rating', 2) }}">
+                </label>
+                <a href="{{ route('superadmin.testimonials.export-pdf', request()->except('comments_per_rating')) }}"
+                    class="btn-export-pdf" onclick="exportReviewPdf(event, this, 'testimonialCommentLimit')">
                     <i class="ri-file-pdf-2-line"></i>
                     Export PDF
                 </a>
@@ -581,11 +586,48 @@
             background: #991B1B;
             color: #fff;
         }
+
+        .export-comment-control {
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 10px;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            background: #fff;
+            color: #4B5563;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .export-comment-control input {
+            width: 58px;
+            height: 28px;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 0 8px;
+            font-size: 13px;
+            font-weight: 800;
+            color: #111827;
+            outline: none;
+        }
     </style>
 @endsection
 
 @section('scripts')
 <script>
+        function exportReviewPdf(event, link, inputId) {
+            event.preventDefault();
+
+            const input = document.getElementById(inputId);
+            const limit = Math.min(Math.max(parseInt(input?.value || '2', 10) || 2, 1), 50);
+            const url = new URL(link.href, window.location.origin);
+            url.searchParams.set('comments_per_rating', limit);
+
+            window.open(url.toString(), '_blank');
+        }
+
         // Close on click outside
         window.onclick = function (event) {
             if (!event.target.closest('.custom-select')) {

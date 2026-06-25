@@ -7,8 +7,10 @@ use Illuminate\Support\Collection;
 
 class TestimonialExportService
 {
-    public function build(int $fiscalYear): array
+    public function build(int $fiscalYear, int $commentsPerRating = 2): array
     {
+        $commentsPerRating = max(1, min($commentsPerRating, 50));
+
         $reviews = ItemReview::query()
             ->with(['user.satker', 'kaporItem', 'allocation'])
             ->where('fiscal_year', $fiscalYear)
@@ -63,13 +65,13 @@ class TestimonialExportService
             ->values();
 
         $commentsByRating = collect(range(5, 1))
-            ->mapWithKeys(function (int $rating) use ($reviews): array {
+            ->mapWithKeys(function (int $rating) use ($reviews, $commentsPerRating): array {
                 $comments = $reviews
                     ->where('response_status', ItemReview::STATUS_REVIEWED)
                     ->where('rating', $rating)
                     ->filter(fn (ItemReview $review): bool => filled($review->comment))
                     ->sortByDesc(fn (ItemReview $review) => $review->submitted_at ?? $review->created_at)
-                    ->take(2)
+                    ->take($commentsPerRating)
                     ->map(fn (ItemReview $review): array => [
                         'comment' => $review->comment,
                         'personnel' => $review->user?->name ?? $review->allocation?->full_name_snapshot ?? 'Personil',
@@ -88,6 +90,7 @@ class TestimonialExportService
             'categoryGroups' => $categoryGroups,
             'categorySummaries' => $categoryGroups,
             'commentsByRating' => $commentsByRating,
+            'commentsPerRating' => $commentsPerRating,
             'totalReviews' => $reviews->count(),
         ];
     }

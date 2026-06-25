@@ -16,8 +16,13 @@
                 </div>
 
                 <div class="page-header-actions" style="display: flex; align-items: center; gap: 12px;">
-                    <a href="{{ route('superadmin.testimonials.export-pdf', request()->query()) }}"
-                        class="btn-export-pdf" style="height: 40px; padding: 0 16px; border-radius: 14px; font-family: 'Outfit', sans-serif; font-size: 14px;">
+                    <label class="export-comment-control">
+                        <span>Komentar/bintang</span>
+                        <input type="number" id="statisticsCommentLimit" min="1" max="50"
+                            value="{{ request('comments_per_rating', 2) }}">
+                    </label>
+                    <a href="{{ route('superadmin.testimonials.export-pdf', request()->except('comments_per_rating')) }}"
+                        class="btn-export-pdf" onclick="exportReviewPdf(event, this, 'statisticsCommentLimit')" style="height: 40px; padding: 0 16px; border-radius: 14px; font-family: 'Outfit', sans-serif; font-size: 14px;">
                         <i class="ri-file-pdf-2-line" style="font-size: 18px;"></i>
                         Export PDF
                     </a>
@@ -456,6 +461,34 @@
         .btn-export-pdf:hover {
             background: #991B1B;
             color: #fff;
+        }
+
+        .export-comment-control {
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px;
+            border: 1px solid #E2E8F0;
+            border-radius: 14px;
+            background: #fff;
+            color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 800;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        .export-comment-control input {
+            width: 58px;
+            height: 28px;
+            border: 1px solid #E2E8F0;
+            border-radius: 10px;
+            padding: 0 8px;
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-main);
+            outline: none;
         }
 
         .admin-stats-wrapper {
@@ -1147,6 +1180,17 @@
 
 @section('scripts')
 <script>
+        function exportReviewPdf(event, link, inputId) {
+            event.preventDefault();
+
+            const input = document.getElementById(inputId);
+            const limit = Math.min(Math.max(parseInt(input?.value || '2', 10) || 2, 1), 50);
+            const url = new URL(link.href, window.location.origin);
+            url.searchParams.set('comments_per_rating', limit);
+
+            window.open(url.toString(), '_blank');
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const comparisonForm = document.getElementById('comparisonFilterForm');
             if (!comparisonForm) {
