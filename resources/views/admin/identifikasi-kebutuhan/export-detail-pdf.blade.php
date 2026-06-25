@@ -12,15 +12,16 @@
             margin: 0;
         }
         .kop {
-            width: 310px;
+            width: 360px;
             text-align: center;
             font-weight: bold;
             line-height: 1.35;
             font-size: 10pt;
             margin: 0 0 4px 0;
+            white-space: nowrap;
         }
         .kop-line {
-            width: 310px;
+            width: 360px;
             border-top: 2px solid #000;
             border-bottom: 1px solid #000;
             height: 2px;
