@@ -143,8 +143,8 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
             ['TEMPLATE UPDATE JABATAN, BAG/FUNGSI, DAN KETERANGAN TA. '.$fiscalYear],
             [''],
             ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP/NIP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'AGAMA', 'KETERANGAN'],
-            ['', '', '', '', '', '', '', '', '', ''],
-            ['', '', '', '', '', '', '', '', '', ''],
+            array_fill(0, 10, ' '),
+            array_fill(0, 10, ' '),
         ];
     }
 

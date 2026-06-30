@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Exports\PersonnelExport;
 use App\Exports\PersonnelSheetExport;
 use App\Imports\PersonnelUpdateImport;
 use App\Models\Personnel;
@@ -11,6 +12,9 @@ use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Maatwebsite\Excel\Excel as ExcelFormat;
+use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -71,6 +75,65 @@ class PersonnelSatkerTemplatePolicyTest extends TestCase
         $this->assertSame('AGAMA', $headers[7][8]);
         $this->assertSame('KETERANGAN', $headers[7][9]);
         $this->assertStringContainsString('TEMPLATE UPDATE JABATAN, BAG/FUNGSI, DAN KETERANGAN', $headers[5][0]);
+    }
+
+    public function test_satker_export_template_keeps_first_two_personnel_rows_visible(): void
+    {
+        $satker = Satker::create([
+            'name' => 'Bid Kum',
+            'code' => 'KUM',
+            'sort_order' => 1,
+        ]);
+
+        $kombes = Rank::create([
+            'name' => 'KOMBES POL',
+            'category' => 'PAMEN',
+            'sort_order' => 1,
+        ]);
+        $akbp = Rank::create([
+            'name' => 'AKBP',
+            'category' => 'PAMEN',
+            'sort_order' => 2,
+        ]);
+        $kompol = Rank::create([
+            'name' => 'KOMPOL',
+            'category' => 'PAMEN',
+            'sort_order' => 3,
+        ]);
+
+        $this->createTemplatePersonnel($satker, $kombes, '70121132', 'ABDUL AZAS SIAGIAN, SH.,M.H.');
+        $this->createTemplatePersonnel($satker, $akbp, '69050177', 'ISMUDIANTO, S.H., M.H.');
+        $this->createTemplatePersonnel($satker, $kompol, '68070341', 'JASA YULIANTO');
+
+        $binary = Excel::raw(new PersonnelExport([$satker->id], $satker->name), ExcelFormat::XLSX);
+        $path = storage_path('framework/testing/personnel-export-visible-rows.xlsx');
+
+        if (! is_dir(dirname($path))) {
+            mkdir(dirname($path), 0777, true);
+        }
+
+        file_put_contents($path, $binary);
+
+        try {
+            $sheet = IOFactory::load($path)->getSheetByName('Data Polri');
+            $names = [];
+
+            for ($row = 11; $row <= $sheet->getHighestDataRow(); $row++) {
+                $name = trim((string) $sheet->getCell('B'.$row)->getValue());
+
+                if ($name !== '') {
+                    $names[] = $name;
+                }
+            }
+        } finally {
+            @unlink($path);
+        }
+
+        $this->assertSame([
+            'ABDUL AZAS SIAGIAN, SH.,M.H.',
+            'ISMUDIANTO, S.H., M.H.',
+            'JASA YULIANTO',
+        ], $names);
     }
 
     public function test_satker_import_only_updates_jabatan_bagian_dan_keterangan(): void
@@ -255,5 +318,24 @@ class PersonnelSatkerTemplatePolicyTest extends TestCase
         $this->assertSame($satker->id, $personnel->satker_id);
         $this->assertSame('08123456789', $personnel->fresh()->phone);
         $this->assertSame('08123456789', $user->fresh()->phone);
+    }
+
+    private function createTemplatePersonnel(Satker $satker, Rank $rank, string $nrp, string $name): Personnel
+    {
+        return Personnel::create([
+            'satker_id' => $satker->id,
+            'rank_id' => $rank->id,
+            'full_name' => $name,
+            'nrp' => $nrp,
+            'golongan' => $rank->category,
+            'jabatan' => 'JABATAN',
+            'bagian' => 'BAGIAN',
+            'gender' => 'L',
+            'religion' => 'Islam',
+            'keterangan' => 'STAF',
+            'kapor_sizes' => [],
+            'personnel_type' => 'Polri',
+            'is_active' => true,
+        ]);
     }
 }
