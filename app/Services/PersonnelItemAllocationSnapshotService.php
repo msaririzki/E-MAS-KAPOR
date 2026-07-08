@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\BudgetPackage;
 use App\Models\Personnel;
 use App\Models\PersonnelItemAllocation;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class PersonnelItemAllocationSnapshotService
@@ -61,7 +62,7 @@ class PersonnelItemAllocationSnapshotService
                             'fiscal_year' => (int) ($budgetPackage->budgetYear->year ?? date('Y')),
                             'allocation_status' => 'eligible',
                             'allocated_at' => now(),
-                            'nrp_snapshot' => $personnel->user->nrp_nip ?? $personnel->nrp,
+                            'nrp_snapshot' => User::normalizeLoginIdentifier($personnel->user->nrp_nip ?? $personnel->nrp),
                             'full_name_snapshot' => $personnel->full_name,
                             'satker_name_snapshot' => $personnel->satker?->name,
                             'kapor_item_name_snapshot' => $kaporItem->item_name,
