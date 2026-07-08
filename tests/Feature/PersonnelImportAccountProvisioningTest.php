@@ -60,6 +60,43 @@ class PersonnelImportAccountProvisioningTest extends TestCase
         $this->assertSame(User::IMPORT_PASSWORD_ROUNDS, password_get_info($user->password)['options']['cost'] ?? null);
     }
 
+    public function test_import_normalizes_excel_text_prefix_on_nrp(): void
+    {
+        $satker = $this->createSatker();
+        $rank = $this->createRank();
+
+        $import = new PersonnelImport($satker->id);
+        $result = $import->saveFromPreviewData([
+            [
+                'nrp' => "'04010649",
+                'full_name' => 'Restu Perwira Aji',
+                'rank_id' => $rank->id,
+                'gender' => 'L',
+                'jabatan' => 'Ba Sium',
+                'bagian' => 'Logistik',
+                'golongan' => '',
+                'keterangan' => '',
+                'keterangan_2' => '',
+                'keterangan_3' => '',
+                'keterangan_4' => '',
+                'sizes' => [],
+                'duplicate_nrp' => false,
+                'db_duplicate' => null,
+            ],
+        ], $satker->id);
+
+        $this->assertSame(1, $result['success_count']);
+        $this->assertSame(0, $result['error_count']);
+
+        $user = User::where('nrp_nip', '04010649')->firstOrFail();
+        $personnel = Personnel::where('nrp', '04010649')->firstOrFail();
+
+        $this->assertSame($user->id, $personnel->user_id);
+        $this->assertTrue(Hash::check('04010649', $user->password));
+        $this->assertDatabaseMissing('users', ['nrp_nip' => "'04010649"]);
+        $this->assertDatabaseMissing('personnels', ['nrp' => "'04010649"]);
+    }
+
     public function test_import_skips_login_account_creation_when_nrp_is_missing(): void
     {
         $satker = $this->createSatker();

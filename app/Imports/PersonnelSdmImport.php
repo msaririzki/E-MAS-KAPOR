@@ -393,27 +393,10 @@ class PersonnelSdmImport extends PersonnelImport
 
     private function normalizeNrp(mixed $nrpRaw): string
     {
-        if ((is_int($nrpRaw) || is_float($nrpRaw)) && $nrpRaw >= 1000000000000000) {
-            $strNrp = sprintf('%.15g', (float) $nrpRaw);
-            if (stripos($strNrp, 'e') !== false) {
-                $parts = explode('e', strtolower($strNrp));
-                $base = str_replace('.', '', $parts[0]);
-                $exp = (int) $parts[1];
+        $nrp = User::normalizeLoginIdentifier($nrpRaw);
 
-                return str_pad($base, $exp + 1, '0', STR_PAD_RIGHT);
-            }
-
-            return str_replace('.', '', $strNrp);
-        }
-
-        $nrp = trim((string) $nrpRaw);
-        $nrp = ltrim($nrp, "'");
         if ($nrp === '' || preg_match('/^[\-\.]+$/', $nrp) === 1) {
             return '';
-        }
-
-        if (is_numeric($nrp) && stripos($nrp, 'E') !== false) {
-            $nrp = number_format((float) $nrp, 0, '', '');
         }
 
         if (str_starts_with($nrp, '=') || in_array(strtolower($nrp), ['jumlah', 'total'], true)) {

@@ -391,7 +391,8 @@ class PersonnelController extends Controller
 
         $validated['phone'] = User::normalizePhone($validated['phone'] ?? null);
 
-        $nrp = trim((string) $validated['nrp']);
+        $nrp = User::normalizeLoginIdentifier($validated['nrp']);
+        $validated['nrp'] = $nrp;
         $duplicateIdentity = $this->findDuplicatePersonnelIdentity($nrp);
 
         if ($duplicateIdentity !== null) {
@@ -553,6 +554,7 @@ class PersonnelController extends Controller
 
         $oldSatkerId = $personnel->satker_id;
         $validated['phone'] = User::normalizePhone($validated['phone'] ?? null);
+        $validated['nrp'] = User::normalizeLoginIdentifier($validated['nrp']);
         $duplicateIdentity = $this->findDuplicatePersonnelIdentity($validated['nrp'], $personnel, $personnel->user);
 
         if ($duplicateIdentity !== null) {
@@ -659,6 +661,7 @@ class PersonnelController extends Controller
 
         $validated['satker_id'] = (int) $request->user()->satker_id;
         $validated['phone'] = User::normalizePhone($validated['phone'] ?? null);
+        $validated['nrp'] = User::normalizeLoginIdentifier($validated['nrp']);
         $duplicateIdentity = $this->findDuplicatePersonnelIdentity($validated['nrp'], $personnel, $personnel->user);
 
         if ($duplicateIdentity !== null) {
@@ -1933,6 +1936,8 @@ class PersonnelController extends Controller
 
     private function findDuplicatePersonnelIdentity(string $nrpNip, ?Personnel $ignorePersonnel = null, ?User $ignoreUser = null): ?array
     {
+        $nrpNip = User::normalizeLoginIdentifier($nrpNip);
+
         $personnel = Personnel::query()
             ->with(['satker', 'user'])
             ->where('nrp', $nrpNip)

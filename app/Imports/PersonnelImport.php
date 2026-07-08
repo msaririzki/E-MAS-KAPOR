@@ -884,26 +884,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             // karena limit presisi IEEE 754 (contoh: 197303052008101000 murni dibaca PHP sbg int 197303052008100992).
             // Namun Excel UI menampilkan 15 significant digits (trailing zero).
             // Logic ini secara matematis mengembalikan angka termutasi tsb kembali ke versi 15-sig display di Excel.
-            if ((is_int($nrpRaw) || is_float($nrpRaw)) && $nrpRaw >= 1000000000000000) {
-                $strNrp = sprintf('%.15g', (float) $nrpRaw);
-                // Menjadi '1.97303052008101e+17' (membuang sisa digit termutasi di ujung)
-                if (stripos($strNrp, 'e') !== false) {
-                    $parts = explode('e', strtolower($strNrp));
-                    $base = str_replace('.', '', $parts[0]);
-                    $exp = (int) $parts[1];
-                    $nrp = str_pad($base, $exp + 1, '0', STR_PAD_RIGHT);
-                } else {
-                    $nrp = str_replace('.', '', $strNrp);
-                }
-            } else {
-                // Untuk teks literal asli (format cell Text) atau angka normal < 15 digit
-                $trimNrp = trim((string) $nrpRaw);
-                if (is_numeric($trimNrp) && stripos($trimNrp, 'E') !== false) {
-                    $nrp = number_format((float) $trimNrp, 0, '', '');
-                } else {
-                    $nrp = $trimNrp;
-                }
-            }
+            $nrp = User::normalizeLoginIdentifier($nrpRaw);
             $jabatan = trim($row[$colJabatan] ?? '');
             $bagian = trim($row[$colBagian] ?? '');
             $genderRaw = strtoupper(trim($row[$colGender] ?? ''));
@@ -1172,7 +1153,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
 
         // ── Pre-load sekali agar tidak ada N+1 query ─────────────────────────
         $ranksById = Rank::all()->keyBy('id');
-        $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => trim($v))->filter()->unique()->values()->all();
+        $allNrp = collect($rows)->pluck('nrp')->map(fn ($v) => User::normalizeLoginIdentifier($v))->filter()->unique()->values()->all();
         $existingPersonnel = Personnel::where('satker_id', $satkerId)
             ->whereIn('nrp', $allNrp)
             ->get()
@@ -1187,7 +1168,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $processedBatchNrps = [];
 
             foreach ($rows as $idx => $data) {
-                $nrp = trim($data['nrp'] ?? '');
+                $nrp = User::normalizeLoginIdentifier($data['nrp'] ?? '');
                 $fullName = trim($data['full_name'] ?? '');
                 $rankId = (int) ($data['rank_id'] ?? 0);
                 $gender = $data['gender'] ?? 'L';
@@ -1439,7 +1420,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         $seenNrps = [];
 
         foreach ($preview as $index => $row) {
-            $nrp = trim((string) ($row['nrp'] ?? ''));
+            $nrp = User::normalizeLoginIdentifier($row['nrp'] ?? '');
 
             if ($nrp === '') {
                 continue;
@@ -1498,7 +1479,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
             $fullName = trim($row[1] ?? '');
             $rankInput = trim($row[2] ?? '');
             $golongan = trim($row[3] ?? '');
-            $nrp = trim($row[4] ?? '');
+            $nrp = User::normalizeLoginIdentifier($row[4] ?? '');
             $jabatan = trim($row[5] ?? '');
             $bagian = trim($row[6] ?? '');
             $genderRaw = strtoupper(trim($row[7] ?? ''));

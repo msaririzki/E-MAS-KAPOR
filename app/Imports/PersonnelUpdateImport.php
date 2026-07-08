@@ -127,12 +127,7 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
             $rankInput = trim(preg_replace('/\s+/', ' ', $rankInputRaw));
             $golongan = trim($row[3] ?? '');
 
-            $nrpRaw = $row[4] ?? '';
-            if (is_numeric($nrpRaw) && (is_float($nrpRaw) || stripos((string) $nrpRaw, 'E') !== false)) {
-                $nrp = number_format((float) $nrpRaw, 0, '', '');
-            } else {
-                $nrp = trim((string) $nrpRaw);
-            }
+            $nrp = User::normalizeLoginIdentifier($row[4] ?? '');
 
             $usesMonitoringLayout = $this->usesMonitoringLayout($row);
             $jabatan = trim($row[5] ?? '');

@@ -102,6 +102,8 @@ class AuthController extends Controller
 
     private function authenticateByNrpNip(Request $request, string $nrpNip, string $password, bool $remember): ?RedirectResponse
     {
+        $nrpNip = User::normalizeLoginIdentifier($nrpNip);
+
         $user = User::with('roles')
             ->where('nrp_nip', $nrpNip)
             ->first();

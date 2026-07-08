@@ -83,6 +83,26 @@ class AuthLoginIdentifierTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_personil_login_normalizes_excel_text_prefix(): void
+    {
+        $satker = $this->createSatker();
+        $user = User::factory()->create([
+            'email' => null,
+            'nrp_nip' => '04010649',
+            'password' => Hash::make('04010649'),
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+
+        $response = $this->post(route('login'), [
+            'login' => "'04010649",
+            'password' => '04010649',
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($user);
+    }
+
     public function test_personil_login_does_not_rehash_existing_import_password(): void
     {
         config(['hashing.bcrypt.rounds' => 12]);

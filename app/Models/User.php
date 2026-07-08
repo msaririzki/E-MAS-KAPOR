@@ -129,6 +129,22 @@ class User extends Authenticatable
         return $normalized;
     }
 
+    public static function normalizeLoginIdentifier(mixed $identifier): string
+    {
+        if ((is_int($identifier) || is_float($identifier)) && $identifier >= 1000000000000000) {
+            $identifier = sprintf('%.15g', (float) $identifier);
+        }
+
+        $normalized = trim((string) $identifier);
+        $normalized = ltrim($normalized, "'");
+
+        if (is_numeric($normalized) && stripos($normalized, 'E') !== false) {
+            $normalized = number_format((float) $normalized, 0, '', '');
+        }
+
+        return trim($normalized);
+    }
+
     public static function normalizeWhatsappPhone(?string $phone): ?string
     {
         $normalized = static::normalizePhone($phone);
@@ -204,6 +220,8 @@ class User extends Authenticatable
         ?string $phone = null,
         bool $syncPhone = false,
     ): self {
+        $identifier = static::normalizeLoginIdentifier($identifier);
+
         $conflictingUser = static::query()
             ->where('nrp_nip', $identifier)
             ->when($user?->exists, fn ($query) => $query->whereKeyNot($user->id))
