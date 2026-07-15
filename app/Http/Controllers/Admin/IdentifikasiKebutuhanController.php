@@ -8,6 +8,7 @@ use App\Models\Kebutuhan;
 use App\Models\KebutuhanItem;
 use App\Models\Satker;
 use App\Services\ExportSignatorySettingService;
+use App\Services\IdentifikasiKebutuhanWordExportService;
 use App\Services\KebutuhanExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -165,6 +166,44 @@ class IdentifikasiKebutuhanController extends Controller
         ]);
 
         return $pdf->download('Detail_Identifikasi_Kebutuhan_Kapor_TA_'.$data['fiscalYear'].'.pdf');
+    }
+
+    public function exportWord(
+        Request $request,
+        KebutuhanExportService $exportService,
+        ExportSignatorySettingService $signatoryService,
+        IdentifikasiKebutuhanWordExportService $wordExportService
+    ) {
+        $data = $exportService->build($request->integer('year') ?: null);
+        $data['signatorySettings'] = $signatoryService->resolveForCurrentUser();
+
+        $tempFile = $wordExportService->generate($data, false);
+        $fileName = 'Identifikasi_Kebutuhan_Kapor_TA_'.$data['fiscalYear'].'.docx';
+
+        return response()
+            ->download($tempFile, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ])
+            ->deleteFileAfterSend(true);
+    }
+
+    public function exportDetailWord(
+        Request $request,
+        KebutuhanExportService $exportService,
+        ExportSignatorySettingService $signatoryService,
+        IdentifikasiKebutuhanWordExportService $wordExportService
+    ) {
+        $data = $exportService->build($request->integer('year') ?: null, true);
+        $data['signatorySettings'] = $signatoryService->resolveForCurrentUser();
+
+        $tempFile = $wordExportService->generate($data, true);
+        $fileName = 'Detail_Identifikasi_Kebutuhan_Kapor_TA_'.$data['fiscalYear'].'.docx';
+
+        return response()
+            ->download($tempFile, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ])
+            ->deleteFileAfterSend(true);
     }
 
     /**

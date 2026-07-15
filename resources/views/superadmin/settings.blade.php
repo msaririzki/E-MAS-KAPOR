@@ -14,6 +14,12 @@
     $systemStatusClass = $settings['is_system_locked']
         ? 'danger'
         : ($isWithinInputPeriod ? 'success' : 'warning');
+    $satkerLockLabel = $settings['is_satker_locked']
+        ? 'Data satker terkunci'
+        : 'Data satker terbuka';
+    $satkerLockClass = $settings['is_satker_locked']
+        ? 'danger'
+        : 'success';
     $reviewStatusLabel = $settings['is_review_locked']
         ? 'Review ditutup paksa'
         : ($isWithinReviewPeriod ? 'Periode review aktif' : 'Di luar periode review');
@@ -85,6 +91,14 @@
                 <div class="ssb-content">
                     <span class="ssb-label">Review Item</span>
                     <span class="ssb-status {{ $reviewStatusClass }}">{{ $reviewStatusLabel }}</span>
+                </div>
+            </div>
+            <div class="ssb-divider"></div>
+            <div class="ssb-item">
+                <div class="ssb-icon"><i class="{{ $settings['is_satker_locked'] ? 'ri-lock-line text-danger' : 'ri-shield-user-line' }}"></i></div>
+                <div class="ssb-content">
+                    <span class="ssb-label">Data Satker</span>
+                    <span class="ssb-status {{ $satkerLockClass }}">{{ $satkerLockLabel }}</span>
                 </div>
             </div>
             <div class="ssb-divider"></div>
@@ -166,6 +180,17 @@
                             <div class="toggle-slider"></div>
                         </label>
                     </div>
+                </div>
+
+                <div class="modern-toggle-group" style="border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px;">
+                    <div class="toggle-info">
+                        <strong style="font-size:13px; color:#1e293b;">Kunci Data Satker</strong>
+                        <span style="font-size:11px;">Cegah perubahan data personel dan data satker</span>
+                    </div>
+                    <label class="modern-toggle">
+                        <input type="checkbox" name="is_satker_locked" value="1" {{ $settings['is_satker_locked'] ? 'checked' : '' }}>
+                        <div class="toggle-slider"></div>
+                    </label>
                 </div>
 
                 <div class="period-card" style="margin-bottom: 16px;">

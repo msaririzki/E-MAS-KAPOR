@@ -11,14 +11,22 @@
             <h1>Identifikasi Kebutuhan</h1>
             <p>Data pengajuan kebutuhan kapor dari seluruh satker.</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
             <a href="{{ route('admin.identifikasi-kebutuhan.export-pdf') }}" class="btn-export-pdf" title="Ekspor Rekapitulasi">
                 <i class="ri-file-chart-line"></i>
                 Rekap PDF
             </a>
+            <a href="{{ route('admin.identifikasi-kebutuhan.export-word') }}" class="btn-export-word" title="Ekspor Rekapitulasi Word">
+                <i class="ri-file-word-line"></i>
+                Rekap Word
+            </a>
             <a href="{{ route('admin.identifikasi-kebutuhan.export-detail-pdf') }}" class="btn-export-pdf btn-export-detail" title="Ekspor Detail Satker">
                 <i class="ri-file-list-3-line"></i>
                 Detail PDF
+            </a>
+            <a href="{{ route('admin.identifikasi-kebutuhan.export-detail-word') }}" class="btn-export-word btn-export-detail-word" title="Ekspor Detail Satker Word">
+                <i class="ri-file-word-line"></i>
+                Detail Word
             </a>
         </div>
     </div>
@@ -511,6 +519,23 @@
     .btn-export-pdf:hover { background: #991B1B; color: #fff; }
     .btn-export-detail { background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; box-shadow: none; }
     .btn-export-detail:hover { background: #e5e7eb; color: #111827; }
+    .btn-export-word {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 14px;
+        border-radius: 10px;
+        background: #0f766e;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+    .btn-export-word:hover { background: #115e59; color: #fff; }
+    .btn-export-detail-word { background: #ecfeff; color: #155e75; border: 1px solid #a5f3fc; box-shadow: none; }
+    .btn-export-detail-word:hover { background: #cffafe; color: #0f766e; }
 
     @media (max-width: 768px) {
         .stats-row { grid-template-columns: 1fr !important; }

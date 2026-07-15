@@ -35,7 +35,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 // ── Authenticated Routes (Semua Role) ──────────────────────────
 
-Route::middleware(['auth', 'read.only', 'satker.scope'])->group(function () {
+Route::middleware(['auth', 'satker.write.lock', 'read.only', 'satker.scope'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', function () {
@@ -47,7 +47,7 @@ Route::middleware(['auth', 'read.only', 'satker.scope'])->group(function () {
 
 // ── Personil Routes ──────────────────────────────────────────────────
 
-Route::middleware(['auth', 'role:personil'])->prefix('personil')->name('personil.')->group(function () {
+Route::middleware(['auth', 'satker.write.lock', 'role:personil'])->prefix('personil')->name('personil.')->group(function () {
     Route::get('/kapor', fn () => redirect()->route('dashboard'))->name('kapor.index');
     Route::post('/kapor', [PersonilPortalController::class, 'storeKapor'])->middleware('system.lock')->name('kapor.store');
     Route::get('/testimoni', [PersonilPortalController::class, 'showTestimoni'])->name('testimoni.index');
@@ -57,7 +57,7 @@ Route::middleware(['auth', 'role:personil'])->prefix('personil')->name('personil
 
 // ── Admin Satker Routes ──────────────────────────────────────────────
 
-Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope::class, 'system.lock'])->prefix('admin-satker')->name('admin-satker.')->group(function () {
+Route::middleware(['auth', 'satker.write.lock', 'role:admin_satker', \App\Http\Middleware\SatkerScope::class, 'system.lock'])->prefix('admin-satker')->name('admin-satker.')->group(function () {
     Route::get('/monitor', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'monitor'])->name('monitor');
     Route::get('/reports', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'reports'])->name('reports');
     Route::get('/allocations', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'allocations'])->name('allocations');
@@ -81,7 +81,7 @@ Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope
 
 // ── Admin Central Routes ──────────────────────────────────────────────
 
-Route::middleware(['auth', 'read.only', 'role:admin|superadmin|kabak_bekum|admin_gudang|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superadmin|kabak_bekum|admin_gudang|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
 
     // User Management
     Route::get('/users/template', [\App\Http\Controllers\UserController::class, 'downloadTemplate'])->name('users.template');
@@ -147,6 +147,8 @@ Route::middleware(['auth', 'read.only', 'role:admin|superadmin|kabak_bekum|admin
     Route::get('/identifikasi-kebutuhan', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'index'])->name('identifikasi-kebutuhan.index');
     Route::get('/identifikasi-kebutuhan/export-pdf', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'exportPdf'])->name('identifikasi-kebutuhan.export-pdf');
     Route::get('/identifikasi-kebutuhan/export-detail-pdf', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'exportDetailPdf'])->name('identifikasi-kebutuhan.export-detail-pdf');
+    Route::get('/identifikasi-kebutuhan/export-word', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'exportWord'])->name('identifikasi-kebutuhan.export-word');
+    Route::get('/identifikasi-kebutuhan/export-detail-word', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'exportDetailWord'])->name('identifikasi-kebutuhan.export-detail-word');
     Route::get('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'show'])->name('identifikasi-kebutuhan.show');
     Route::post('/identifikasi-kebutuhan/{kebutuhan}/reject', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'reject'])->name('identifikasi-kebutuhan.reject');
     Route::delete('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'destroy'])->name('identifikasi-kebutuhan.destroy');

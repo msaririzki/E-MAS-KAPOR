@@ -98,7 +98,7 @@ class ExportSignatorySettingsTest extends TestCase
         $this->assertSame('AKBP SATKER A', $resolvedA['signatory_name']);
         $this->assertSame('KABAG LOG POLRES A', $resolvedA['signatory_title']);
         $this->assertSame('GLOBAL NAME', $resolvedB['signatory_name']);
-        $this->assertSame('KASUBBAG RENMIN', $resolvedB['signatory_title']);
+        $this->assertSame('.............................', $resolvedB['signatory_title']);
     }
 
     public function test_admin_satker_settings_page_displays_signatory_form(): void
@@ -111,6 +111,7 @@ class ExportSignatorySettingsTest extends TestCase
 
         $response->assertOk();
         $response->assertSeeText('Penanda Tangan Export');
+        $response->assertSee('value="............................."', false);
     }
 
     private function createSatker(string $code, string $name, int $sortOrder): Satker

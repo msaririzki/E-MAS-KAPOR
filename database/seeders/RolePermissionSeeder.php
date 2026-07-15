@@ -53,6 +53,14 @@ class RolePermissionSeeder extends Seeder
         $superadmin = Role::findOrCreate('superadmin', 'web');
         $superadmin->syncPermissions(Permission::all());
 
+        // Kabak Bekum: akses baca setara superadmin, mutasi diblokir middleware read-only
+        $kabakBekum = Role::findOrCreate('kabak_bekum', 'web');
+        $kabakBekum->syncPermissions([
+            'view-global-reports',
+            'view-satker-data',
+            'view-own-profile',
+        ]);
+
         // Admin Gudang: fokus pada pengelolaan gudang
         $adminGudang = Role::findOrCreate('admin_gudang', 'web');
         $adminGudang->syncPermissions([

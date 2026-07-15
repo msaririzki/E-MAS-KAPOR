@@ -33,6 +33,7 @@ class SettingsController extends Controller
         $settings = [
             'fiscal_year' => Setting::getValue('fiscal_year', date('Y')),
             'is_system_locked' => Setting::getValue('is_system_locked', 'false') === 'true',
+            'is_satker_locked' => Setting::getValue('is_satker_locked', 'false') === 'true',
             'is_review_locked' => Setting::getValue('is_review_locked', 'false') === 'true',
             'app_name' => Setting::getValue('app_name', 'SI-KAPOR Polda NTB'),
             'input_start_date' => Setting::getValue('input_start_date', date('Y-02-01')),
@@ -135,6 +136,7 @@ class SettingsController extends Controller
             'app_name' => 'required|string|max:255',
             'fiscal_year' => 'required|integer|min:2020|max:2099',
             'is_system_locked' => 'nullable|boolean',
+            'is_satker_locked' => 'nullable|boolean',
             'is_review_locked' => 'nullable|boolean',
             'input_start_date' => 'nullable|date',
             'input_end_date' => 'nullable|date|after_or_equal:input_start_date',
@@ -146,6 +148,7 @@ class SettingsController extends Controller
         Setting::setValue('app_name', $validated['app_name']);
         Setting::setValue('fiscal_year', $validated['fiscal_year']);
         Setting::setValue('is_system_locked', $request->has('is_system_locked') ? 'true' : 'false');
+        Setting::setValue('is_satker_locked', $request->has('is_satker_locked') ? 'true' : 'false');
         Setting::setValue('is_review_locked', $request->has('is_review_locked') ? 'true' : 'false');
 
         if (isset($validated['input_start_date'])) {
@@ -178,6 +181,7 @@ class SettingsController extends Controller
 
         DB::transaction(function () use ($currentYear, $nextYear) {
             Setting::setValue('is_system_locked', 'true');
+            Setting::setValue('is_satker_locked', 'false');
             Setting::setValue('is_review_locked', 'false');
             Setting::setValue('fiscal_year', $nextYear);
             Setting::setValue('input_start_date', $nextYear.'-02-01');

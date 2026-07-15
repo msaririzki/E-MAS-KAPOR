@@ -19,7 +19,9 @@ class SatkerController extends Controller
      */
     public function index()
     {
-        $this->satkerPersonnelCountService->syncStoredCounts();
+        if (! auth()->user()?->isReadOnlyAdmin()) {
+            $this->satkerPersonnelCountService->syncStoredCounts();
+        }
 
         $countsBySatker = $this->satkerPersonnelCountService->getCountsBySatker();
         $satkers = Satker::with('parent')
