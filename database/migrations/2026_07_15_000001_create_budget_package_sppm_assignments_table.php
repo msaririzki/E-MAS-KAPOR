@@ -19,8 +19,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['budget_package_id', 'personnel_id'], 'pkg_sppm_assignment_personnel_unique');
-            $table->index(['budget_package_id', 'original_satker_id']);
-            $table->index(['budget_package_id', 'sppm_satker_id']);
+            $table->index(['budget_package_id', 'original_satker_id'], 'bp_sppm_orig_idx');
+            $table->index(['budget_package_id', 'sppm_satker_id'], 'bp_sppm_tgt_idx');
         });
     }
 
