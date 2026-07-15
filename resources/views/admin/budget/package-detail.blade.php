@@ -322,6 +322,15 @@
                 <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
             </button>
 
+            <a href="{{ route('admin.budget.sppm-assignments.index', $budgetPackage) }}" class="export-btn export-blue">
+                <div class="export-icon"><i class="ri-route-line"></i></div>
+                <div class="export-info">
+                    <h4>Titipan SPPM</h4>
+                    <p>{{ number_format($budgetPackage->sppm_assignments_count ?? 0, 0, ',', '.') }} personel diatur.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
+            </a>
+
             <a href="{{ route('admin.budget.invoice', $budgetPackage) }}" class="export-btn export-orange">
                 <div class="export-icon"><i class="ri-file-text-line"></i></div>
                 <div class="export-info">

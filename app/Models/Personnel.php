@@ -86,6 +86,11 @@ class Personnel extends Model
         return $this->hasMany(ItemReview::class);
     }
 
+    public function sppmAssignments(): HasMany
+    {
+        return $this->hasMany(BudgetPackageSppmAssignment::class);
+    }
+
     public function getWhatsappLinkAttribute(): ?string
     {
         return User::buildWhatsappLink($this->phone ?: $this->user?->phone);

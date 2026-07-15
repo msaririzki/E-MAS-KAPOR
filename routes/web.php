@@ -35,7 +35,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 // ── Authenticated Routes (Semua Role) ──────────────────────────
 
-Route::middleware(['auth', 'satker.scope'])->group(function () {
+Route::middleware(['auth', 'read.only', 'satker.scope'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', function () {
@@ -81,7 +81,7 @@ Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope
 
 // ── Admin Central Routes ──────────────────────────────────────────────
 
-Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'read.only', 'role:admin|superadmin|kabak_bekum|admin_gudang|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
 
     // User Management
     Route::get('/users/template', [\App\Http\Controllers\UserController::class, 'downloadTemplate'])->name('users.template');
@@ -151,7 +151,7 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     Route::post('/identifikasi-kebutuhan/{kebutuhan}/reject', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'reject'])->name('identifikasi-kebutuhan.reject');
     Route::delete('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'destroy'])->name('identifikasi-kebutuhan.destroy');
 
-    Route::middleware('role:superadmin|admin_gudang')->group(function () {
+    Route::middleware('role:superadmin|kabak_bekum|admin_gudang')->group(function () {
         // Warehouse Data Gudang (Unified)
         Route::post('/warehouse-items/import', [WarehouseController::class, 'import'])->name('warehouse-items.import');
         Route::get('/warehouse-items/template', [WarehouseController::class, 'downloadTemplate'])->name('warehouse-items.download-template');
@@ -209,6 +209,10 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
         Route::post('/years/{budgetYear}/packages', [\App\Http\Controllers\Admin\BudgetController::class, 'storePackage'])->name('store-package');
         Route::put('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'updatePackage'])->name('update-package');
         Route::delete('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'destroyPackage'])->name('destroy-package');
+        Route::get('/packages/{budgetPackage}/sppm-assignments', [\App\Http\Controllers\Admin\BudgetPackageSppmAssignmentController::class, 'index'])->name('sppm-assignments.index');
+        Route::post('/packages/{budgetPackage}/sppm-assignments', [\App\Http\Controllers\Admin\BudgetPackageSppmAssignmentController::class, 'store'])->name('sppm-assignments.store');
+        Route::patch('/packages/{budgetPackage}/sppm-assignments/{assignment}', [\App\Http\Controllers\Admin\BudgetPackageSppmAssignmentController::class, 'update'])->name('sppm-assignments.update');
+        Route::delete('/packages/{budgetPackage}/sppm-assignments/{assignment}', [\App\Http\Controllers\Admin\BudgetPackageSppmAssignmentController::class, 'destroy'])->name('sppm-assignments.destroy');
         Route::get('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'showPackage'])->name('show-package');
         Route::post('/packages/{budgetPackage}/recalculate', [\App\Http\Controllers\Admin\BudgetController::class, 'recalculatePackage'])->name('recalculate-package');
         Route::get('/packages/{budgetPackage}/select-items', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectItems'])->name('wizard.step1');
@@ -233,7 +237,7 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
 
 // ── Superadmin Routes ────────────────────────────────────────────────
 
-Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+Route::middleware(['auth', 'read.only', 'role:superadmin|kabak_bekum'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/satkers', [SatkerController::class, 'index'])->name('satkers.index');
     Route::post('/satkers', [SatkerController::class, 'store'])->name('satkers.store');
     Route::put('/satkers/{satker}', [SatkerController::class, 'update'])->name('satkers.update');
