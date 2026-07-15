@@ -25,7 +25,6 @@ use App\Services\AuditLogger;
 use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
 use App\Services\SdmImportRunService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
@@ -1765,10 +1764,6 @@ class PersonnelController extends Controller
     /**
      * Print Satker PDF Report.
      */
-
-    /**
-     * Print Satker PDF Report.
-     */
     public function printSatker(Request $request)
     {
         // Pastikan cukup waktu dan memori untuk data besar
@@ -1806,16 +1801,7 @@ class PersonnelController extends Controller
 
         $kaporItems = KaporItem::where('is_active', true)->orderBy('id')->get();
 
-        $options = [
-            'dpi' => 72,        // Turunkan DPI untuk performa
-            'defaultFont' => 'Arial',
-            'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled' => false,
-            'isFontSubsettingEnabled' => false,     // Nonaktifkan subsetting untuk performa
-            'chroot' => realpath(base_path()),
-        ];
-
-        $pdf = Pdf::setOptions($options)->loadView('admin.reports.personnel_satker_pdf', [
+        $html = view('admin.reports.personnel_satker_pdf', [
             'satker' => $satker,
             'fiscalYear' => $fiscalYear,
             'personnels' => $personnels,
@@ -1825,17 +1811,33 @@ class PersonnelController extends Controller
             'signatory_role' => $request->get('signatory_role', 'KASUBBAG RENMIN KABAG LOG'),
             'signatory_name' => $request->get('signatory_name', '__________________________'),
             'signatory_nrp' => $request->get('signatory_nrp', ''),
-        ]);
+        ])->render();
 
-        $pdf->setPaper('a4', 'landscape');
-
-        $filename = "Data_Personel_{$satker->name}_{$fiscalYear}.pdf";
-
-        if ($request->has('download')) {
-            return $pdf->download($filename);
+        $tempDir = storage_path('app/mpdf');
+        if (! is_dir($tempDir)) {
+            mkdir($tempDir, 0775, true);
         }
 
-        return $pdf->stream($filename);
+        $mpdf = new \Mpdf\Mpdf([
+            'format' => 'A4-L',
+            'orientation' => 'L',
+            'margin_top' => 10,
+            'margin_bottom' => 10,
+            'margin_left' => 10,
+            'margin_right' => 10,
+            'default_font' => 'Arial',
+            'tempDir' => $tempDir,
+        ]);
+        $mpdf->WriteHTML($html);
+
+        $filename = "Data_Personel_{$satker->name}_{$fiscalYear}.pdf";
+        $output = $mpdf->Output($filename, \Mpdf\Output\Destination::STRING_RETURN);
+        $disposition = $request->has('download') ? 'attachment' : 'inline';
+
+        return response($output, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => $disposition.'; filename="'.$filename.'"',
+        ]);
     }
 
     /**

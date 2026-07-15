@@ -214,6 +214,37 @@ class PersonnelBagianFilterTest extends TestCase
         });
     }
 
+    public function test_admin_satker_can_print_satker_personnel_pdf(): void
+    {
+        $satker = Satker::create([
+            'name' => 'POLRES BIMA',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'AIPDA',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $adminSatker = User::factory()->create([
+            'satker_id' => $satker->id,
+        ]);
+        $adminSatker->assignRole('admin_satker');
+
+        $this->createPersonnel($satker, $rank, '76100169', 'PERSONEL PDF', 'SAT RESKRIM');
+
+        $response = $this->actingAs($adminSatker)->get(route('admin.personnel.print-satker', [
+            'satker_id' => $satker->id,
+            'fiscal_year' => '2026',
+        ]));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $response->assertHeader('Content-Disposition', 'inline; filename="Data_Personel_POLRES BIMA_2026.pdf"');
+    }
+
     private function createPersonnel(
         Satker $satker,
         Rank $rank,

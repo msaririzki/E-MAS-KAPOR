@@ -272,19 +272,25 @@ class AdminSatkerController extends Controller
         $signatorySettings = $signatoryService->resolveForUser($user);
 
         // Naikkan limit PCRE dan memori sementara untuk dataset besar
-        $prevPcreLimit  = ini_get('pcre.backtrack_limit');
-        $prevMemLimit   = ini_get('memory_limit');
+        $prevPcreLimit = ini_get('pcre.backtrack_limit');
+        $prevMemLimit = ini_get('memory_limit');
         ini_set('pcre.backtrack_limit', 10_000_000);
         ini_set('memory_limit', '512M');
 
         try {
+            $tempDir = storage_path('app/mpdf');
+            if (! is_dir($tempDir)) {
+                mkdir($tempDir, 0775, true);
+            }
+
             $mpdf = new \Mpdf\Mpdf([
-                'format'        => 'A4-L',
-                'orientation'   => 'L',
-                'margin_top'    => 10,
+                'format' => 'A4-L',
+                'orientation' => 'L',
+                'margin_top' => 10,
                 'margin_bottom' => 15,
-                'margin_left'   => 15,
-                'margin_right'  => 15,
+                'margin_left' => 15,
+                'margin_right' => 15,
+                'tempDir' => $tempDir,
             ]);
 
             $html = view('admin-satker.exports.allocations-pdf', compact(
@@ -302,7 +308,7 @@ class AdminSatkerController extends Controller
         }
 
         return response($output, 200, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
