@@ -5,6 +5,8 @@ namespace App\Exports;
 use App\Models\BudgetPackage;
 use App\Models\PackageItem;
 use App\Models\Personnel;
+use App\Models\PersonnelItemAllocation;
+use App\Models\Setting;
 use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
 use Maatwebsite\Excel\Concerns\FromArray;
@@ -98,6 +100,32 @@ class PackageDetailSheet implements FromArray, WithEvents, WithTitle
 
         $no = 0;
 
+        if ($this->shouldReadSnapshot()) {
+            PersonnelItemAllocation::query()
+                ->where('package_item_id', $this->packageItem->id)
+                ->orderBy('full_name_snapshot')
+                ->chunk(500, function ($allocations) use ($sizeKey, &$no): void {
+                    foreach ($allocations as $allocation) {
+                        $no++;
+                        $this->rows[] = [
+                            $no,
+                            $allocation->full_name_snapshot,
+                            "'".($allocation->nrp_snapshot ?? '-'),
+                            $allocation->rank_snapshot ?? '-',
+                            $allocation->jabatan_snapshot ?? '-',
+                            $allocation->satker_name_snapshot ?? '-',
+                            $allocation->gender_snapshot === 'P' ? 'Perempuan' : ($allocation->gender_snapshot === 'L' ? 'Laki-laki' : '-'),
+                            $this->sizeValue($allocation->kapor_sizes_snapshot, $sizeKey),
+                        ];
+                    }
+                });
+
+            $this->personnelCount = $no;
+            $this->addFooterRows($settings, $no);
+
+            return;
+        }
+
         foreach ($this->packageItem->recipients as $recipient) {
             $filters = $recipient->recipient_filters ?? [];
             $satker = $recipient->satker;
@@ -138,8 +166,13 @@ class PackageDetailSheet implements FromArray, WithEvents, WithTitle
 
         $this->personnelCount = $no;
 
+        $this->addFooterRows($settings, $no);
+    }
+
+    private function addFooterRows(object $settings, int $total): void
+    {
         // Footer total
-        $this->rows[] = ['', 'TOTAL', '', '', '', '', '', $no.' Personel'];
+        $this->rows[] = ['', 'TOTAL', '', '', '', '', '', $total.' Personel'];
 
         // Baris kosong
         $this->rows[] = [''];
@@ -156,6 +189,24 @@ class PackageDetailSheet implements FromArray, WithEvents, WithTitle
         $this->rows[] = [''];
         $this->rows[] = ['', '', '', '', '', $settings->signatory_name ?? ''];
         $this->rows[] = ['', '', '', '', '', 'NRP. '.($settings->signatory_nrp ?? '')];
+    }
+
+    private function shouldReadSnapshot(): bool
+    {
+        $activeFiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $this->budgetPackage->loadMissing('budgetYear');
+
+        return $this->budgetPackage->status === 'archived'
+            || (int) ($this->budgetPackage->budgetYear?->year ?? 0) < $activeFiscalYear;
+    }
+
+    private function sizeValue(array|string|null $kaporSizes, string $sizeKey): string
+    {
+        $sizes = is_string($kaporSizes) ? json_decode($kaporSizes, true) : $kaporSizes;
+        $value = is_array($sizes) ? ($sizes[$sizeKey] ?? null) : null;
+        $value = (string) $value;
+
+        return filled($value) && $value !== '-' && $value !== 'null' ? $value : '-';
     }
 
     public function array(): array

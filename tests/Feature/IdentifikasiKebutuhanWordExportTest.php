@@ -43,9 +43,10 @@ class IdentifikasiKebutuhanWordExportTest extends TestCase
         $documentXml = $this->readDocumentXml($path);
 
         $this->assertStringContainsString('HASIL IDENTIFIKASI KEBUTUHAN KAPOR', $documentXml);
-        $this->assertStringContainsString('ROMPI KESELAMATAN', $documentXml);
+        $this->assertStringContainsString('PDL I-A &amp; I-B SABHARA', $documentXml);
         $this->assertStringContainsString('POLRES A', $documentXml);
         $this->assertStringContainsString('KOMBES TEST', $documentXml);
+        $this->assertXmlStringEqualsXmlString($documentXml, $documentXml);
 
         @unlink($path);
     }
@@ -83,7 +84,7 @@ class IdentifikasiKebutuhanWordExportTest extends TestCase
         $superadmin->assignRole('superadmin');
 
         $item = IdentifikasiItem::create([
-            'item_name' => 'ROMPI KESELAMATAN',
+            'item_name' => 'PDL I-A & I-B SABHARA',
             'category' => 'Tutup_Badan',
             'eligible_satker_count' => 2,
             'is_active' => true,

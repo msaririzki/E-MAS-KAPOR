@@ -33,6 +33,11 @@
         overflow: visible;
     }
 
+    .sppm-card.has-open-dropdown {
+        position: relative;
+        z-index: 120 !important;
+    }
+
     .sppm-card-header {
         display: flex;
         align-items: center;
@@ -951,6 +956,12 @@
                     resetSppmOptions(shell);
                 }
             });
+
+            document.querySelectorAll('.sppm-card.has-open-dropdown').forEach((card) => {
+                if (!card.querySelector('[data-select-shell].is-open')) {
+                    card.classList.remove('has-open-dropdown');
+                }
+            });
         }
 
         function resetSppmOptions(shell) {
@@ -1015,6 +1026,7 @@
 
             if (isHidden) {
                 shell.classList.add('is-open');
+                shell.closest('.sppm-card')?.classList.add('has-open-dropdown');
                 menu.classList.remove('hidden');
                 positionSppmDropdown(shell);
                 // force reflow
@@ -1026,6 +1038,7 @@
                 if (search) setTimeout(() => search.focus(), 50);
             } else {
                 shell.classList.remove('is-open');
+                shell.closest('.sppm-card')?.classList.remove('has-open-dropdown');
                 menu.classList.add('opacity-0');
                 setTimeout(() => menu.classList.add('hidden'), 150);
                 if (icon) icon.classList.remove('rotate-180');

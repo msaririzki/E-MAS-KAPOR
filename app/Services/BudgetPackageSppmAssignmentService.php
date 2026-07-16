@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\BudgetPackage;
 use App\Models\BudgetPackageSppmAssignment;
 use App\Models\Personnel;
+use App\Models\PersonnelItemAllocation;
 use App\Models\Satker;
+use App\Models\Setting;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -119,9 +121,14 @@ class BudgetPackageSppmAssignmentService
     public function buildSppmSatkerData(BudgetPackage $budgetPackage): array
     {
         $budgetPackage->loadMissing([
+            'budgetYear',
             'items.kaporItem',
             'items.recipients.satker',
         ]);
+
+        if ($this->shouldReadSnapshot($budgetPackage)) {
+            return $this->buildSppmSatkerDataFromSnapshot($budgetPackage);
+        }
 
         $assignments = BudgetPackageSppmAssignment::query()
             ->where('budget_package_id', $budgetPackage->id)
@@ -177,6 +184,75 @@ class BudgetPackageSppmAssignmentService
                     }
                 }, 'id');
             }
+        }
+
+        $satkers = Satker::query()
+            ->whereIn('id', array_values($satkerIds))
+            ->get()
+            ->keyBy('id');
+
+        foreach ($satkerData as $satkerId => $data) {
+            $satkerData[$satkerId]['satker'] = $satkers->get($satkerId);
+            $satkerData[$satkerId]['items'] = array_values($data['items'] ?? []);
+        }
+
+        return $satkerData;
+    }
+
+    private function shouldReadSnapshot(BudgetPackage $budgetPackage): bool
+    {
+        $activeFiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $year = (int) ($budgetPackage->budgetYear?->year ?? 0);
+
+        return $budgetPackage->status === 'archived' || ($year > 0 && $year < $activeFiscalYear);
+    }
+
+    private function buildSppmSatkerDataFromSnapshot(BudgetPackage $budgetPackage): array
+    {
+        $assignments = BudgetPackageSppmAssignment::query()
+            ->where('budget_package_id', $budgetPackage->id)
+            ->get(['personnel_id', 'sppm_satker_id'])
+            ->keyBy('personnel_id');
+
+        $satkerData = [];
+        $satkerIds = [];
+
+        $allocations = PersonnelItemAllocation::query()
+            ->where('budget_package_id', $budgetPackage->id)
+            ->with(['packageItem.kaporItem'])
+            ->get();
+
+        foreach ($allocations as $allocation) {
+            $packageItem = $allocation->packageItem;
+            $kaporItem = $packageItem?->kaporItem;
+
+            if ($packageItem === null || $kaporItem === null) {
+                continue;
+            }
+
+            $effectiveSatkerId = (int) (
+                $assignments->get($allocation->personnel_id)?->sppm_satker_id
+                ?? $allocation->satker_id
+            );
+
+            if ($effectiveSatkerId <= 0) {
+                continue;
+            }
+
+            $price = (float) ($packageItem->custom_price ?? $kaporItem->price ?? 0);
+            $itemKey = $packageItem->id;
+            $satkerIds[$effectiveSatkerId] = $effectiveSatkerId;
+
+            $satkerData[$effectiveSatkerId]['items'][$itemKey] ??= [
+                'item_name' => $allocation->kapor_item_name_snapshot ?: $kaporItem->item_name,
+                'unit' => $kaporItem->unit ?? 'PCS',
+                'price' => $price,
+                'qty' => 0,
+                'total' => 0,
+            ];
+
+            $satkerData[$effectiveSatkerId]['items'][$itemKey]['qty']++;
+            $satkerData[$effectiveSatkerId]['items'][$itemKey]['total'] += $price;
         }
 
         $satkers = Satker::query()

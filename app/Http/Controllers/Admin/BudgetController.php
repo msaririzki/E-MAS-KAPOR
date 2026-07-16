@@ -180,13 +180,17 @@ class BudgetController extends Controller
 
     public function showPackage(BudgetPackage $budgetPackage)
     {
+        $activeFiscalYear = $this->activeFiscalYear();
+
         $budgetPackage->load([
             'budgetYear',
             'items.kaporItem.sizes',
             'items.recipients.satker',
         ])->loadCount('sppmAssignments');
 
-        if (! auth()->user()?->isReadOnlyAdmin()) {
+        $isCurrentFiscalYear = (int) $budgetPackage->budgetYear->year === $activeFiscalYear;
+
+        if ($isCurrentFiscalYear && ! auth()->user()?->isReadOnlyAdmin()) {
             DB::transaction(function () use ($budgetPackage): void {
                 $this->syncPackageCalculatedFields($budgetPackage);
             });
@@ -199,7 +203,6 @@ class BudgetController extends Controller
         }
 
         $sizeWarnings = $this->kaporRequirementService->buildPackageSizeWarnings($budgetPackage);
-        $activeFiscalYear = $this->activeFiscalYear();
 
         return view('admin.budget.package-detail', compact('budgetPackage', 'sizeWarnings', 'activeFiscalYear'));
     }

@@ -133,14 +133,6 @@
                     </button>
                 </div>
             </div>
-            @else
-            {{-- Admin Satker: hanya Cetak PDF --}}
-            <button class="btn personnel-header-btn btn-more" onclick="openModal('printSatkerModal')">
-                <div class="btn-content">
-                    <i class="ri-printer-line"></i>
-                    <span>Cetak</span>
-                </div>
-            </button>
             @endif
 
         </div>

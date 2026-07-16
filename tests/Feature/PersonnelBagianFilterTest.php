@@ -214,7 +214,7 @@ class PersonnelBagianFilterTest extends TestCase
         });
     }
 
-    public function test_admin_satker_can_print_satker_personnel_pdf(): void
+    public function test_admin_satker_cannot_print_satker_personnel_pdf(): void
     {
         $satker = Satker::create([
             'name' => 'POLRES BIMA',
@@ -240,9 +240,7 @@ class PersonnelBagianFilterTest extends TestCase
             'fiscal_year' => '2026',
         ]));
 
-        $response->assertOk();
-        $response->assertHeader('Content-Type', 'application/pdf');
-        $response->assertHeader('Content-Disposition', 'inline; filename="Data_Personel_POLRES BIMA_2026.pdf"');
+        $response->assertForbidden();
     }
 
     private function createPersonnel(

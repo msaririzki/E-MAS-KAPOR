@@ -1770,6 +1770,8 @@ class PersonnelController extends Controller
         set_time_limit(0);
         ini_set('memory_limit', '2G');
 
+        abort_unless(! $request->user()?->hasRole('admin_satker'), 403, 'Fitur cetak satker tidak tersedia untuk admin satker.');
+
         $request->validate([
             'satker_id' => 'required|exists:satkers,id',
             'fiscal_year' => 'nullable|string',

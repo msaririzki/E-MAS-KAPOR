@@ -32,11 +32,6 @@ class IdentifikasiKebutuhanWordExportService
         $phpWord->setDefaultFontName('Arial');
         $phpWord->setDefaultFontSize(8.5);
 
-        $phpWord->addTableStyle('kopTable', [
-            'borderSize' => 0,
-            'cellMargin' => 0,
-            'alignment' => JcTable::START,
-        ]);
         $phpWord->addTableStyle('mainExportTable', [
             'borderSize' => 6,
             'borderColor' => '000000',
@@ -53,14 +48,6 @@ class IdentifikasiKebutuhanWordExportService
             'width' => 100 * 50,
             'unit' => TblWidth::PERCENT,
         ]);
-        $phpWord->addTableStyle('signatureTable', [
-            'borderSize' => 0,
-            'cellMargin' => 0,
-            'alignment' => JcTable::CENTER,
-            'width' => 100 * 50,
-            'unit' => TblWidth::PERCENT,
-        ]);
-
         $section = $phpWord->addSection([
             'orientation' => 'landscape',
             'pageSizeW' => 16838,
@@ -89,25 +76,35 @@ class IdentifikasiKebutuhanWordExportService
 
     private function addHeader(Section $section, int $fiscalYear): void
     {
-        $kopTable = $section->addTable('kopTable');
-        $kopTable->addRow();
-        $kopCell = $kopTable->addCell(4300, [
+        $kopParagraph = [
+            'alignment' => Jc::CENTER,
+            'indentation' => ['right' => 8600],
+            'spaceAfter' => 0,
+            'lineHeight' => 1.05,
+        ];
+
+        $section->addText(
+            'KEPOLISIAN NEGARA REPUBLIK INDONESIA',
+            ['bold' => true, 'size' => 9.5],
+            $kopParagraph,
+        );
+        $section->addText(
+            'DAERAH NUSA TENGGARA BARAT',
+            ['bold' => true, 'size' => 9.5],
+            $kopParagraph,
+        );
+        $section->addText(
+            'BIRO LOGISTIK',
+            ['bold' => true, 'size' => 9.5],
+            $kopParagraph,
+        );
+        $section->addText('', ['size' => 1], [
+            'indentation' => ['right' => 8600],
             'borderBottomSize' => 12,
             'borderBottomColor' => '000000',
-            'valign' => VerticalJc::CENTER,
+            'spaceAfter' => 180,
+            'lineHeight' => 0.1,
         ]);
-
-        foreach ([
-            'KEPOLISIAN NEGARA REPUBLIK INDONESIA',
-            'DAERAH NUSA TENGGARA BARAT',
-            'BIRO LOGISTIK',
-        ] as $line) {
-            $kopCell->addText($line, ['bold' => true, 'size' => 10], [
-                'alignment' => Jc::CENTER,
-                'spaceAfter' => 0,
-                'lineHeight' => 1.05,
-            ]);
-        }
 
         $section->addTextBreak(1);
         $section->addText(
@@ -129,7 +126,7 @@ class IdentifikasiKebutuhanWordExportService
         $run->addText(number_format((int) $data['submittedSatkers']), ['bold' => true, 'size' => 8]);
         $run->addText('  |  Total item terpilih: ', ['size' => 8]);
         $run->addText(number_format((int) $data['totalItems']), ['bold' => true, 'size' => 8]);
-        $run->addText('  |  Dicetak: '.$data['generatedAt']->translatedFormat('d F Y H:i'), ['size' => 8]);
+        $run->addText($this->safeText('  |  Dicetak: '.$data['generatedAt']->translatedFormat('d F Y H:i')), ['size' => 8]);
     }
 
     /**
@@ -160,7 +157,7 @@ class IdentifikasiKebutuhanWordExportService
                 'bgColor' => 'F3F4F6',
                 'valign' => VerticalJc::CENTER,
             ]);
-            $categoryCell->addText(strtoupper((string) $category['name']), ['bold' => true, 'size' => 8.5], [
+            $categoryCell->addText($this->safeText(strtoupper((string) $category['name'])), ['bold' => true, 'size' => 8.5], [
                 'spaceAfter' => 0,
             ]);
 
@@ -192,7 +189,7 @@ class IdentifikasiKebutuhanWordExportService
                     ]);
                     $detailRun = $detailCell->addTextRun(['alignment' => Jc::BOTH, 'spaceAfter' => 60]);
                     $detailRun->addText('Daftar Satker Memilih: ', ['bold' => true, 'size' => 7.5]);
-                    $detailRun->addText(implode(', ', $item['satkers']), ['size' => 7.5]);
+                    $detailRun->addText($this->safeText(implode(', ', $item['satkers'])), ['size' => 7.5]);
                     $table->addCell(self::MAIN_COLUMNS[3], ['bgColor' => 'FFFFFF'])->addText('', [], ['spaceAfter' => 0]);
                     $table->addCell(self::MAIN_COLUMNS[4], ['bgColor' => 'FFFFFF'])->addText('', [], ['spaceAfter' => 0]);
                 }
@@ -260,7 +257,7 @@ class IdentifikasiKebutuhanWordExportService
     private function addBodyCell($table, int $width, string $text, string $alignment = Jc::START, array $font = []): void
     {
         $cell = $table->addCell($width, ['valign' => VerticalJc::CENTER]);
-        $cell->addText($text, array_merge(['size' => 8.5], $font), [
+        $cell->addText($this->safeText($text), array_merge(['size' => 8.5], $font), [
             'alignment' => $alignment,
             'spaceAfter' => 0,
         ]);
@@ -281,19 +278,25 @@ class IdentifikasiKebutuhanWordExportService
         $rankLine = trim($rank.($nrp !== '' ? ' NRP/NIP '.$nrp : ''));
 
         $section->addTextBreak(1);
-        $signature = $section->addTable('signatureTable');
-        $signature->addRow();
-        $signature->addCell((int) (self::PAGE_WIDTH * 0.58))->addText('', [], ['spaceAfter' => 0]);
-        $cell = $signature->addCell((int) (self::PAGE_WIDTH * 0.42));
+        $paragraph = [
+            'alignment' => Jc::CENTER,
+            'indentation' => ['left' => 8600],
+            'spaceAfter' => 0,
+            'lineHeight' => 1.1,
+        ];
 
-        $paragraph = ['alignment' => Jc::CENTER, 'spaceAfter' => 0, 'lineHeight' => 1.1];
-        $cell->addText($location.', '.$data['generatedAt']->translatedFormat('d F Y'), ['size' => 9], $paragraph);
+        $section->addText($this->safeText($location.', '.$data['generatedAt']->translatedFormat('d F Y')), ['size' => 9], $paragraph);
         if ($organizationName !== '') {
-            $cell->addText('a.n. '.$organizationName, ['size' => 9], $paragraph);
+            $section->addText($this->safeText('a.n. '.$organizationName), ['size' => 9], $paragraph);
         }
-        $cell->addText($signatoryTitle, ['bold' => true, 'size' => 9], $paragraph);
-        $cell->addTextBreak(3);
-        $cell->addText($signatoryName, ['bold' => true, 'underline' => 'single', 'size' => 9], $paragraph);
-        $cell->addText($rankLine, ['size' => 9], $paragraph);
+        $section->addText($this->safeText($signatoryTitle), ['bold' => true, 'size' => 9], $paragraph);
+        $section->addTextBreak(3);
+        $section->addText($this->safeText($signatoryName), ['bold' => true, 'underline' => 'single', 'size' => 9], $paragraph);
+        $section->addText($this->safeText($rankLine), ['size' => 9], $paragraph);
+    }
+
+    private function safeText(string $text): string
+    {
+        return htmlspecialchars($text, ENT_XML1 | ENT_COMPAT, 'UTF-8');
     }
 }

@@ -10,8 +10,10 @@ use App\Models\PackageItemRecipient;
 use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\BudgetPackageSppmAssignmentService;
+use App\Services\PersonnelItemAllocationSnapshotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -110,6 +112,70 @@ class BudgetPackageSppmAssignmentTest extends TestCase
         $this->assertSame(1, $satkerData[$targetSatker->id]['items'][0]['qty']);
         $this->assertSame('SISWA DIKTUKBA', $satkerData[$sourceSatker->id]['satker']->name);
         $this->assertSame('SPN POLDA NTB', $satkerData[$targetSatker->id]['satker']->name);
+    }
+
+    public function test_archived_sppm_data_uses_allocation_snapshot_after_personnel_reset(): void
+    {
+        Role::findOrCreate('personil');
+        Setting::setValue('fiscal_year', '2027');
+
+        $sourceSatker = Satker::create([
+            'name' => 'SISWA DIKTUKBA',
+            'code' => 'SISWA',
+            'sort_order' => 1,
+        ]);
+
+        $rank = Rank::create([
+            'name' => 'BRIPDA',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
+
+        $budgetYear = BudgetYear::create([
+            'year' => 2026,
+            'name' => 'T.A. 2026',
+            'is_active' => false,
+        ]);
+
+        $package = BudgetPackage::create([
+            'budget_year_id' => $budgetYear->id,
+            'name' => 'PAKET SISWA',
+            'status' => 'finalized',
+        ]);
+
+        $kaporItem = KaporItem::create([
+            'item_name' => 'PAKAIAN DINAS',
+            'category' => 'Tutup_Badan',
+            'price' => 100000,
+            'unit' => 'STEL',
+            'is_active' => true,
+        ]);
+
+        $packageItem = PackageItem::create([
+            'budget_package_id' => $package->id,
+            'kapor_item_id' => $kaporItem->id,
+            'custom_price' => 100000,
+        ]);
+
+        PackageItemRecipient::create([
+            'package_item_id' => $packageItem->id,
+            'satker_id' => $sourceSatker->id,
+            'recipient_filters' => null,
+            'matched_count' => 2,
+        ]);
+
+        $this->createPersonnel($sourceSatker, $rank, '990001', 'SISWA SATU');
+        $this->createPersonnel($sourceSatker, $rank, '990002', 'SISWA DUA');
+
+        app(PersonnelItemAllocationSnapshotService::class)->regenerateForBudgetPackage($package->fresh());
+
+        Personnel::query()->delete();
+        $package->update(['status' => 'archived']);
+
+        $satkerData = app(BudgetPackageSppmAssignmentService::class)->buildSppmSatkerData($package->fresh());
+
+        $this->assertSame(2, $satkerData[$sourceSatker->id]['items'][0]['qty']);
+        $this->assertSame('PAKAIAN DINAS', $satkerData[$sourceSatker->id]['items'][0]['item_name']);
     }
 
     private function createPersonnel(Satker $satker, Rank $rank, string $nrp, string $name): Personnel
