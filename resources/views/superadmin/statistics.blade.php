@@ -26,6 +26,11 @@
                         <i class="ri-file-pdf-2-line" style="font-size: 18px;"></i>
                         Export PDF
                     </a>
+                    <a href="{{ route('superadmin.testimonials.export-word', request()->except('comments_per_rating')) }}"
+                        class="btn-export-word" onclick="exportReviewPdf(event, this, 'statisticsCommentLimit')" style="height: 40px; padding: 0 16px; border-radius: 14px; font-family: 'Outfit', sans-serif; font-size: 14px;">
+                        <i class="ri-file-word-2-line" style="font-size: 18px;"></i>
+                        Export Word
+                    </a>
 
                     {{-- Filter Tahun Anggaran --}}
                     <div
@@ -460,6 +465,27 @@
 
         .btn-export-pdf:hover {
             background: #991B1B;
+            color: #fff;
+        }
+
+        .btn-export-word {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 38px;
+            padding: 0 14px;
+            border-radius: 10px;
+            background: #0F766E;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s;
+        }
+
+        .btn-export-word:hover {
+            background: #115E59;
             color: #fff;
         }
 

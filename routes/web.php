@@ -260,6 +260,7 @@ Route::middleware(['auth', 'read.only', 'role:superadmin|kabak_bekum'])->prefix(
 
     Route::get('/statistik', [StatisticsController::class, 'index'])->name('statistics');
     Route::get('/testimonials/export-pdf', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'exportPdf'])->name('testimonials.export-pdf');
+    Route::get('/testimonials/export-word', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'exportWord'])->name('testimonials.export-word');
     Route::get('/testimonials', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'index'])->name('testimonials.index');
 
     Route::resource('identifikasi-items', \App\Http\Controllers\Superadmin\IdentifikasiItemController::class)
