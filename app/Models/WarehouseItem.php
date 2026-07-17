@@ -14,6 +14,8 @@ class WarehouseItem extends Model
         'name',
         'unit',
         'price',
+        'sumber_pengadaan',
+        'kategori_stok',
         'deletion_reason',
         'deleted_at_stock',
     ];
@@ -30,7 +32,9 @@ class WarehouseItem extends Model
      */
     public function getFormattedPriceAttribute(): string
     {
-        return 'Rp '.number_format((float) $this->price, 0, ',', '.');
+        $price = (float) $this->price;
+        $decimals = floor($price) == $price ? 0 : 2;
+        return 'Rp '.number_format($price, $decimals, ',', '.');
     }
 
     public function sizes(): HasMany

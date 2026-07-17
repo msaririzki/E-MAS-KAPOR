@@ -71,22 +71,73 @@
 </div>
 
 {{-- Filter --}}
-<div class="filter-bar">
-    <form id="filterForm" method="GET" action="{{ route('admin.warehouse-items.index') }}" class="filter-form" onsubmit="return false;" style="display:flex; justify-content:space-between; align-items:center;">
-        <div class="search-input-wrapper" style="max-width:300px; flex:1;">
-            <i class="ri-search-line search-icon"></i>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama barang..." class="search-field" autocomplete="off">
+<div class="filter-bar" style="background: transparent; border: none; box-shadow: none; padding: 0; margin-bottom: 24px;">
+    <form id="filterForm" method="GET" action="{{ route('admin.warehouse-items.index') }}" class="filter-form" style="display:flex; flex-wrap:wrap; gap: 16px; justify-content:space-between; align-items:flex-end; background: #fff; padding: 16px 20px; border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        
+        <div class="search-input-wrapper" style="flex: 1; min-width: 250px; max-width: none;">
+            <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px;">PENCARIAN</div>
+            <div style="position: relative;">
+                <i class="ri-search-line search-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9CA3AF;"></i>
+                <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari nama barang atau satuan..." autocomplete="off" style="width: 100%; border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0; padding-left: 40px; font-size: 14px; outline: none; transition: all 0.2s;">
+            </div>
         </div>
         
-        <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size: 13px; color: #6B7280; white-space: nowrap;">Tampilkan:</span>
-            <select name="per_page" class="form-input per-page-select" style="width: 70px; padding: 4px 8px; font-size: 13px; height: 36px; border-radius: 8px; border: 1px solid #D1D5DB; outline: none; background: #fff;">
-                <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
-                <option value="15" {{ request('per_page', 10) == 15 ? 'selected' : '' }}>15</option>
-                <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
-                <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
-                <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
-            </select>
+        <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+            <!-- Filter Sumber Pengadaan -->
+            <div class="custom-select-wrapper" style="width: 180px;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px;">SUMBER PENGADAAN</div>
+                <input type="hidden" name="sumber_pengadaan" id="filter_sumber" value="{{ request('sumber_pengadaan') }}">
+                <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
+                    <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px;">
+                        <span>{{ request('sumber_pengadaan') ?: 'Semua Sumber' }}</span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="custom-option {{ !request('sumber_pengadaan') ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '', 'Semua Sumber', 'filter_sumber');">
+                            Semua Sumber
+                        </div>
+                        <div class="custom-option {{ request('sumber_pengadaan') == 'Mabes Polri' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Mabes Polri', 'Mabes Polri', 'filter_sumber');">Mabes Polri</div>
+                        <div class="custom-option {{ request('sumber_pengadaan') == 'Polda NTB' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Polda NTB', 'Polda NTB', 'filter_sumber');">Polda NTB</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Kategori Stok -->
+            <div class="custom-select-wrapper" style="width: 160px;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px;">KATEGORI STOK</div>
+                <input type="hidden" name="kategori_stok" id="filter_kategori" value="{{ request('kategori_stok') }}">
+                <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
+                    <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px;">
+                        <span>{{ request('kategori_stok') ?: 'Semua Stok' }}</span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="custom-option {{ !request('kategori_stok') ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '', 'Semua Stok', 'filter_kategori');">
+                            Semua Stok
+                        </div>
+                        <div class="custom-option {{ request('kategori_stok') == 'Stok' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Stok', 'Stok', 'filter_kategori');">Stok</div>
+                        <div class="custom-option {{ request('kategori_stok') == 'Luar Stok' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Luar Stok', 'Luar Stok', 'filter_kategori');">Luar Stok</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="custom-select-wrapper" style="width: 80px;">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px;">BARIS</div>
+                <input type="hidden" name="per_page" id="filter_per_page" value="{{ request('per_page', 10) }}">
+                <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
+                    <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px; color: #374151;">
+                        <span>{{ request('per_page', 10) }}</span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="custom-options" style="min-width: 80px; text-align: center;">
+                        <div class="custom-option {{ request('per_page', 10) == 10 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '10', '10', 'filter_per_page');">10</div>
+                        <div class="custom-option {{ request('per_page') == 15 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '15', '15', 'filter_per_page');">15</div>
+                        <div class="custom-option {{ request('per_page') == 25 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '25', '25', 'filter_per_page');">25</div>
+                        <div class="custom-option {{ request('per_page') == 50 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '50', '50', 'filter_per_page');">50</div>
+                        <div class="custom-option {{ request('per_page') == 100 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '100', '100', 'filter_per_page');">100</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </form>
 </div>
@@ -112,6 +163,28 @@
                     <label>NAMA BARANG</label>
                     <input type="text" name="name" required class="form-input" placeholder="Contoh: PAKAIAN PDL II PRIA">
                 </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>SUMBER PENGADAAN</label>
+                        <div class="custom-select-wrapper">
+                            <select name="sumber_pengadaan" class="form-input" style="appearance: auto;" required>
+                                <option value="Mabes Polri">Mabes Polri</option>
+                                <option value="Polda NTB">Polda NTB</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>KATEGORI STOK</label>
+                        <div class="custom-select-wrapper">
+                            <select name="kategori_stok" class="form-input" style="appearance: auto;" required>
+                                <option value="Stok">Stok</option>
+                                <option value="Luar Stok">Luar Stok</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div class="form-group">
                         <label>SATUAN</label>
@@ -125,7 +198,7 @@
                     </div>
                     <div class="form-group">
                         <label>HARGA SATUAN (Rp)</label>
-                        <input type="number" name="price" class="form-input" placeholder="100000" min="0" step="100">
+                        <input type="text" name="price" class="form-input" placeholder="Contoh: 40.506,70">
                     </div>
                 </div>
 
@@ -174,6 +247,28 @@
                     <label>NAMA BARANG</label>
                     <input type="text" name="name" id="edit_name" required class="form-input">
                 </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>SUMBER PENGADAAN</label>
+                        <div class="custom-select-wrapper">
+                            <select name="sumber_pengadaan" id="edit_sumber_pengadaan" class="form-input" style="appearance: auto;" required>
+                                <option value="Mabes Polri">Mabes Polri</option>
+                                <option value="Polda NTB">Polda NTB</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>KATEGORI STOK</label>
+                        <div class="custom-select-wrapper">
+                            <select name="kategori_stok" id="edit_kategori_stok" class="form-input" style="appearance: auto;" required>
+                                <option value="Stok">Stok</option>
+                                <option value="Luar Stok">Luar Stok</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div class="form-group">
                         <label>SATUAN</label>
@@ -187,7 +282,7 @@
                     </div>
                     <div class="form-group">
                         <label>HARGA SATUAN (Rp)</label>
-                        <input type="number" name="price" id="edit_price" class="form-input" min="0" step="100">
+                        <input type="text" name="price" id="edit_price" class="form-input" placeholder="Contoh: 100.500,50">
                     </div>
                 </div>
             </div>
@@ -258,6 +353,8 @@
                             <span class="badge">nama_barang</span>
                             <span class="badge">kuantitas</span>
                             <span class="badge">harga_satuan</span>
+                            <span class="badge">sumber_pengadaan</span>
+                            <span class="badge">kategori_stok</span>
                         </div>
                     </div>
                 </div>
@@ -435,11 +532,11 @@
 
     .table-container { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02);}
     .user-table { width: 100%; border-collapse: collapse; }
-    .user-table th { background: #F9FAFB; padding: 12px 24px; text-align: left; font-size: 12px; font-weight: 600; color: #6B7280; border-bottom: 1px solid #E5E7EB; }
-    .user-table td { padding: 16px 24px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; color: #374151; font-size: 14px; }
+    .user-table th { background: #F9FAFB; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #6B7280; border-bottom: 1px solid #E5E7EB; white-space: nowrap; }
+    .user-table td { padding: 10px 12px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; color: #374151; font-size: 12px; }
     
-    .action-buttons { display: flex; gap: 6px; justify-content: center; }
-    .btn-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px solid #E5E7EB; cursor: pointer; background: #fff; color:#4B5563;}
+    .action-buttons { display: flex; gap: 4px; justify-content: flex-end; }
+    .btn-icon { width: 28px; height: 28px; font-size: 13px; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px solid #E5E7EB; cursor: pointer; background: #fff; color:#4B5563;}
     .btn-icon:hover { background: #F9FAFB; }
     .btn-icon.blue:hover { color: #3B82F6; background: #EFF6FF; border-color: #BFDBFE;}
     .btn-icon.red:hover { color: #EF4444; background: #FEF2F2; border-color: #FECACA;}
@@ -495,7 +592,7 @@
     .instruction-header { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 10px; }
     .instruction-header i { color: #64748B; font-size: 16px; }
     .instruction-badges { display: flex; flex-wrap: wrap; gap: 6px; }
-    .badge { background: white; border: 1px solid #CBD5E1; color: #64748B; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px; font-family: monospace; }
+    .badge { background: white; border: 1px solid #CBD5E1; color: #64748B; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; font-family: monospace; white-space: nowrap; }
 
     /* Filter Bar */
     .filter-bar { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 4px 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); margin-bottom: 24px; }
@@ -504,6 +601,19 @@
     .search-icon { position: absolute; left: 14px; color: #9CA3AF; font-size: 18px; pointer-events: none; }
     .search-field { width: 100%; height: 44px; border: none; border-radius: 8px; padding: 0 16px 0 44px; font-size: 14px; color: #374151; outline: none; background: transparent; }
     .search-field::placeholder { color: #9CA3AF; }
+
+    /* Beautiful Filter Select */
+    .filter-select {
+        appearance: none; -webkit-appearance: none; -moz-appearance: none;
+        background-color: #fff; border: 1px solid #E5E7EB; border-radius: 8px;
+        padding: 0 32px 0 14px; font-size: 13px; font-weight: 500; color: #4B5563;
+        height: 38px; cursor: pointer; outline: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='18' height='18' fill='rgba(107,114,128,1)'%3E%3Cpath d='M12 15.0006L7.75732 10.758L9.17154 9.34375L12 12.1722L14.8284 9.34375L16.2426 10.758L12 15.0006Z'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right 8px center;
+        transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .filter-select:hover { border-color: #D1D5DB; background-color: #F9FAFB; color: #111827; }
+    .filter-select:focus { border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
 
     /* Custom Select */
     .custom-select-wrapper { position: relative; width: 100%; }
@@ -520,8 +630,8 @@
     }
     .custom-select:hover { border-color: #9CA3AF; }
     .custom-select.active {
-        border-color: #3B82F6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        border-color: #B91C1C;
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15); /* Red shadow */
     }
     .select-trigger {
         width: 100%;
@@ -534,8 +644,8 @@
         font-size: 14px;
     }
     .select-trigger i { color: #6B7280; font-size: 20px; transition: transform 0.2s ease; }
-    .custom-select.active .select-trigger { color: #111827; }
-    .custom-select.active .select-trigger i { transform: rotate(180deg); color: #3B82F6; }
+    .custom-select.active .select-trigger { color: #B91C1C; font-weight: 600; }
+    .custom-select.active .select-trigger i { transform: rotate(180deg); color: #B91C1C; }
 
     /* Dropdown UI */
     .custom-options {
@@ -555,14 +665,14 @@
     .options-scroll::-webkit-scrollbar-thumb:hover { background-color: #D1D5DB; }
 
     /* Option Item UI */
-    .option {
+    .custom-option {
         padding: 10px 12px; cursor: pointer; transition: all 0.15s; font-size: 14px;
         color: #4B5563; border-radius: 8px; margin-bottom: 2px; font-weight: 500;
         display: flex; align-items: center; justify-content: space-between;
     }
-    .option:last-child { margin-bottom: 0; }
-    .option:hover { background-color: #F9FAFB; color: #111827; }
-    .option.selected { background-color: #FEF2F2; color: #B91C1C; }
+    .custom-option:last-child { margin-bottom: 0; }
+    .custom-option:hover { background-color: #F9FAFB; color: #111827; }
+    .custom-option.selected { background-color: #FEF2F2; color: #B91C1C; }
 
     /* Select Search UI */
     .select-search-container {
@@ -663,31 +773,27 @@
     document.addEventListener('input', function(e) {
         if(e.target.classList.contains('search-field')) {
             clearTimeout(typingTimer);
-            let val = e.target.value;
-            
             typingTimer = setTimeout(() => {
-                let url = new URL(window.location.href);
-                if(val) {
-                    url.searchParams.set('search', val);
-                } else {
-                    url.searchParams.delete('search');
-                }
-                url.searchParams.set('page', 1);
-                fetchTable(url.toString());
+                triggerFilterChange();
             }, 500);
         }
     });
 
-    // Per Page Filter Change
-    document.addEventListener('change', function(e) {
-        if(e.target.classList.contains('per-page-select')) {
-            let val = e.target.value;
-            let url = new URL(window.location.href);
-            url.searchParams.set('per_page', val);
-            url.searchParams.set('page', 1);
-            fetchTable(url.toString());
-        }
-    });
+    function triggerFilterChange() {
+        let url = new URL(window.location.href);
+        let sumber = document.getElementById('filter_sumber').value;
+        let kategori = document.getElementById('filter_kategori').value;
+        let perPage = document.getElementById('filter_per_page').value;
+        let search = document.getElementById('searchInput').value;
+
+        if(sumber) { url.searchParams.set('sumber_pengadaan', sumber); } else { url.searchParams.delete('sumber_pengadaan'); }
+        if(kategori) { url.searchParams.set('kategori_stok', kategori); } else { url.searchParams.delete('kategori_stok'); }
+        if(perPage) { url.searchParams.set('per_page', perPage); }
+        if(search) { url.searchParams.set('search', search); } else { url.searchParams.delete('search'); }
+
+        url.searchParams.set('page', 1);
+        fetchTable(url.toString());
+    }
 
     // Close Dropdown on outside click
     window.addEventListener('click', function(e) {
@@ -723,6 +829,8 @@
 
     function openEditModal(item) {
         document.getElementById('edit_name').value = item.name;
+        document.getElementById('edit_sumber_pengadaan').value = item.sumber_pengadaan || 'Mabes Polri';
+        document.getElementById('edit_kategori_stok').value = item.kategori_stok || 'Stok';
         document.getElementById('edit_unit').value = item.unit || 'PCS';
         document.getElementById('edit_price').value = parseInt(item.price) || 0;
         document.getElementById('editForm').action = "/admin/warehouse-items/" + item.id;
@@ -1016,6 +1124,27 @@
         el.closest('.custom-select').classList.remove('active');
         
         if(event) event.stopPropagation();
+    }
+
+    function selectOption(el, value, label, inputId) {
+        // Set hidden input value
+        document.getElementById(inputId).value = value;
+        // Update visible label
+        el.closest('.custom-select').querySelector('.select-trigger span').innerText = label;
+        
+        // Update selected state
+        const wrapper = el.closest('.custom-select-wrapper');
+        wrapper.querySelectorAll('.custom-option').forEach(opt => opt.classList.remove('selected'));
+        el.classList.add('selected');
+        
+        // Close dropdown
+        el.closest('.custom-options').style.display = 'none';
+        el.closest('.custom-select').classList.remove('active');
+        
+        // Execute AJAX fetch instead of form submit
+        setTimeout(function() {
+            triggerFilterChange();
+        }, 50);
     }
 
     function selectDispenseSize(value, label, stock, el = null) {

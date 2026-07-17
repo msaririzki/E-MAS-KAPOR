@@ -23,8 +23,16 @@ class WarehouseController extends Controller
         }])->withSum('sizes', 'stock');
 
         if ($request->filled('search')) {
-            $viewQuery->where('name', 'like', "%{$request->search}%")
-                ->orWhere('unit', 'like', "%{$request->search}%");
+            $viewQuery->where(function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%")
+                    ->orWhere('unit', 'like', "%{$request->search}%");
+            });
+        }
+        if ($request->filled('sumber_pengadaan')) {
+            $viewQuery->where('sumber_pengadaan', $request->sumber_pengadaan);
+        }
+        if ($request->filled('kategori_stok')) {
+            $viewQuery->where('kategori_stok', $request->kategori_stok);
         }
 
         $perPage = $request->input('per_page', 10);
@@ -48,6 +56,12 @@ class WarehouseController extends Controller
 
     public function store(Request $request)
     {
+        if ($request->has('price')) {
+            $priceStr = str_replace('.', '', $request->input('price'));
+            $priceStr = str_replace(',', '.', $priceStr);
+            $request->merge(['price' => $priceStr]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'nullable|numeric|min:0',
@@ -56,6 +70,8 @@ class WarehouseController extends Controller
             'sizes.*' => 'required|string|max:50',
             'quantities' => 'nullable|array',
             'quantities.*' => 'required|integer|min:0',
+            'sumber_pengadaan' => 'required|string|in:Mabes Polri,Polda NTB',
+            'kategori_stok' => 'required|string|in:Stok,Luar Stok',
         ]);
 
         $validated['unit'] = $validated['unit'] ?? 'PCS';
@@ -65,6 +81,8 @@ class WarehouseController extends Controller
             'name' => $validated['name'],
             'unit' => $validated['unit'],
             'price' => $validated['price'],
+            'sumber_pengadaan' => $validated['sumber_pengadaan'],
+            'kategori_stok' => $validated['kategori_stok'],
         ]);
 
         if (! empty($validated['sizes']) && ! empty($validated['quantities'])) {
@@ -82,16 +100,26 @@ class WarehouseController extends Controller
 
     public function update(Request $request, WarehouseItem $warehouse_item)
     {
+        if ($request->has('price')) {
+            $priceStr = str_replace('.', '', $request->input('price'));
+            $priceStr = str_replace(',', '.', $priceStr);
+            $request->merge(['price' => $priceStr]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
+            'sumber_pengadaan' => 'required|string|in:Mabes Polri,Polda NTB',
+            'kategori_stok' => 'required|string|in:Stok,Luar Stok',
         ]);
 
         $warehouse_item->update([
             'name' => $validated['name'],
             'price' => $validated['price'] ?? 0,
             'unit' => $validated['unit'] ?? 'PCS',
+            'sumber_pengadaan' => $validated['sumber_pengadaan'],
+            'kategori_stok' => $validated['kategori_stok'],
         ]);
 
         return redirect()->back()->with('success', 'Data Gudang berhasil diperbarui');
@@ -208,8 +236,9 @@ class WarehouseController extends Controller
                 'letter_number' => 'nullable|string|max:255',
                 'letter_date' => 'nullable|date',
                 'items' => 'required|array|min:1',
-                'items.*.warehouse_item_size_id' => 'required|exists:warehouse_item_sizes,id',
-                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.sizes' => 'required|array|min:1',
+                'items.*.sizes.*.warehouse_item_size_id' => 'required|exists:warehouse_item_sizes,id',
+                'items.*.sizes.*.quantity' => 'required|integer|min:1',
             ]);
         } else {
             $request->validate([
@@ -219,8 +248,8 @@ class WarehouseController extends Controller
                 'selected_satkers' => 'required|array|min:1',
                 'selected_satkers.*' => 'exists:satkers,id',
                 'selected_items' => 'required|array|min:1',
-                'selected_items.*' => 'exists:warehouse_item_sizes,id',
-                'quantities' => 'required|array',
+                'selected_items.*' => 'exists:warehouse_items,id',
+                'm2_mode' => 'nullable|in:acak,ukuran',
             ]);
         }
 
@@ -230,97 +259,158 @@ class WarehouseController extends Controller
 
             if ($method === 'method_1') {
                 foreach ($request->items as $itemData) {
-                    $size = WarehouseItemSize::with('item')->findOrFail($itemData['warehouse_item_size_id']);
+                    foreach ($itemData['sizes'] as $sizeData) {
+                        $size = WarehouseItemSize::with('item')->findOrFail($sizeData['warehouse_item_size_id']);
 
-                    if ($size->stock < $itemData['quantity']) {
-                        DB::rollBack();
+                        if ($size->stock < $sizeData['quantity']) {
+                            DB::rollBack();
 
-                        return back()->withInput()->with('error', 'Stok ' . $size->item->name . ' ukuran ' . $size->size_label . ' tidak mencukupi. (Stok tersisa: ' . $size->stock . ')');
+                            return back()->withInput()->with('error', 'Stok ' . $size->item->name . ' ukuran ' . $size->size_label . ' tidak mencukupi. (Stok tersisa: ' . $size->stock . ')');
+                        }
+
+                        // Kurangi stok
+                        $size->stock -= $sizeData['quantity'];
+                        $size->save();
+
+                        // Catat pengeluaran
+                        WarehouseOutflow::create([
+                            'warehouse_item_size_id' => $size->id,
+                            'satker_id' => $request->satker_id,
+                            'quantity' => $sizeData['quantity'],
+                            'outflow_date' => $request->outflow_date,
+                            'recipient_name' => $request->recipient_name,
+                            'reference_note' => 'Belum Ada',
+                            'letter_number' => $request->letter_number,
+                            'letter_date' => $request->letter_date,
+                        ]);
+
+                        $createdCount++;
                     }
-
-                    // Kurangi stok
-                    $size->stock -= $itemData['quantity'];
-                    $size->save();
-
-                    // Catat pengeluaran
-                    WarehouseOutflow::create([
-                        'warehouse_item_size_id' => $size->id,
-                        'satker_id' => $request->satker_id,
-                        'quantity' => $itemData['quantity'],
-                        'outflow_date' => $request->outflow_date,
-                        'recipient_name' => $request->recipient_name,
-                        'reference_note' => 'Belum Ada',
-                        'letter_number' => $request->letter_number,
-                        'letter_date' => $request->letter_date,
-                    ]);
-
-                    $createdCount++;
                 }
-            } else {
-                // Method 2: Per Barang (Multiple Satkers & Items grid, No Size Selected)
-                $request->validate([
-                    'selected_items.*' => 'exists:warehouse_items,id',
-                ]);
 
+            } else {
+                // Method 2: Per Barang (Multiple Satkers & Items grid, No Size Selected ATAU by Ukuran)
+
+                $mode = $request->m2_mode ?? 'acak';
                 $totalsNeeded = [];
+                $totalsNeededSize = [];
+                
                 // Calculate total needed per ITEM id
                 foreach ($request->selected_satkers as $satkerId) {
                     foreach ($request->selected_items as $itemId) {
-                        $qty = isset($request->quantities[$satkerId][$itemId]) ? (int)$request->quantities[$satkerId][$itemId] : 0;
-                        if ($qty > 0) {
-                            $totalsNeeded[$itemId] = ($totalsNeeded[$itemId] ?? 0) + $qty;
+                        if ($mode === 'ukuran') {
+                            if (isset($request->quantities_size[$satkerId][$itemId]) && is_array($request->quantities_size[$satkerId][$itemId])) {
+                                foreach ($request->quantities_size[$satkerId][$itemId] as $sizeId => $qty) {
+                                    $qty = (int)$qty;
+                                    if ($qty > 0) {
+                                        $totalsNeededSize[$itemId][$sizeId] = ($totalsNeededSize[$itemId][$sizeId] ?? 0) + $qty;
+                                    }
+                                }
+                            }
+                        } else {
+                            $qty = isset($request->quantities[$satkerId][$itemId]) ? (int)$request->quantities[$satkerId][$itemId] : 0;
+                            if ($qty > 0) {
+                                $totalsNeeded[$itemId] = ($totalsNeeded[$itemId] ?? 0) + $qty;
+                            }
                         }
                     }
                 }
 
-                if (empty($totalsNeeded)) {
+                if ($mode === 'ukuran' && empty($totalsNeededSize)) {
+                    DB::rollBack();
+                    return back()->withInput()->with('error', 'Tidak ada barang dengan jumlah > 0 yang dibagikan ke satker mana pun.');
+                }
+                if ($mode === 'acak' && empty($totalsNeeded)) {
                     DB::rollBack();
                     return back()->withInput()->with('error', 'Tidak ada barang dengan jumlah > 0 yang dibagikan ke satker mana pun.');
                 }
 
-                // Validate stocks across all items first (Total sum of all sizes)
-                foreach ($totalsNeeded as $itemId => $totalQty) {
-                    $totalStock = WarehouseItemSize::where('warehouse_item_id', $itemId)->sum('stock');
-                    if ($totalStock < $totalQty) {
+                // Validate stocks
+                if ($mode === 'ukuran') {
+                    // Validasi per size
+                    foreach ($totalsNeededSize as $itemId => $sizes) {
                         $item = \App\Models\WarehouseItem::findOrFail($itemId);
-                        DB::rollBack();
-                        return back()->withInput()->with('error', 'Total stok ' . $item->name . ' tidak mencukupi untuk total pembagian. (Dibutuhkan: ' . $totalQty . ', Stok tersisa: ' . $totalStock . ')');
+                        foreach ($sizes as $sizeId => $totalQty) {
+                            $sizeObj = WarehouseItemSize::findOrFail($sizeId);
+                            if ($sizeObj->stock < $totalQty) {
+                                DB::rollBack();
+                                return back()->withInput()->with('error', 'Total stok ' . $item->name . ' ukuran ' . $sizeObj->size_label . ' tidak mencukupi. (Dibutuhkan: ' . $totalQty . ', Stok: ' . $sizeObj->stock . ')');
+                            }
+                        }
+                    }
+                } else {
+                    // Validasi total stok item
+                    foreach ($totalsNeeded as $itemId => $totalQty) {
+                        $totalStock = WarehouseItemSize::where('warehouse_item_id', $itemId)->sum('stock');
+                        if ($totalStock < $totalQty) {
+                            $item = \App\Models\WarehouseItem::findOrFail($itemId);
+                            DB::rollBack();
+                            return back()->withInput()->with('error', 'Total stok ' . $item->name . ' tidak mencukupi untuk total pembagian. (Dibutuhkan: ' . $totalQty . ', Stok tersisa: ' . $totalStock . ')');
+                        }
                     }
                 }
 
-                // If sufficient, reduce stock and create outflow using FIFO
+                // If sufficient, reduce stock and create outflow
                 foreach ($request->selected_satkers as $satkerId) {
                     foreach ($request->selected_items as $itemId) {
-                        $qtyRequired = isset($request->quantities[$satkerId][$itemId]) ? (int)$request->quantities[$satkerId][$itemId] : 0;
-                        if ($qtyRequired > 0) {
-                            $sizes = WarehouseItemSize::where('warehouse_item_id', $itemId)
-                                        ->where('stock', '>', 0)
-                                        ->orderBy('id')
-                                        ->get();
-                            
-                            $remaining = $qtyRequired;
-                            
-                            foreach ($sizes as $size) {
-                                if ($remaining <= 0) break;
+                        
+                        if ($mode === 'ukuran') {
+                            if (isset($request->quantities_size[$satkerId][$itemId]) && is_array($request->quantities_size[$satkerId][$itemId])) {
+                                foreach ($request->quantities_size[$satkerId][$itemId] as $sizeId => $qty) {
+                                    $qtyRequired = (int)$qty;
+                                    if ($qtyRequired > 0) {
+                                        $sizeObj = WarehouseItemSize::findOrFail($sizeId);
+                                        $sizeObj->stock -= $qtyRequired;
+                                        $sizeObj->save();
+                                        
+                                        WarehouseOutflow::create([
+                                            'warehouse_item_size_id' => $sizeObj->id,
+                                            'satker_id' => $satkerId,
+                                            'quantity' => $qtyRequired,
+                                            'outflow_date' => $request->outflow_date,
+                                            'recipient_name' => null, 
+                                            'reference_note' => 'Belum Ada',
+                                            'letter_number' => $request->letter_number,
+                                            'letter_date' => $request->letter_date,
+                                        ]);
+                                        
+                                        $createdCount++;
+                                    }
+                                }
+                            }
+                        } else {
+                            // Acak FIFO
+                            $qtyRequired = isset($request->quantities[$satkerId][$itemId]) ? (int)$request->quantities[$satkerId][$itemId] : 0;
+                            if ($qtyRequired > 0) {
+                                $sizes = WarehouseItemSize::where('warehouse_item_id', $itemId)
+                                            ->where('stock', '>', 0)
+                                            ->orderBy('id')
+                                            ->get();
                                 
-                                $take = min($size->stock, $remaining);
+                                $remaining = $qtyRequired;
                                 
-                                $size->stock -= $take;
-                                $size->save();
-                                
-                                WarehouseOutflow::create([
-                                    'warehouse_item_size_id' => $size->id,
-                                    'satker_id' => $satkerId,
-                                    'quantity' => $take,
-                                    'outflow_date' => $request->outflow_date,
-                                    'recipient_name' => null, 
-                                    'reference_note' => 'Belum Ada',
-                                    'letter_number' => $request->letter_number,
-                                    'letter_date' => $request->letter_date,
-                                ]);
-                                
-                                $createdCount++;
-                                $remaining -= $take;
+                                foreach ($sizes as $size) {
+                                    if ($remaining <= 0) break;
+                                    
+                                    $take = min($size->stock, $remaining);
+                                    
+                                    $size->stock -= $take;
+                                    $size->save();
+                                    
+                                    WarehouseOutflow::create([
+                                        'warehouse_item_size_id' => $size->id,
+                                        'satker_id' => $satkerId,
+                                        'quantity' => $take,
+                                        'outflow_date' => $request->outflow_date,
+                                        'recipient_name' => null, 
+                                        'reference_note' => 'Belum Ada',
+                                        'letter_number' => $request->letter_number,
+                                        'letter_date' => $request->letter_date,
+                                    ]);
+                                    
+                                    $createdCount++;
+                                    $remaining -= $take;
+                                }
                             }
                         }
                     }

@@ -2285,10 +2285,12 @@
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.index') ? 'active' : '' }}">
                             Data Barang
                         </a>
-                        <a href="{{ route('admin.warehouse-items.dispense-form') }}"
-                            class="nav-link {{ request()->routeIs('admin.warehouse-items.dispense-form') ? 'active' : '' }}">
-                            Pengeluaran Barang
-                        </a>
+                        @if(auth()->user()->hasRole('superadmin'))
+                            <a href="{{ route('admin.warehouse-items.dispense-form') }}"
+                                class="nav-link {{ request()->routeIs('admin.warehouse-items.dispense-form') ? 'active' : '' }}">
+                                Pengeluaran Barang
+                            </a>
+                        @endif
                         <a href="{{ route('admin.warehouse-items.reports', ['type' => 'outflow']) }}"
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.reports') ? 'active' : '' }}">
                             Laporan Detail

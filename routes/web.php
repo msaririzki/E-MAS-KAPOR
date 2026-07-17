@@ -160,9 +160,11 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
         Route::get('/warehouse-items/reports/export-pdf', [\App\Http\Controllers\Admin\WarehouseController::class, 'exportReportsPdf'])->name('warehouse-items.reports.export-pdf');
 
         // Pengeluaran Barang (Halaman Terpisah)
-        Route::get('/warehouse-items/dispense', [\App\Http\Controllers\Admin\WarehouseController::class, 'dispenseForm'])->name('warehouse-items.dispense-form');
-        Route::post('/warehouse-items/dispense', [\App\Http\Controllers\Admin\WarehouseController::class, 'dispense'])->name('warehouse-items.dispense');
-        Route::get('/warehouse-items/api/item-sizes/{id}', [\App\Http\Controllers\Admin\WarehouseController::class, 'getItemSizes'])->name('warehouse-items.api.item-sizes');
+        Route::middleware('role:superadmin')->group(function () {
+            Route::get('/warehouse-items/dispense', [\App\Http\Controllers\Admin\WarehouseController::class, 'dispenseForm'])->name('warehouse-items.dispense-form');
+            Route::post('/warehouse-items/dispense', [\App\Http\Controllers\Admin\WarehouseController::class, 'dispense'])->name('warehouse-items.dispense');
+            Route::get('/warehouse-items/api/item-sizes/{id}', [\App\Http\Controllers\Admin\WarehouseController::class, 'getItemSizes'])->name('warehouse-items.api.item-sizes');
+        });
 
         // Penanda Tangan
         Route::get('/warehouse-items/signatories', [\App\Http\Controllers\Admin\WarehouseController::class, 'signatories'])->name('warehouse-items.signatories');
