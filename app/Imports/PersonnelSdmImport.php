@@ -194,6 +194,7 @@ class PersonnelSdmImport extends PersonnelImport
         $successCount = 0;
         $errorCount = 0;
         $errors = [];
+        $errorRows = [];
         $touchedSatkers = [];
 
         $ranksById = Rank::all()->keyBy('id');
@@ -237,7 +238,13 @@ class PersonnelSdmImport extends PersonnelImport
 
                 if ($fullName === '') {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference}: Nama kosong, dilewati.";
+                    $message = "Baris {$rowReference}: Nama kosong, dilewati.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
@@ -248,14 +255,26 @@ class PersonnelSdmImport extends PersonnelImport
                     || (bool) ($data['duplicate_nrp'] ?? false)
                 ) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): Preview masih mengandung error dan harus diperbaiki lebih dulu.";
+                    $message = "Baris {$rowReference} ({$fullName}): Preview masih mengandung error dan harus diperbaiki lebih dulu.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
 
                 if ($nrp !== '' && isset($processedNrps[$nrp])) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): NRP/NIP {$nrp} muncul lebih dari sekali pada payload import.";
+                    $message = "Baris {$rowReference} ({$fullName}): NRP/NIP {$nrp} muncul lebih dari sekali pada payload import.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
@@ -263,7 +282,13 @@ class PersonnelSdmImport extends PersonnelImport
                 $rank = $rankId > 0 ? $ranksById->get($rankId) : null;
                 if ($rankId > 0 && $rank === null) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): Pangkat tidak ditemukan.";
+                    $message = "Baris {$rowReference} ({$fullName}): Pangkat tidak ditemukan.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
@@ -271,21 +296,39 @@ class PersonnelSdmImport extends PersonnelImport
                 $satker = $satkersById->get($satkerId);
                 if ($satker === null) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): Satker tidak ditemukan.";
+                    $message = "Baris {$rowReference} ({$fullName}): Satker tidak ditemukan.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
 
                 if (! in_array($gender, ['L', 'P'], true)) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): Jenis kelamin tidak valid.";
+                    $message = "Baris {$rowReference} ({$fullName}): Jenis kelamin tidak valid.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
 
                 if ($religion === '') {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): Agama kosong.";
+                    $message = "Baris {$rowReference} ({$fullName}): Agama kosong.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
@@ -368,7 +411,13 @@ class PersonnelSdmImport extends PersonnelImport
                     }
                 } catch (\Throwable $throwable) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): ".$throwable->getMessage();
+                    $message = "Baris {$rowReference} ({$fullName}): ".$throwable->getMessage();
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
                 }
             }
         });
@@ -381,6 +430,7 @@ class PersonnelSdmImport extends PersonnelImport
             'success_count' => $successCount,
             'error_count' => $errorCount,
             'errors' => $errors,
+            'error_rows' => $errorRows,
         ];
     }
 

@@ -126,9 +126,14 @@ class SdmImportRunService
     /**
      * @param  array<int, array<string, mixed>>  $preview
      * @param  array<int, string>  $processingErrors
+     * @param  array<int, array<string, mixed>>  $processingErrorRows
      */
-    public function storeErrorReport(SdmImportRun $run, array $preview, array $processingErrors = []): ?string
-    {
+    public function storeErrorReport(
+        SdmImportRun $run,
+        array $preview,
+        array $processingErrors = [],
+        array $processingErrorRows = [],
+    ): ?string {
         $rows = [];
 
         foreach ($preview as $row) {
@@ -150,6 +155,19 @@ class SdmImportRunService
 
         foreach ($processingErrors as $message) {
             $rows[] = ['', 'runtime', '', '', '', '', '', $message];
+        }
+
+        foreach ($processingErrorRows as $errorRow) {
+            $rows[] = [
+                '',
+                $errorRow['row_reference'] ?? 'runtime',
+                $errorRow['full_name'] ?? '',
+                '',
+                '',
+                '',
+                '',
+                $errorRow['message'] ?? '',
+            ];
         }
 
         if ($rows === []) {

@@ -1491,9 +1491,14 @@ class PersonnelController extends Controller
 
             $successCount = $results['success_count'];
             $errorCount = $results['error_count'];
+            $failedNames = $this->extractFailedSdmNames(
+                $results['error_rows'] ?? [],
+                $results['errors'] ?? [],
+            );
+            $failedRowSummary = $this->formatFailedSdmNames($failedNames);
             $notificationType = $errorCount > 0 ? 'warning' : 'success';
             $notificationMessage = $errorCount > 0
-                ? "Berhasil mengimpor {$successCount} data SDM. Gagal: {$errorCount}."
+                ? $this->buildSdmImportWarningMessage($successCount, $errorCount, $failedRowSummary)
                 : "Berhasil mengimpor {$successCount} data personil (SDM).";
 
             if ($importRun !== null) {
@@ -1501,9 +1506,15 @@ class PersonnelController extends Controller
                     'success_count' => $successCount,
                     'error_count' => $errorCount,
                     'processing_errors' => count($results['errors'] ?? []),
+                    'failed_names' => $failedNames,
                 ]);
 
-                $errorPath = $this->sdmImportRunService->storeErrorReport($importRun, $preview, $results['errors'] ?? []);
+                $errorPath = $this->sdmImportRunService->storeErrorReport(
+                    $importRun,
+                    $preview,
+                    $results['errors'] ?? [],
+                    $results['error_rows'] ?? [],
+                );
 
                 $importRun->update([
                     'status' => $errorCount > 0 ? 'completed_with_errors' : 'completed',
@@ -1527,6 +1538,7 @@ class PersonnelController extends Controller
                     'redirect_url' => route('admin.personnel.index'),
                     'success_count' => $successCount,
                     'error_count' => $errorCount,
+                    'failed_names' => $failedNames,
                 ]);
             }
 
@@ -1603,6 +1615,72 @@ class PersonnelController extends Controller
             'elapsed_seconds' => $elapsedSeconds,
             'stale_queue' => $isStaleQueue,
         ]);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>|string>  $errorRows
+     * @return array<int, string>
+     */
+    private function extractFailedSdmNames(array $errorRows, array $errorMessages = []): array
+    {
+        $names = collect($errorRows)
+            ->map(function ($row): string {
+                if (is_array($row)) {
+                    return trim((string) ($row['full_name'] ?? ''));
+                }
+
+                if (preg_match('/\((.*?)\):/', (string) $row, $matches)) {
+                    return trim($matches[1]);
+                }
+
+                return '';
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($names->isNotEmpty()) {
+            return $names->all();
+        }
+
+        return collect($errorMessages)
+            ->map(function ($message): string {
+                if (preg_match('/\((.*?)\):/', (string) $message, $matches)) {
+                    return trim($matches[1]);
+                }
+
+                return '';
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, string>  $names
+     */
+    private function formatFailedSdmNames(array $names, int $limit = 3): string
+    {
+        if ($names === []) {
+            return '';
+        }
+
+        $shownNames = array_slice($names, 0, $limit);
+        $suffix = count($names) > $limit ? ' dan '.(count($names) - $limit).' nama lain' : '';
+
+        return implode(', ', $shownNames).$suffix;
+    }
+
+    private function buildSdmImportWarningMessage(int $successCount, int $errorCount, string $failedNames): string
+    {
+        $message = "Berhasil mengimpor {$successCount} data SDM. Gagal: {$errorCount}.";
+
+        if ($failedNames !== '') {
+            $message .= ' Gagal pada: '.$failedNames.'.';
+        }
+
+        return $message;
     }
 
     /**
