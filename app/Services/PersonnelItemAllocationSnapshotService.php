@@ -39,7 +39,7 @@ class PersonnelItemAllocationSnapshotService
                 }
 
                 $query = Personnel::query()
-                    ->with(['user:id,name,nrp_nip,satker_id,is_active', 'satker:id,name'])
+                    ->with(['rank:id,name', 'user:id,name,nrp_nip,satker_id,is_active', 'satker:id,name'])
                     ->where('satker_id', $satker->id)
                     ->where('is_active', true)
                     ->whereNotNull('user_id');
@@ -65,6 +65,12 @@ class PersonnelItemAllocationSnapshotService
                             'nrp_snapshot' => User::normalizeLoginIdentifier($personnel->user->nrp_nip ?? $personnel->nrp),
                             'full_name_snapshot' => $personnel->full_name,
                             'satker_name_snapshot' => $personnel->satker?->name,
+                            'rank_snapshot' => $personnel->rank?->name ?? $personnel->golongan,
+                            'jabatan_snapshot' => $personnel->jabatan,
+                            'bagian_snapshot' => $personnel->bagian,
+                            'gender_snapshot' => $personnel->gender,
+                            'personnel_type_snapshot' => $personnel->personnel_type,
+                            'kapor_sizes_snapshot' => $personnel->kapor_sizes,
                             'kapor_item_name_snapshot' => $kaporItem->item_name,
                             'item_category_snapshot' => str_replace('_', ' ', (string) $kaporItem->category),
                             'budget_package_name_snapshot' => $budgetPackage->name,

@@ -5,6 +5,8 @@ namespace App\Exports;
 use App\Models\BudgetPackage;
 use App\Models\PackageItem;
 use App\Models\Personnel;
+use App\Models\PersonnelItemAllocation;
+use App\Models\Setting;
 use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
 use Illuminate\Contracts\View\View;
@@ -97,6 +99,10 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
      */
     private function buildCombinedMatrix(string $sizeKey, array $availableSizes): array
     {
+        if ($this->shouldReadSnapshot()) {
+            return $this->buildCombinedMatrixFromSnapshot($sizeKey, $availableSizes);
+        }
+
         $matrix = [];
         $totalPerSizePria = array_fill_keys($availableSizes, 0);
         $totalPerSizeWanita = array_fill_keys($availableSizes, 0);
@@ -156,6 +162,10 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
      */
     private function buildMatrix(string $sizeKey, array $availableSizes, ?string $genderFilter): array
     {
+        if ($this->shouldReadSnapshot()) {
+            return $this->buildMatrixFromSnapshot($sizeKey, $availableSizes, $genderFilter);
+        }
+
         $matrix = [];
         $totalPerSize = array_fill_keys($availableSizes, 0);
         $grandTotal = 0;
@@ -204,6 +214,117 @@ class PackageItemSheet implements FromView, ShouldAutoSize, WithEvents, WithTitl
         }
 
         return compact('matrix', 'totalPerSize', 'grandTotal');
+    }
+
+    private function buildCombinedMatrixFromSnapshot(string $sizeKey, array $availableSizes): array
+    {
+        $matrixBySatker = [];
+        $totalPerSizePria = array_fill_keys($availableSizes, 0);
+        $totalPerSizeWanita = array_fill_keys($availableSizes, 0);
+        $grandTotalPria = 0;
+        $grandTotalWanita = 0;
+
+        $allocations = PersonnelItemAllocation::query()
+            ->where('package_item_id', $this->packageItem->id)
+            ->orderBy('satker_name_snapshot')
+            ->get();
+
+        foreach ($allocations as $allocation) {
+            $satkerName = $allocation->satker_name_snapshot ?? 'Tanpa Satker';
+            $matrixBySatker[$satkerName] ??= [
+                'satker_name' => $satkerName,
+                'sizes_pria' => array_fill_keys($availableSizes, 0),
+                'total_pria' => 0,
+                'sizes_wanita' => array_fill_keys($availableSizes, 0),
+                'total_wanita' => 0,
+            ];
+
+            $sizeVal = $this->snapshotSizeValue($allocation->kapor_sizes_snapshot, $sizeKey, $availableSizes);
+
+            if ($allocation->gender_snapshot === 'L') {
+                if ($sizeVal !== null) {
+                    $matrixBySatker[$satkerName]['sizes_pria'][$sizeVal]++;
+                    $totalPerSizePria[$sizeVal]++;
+                }
+                $matrixBySatker[$satkerName]['total_pria']++;
+                $grandTotalPria++;
+            } elseif ($allocation->gender_snapshot === 'P') {
+                if ($sizeVal !== null) {
+                    $matrixBySatker[$satkerName]['sizes_wanita'][$sizeVal]++;
+                    $totalPerSizeWanita[$sizeVal]++;
+                }
+                $matrixBySatker[$satkerName]['total_wanita']++;
+                $grandTotalWanita++;
+            }
+        }
+
+        return [
+            'matrix' => array_values($matrixBySatker),
+            'totalPerSizePria' => $totalPerSizePria,
+            'totalPerSizeWanita' => $totalPerSizeWanita,
+            'grandTotalPria' => $grandTotalPria,
+            'grandTotalWanita' => $grandTotalWanita,
+        ];
+    }
+
+    private function buildMatrixFromSnapshot(string $sizeKey, array $availableSizes, ?string $genderFilter): array
+    {
+        $matrixBySatker = [];
+        $totalPerSize = array_fill_keys($availableSizes, 0);
+        $grandTotal = 0;
+
+        $allocations = PersonnelItemAllocation::query()
+            ->where('package_item_id', $this->packageItem->id)
+            ->orderBy('satker_name_snapshot')
+            ->get();
+
+        foreach ($allocations as $allocation) {
+            if ($genderFilter !== null && $allocation->gender_snapshot !== $genderFilter) {
+                continue;
+            }
+
+            $satkerName = $allocation->satker_name_snapshot ?? 'Tanpa Satker';
+            $matrixBySatker[$satkerName] ??= [
+                'satker_name' => $satkerName,
+                'sizes' => array_fill_keys($availableSizes, 0),
+                'row_total' => 0,
+            ];
+
+            $sizeVal = $this->snapshotSizeValue($allocation->kapor_sizes_snapshot, $sizeKey, $availableSizes);
+            if ($sizeVal !== null) {
+                $matrixBySatker[$satkerName]['sizes'][$sizeVal]++;
+                $totalPerSize[$sizeVal]++;
+            }
+
+            $matrixBySatker[$satkerName]['row_total']++;
+            $grandTotal++;
+        }
+
+        return [
+            'matrix' => array_values($matrixBySatker),
+            'totalPerSize' => $totalPerSize,
+            'grandTotal' => $grandTotal,
+        ];
+    }
+
+    private function shouldReadSnapshot(): bool
+    {
+        $activeFiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $this->budgetPackage->loadMissing('budgetYear');
+
+        return $this->budgetPackage->status === 'archived'
+            || (int) ($this->budgetPackage->budgetYear?->year ?? 0) < $activeFiscalYear;
+    }
+
+    private function snapshotSizeValue(array|string|null $kaporSizes, string $sizeKey, array $availableSizes): ?string
+    {
+        $sizes = is_string($kaporSizes) ? json_decode($kaporSizes, true) : $kaporSizes;
+        $value = is_array($sizes) ? ($sizes[$sizeKey] ?? null) : null;
+        $value = (string) $value;
+
+        return filled($value) && $value !== '-' && $value !== 'null' && in_array($value, $availableSizes, true)
+            ? $value
+            : null;
     }
 
     public function view(): View

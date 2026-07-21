@@ -4,7 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\BudgetPackage;
 use App\Models\BudgetYear;
+use App\Models\KaporItem;
+use App\Models\PackageItem;
+use App\Models\PackageItemRecipient;
 use App\Models\Personnel;
+use App\Models\PersonnelItemAllocation;
 use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\Setting;
@@ -65,6 +69,29 @@ class PrepareNextYearTest extends TestCase
             'name' => 'Paket Final',
             'status' => 'finalized',
             'total_budget' => 200000,
+        ]);
+
+        $kaporItem = KaporItem::create([
+            'category' => 'Tutup_Kepala',
+            'item_name' => 'BARET LAPANGAN',
+            'price' => 100000,
+            'unit' => 'PCS',
+            'is_active' => true,
+            'for_identifikasi' => true,
+        ]);
+
+        $packageItem = PackageItem::create([
+            'budget_package_id' => $finalPackage->id,
+            'kapor_item_id' => $kaporItem->id,
+            'calculated_qty' => 1,
+            'calculated_total' => 100000,
+        ]);
+
+        PackageItemRecipient::create([
+            'package_item_id' => $packageItem->id,
+            'satker_id' => $satker->id,
+            'recipient_filters' => null,
+            'matched_count' => 1,
         ]);
 
         $user = User::factory()->create([
@@ -131,6 +158,19 @@ class PrepareNextYearTest extends TestCase
         $this->assertDatabaseMissing('personnels', [
             'id' => $personnel->id,
         ]);
+
+        $allocation = PersonnelItemAllocation::query()
+            ->where('budget_package_id', $finalPackage->id)
+            ->where('package_item_id', $packageItem->id)
+            ->firstOrFail();
+
+        $this->assertSame('EGAS DOSANTOS', $allocation->full_name_snapshot);
+        $this->assertSame('AIPDA', $allocation->rank_snapshot);
+        $this->assertSame('BANIT RESKRIM', $allocation->jabatan_snapshot);
+        $this->assertSame('SAT RESKRIM', $allocation->bagian_snapshot);
+        $this->assertSame('L', $allocation->gender_snapshot);
+        $this->assertSame('Polri', $allocation->personnel_type_snapshot);
+        $this->assertSame('57', $allocation->kapor_sizes_snapshot['topi']);
 
         $this->assertDatabaseHas('users', [
             'id' => $user->id,

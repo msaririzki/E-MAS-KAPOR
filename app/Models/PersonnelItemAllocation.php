@@ -24,6 +24,12 @@ class PersonnelItemAllocation extends Model
         'nrp_snapshot',
         'full_name_snapshot',
         'satker_name_snapshot',
+        'rank_snapshot',
+        'jabatan_snapshot',
+        'bagian_snapshot',
+        'gender_snapshot',
+        'personnel_type_snapshot',
+        'kapor_sizes_snapshot',
         'kapor_item_name_snapshot',
         'item_category_snapshot',
         'budget_package_name_snapshot',
@@ -33,6 +39,7 @@ class PersonnelItemAllocation extends Model
     {
         return [
             'allocated_at' => 'datetime',
+            'kapor_sizes_snapshot' => 'array',
         ];
     }
 

@@ -17,13 +17,15 @@ use App\Models\User;
 use App\Services\AnnualArchiveService;
 use App\Services\AuditLogger;
 use App\Services\ExportSignatorySettingService;
+use App\Services\PersonnelItemAllocationSnapshotService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SettingsController extends Controller
 {
     public function __construct(
-        private readonly AnnualArchiveService $annualArchiveService
+        private readonly AnnualArchiveService $annualArchiveService,
+        private readonly PersonnelItemAllocationSnapshotService $allocationSnapshotService,
     ) {}
 
     public function index()
@@ -175,6 +177,13 @@ class SettingsController extends Controller
         $satkerIds = Satker::query()->pluck('id')->all();
 
         $this->annualArchiveService->generateForYear((int) $currentYear, auth()->id());
+
+        BudgetPackage::query()
+            ->whereHas('budgetYear', fn ($query) => $query->where('year', $currentYear))
+            ->whereIn('status', ['draft', 'finalized'])
+            ->with(['budgetYear', 'items.kaporItem', 'items.recipients.satker'])
+            ->get()
+            ->each(fn (BudgetPackage $package) => $this->allocationSnapshotService->regenerateForBudgetPackage($package));
 
         DB::transaction(function () use ($currentYear, $nextYear) {
             Setting::setValue('is_system_locked', 'true');

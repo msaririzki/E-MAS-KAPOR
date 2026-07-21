@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\BudgetPackage;
 use App\Models\Personnel;
+use App\Models\PersonnelItemAllocation;
 use App\Models\Satker;
+use App\Models\Setting;
 use Illuminate\Support\Collection;
 
 class PackageSatkerAllocationService
@@ -40,6 +42,10 @@ class PackageSatkerAllocationService
     private function buildRowsForPackageItems(Collection $packageItems, Satker $satker): Collection
     {
         $packageItems = $packageItems->filter();
+
+        if ($this->shouldReadSnapshot($packageItems)) {
+            return $this->buildRowsFromAllocationSnapshots($packageItems, $satker);
+        }
 
         $personnelRows = [];
         $exportedPersonnelItems = [];
@@ -114,6 +120,84 @@ class PackageSatkerAllocationService
                         }
                     });
             }
+        }
+
+        return collect($personnelRows)
+            ->map(function (array $row) {
+                $row['item_count'] = count($row['items']);
+
+                return $row;
+            })
+            ->sortBy('full_name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+    }
+
+    private function shouldReadSnapshot(Collection $packageItems): bool
+    {
+        $activeFiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
+
+        foreach ($packageItems as $packageItem) {
+            $packageItem->loadMissing('budgetPackage.budgetYear');
+            $package = $packageItem->budgetPackage;
+            $year = (int) ($package?->budgetYear?->year ?? 0);
+
+            if ($package?->status === 'archived' || ($year > 0 && $year < $activeFiscalYear)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function buildRowsFromAllocationSnapshots(Collection $packageItems, Satker $satker): Collection
+    {
+        $packageItemIds = $packageItems->pluck('id')->filter()->values();
+
+        if ($packageItemIds->isEmpty()) {
+            return collect();
+        }
+
+        $allocations = PersonnelItemAllocation::query()
+            ->whereIn('package_item_id', $packageItemIds)
+            ->where('satker_id', $satker->id)
+            ->orderBy('full_name_snapshot')
+            ->get();
+
+        $personnelRows = [];
+        $exportedPersonnelItems = [];
+
+        foreach ($allocations as $allocation) {
+            $personnelKey = $allocation->user_id ?: $allocation->personnel_id ?: $allocation->nrp_snapshot ?: $allocation->full_name_snapshot;
+            $exportKey = $allocation->package_item_id.'-'.$personnelKey;
+
+            if (isset($exportedPersonnelItems[$exportKey])) {
+                continue;
+            }
+
+            $exportedPersonnelItems[$exportKey] = true;
+
+            if (! isset($personnelRows[$personnelKey])) {
+                $personnelRows[$personnelKey] = [
+                    'personnel_id' => $allocation->personnel_id,
+                    'full_name' => $allocation->full_name_snapshot,
+                    'nrp' => $allocation->nrp_snapshot ?? '-',
+                    'rank' => $allocation->rank_snapshot ?? '-',
+                    'jabatan' => $allocation->jabatan_snapshot ?? '-',
+                    'bagian' => $allocation->bagian_snapshot ?? '-',
+                    'personnel_type' => $allocation->personnel_type_snapshot ?? '-',
+                    'gender' => $this->genderLabel($allocation->gender_snapshot),
+                    'items' => [],
+                    'categories' => [],
+                    'sizes' => [],
+                ];
+            }
+
+            $personnelRows[$personnelKey]['items'][] = $allocation->kapor_item_name_snapshot;
+            $personnelRows[$personnelKey]['categories'][] = $allocation->item_category_snapshot ?? '-';
+            $personnelRows[$personnelKey]['sizes'][] = $this->sizeDisplayValue(
+                $allocation->kapor_item_name_snapshot,
+                $allocation->kapor_sizes_snapshot,
+            );
         }
 
         return collect($personnelRows)
