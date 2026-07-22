@@ -11,6 +11,7 @@ use App\Models\User;
 use Database\Seeders\RankSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
@@ -167,6 +168,60 @@ class ImportSdmTest extends TestCase
         $this->assertSame('KET MANUAL', $personnel->keterangan);
         $this->assertSame(['topi' => '57', 'kemeja' => '15'], $personnel->kapor_sizes);
         $this->assertSame('Katolik', $personnel->religion);
+    }
+
+    public function test_sdm_import_recovers_orphan_user_with_hidden_unicode_space_in_nrp(): void
+    {
+        Satker::create([
+            'name' => 'POLDA NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        $satker = Satker::create([
+            'name' => 'POLRES BIMA KOTA',
+            'code' => 'POLRES-BIMA-KOTA',
+            'sort_order' => 2,
+        ]);
+
+        $orphanUser = User::factory()->create([
+            'name' => 'JEFTHA ANDARA WONGSO',
+            'nrp_nip' => "99110739\u{00A0}",
+            'password' => Hash::make('password-lama'),
+            'satker_id' => null,
+            'is_active' => false,
+        ]);
+        $orphanUser->assignRole('personil');
+
+        $this->assertSame('99110739', User::normalizeLoginIdentifier($orphanUser->nrp_nip));
+        $this->assertDatabaseMissing('personnels', ['user_id' => $orphanUser->id]);
+
+        $import = new PersonnelSdmImport;
+        $preview = $import->generatePreview(collect([
+            [1, 'JEFTHA ANDHARA WONGSO, S.H.', 'BRIPTU', "99110739\u{00A0}", 'BA SATINTELKAM POLRES BIMA KOTA POLDA NTB', 'PRIA', 'ISLAM'],
+        ]), 'Sheet 1');
+
+        $result = $import->saveFromPreviewData($preview);
+
+        $this->assertSame(1, $result['success_count']);
+        $this->assertSame(0, $result['error_count']);
+        $this->assertSame(1, User::where('nrp_nip', '99110739')->count());
+
+        $orphanUser->refresh();
+        $this->assertSame('99110739', $orphanUser->nrp_nip);
+        $this->assertSame('JEFTHA ANDHARA WONGSO, S.H.', $orphanUser->name);
+        $this->assertSame($satker->id, $orphanUser->satker_id);
+        $this->assertTrue($orphanUser->is_active);
+        $this->assertTrue(Hash::check('99110739', $orphanUser->password));
+
+        $this->assertDatabaseHas('personnels', [
+            'user_id' => $orphanUser->id,
+            'nrp' => '99110739',
+            'full_name' => 'JEFTHA ANDHARA WONGSO, S.H.',
+            'satker_id' => $satker->id,
+            'jabatan' => 'BA SATINTELKAM POLRES BIMA KOTA POLDA NTB',
+            'is_active' => true,
+        ]);
     }
 
     public function test_sdm_import_creates_persistent_run_log_and_error_report(): void
