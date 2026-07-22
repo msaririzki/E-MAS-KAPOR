@@ -27,13 +27,14 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         $isPersonnel = $this->input('role') === 'personil';
+        $isKabakBekum = $this->input('role') === User::READ_ONLY_ADMIN_ROLE;
 
         return array_merge([
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
             'password' => $this->adminPasswordRules(),
             'role' => ['required', Rule::in(User::ADMINISTRATIVE_ROLES)],
-            'satker_id' => 'nullable|exists:satkers,id',
+            'satker_id' => [$isKabakBekum ? 'required' : 'nullable', 'exists:satkers,id'],
         ], $this->userAccountFieldRules($isPersonnel));
     }
 

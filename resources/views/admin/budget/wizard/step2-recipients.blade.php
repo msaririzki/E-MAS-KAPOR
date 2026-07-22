@@ -224,7 +224,7 @@
 
                         {{-- Kategori Pangkat --}}
                         <div class="filter-item" id="rank-group-{{ $item->id }}">
-                            <label class="filter-label">Kategori Golongan</label>
+                            <label class="filter-label">Pangkat / Golongan</label>
                             <div class="filter-pills" id="rank-pills-{{ $item->id }}">
                                 {{-- Pangkat Polri --}}
                                 <label class="pill-check rank-pill polri-rank" data-type="polri">
@@ -250,19 +250,19 @@
                                 {{-- Golongan PNS/PPPK --}}
                                 <label class="pill-check rank-pill pns-rank" data-type="pns">
                                     <input type="checkbox" class="filter-input" data-filter="golongan" data-value="1" data-item="{{ $item->id }}">
-                                    <span>GOL 1</span>
+                                    <span>1</span>
                                 </label>
                                 <label class="pill-check rank-pill pns-rank" data-type="pns">
                                     <input type="checkbox" class="filter-input" data-filter="golongan" data-value="2" data-item="{{ $item->id }}">
-                                    <span>GOL 2</span>
+                                    <span>2</span>
                                 </label>
                                 <label class="pill-check rank-pill pns-rank" data-type="pns">
                                     <input type="checkbox" class="filter-input" data-filter="golongan" data-value="3" data-item="{{ $item->id }}">
-                                    <span>GOL 3</span>
+                                    <span>3</span>
                                 </label>
                                 <label class="pill-check rank-pill pns-rank" data-type="pns">
                                     <input type="checkbox" class="filter-input" data-filter="golongan" data-value="4" data-item="{{ $item->id }}">
-                                    <span>GOL 4</span>
+                                    <span>4</span>
                                 </label>
                             </div>
                         </div>
@@ -925,6 +925,19 @@
     );
     const keteranganTouchedItems = new Set();
 
+    function normalizeGolonganValue(value) {
+        let normalized = String(value ?? '').trim().toUpperCase();
+        normalized = normalized.replace(/^GOL(?:ONGAN)?\.?\s*/, '').replace(/\s+/g, '');
+
+        const numeric = normalized.match(/^([1-4])(?:[.\/-]?[A-E])?$/);
+        if (numeric) return numeric[1];
+
+        const roman = normalized.match(/^(IV|III|II|I)(?:[.\/-]?[A-E])?$/);
+        if (!roman) return null;
+
+        return { I: '1', II: '2', III: '3', IV: '4' }[roman[1]];
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Toggle Auto-Saran Logic
         const autoSuggestToggle = document.getElementById('auto-suggest-toggle');
@@ -1019,6 +1032,18 @@
                             hasAutoApplied = true;
                         }
                     });
+                }
+
+                if (!(filters.golongan && filters.golongan.length > 0)) {
+                    const detectedGolongan = detectGolonganFromName(itemName);
+                    if (detectedGolongan) {
+                        const cb = card.querySelector(`input.filter-input[data-filter="golongan"][data-value="${detectedGolongan}"]`);
+                        if (cb && !cb.checked) {
+                            cb.checked = true;
+                            addAutoBadge(cb.nextElementSibling);
+                            hasAutoApplied = true;
+                        }
+                    }
                 }
 
                 // Jika di-force (dari tombol toggle ON) dan ada perubahan, trigger save otomatis
@@ -1116,7 +1141,21 @@
             // Pre-check rank_categories
             if (filters.rank_categories && Array.isArray(filters.rank_categories)) {
                 filters.rank_categories.forEach(val => {
-                    const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="rank_categories"][data-value="${val}"]`);
+                    const golongan = normalizeGolonganValue(val);
+                    const filterName = golongan ? 'golongan' : 'rank_categories';
+                    const filterValue = golongan || val;
+                    const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="${filterName}"][data-value="${filterValue}"]`);
+                    if (cb) cb.checked = true;
+                });
+            }
+
+
+            if (filters.golongan && Array.isArray(filters.golongan)) {
+                filters.golongan.forEach(val => {
+                    const golongan = normalizeGolonganValue(val);
+                    if (!golongan) return;
+
+                    const cb = document.querySelector(`input.filter-input[data-item="${itemId}"][data-filter="golongan"][data-value="${golongan}"]`);
                     if (cb) cb.checked = true;
                 });
             }
@@ -1156,6 +1195,12 @@
             if (n.includes('BINTARA')) ranks.push('BINTARA');
             if (n.includes('TAMTAMA')) ranks.push('TAMTAMA');
             return ranks;
+        }
+
+        function detectGolonganFromName(name) {
+            const match = name.toUpperCase().match(/\bGOL(?:ONGAN)?\.?\s*(IV|III|II|I|[1-4])(?:\s*[.\/-]?\s*[A-E])?\b/);
+
+            return match ? normalizeGolonganValue(match[1]) : null;
         }
 
         // Eksekusi auto-suggest saat load pertama kali (tidak di-force, hormati status existing)

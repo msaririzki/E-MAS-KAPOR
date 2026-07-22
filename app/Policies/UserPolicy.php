@@ -11,7 +11,7 @@ class UserPolicy
      */
     public function viewAny(User $auth): bool
     {
-        return $auth->hasRole('superadmin');
+        return $auth->hasSuperadminReadAccess();
     }
 
     /**
@@ -19,7 +19,7 @@ class UserPolicy
      */
     public function view(User $auth, User $target): bool
     {
-        return $auth->hasRole('superadmin');
+        return $auth->hasSuperadminReadAccess();
     }
 
     /**

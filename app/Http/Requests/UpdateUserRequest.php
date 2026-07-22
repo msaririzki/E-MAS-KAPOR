@@ -29,6 +29,7 @@ class UpdateUserRequest extends FormRequest
         $user = $this->route('user');
         $role = $this->input('role') ?: $user?->getRoleNames()->first();
         $isPersonnel = $role === 'personil';
+        $isKabakBekum = $role === User::READ_ONLY_ADMIN_ROLE;
 
         return array_merge([
             'name' => 'required|string|max:255',
@@ -36,7 +37,7 @@ class UpdateUserRequest extends FormRequest
             'password' => $this->adminPasswordRules(false),
             'role' => ['required', Rule::in(User::ADMINISTRATIVE_ROLES)],
             'is_active' => 'boolean',
-            'satker_id' => 'nullable|exists:satkers,id',
+            'satker_id' => [$isKabakBekum ? 'required' : 'nullable', 'exists:satkers,id'],
         ], $this->userAccountFieldRules($isPersonnel, $user?->id));
     }
 

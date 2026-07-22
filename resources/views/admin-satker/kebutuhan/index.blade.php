@@ -71,17 +71,19 @@
             </thead>
             <tbody>
                 @forelse($kebutuhans as $index => $k)
-                <tr>
+                <tr class="kebutuhan-row" data-url="{{ route('admin-satker.kebutuhan.show', $k) }}"
+                    onclick="if (!event.target.closest('.kebutuhan-actions')) window.location.href = this.dataset.url;"
+                    tabindex="0" role="link" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href = this.dataset.url; }">
                     <td style="text-align: center;">{{ $kebutuhans->firstItem() + $index }}</td>
                     <td style="text-align: center;"><span class="badge badge-neutral">{{ $k->items->count() }} item</span></td>
                     <td>{{ $k->fiscal_year }}</td>
                     <td style="font-size: 12px;">{{ $k->submitted_at ? $k->submitted_at->format('d/m/Y H:i') : $k->created_at->format('d/m/Y H:i') }}</td>
                     <td style="text-align: center;">
-                        <div style="display: flex; gap: 4px; justify-content: center;">
-                            <a href="{{ route('admin-satker.kebutuhan.show', $k) }}" class="btn btn-outline btn-xs" title="Lihat Detail"><i class="ri-eye-line"></i></a>
-                            <a href="{{ route('admin-satker.kebutuhan.print', $k) }}" target="_blank" class="btn btn-outline btn-xs" title="Cetak PDF"><i class="ri-printer-line"></i></a>
+                        <div class="kebutuhan-actions" style="display: flex; gap: 4px; justify-content: center;">
+                            <a href="{{ route('admin-satker.kebutuhan.show', $k) }}" class="btn btn-outline btn-xs" title="Lihat Detail" onclick="event.stopPropagation();"><i class="ri-eye-line"></i></a>
+                            <a href="{{ route('admin-satker.kebutuhan.print', $k) }}" target="_blank" class="btn btn-outline btn-xs" title="Cetak PDF" onclick="event.stopPropagation();"><i class="ri-printer-line"></i></a>
                             <button type="button" class="btn btn-outline btn-xs" style="color: var(--danger);" title="Hapus"
-                                onclick="openDeleteModal({{ $k->id }}, '{{ addslashes($k->title) }}')">
+                                onclick="event.stopPropagation(); openDeleteModal({{ $k->id }}, '{{ addslashes($k->title) }}')">
                                 <i class="ri-delete-bin-line"></i>
                             </button>
                         </div>
@@ -147,6 +149,13 @@
     @keyframes kmFadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes kmSlideUp { from { opacity: 0; transform: translateY(20px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 </style>
+<script>
+    document.querySelectorAll('.kebutuhan-row').forEach((row) => {
+        row.style.cursor = 'pointer';
+        row.addEventListener('mouseenter', () => row.style.background = 'rgba(59, 130, 246, 0.04)');
+        row.addEventListener('mouseleave', () => row.style.background = '');
+    });
+</script>
 @endsection
 
 @section('scripts')

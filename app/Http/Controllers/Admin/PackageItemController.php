@@ -12,6 +12,7 @@ use App\Models\Satker;
 use App\Models\Setting;
 use App\Services\PersonnelItemAllocationSnapshotService;
 use App\Services\PersonnelKeteranganService;
+use App\Support\GolonganNormalizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -405,6 +406,15 @@ class PackageItemController extends Controller
 
         foreach ($filters as $key => $value) {
             if (is_array($value)) {
+                if ($key === 'golongan') {
+                    $golongan = GolonganNormalizer::majors($value);
+                    if ($golongan !== []) {
+                        $cleaned[$key] = $golongan;
+                    }
+
+                    continue;
+                }
+
                 $nested = $this->sanitizeRecipientFilters($value);
                 if ($nested !== null) {
                     $cleaned[$key] = $nested;
@@ -415,6 +425,25 @@ class PackageItemController extends Controller
 
             if (filled($value)) {
                 $cleaned[$key] = $value;
+            }
+        }
+
+        if (isset($cleaned['rank_categories']) && is_array($cleaned['rank_categories'])) {
+            $legacyGolongan = GolonganNormalizer::majors($cleaned['rank_categories']);
+
+            if ($legacyGolongan !== []) {
+                $cleaned['golongan'] = array_values(array_unique(array_merge(
+                    (array) ($cleaned['golongan'] ?? []),
+                    $legacyGolongan,
+                )));
+                $cleaned['rank_categories'] = array_values(array_filter(
+                    $cleaned['rank_categories'],
+                    static fn (mixed $category): bool => GolonganNormalizer::major($category) === null,
+                ));
+
+                if ($cleaned['rank_categories'] === []) {
+                    unset($cleaned['rank_categories']);
+                }
             }
         }
 

@@ -4,6 +4,9 @@
 @section('breadcrumb', 'Manajemen Pengguna')
 
 @section('content')
+@php
+    $canManageUsers = auth()->user()->can('create', \App\Models\User::class);
+@endphp
 {{-- Page Header --}}
 <div class="page-header" style="margin-bottom: 24px;">
     <div class="page-header-row">
@@ -11,25 +14,28 @@
             <h1 style="font-size: 24px; font-weight: 700; color: #111827;">Manajemen Pengguna</h1>
             <p style="color: #6B7280; font-size: 14px; margin-top: 4px;">Kelola akun pengguna, peran, dan hak akses</p>
         </div>
-        <div class="page-header-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <button class="btn btn-outline" onclick="openModal('bulkAdminSatkerModal')" style="border-radius: 10px; padding: 10px 18px; font-weight: 600; border-color: #DDD6FE; color: #4C1D95; background: #F5F3FF;">
-                <i class="ri-shield-user-line" style="color: #7C3AED;"></i> Generate Admin Satker
-            </button>
-            <button class="btn btn-outline" onclick="openModal('bulkDeleteAdminSatkerModal')" style="border-radius: 10px; padding: 10px 18px; font-weight: 600; border-color: #FECACA; color: #991B1B; background: #FEF2F2;">
-                <i class="ri-user-unfollow-line" style="color: #DC2626;"></i> Hapus Admin Satker
-            </button>
-            <button id="addBtn" class="btn btn-primary btn-maroon" onclick="toggleAddForm()" style="border-radius: 10px; padding: 10px 18px; font-weight: 700;">
-                @if($errors->any())
-                    <i class="ri-close-line"></i> Batal
-                @else
-                    <i class="ri-user-add-line"></i> Tambah Akun
-                @endif
-            </button>
-        </div>
+        @if($canManageUsers)
+            <div class="page-header-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn btn-outline" onclick="openModal('bulkAdminSatkerModal')" style="border-radius: 10px; padding: 10px 18px; font-weight: 600; border-color: #DDD6FE; color: #4C1D95; background: #F5F3FF;">
+                    <i class="ri-shield-user-line" style="color: #7C3AED;"></i> Generate Admin Satker
+                </button>
+                <button class="btn btn-outline" onclick="openModal('bulkDeleteAdminSatkerModal')" style="border-radius: 10px; padding: 10px 18px; font-weight: 600; border-color: #FECACA; color: #991B1B; background: #FEF2F2;">
+                    <i class="ri-user-unfollow-line" style="color: #DC2626;"></i> Hapus Admin Satker
+                </button>
+                <button id="addBtn" class="btn btn-primary btn-maroon" onclick="toggleAddForm()" style="border-radius: 10px; padding: 10px 18px; font-weight: 700;">
+                    @if($errors->any())
+                        <i class="ri-close-line"></i> Batal
+                    @else
+                        <i class="ri-user-add-line"></i> Tambah Akun
+                    @endif
+                </button>
+            </div>
+        @endif
     </div>
 </div>
 
 {{-- Inline Add User Form --}}
+@if($canManageUsers)
 <div id="addUserSection" class="inline-card" style="display: {{ $errors->any() ? 'block' : 'none' }}; margin-bottom: 24px;">
     <div class="card-header-simple">
         <h3 style="font-size: 18px; font-weight: 700; color: #111827;">Tambah Pengguna Baru</h3>
@@ -100,7 +106,7 @@
                          <input type="hidden" name="role" id="role_input" value="{{ old('role') }}" required>
                      </div>
                      <div style="margin-top: 8px; font-size: 12px; color: #6B7280;">
-                         Superadmin, Admin Satker, dan Admin Gudang login memakai Gmail. Akun personil dibuat dari Data Personel dan login dengan NRP/NIP.
+                         Superadmin, Kabak Bekum, Admin Satker, dan Admin Gudang login memakai Gmail. Akun personil dibuat dari Data Personel dan login dengan NRP/NIP.
                      </div>
                      @error('role') <span class="error-msg">{{ $message }}</span> @enderror
                  </div>
@@ -153,6 +159,7 @@
         </div>
     </form>
 </div>
+@endif
 
 {{-- Toast Notification Container --}}
 <div id="toastContainer" class="toast-container"></div>
@@ -233,6 +240,15 @@ Password: {{ $credential['password'] }}
         <div class="stat-content">
             <span class="stat-label">Superadmin</span>
             <span class="stat-number">{{ $stats['total_superadmin'] }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #EFF6FF; color: #2563EB;">
+            <i class="ri-eye-line"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Kabak Bekum</span>
+            <span class="stat-number">{{ $stats['total_kabak_bekum'] }}</span>
         </div>
     </div>
     <div class="stat-card">
@@ -342,7 +358,9 @@ Password: {{ $credential['password'] }}
                     <th>PERAN <i class="ri-arrow-up-down-line" style="font-size: 10px; opacity: 0.5;"></i></th>
                     <th>STATUS <i class="ri-arrow-up-down-line" style="font-size: 10px; opacity: 0.5;"></i></th>
                     <th>AKTIVITAS <i class="ri-arrow-up-down-line" style="font-size: 10px; opacity: 0.5;"></i></th>
-                    <th style="border-top-right-radius: 12px; text-align: center;">AKSI</th>
+                    @if($canManageUsers)
+                        <th style="border-top-right-radius: 12px; text-align: center;">AKSI</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -381,34 +399,36 @@ Password: {{ $credential['password'] }}
                         <div style="font-weight: 600; color: #111827;">{{ $u->updated_at->translatedFormat('d M Y') }}</div>
                         <div style="font-size: 11px; color: #9CA3AF;">Pukul {{ $u->updated_at->format('H:i') }}</div>
                     </td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-icon blue" onclick="openEditModal({{ json_encode($u->load(['roles', 'personnel'])) }})" title="Edit Data">
-                                <i class="ri-edit-line"></i>
-                            </button>
-                            
-                            {{-- Toggle Status Button --}}
-                            <form method="POST" action="{{ route('admin.users.toggle-status', $u) }}" style="display:inline;">
-                                @csrf
-                                <button type="submit" class="btn-icon {{ $u->is_active ? 'orange' : 'green' }}" 
-                                    title="{{ $u->is_active ? 'Nonaktifkan' : 'Aktifkan' }}"
-                                    {{ auth()->id() === $u->id ? 'disabled' : '' }}>
-                                    <i class="{{ $u->is_active ? 'ri-lock-line' : 'ri-lock-unlock-line' }}"></i>
+                    @if($canManageUsers)
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-icon blue" onclick="openEditModal({{ json_encode($u->load(['roles', 'personnel'])) }})" title="Edit Data">
+                                    <i class="ri-edit-line"></i>
                                 </button>
-                            </form>
 
-                            {{-- Delete Button --}}
-                            <button type="button" class="btn-icon red" title="Hapus Permanen" 
-                                onclick="confirmDelete({{ $u->id }}, '{{ $u->name }}')"
-                                {{ auth()->id() === $u->id ? 'disabled' : '' }}>
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
-                        </div>
-                    </td>
+                                {{-- Toggle Status Button --}}
+                                <form method="POST" action="{{ route('admin.users.toggle-status', $u) }}" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn-icon {{ $u->is_active ? 'orange' : 'green' }}"
+                                        title="{{ $u->is_active ? 'Nonaktifkan' : 'Aktifkan' }}"
+                                        {{ auth()->id() === $u->id ? 'disabled' : '' }}>
+                                        <i class="{{ $u->is_active ? 'ri-lock-line' : 'ri-lock-unlock-line' }}"></i>
+                                    </button>
+                                </form>
+
+                                {{-- Delete Button --}}
+                                <button type="button" class="btn-icon red" title="Hapus Permanen"
+                                    onclick="confirmDelete({{ $u->id }}, '{{ $u->name }}')"
+                                    {{ auth()->id() === $u->id ? 'disabled' : '' }}>
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            </div>
+                        </td>
+                    @endif
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" style="text-align:center; padding: 48px; color: #9CA3AF;">Belum ada data pengguna yang sesuai.</td>
+                    <td colspan="{{ $canManageUsers ? 5 : 4 }}" style="text-align:center; padding: 48px; color: #9CA3AF;">Belum ada data pengguna yang sesuai.</td>
                 </tr>
                 @endforelse
             </tbody>

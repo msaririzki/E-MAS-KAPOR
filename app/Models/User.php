@@ -18,8 +18,16 @@ class User extends Authenticatable
 
     public const IMPORT_PASSWORD_ROUNDS = 4;
 
+    public const READ_ONLY_ADMIN_ROLE = 'kabak_bekum';
+
+    public const SUPERADMIN_READ_ROLES = [
+        'superadmin',
+        self::READ_ONLY_ADMIN_ROLE,
+    ];
+
     public const SYSTEM_ROLES = [
         'superadmin',
+        self::READ_ONLY_ADMIN_ROLE,
         'admin_satker',
         'personil',
         'admin_gudang',
@@ -27,6 +35,7 @@ class User extends Authenticatable
 
     public const ADMINISTRATIVE_ROLES = [
         'superadmin',
+        self::READ_ONLY_ADMIN_ROLE,
         'admin_gudang',
         'admin_satker',
     ];
@@ -101,6 +110,16 @@ class User extends Authenticatable
     public function isPersonnel(): bool
     {
         return $this->hasRole('personil');
+    }
+
+    public function isReadOnlyAdmin(): bool
+    {
+        return $this->hasRole(self::READ_ONLY_ADMIN_ROLE);
+    }
+
+    public function hasSuperadminReadAccess(): bool
+    {
+        return $this->hasAnyRole(self::SUPERADMIN_READ_ROLES);
     }
 
     public function usesEmailLogin(): bool

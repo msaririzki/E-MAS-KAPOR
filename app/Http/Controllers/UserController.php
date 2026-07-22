@@ -19,8 +19,9 @@ class UserController extends Controller
 {
     private const ROLE_SORT_ORDER = [
         'superadmin' => 1,
-        'admin_gudang' => 2,
-        'admin_satker' => 3,
+        'kabak_bekum' => 2,
+        'admin_gudang' => 3,
+        'admin_satker' => 4,
     ];
 
     /**
@@ -48,6 +49,7 @@ class UserController extends Controller
         $stats = [
             'total_admin_satker' => $this->countUsersByExistingRoles(['admin_satker']),
             'total_superadmin' => $this->countUsersByExistingRoles(['superadmin']),
+            'total_kabak_bekum' => $this->countUsersByExistingRoles([User::READ_ONLY_ADMIN_ROLE]),
             'total_admin_gudang' => $this->countUsersByExistingRoles(['admin_gudang']),
             'total_personil' => $this->countUsersByExistingRoles(['personil']),
             'active_users' => $this->administrativeUsersQuery()->where('is_active', true)->count(),
@@ -320,18 +322,18 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return redirect()->route('admin.users.index')->with('error', 'Terjadi kesalahan sistem saat impor: '.$e->getMessage());
+            return redirect()->route('admin.users.index')->with('error', 'Terjadi kesalahan sistem saat unggah data: '.$e->getMessage());
         }
 
         fclose($handle);
 
-        AuditLogger::log('Import User', 'Manajemen Pengguna', null, null, null, 'success', "Berhasil memproses {$successCount} pengguna. Gagal: {$errorCount}");
+        AuditLogger::log('Unggah Pengguna', 'Manajemen Pengguna', null, null, null, 'success', "Berhasil memproses {$successCount} pengguna. Gagal: {$errorCount}");
 
         if ($errorCount > 0) {
             return redirect()->route('admin.users.index')->with('warning', "Berhasil memproses {$successCount} data. Gagal: {$errorCount}. Contoh error: ".implode(', ', array_slice($errors, 0, 3)));
         }
 
-        return redirect()->route('admin.users.index')->with('success', "Berhasil mengimpor {$successCount} pengguna.");
+        return redirect()->route('admin.users.index')->with('success', "Berhasil mengunggah {$successCount} pengguna.");
     }
 
     private function applyFilters($query, Request $request): void
@@ -462,10 +464,10 @@ class UserController extends Controller
 
         $baseLocal = $slug !== '' ? $slug : 'satker'.$satker->id;
         $localPart = $baseLocal;
-        $counter   = 2;
+        $counter = 2;
 
         while (User::query()->where('email', $localPart.'@gmail.com')->exists()) {
-            $suffix    = $counter;
+            $suffix = $counter;
             $localPart = Str::limit($baseLocal, 64 - strlen((string) $suffix), '').$suffix;
             $counter++;
         }

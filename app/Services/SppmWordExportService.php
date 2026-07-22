@@ -26,19 +26,15 @@ class SppmWordExportService
 
     private const FOOTER_MARGIN_TWIP = '900';
 
-    private BudgetCalculationService $calcService;
-
-    public function __construct(BudgetCalculationService $calcService)
-    {
-        $this->calcService = $calcService;
-    }
+    public function __construct(
+        private readonly BudgetPackageSppmAssignmentService $assignmentService,
+    ) {}
 
     /**
      * Generate one SPPM Word document for the whole package.
      */
     public function generateForPackage(BudgetPackage $package, array $suratData): ?string
     {
-        $data = $this->calcService->calculatePackage($package);
         $settings = app(ExportSignatorySettingService::class)->applyToInvoiceSetting(
             InvoiceSetting::getSettings(),
             auth()->user(),
@@ -49,32 +45,7 @@ class SppmWordExportService
             throw new RuntimeException('Template SPPM tidak ditemukan: '.$templatePath);
         }
 
-        $satkerData = [];
-
-        foreach ($data['items'] as $item) {
-            foreach ($item['recipients'] as $recipient) {
-                if ($recipient['matched_count'] <= 0) {
-                    continue;
-                }
-
-                $satkerId = $recipient['satker_id'];
-
-                if (! isset($satkerData[$satkerId])) {
-                    $satkerData[$satkerId] = [
-                        'satker' => Satker::find($satkerId),
-                        'items' => [],
-                    ];
-                }
-
-                $satkerData[$satkerId]['items'][] = [
-                    'item_name' => $item['item_name'],
-                    'unit' => $item['unit'],
-                    'price' => $item['price'],
-                    'qty' => $recipient['matched_count'],
-                    'total' => $recipient['subtotal'],
-                ];
-            }
-        }
+        $satkerData = $this->assignmentService->buildSppmSatkerData($package);
 
         // Urutkan satkerData sesuai urutan di halaman Daftar Satker
         // Menggunakan query yang sama: Satker::orderBy('sort_order') + global scope

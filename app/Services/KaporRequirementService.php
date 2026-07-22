@@ -6,7 +6,9 @@ use App\Models\BudgetPackage;
 use App\Models\KaporItem;
 use App\Models\Personnel;
 use App\Models\Satker;
+use App\Support\GolonganNormalizer;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class KaporRequirementService
 {
@@ -27,8 +29,23 @@ class KaporRequirementService
             $query->whereIn('gender', $filters['gender']);
         }
 
+        $golonganFilters = (array) ($filters['golongan'] ?? []);
+
         if (! empty($filters['rank_categories'])) {
-            $query->whereHas('rank', fn ($rankQuery) => $rankQuery->whereIn('category', $filters['rank_categories']));
+            $rawRankCategories = (array) $filters['rank_categories'];
+            $rankCategories = array_values(array_filter(
+                $rawRankCategories,
+                static fn (mixed $category): bool => GolonganNormalizer::major($category) === null,
+            ));
+            $legacyGolonganFilters = array_values(array_filter(
+                $rawRankCategories,
+                static fn (mixed $category): bool => GolonganNormalizer::major($category) !== null,
+            ));
+            $golonganFilters = array_merge($golonganFilters, $legacyGolonganFilters);
+
+            if ($rankCategories !== []) {
+                $query->whereHas('rank', fn ($rankQuery) => $rankQuery->whereIn('category', $rankCategories));
+            }
         }
 
         $keteranganFilters = $this->resolveKeteranganFilters($filters, $satker);
@@ -36,8 +53,19 @@ class KaporRequirementService
             $this->applyKeteranganFilter($query, $keteranganFilters);
         }
 
-        if (! empty($filters['golongan'])) {
-            $query->whereIn('golongan', $filters['golongan']);
+        if ($golonganFilters !== []) {
+            $golonganMajors = GolonganNormalizer::majors($golonganFilters);
+            $golonganVariants = collect($golonganMajors)
+                ->flatMap(GolonganNormalizer::databaseVariants(...))
+                ->unique()
+                ->values()
+                ->all();
+
+            if ($golonganVariants === []) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereIn(DB::raw('LOWER(TRIM(golongan))'), $golonganVariants);
+            }
         }
 
         return $query;
@@ -581,7 +609,7 @@ class KaporRequirementService
         $candidate = strtoupper(str_replace(' ', '', $value));
 
         $candidateLetters = preg_replace('/[^A-Z]/', '', $candidate);
-        
+
         $mapping = [
             'S' => 'K',
             'M' => 'SD',
@@ -598,7 +626,7 @@ class KaporRequirementService
         // Coba translate nilai aslinya terlebih dahulu
         if (isset($mapping[$candidate])) {
             $candidate = $mapping[$candidate];
-        } 
+        }
         // Jika aslinya bukan S/M/L valid, mungkin karena typo angka seperti '=L660'
         elseif (isset($mapping[$candidateLetters])) {
             $candidate = $mapping[$candidateLetters];

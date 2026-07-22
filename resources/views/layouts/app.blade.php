@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css" rel="stylesheet">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     {{-- Select2 & jQuery --}}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -2206,7 +2207,7 @@
             @endif
 
             {{-- ══ Admin / Superadmin Roles ══ --}}
-            @if(auth()->user()->hasRole('superadmin'))
+            @if(auth()->user()->hasSuperadminReadAccess())
                 <div
                     class="nav-group {{ request()->routeIs('admin.identifikasi-kebutuhan.*') || request()->routeIs('admin.personnel.*') || request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
@@ -2274,7 +2275,7 @@
                 </div>
             @endif
 
-            @if(auth()->user()->hasAnyRole(['superadmin', 'admin_gudang']))
+            @if(auth()->user()->hasAnyRole(['superadmin', 'kabak_bekum', 'admin_gudang']))
                 <div class="nav-group {{ request()->routeIs('admin.warehouse-items.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-archive-line group-icon"></i> Data Gudang
@@ -2295,7 +2296,7 @@
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.reports') ? 'active' : '' }}">
                             Laporan Detail
                         </a>
-                        @if(auth()->user()->hasRole('superadmin'))
+                        @if(auth()->user()->hasSuperadminReadAccess())
                             <a href="{{ route('admin.warehouse-items.sppm') }}"
                                 class="nav-link {{ request()->routeIs('admin.warehouse-items.sppm') ? 'active' : '' }}">
                                 SPPM
@@ -2314,7 +2315,7 @@
             @endif
 
             {{-- ══ Superadmin Only ══ --}}
-            @if(auth()->user()->hasRole('superadmin'))
+            @if(auth()->user()->hasSuperadminReadAccess())
                 <div class="nav-group {{ request()->routeIs('superadmin.*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-settings-4-line group-icon"></i> Sistem
@@ -2400,6 +2401,20 @@
 
         <div class="content" id="main-content">
             @yield('styles')
+            @php
+                $satkerWriteLocked = auth()->check()
+                    && auth()->user()->hasAnyRole(['admin_satker', 'personil'])
+                    && \App\Models\Setting::getValue('is_satker_locked', 'false') === 'true';
+            @endphp
+            @if($satkerWriteLocked)
+                <div style="margin-bottom: 18px; padding: 14px 16px; border-radius: 10px; border: 1px solid #FECACA; background: #FEF2F2; color: #991B1B; display: flex; gap: 10px; align-items: flex-start;">
+                    <i class="ri-lock-line" style="font-size: 18px; margin-top: 2px;"></i>
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px;">Mode baca saja aktif</div>
+                        <div style="font-size: 13px; line-height: 1.5;">Superadmin sedang mengunci perubahan data satker dan personel. Data tetap bisa dilihat, dicetak, dan diunduh, tetapi penyimpanan perubahan baru ditolak.</div>
+                    </div>
+                </div>
+            @endif
             @yield('content')
         </div>
     </div>

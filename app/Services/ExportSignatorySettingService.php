@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Schema;
 
 class ExportSignatorySettingService
 {
+    public const DEFAULT_SATKER_SIGNATORY_TITLE = '.............................';
+
     private const GLOBAL_SCOPE = 'global';
 
     private const SATKER_SCOPE = 'satker';
@@ -55,7 +57,7 @@ class ExportSignatorySettingService
 
         $satkerValues = $this->getScopeValues(self::SATKER_SCOPE, (int) $user->satker_id);
 
-        return $this->mergePreferScope($satkerValues, $global);
+        return $this->mergePreferScope($satkerValues, $this->satkerFallbackSettings($global));
     }
 
     /**
@@ -75,7 +77,7 @@ class ExportSignatorySettingService
     {
         $scopeValues = $this->getScopeValues(self::SATKER_SCOPE, $satkerId);
 
-        return $this->mergePreferScope($scopeValues, $this->getGlobalSettings());
+        return $this->mergePreferScope($scopeValues, $this->satkerFallbackSettings($this->getGlobalSettings()));
     }
 
     /**
@@ -201,6 +203,17 @@ class ExportSignatorySettingService
             'location' => $this->firstNonEmpty((string) optional($invoiceSetting)->location, 'Mataram'),
             'organization_name' => $this->firstNonEmpty((string) optional($invoiceSetting)->organization_name, 'KEPALA BIRO LOGISTIK POLDA NTB'),
         ];
+    }
+
+    /**
+     * @param  array<string, string>  $global
+     * @return array<string, string>
+     */
+    private function satkerFallbackSettings(array $global): array
+    {
+        $global['signatory_title'] = self::DEFAULT_SATKER_SIGNATORY_TITLE;
+
+        return $global;
     }
 
     private function makeKey(string $scope, string $field, ?int $satkerId = null): string

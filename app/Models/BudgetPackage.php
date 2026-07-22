@@ -41,6 +41,11 @@ class BudgetPackage extends Model
             ->orderBy('id');
     }
 
+    public function sppmAssignments(): HasMany
+    {
+        return $this->hasMany(BudgetPackageSppmAssignment::class);
+    }
+
     // ── Scopes ────────────────────────────────────────────────
 
     public function scopeDraft($query)

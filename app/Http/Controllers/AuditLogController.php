@@ -65,7 +65,7 @@ class AuditLogController extends Controller
         $roles = Role::all();
         $categories = AuditLog::select('category')->distinct()->pluck('category');
         $actions = AuditLog::select('action')->distinct()->pluck('action');
-        $recentSdmImportRuns = $request->user()?->hasRole('superadmin')
+        $recentSdmImportRuns = $request->user()?->hasSuperadminReadAccess()
             ? SdmImportRun::query()->with('initiator:id,name')->latest()->limit(10)->get()
             : collect();
 

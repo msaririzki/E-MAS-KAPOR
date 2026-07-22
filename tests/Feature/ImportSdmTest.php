@@ -262,6 +262,86 @@ class ImportSdmTest extends TestCase
         $this->assertNull($run->error_report_path);
     }
 
+    public function test_sdm_import_confirm_shows_failed_name_when_runtime_conflict_occurs(): void
+    {
+        Storage::fake('local');
+
+        Satker::create([
+            'name' => 'POLDA NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        $satker = Satker::create([
+            'name' => 'BIRO LOGISTIK',
+            'code' => 'BIRO-LOG',
+            'sort_order' => 2,
+        ]);
+
+        $superAdmin = User::factory()->create();
+        $superAdmin->assignRole('superadmin');
+
+        $importedUser = User::factory()->create([
+            'name' => 'JEFTHA ANDHARA WONGSO, S.H.',
+            'nrp_nip' => '99110739',
+            'satker_id' => $satker->id,
+        ]);
+        $importedUser->assignRole('personil');
+
+        Personnel::create([
+            'user_id' => $importedUser->id,
+            'nrp' => '77770001',
+            'full_name' => 'PEMILIK USER KONFLIK',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => \App\Models\Rank::where('name', 'AIPDA')->value('id'),
+            'golongan' => 'BINTARA',
+            'jabatan' => 'BANIT TEST',
+            'bagian' => null,
+            'satker_id' => $satker->id,
+            'religion' => 'Islam',
+            'is_active' => true,
+            'kapor_sizes' => [],
+        ]);
+
+        $import = new PersonnelSdmImport;
+        $preview = $import->generatePreview(collect([
+            [1, 'JEFTHA ANDHARA WONGSO, S.H.', 'AIPDA', "'99110739", 'BAMIN ROLOG POLDA NTB', 'PRIA', 'ISLAM'],
+        ]), 'Sheet 1');
+
+        $this->assertSame('ok', $preview[0]['status']);
+
+        $run = SdmImportRun::create([
+            'initiated_by' => $superAdmin->id,
+            'status' => 'preview_ready',
+            'processing_mode' => 'sync',
+            'source_files' => [],
+            'summary' => ['error' => 0, 'ok' => 1, 'total' => 1],
+            'preview_payload_path' => 'import-previews/sdm/run-1.json',
+            'started_at' => now(),
+        ]);
+
+        Storage::disk('local')->put($run->preview_payload_path, json_encode([
+            'preview' => $preview,
+            'stats' => ['error' => 0, 'ok' => 1, 'total' => 1],
+        ], JSON_UNESCAPED_UNICODE));
+
+        $response = $this->actingAs($superAdmin)
+            ->withSession([
+                'sdm_import_run_id' => $run->id,
+                'sdm_import_preview_key' => $run->preview_payload_path,
+                'sdm_import_stats' => ['error' => 0, 'ok' => 1, 'total' => 1],
+            ])
+            ->post(route('admin.personnel.import-sdm-confirm'));
+
+        $response->assertRedirect(route('admin.personnel.index'));
+        $response->assertSessionHas('warning');
+
+        $run->refresh();
+        $this->assertSame('completed_with_errors', $run->status);
+        $this->assertSame(['JEFTHA ANDHARA WONGSO, S.H.'], $run->summary['failed_names']);
+    }
+
     public function test_sdm_import_can_queue_preview_processing_when_queue_driver_is_async(): void
     {
         Storage::fake('local');

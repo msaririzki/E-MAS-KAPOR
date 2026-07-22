@@ -268,7 +268,7 @@
             <a href="{{ route('admin.budget.export-csv', $budgetPackage) }}" class="export-btn export-green" data-download data-estimate="10">
                 <div class="export-icon"><i class="ri-file-excel-line"></i></div>
                 <div class="export-info">
-                    <h4>Export Rekapan</h4>
+                    <h4>Unduh Rekapan</h4>
                     <p>Rekap utama `.xlsx`.</p>
                 </div>
                 <div class="export-trailing"><i class="ri-download-2-line"></i></div>
@@ -280,7 +280,7 @@
             <a href="{{ route('admin.budget.export-pdf', $budgetPackage) }}" class="export-btn export-red" data-download data-estimate="15">
                 <div class="export-icon"><i class="ri-file-pdf-line"></i></div>
                 <div class="export-info">
-                    <h4>Export Rekapan PDF</h4>
+                    <h4>Unduh Rekapan PDF</h4>
                     <p>Rekap siap baca `.pdf`.</p>
                 </div>
                 <div class="export-trailing"><i class="ri-download-2-line"></i></div>
@@ -292,7 +292,7 @@
             <a href="{{ route('admin.budget.export-detail', $budgetPackage) }}" class="export-btn export-purple" data-download data-estimate="20">
                 <div class="export-icon"><i class="ri-team-line"></i></div>
                 <div class="export-info">
-                    <h4>Export Nominatif</h4>
+                    <h4>Unduh Nominatif</h4>
                     <p>Detail per personil.</p>
                 </div>
                 <div class="export-trailing"><i class="ri-download-2-line"></i></div>
@@ -321,6 +321,15 @@
                 </div>
                 <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
             </button>
+
+            <a href="{{ route('admin.budget.sppm-assignments.index', $budgetPackage) }}" class="export-btn export-blue">
+                <div class="export-icon"><i class="ri-route-line"></i></div>
+                <div class="export-info">
+                    <h4>Titipan SPPM</h4>
+                    <p>{{ number_format($budgetPackage->sppm_assignments_count ?? 0, 0, ',', '.') }} personel diatur.</p>
+                </div>
+                <div class="export-trailing"><i class="ri-arrow-right-line"></i></div>
+            </a>
 
             <a href="{{ route('admin.budget.invoice', $budgetPackage) }}" class="export-btn export-orange">
                 <div class="export-icon"><i class="ri-file-text-line"></i></div>
@@ -1117,7 +1126,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 a.remove();
             } catch (error) {
                 console.error("Export error:", error);
-                alert("Gagal melakukan export atau sesi habis. Silakan refresh halaman dan coba lagi.");
+                alert("Gagal mengunduh file atau sesi telah habis. Silakan muat ulang halaman dan coba lagi.");
             } finally {
                 // Apapun yang terjadi, stop mutarnya 100% presisi sinkron waktu server!
                 btn.classList.remove('is-loading');

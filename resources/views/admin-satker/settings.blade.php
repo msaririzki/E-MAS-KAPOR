@@ -30,8 +30,8 @@
     {{-- Penanda Tangan Export Satker --}}
     <div class="settings-section">
         <div class="settings-info">
-            <h3><i class="ri-quill-pen-line"></i> Penanda Tangan Export</h3>
-            <p>Atur identitas penanda tangan untuk semua export satker. Jika ada kolom kosong, sistem otomatis memakai setting global dari Superadmin.</p>
+            <h3><i class="ri-quill-pen-line"></i> Penanda Tangan Dokumen</h3>
+            <p>Atur identitas penanda tangan untuk semua dokumen yang diunduh. Jika ada kolom kosong, sistem otomatis memakai pengaturan global dari Superadmin.</p>
         </div>
         <div class="settings-card">
             <form method="POST" action="{{ route('admin-satker.settings.signatory.update') }}" class="form-block">

@@ -7,6 +7,7 @@ use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\User;
 use App\Services\SdmSatkerResolver;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -194,6 +195,7 @@ class PersonnelSdmImport extends PersonnelImport
         $successCount = 0;
         $errorCount = 0;
         $errors = [];
+        $errorRows = [];
         $touchedSatkers = [];
 
         $ranksById = Rank::all()->keyBy('id');
@@ -237,7 +239,13 @@ class PersonnelSdmImport extends PersonnelImport
 
                 if ($fullName === '') {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference}: Nama kosong, dilewati.";
+                    $message = "Baris {$rowReference}: Nama kosong, dilewati.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
@@ -248,14 +256,26 @@ class PersonnelSdmImport extends PersonnelImport
                     || (bool) ($data['duplicate_nrp'] ?? false)
                 ) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): Preview masih mengandung error dan harus diperbaiki lebih dulu.";
+                    $message = "Baris {$rowReference} ({$fullName}): Preview masih mengandung error dan harus diperbaiki lebih dulu.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
 
                 if ($nrp !== '' && isset($processedNrps[$nrp])) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): NRP/NIP {$nrp} muncul lebih dari sekali pada payload import.";
+                    $message = "Baris {$rowReference} ({$fullName}): NRP/NIP {$nrp} muncul lebih dari sekali pada data unggahan.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
@@ -263,7 +283,13 @@ class PersonnelSdmImport extends PersonnelImport
                 $rank = $rankId > 0 ? $ranksById->get($rankId) : null;
                 if ($rankId > 0 && $rank === null) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): Pangkat tidak ditemukan.";
+                    $message = "Baris {$rowReference} ({$fullName}): Pangkat tidak ditemukan.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
@@ -271,21 +297,39 @@ class PersonnelSdmImport extends PersonnelImport
                 $satker = $satkersById->get($satkerId);
                 if ($satker === null) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): Satker tidak ditemukan.";
+                    $message = "Baris {$rowReference} ({$fullName}): Satker tidak ditemukan.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
 
                 if (! in_array($gender, ['L', 'P'], true)) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): Jenis kelamin tidak valid.";
+                    $message = "Baris {$rowReference} ({$fullName}): Jenis kelamin tidak valid.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
 
                 if ($religion === '') {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): Agama kosong.";
+                    $message = "Baris {$rowReference} ({$fullName}): Agama kosong.";
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
 
                     continue;
                 }
@@ -307,21 +351,53 @@ class PersonnelSdmImport extends PersonnelImport
                     }
 
                     if ($user === null) {
-                        $user = User::create([
-                            'name' => $fullName,
-                            'nrp_nip' => $effectiveNrp,
-                            'password' => password_hash($effectiveNrp, PASSWORD_BCRYPT, ['cost' => 4]),
-                            'satker_id' => $satker->id,
-                            'is_active' => true,
-                        ]);
-                        $user->assignRole('personil');
-                        $existingUsers->put($effectiveNrp, $user);
+                        try {
+                            $user = User::create([
+                                'name' => $fullName,
+                                'nrp_nip' => $effectiveNrp,
+                                'password' => password_hash($effectiveNrp, PASSWORD_BCRYPT, ['cost' => 4]),
+                                'satker_id' => $satker->id,
+                                'is_active' => true,
+                            ]);
+                            if (! $user->hasRole('personil')) {
+                                $user->assignRole('personil');
+                            }
+                            $existingUsers->put($effectiveNrp, $user);
+                        } catch (QueryException $exception) {
+                            if ((int) ($exception->errorInfo[1] ?? 0) !== 1062) {
+                                throw $exception;
+                            }
+
+                            $user = User::query()
+                                ->where('nrp_nip', $effectiveNrp)
+                                ->first();
+
+                            if ($user === null) {
+                                throw $exception;
+                            }
+
+                            $user->update([
+                                'name' => $fullName,
+                                'satker_id' => $satker->id,
+                                'is_active' => true,
+                            ]);
+
+                            if (! $user->hasRole('personil')) {
+                                $user->assignRole('personil');
+                            }
+
+                            $existingUsers->put($effectiveNrp, $user);
+                        }
                     } else {
                         $user->update([
                             'name' => $fullName,
                             'satker_id' => $satker->id,
                             'is_active' => true,
                         ]);
+
+                        if (! $user->hasRole('personil')) {
+                            $user->assignRole('personil');
+                        }
                     }
 
                     $payload = [
@@ -368,7 +444,13 @@ class PersonnelSdmImport extends PersonnelImport
                     }
                 } catch (\Throwable $throwable) {
                     $errorCount++;
-                    $errors[] = "Baris {$rowReference} ({$fullName}): ".$throwable->getMessage();
+                    $message = "Baris {$rowReference} ({$fullName}): ".$throwable->getMessage();
+                    $errors[] = $message;
+                    $errorRows[] = [
+                        'row_reference' => $rowReference,
+                        'full_name' => $fullName,
+                        'message' => $message,
+                    ];
                 }
             }
         });
@@ -381,6 +463,7 @@ class PersonnelSdmImport extends PersonnelImport
             'success_count' => $successCount,
             'error_count' => $errorCount,
             'errors' => $errors,
+            'error_rows' => $errorRows,
         ];
     }
 
@@ -448,23 +531,23 @@ class PersonnelSdmImport extends PersonnelImport
         }
 
         return match ($rank->name) {
-            'Juru Muda' => 'I/a',
-            'Juru Muda Tingkat I' => 'I/b',
-            'Juru' => 'I/c',
-            'Juru Tingkat I' => 'I/d',
-            'Pengatur Muda' => 'II/a',
-            'Pengatur Muda Tingkat I' => 'II/b',
-            'Pengatur' => 'II/c',
-            'Pengatur Tingkat I' => 'II/d',
-            'Penata Muda' => 'III/a',
-            'Penata Muda Tingkat I' => 'III/b',
-            'Penata' => 'III/c',
-            'Penata Tingkat I' => 'III/d',
-            'Pembina' => 'IV/a',
-            'Pembina Tingkat I' => 'IV/b',
-            'Pembina Utama Muda' => 'IV/c',
-            'Pembina Utama Madya' => 'IV/d',
-            'Pembina Utama' => 'IV/e',
+            'Juru Muda',
+            'Juru Muda Tingkat I',
+            'Juru',
+            'Juru Tingkat I' => '1',
+            'Pengatur Muda',
+            'Pengatur Muda Tingkat I',
+            'Pengatur',
+            'Pengatur Tingkat I' => '2',
+            'Penata Muda',
+            'Penata Muda Tingkat I',
+            'Penata',
+            'Penata Tingkat I' => '3',
+            'Pembina',
+            'Pembina Tingkat I',
+            'Pembina Utama Muda',
+            'Pembina Utama Madya',
+            'Pembina Utama' => '4',
             'PPPK' => 'PPPK',
             default => '',
         };

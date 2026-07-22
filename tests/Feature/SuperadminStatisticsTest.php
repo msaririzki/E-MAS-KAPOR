@@ -12,9 +12,11 @@ use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\TestimonialExportService;
+use App\Services\TestimonialWordExportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
+use ZipArchive;
 
 class SuperadminStatisticsTest extends TestCase
 {
@@ -336,6 +338,61 @@ class SuperadminStatisticsTest extends TestCase
         $this->assertSame(3, $customData['commentsByRating'][4]->count());
     }
 
+    public function test_testimonial_word_export_matches_review_content_order(): void
+    {
+        Setting::setValue('fiscal_year', '2026');
+
+        $satker = Satker::create([
+            'name' => 'SPN',
+            'code' => 'SPN',
+            'sort_order' => 1,
+        ]);
+
+        $superadmin = User::factory()->create([
+            'satker_id' => $satker->id,
+        ]);
+        $superadmin->assignRole('superadmin');
+
+        $personil = User::factory()->create([
+            'name' => 'M. TAUFIK',
+            'satker_id' => $satker->id,
+        ]);
+        $personil->assignRole('personil');
+
+        $allocation = $this->createAllocation($personil, $satker, 'SEPATU OLAHRAGA', 'Tutup Kaki', 'Tutup_Kaki');
+
+        ItemReview::create([
+            'personnel_item_allocation_id' => $allocation->id,
+            'user_id' => $personil->id,
+            'kapor_item_id' => $allocation->kapor_item_id,
+            'fiscal_year' => 2026,
+            'response_status' => ItemReview::STATUS_REVIEWED,
+            'comment' => 'Nyaman madel bagus kualitas baik',
+            'rating' => 5,
+            'submitted_at' => now(),
+        ]);
+
+        $data = app(TestimonialExportService::class)->build(2026);
+        $path = app(TestimonialWordExportService::class)->generate($data);
+        $documentXml = $this->readDocumentXml($path);
+
+        $source = 'M. TAUFIK - SPN - SEPATU OLAHRAGA';
+        $comment = 'Nyaman madel bagus kualitas baik';
+
+        $this->assertStringContainsString('HASIL REVIEW PENGADAAN KAPOR', $documentXml);
+        $this->assertStringContainsString($source, $documentXml);
+        $this->assertStringContainsString($comment, $documentXml);
+        $this->assertLessThan(strpos($documentXml, $comment), strpos($documentXml, $source));
+        $this->assertXmlStringEqualsXmlString($documentXml, $documentXml);
+
+        @unlink($path);
+
+        $this->actingAs($superadmin)
+            ->get(route('superadmin.testimonials.export-word', ['year' => 2026, 'comments_per_rating' => 1]))
+            ->assertOk()
+            ->assertDownload('Hasil_Review_Kapor_TA_2026.docx');
+    }
+
     private function createAllocation(User $user, Satker $satker, string $itemName, string $snapshotCategory = 'Tutup Kepala', string $dbCategory = 'Tutup_Kepala', int $fiscalYear = 2026): PersonnelItemAllocation
     {
         $budgetYear = BudgetYear::firstOrCreate([
@@ -384,5 +441,20 @@ class SuperadminStatisticsTest extends TestCase
             'item_category_snapshot' => $snapshotCategory,
             'budget_package_name_snapshot' => $package->name,
         ]);
+    }
+
+    private function readDocumentXml(string $path): string
+    {
+        $zip = new ZipArchive;
+        $opened = $zip->open($path);
+
+        $this->assertTrue($opened === true, 'DOCX hasil generate tidak bisa dibuka.');
+
+        $documentXml = $zip->getFromName('word/document.xml');
+        $zip->close();
+
+        $this->assertIsString($documentXml);
+
+        return $documentXml;
     }
 }

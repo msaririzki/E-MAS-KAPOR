@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Preview Import Keterangan Referensi')
-@section('breadcrumb', 'Preview Import Keterangan Referensi')
+@section('title', 'Pratinjau Unggah Keterangan Referensi')
+@section('breadcrumb', 'Pratinjau Unggah Keterangan Referensi')
 
 
 
@@ -21,7 +21,7 @@
     <section class="ket-hero">
         <div class="ket-hero-top">
             <div class="ket-hero-copy">
-                <div class="ket-eyebrow"><i class="ri-file-search-line"></i> Preview Import Keterangan Referensi</div>
+                <div class="ket-eyebrow"><i class="ri-file-search-line"></i> Pratinjau Unggah Keterangan Referensi</div>
                 <h1 class="ket-title">Review perubahan sebelum data diterapkan</h1>
                 <p class="ket-subtitle">
                     Sistem hanya akan mengubah kolom <strong>`keterangan_2`</strong>, <strong>`keterangan_3`</strong>, dan <strong>`keterangan_4`</strong>.
@@ -41,7 +41,7 @@
                 <p>Tinjau baris yang berubah, gunakan filter dan pencarian jika perlu, lalu konfirmasi hanya jika preview sudah sesuai.</p>
                 <div class="ket-action-grid">
                     <button type="submit" form="confirmForm" class="btn btn-primary" @if($updateCount === 0) disabled @endif>
-                        <i class="ri-check-double-line"></i> Konfirmasi Import{{ $updateCount > 0 ? ' ('.$updateCount.')' : '' }}
+                    <i class="ri-check-double-line"></i> Konfirmasi Unggah{{ $updateCount > 0 ? ' ('.$updateCount.')' : '' }}
                     </button>
                     <button type="submit" form="cancelForm" class="btn btn-outline">
                         <i class="ri-close-line"></i> Batal dan Kembali
@@ -55,7 +55,7 @@
         <article class="ket-stat update"><div class="ket-stat-label"><i class="ri-refresh-line"></i> Akan Diperbarui</div><div class="ket-stat-value">{{ $updateCount }}</div><div class="ket-stat-help">Baris dengan perubahan pada kolom target.</div></article>
         <article class="ket-stat same"><div class="ket-stat-label"><i class="ri-equal-line"></i> Tidak Berubah</div><div class="ket-stat-value">{{ $noChangeCount }}</div><div class="ket-stat-help">Baris valid tetapi nilainya tetap sama.</div></article>
         <article class="ket-stat error"><div class="ket-stat-label"><i class="ri-error-warning-line"></i> Error</div><div class="ket-stat-value">{{ $errorCount }}</div><div class="ket-stat-help">Baris belum bisa diterapkan.</div></article>
-        <article class="ket-stat total"><div class="ket-stat-label"><i class="ri-list-check-3"></i> Total Baris</div><div class="ket-stat-value">{{ $totalRows }}</div><div class="ket-stat-help">Jumlah seluruh preview dari file impor.</div></article>
+        <article class="ket-stat total"><div class="ket-stat-label"><i class="ri-list-check-3"></i> Total Baris</div><div class="ket-stat-value">{{ $totalRows }}</div><div class="ket-stat-help">Jumlah seluruh pratinjau dari file unggahan.</div></article>
     </section>
 
     <section class="ket-panel">

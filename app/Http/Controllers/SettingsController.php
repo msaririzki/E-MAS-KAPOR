@@ -31,10 +31,15 @@ class SettingsController extends Controller
     public function index()
     {
         $signatoryService = app(ExportSignatorySettingService::class);
+        $activeFiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $storedKebutuhanTargetYear = (int) Setting::getValue('kebutuhan_target_year', 0);
+        $kebutuhanTargetYear = $storedKebutuhanTargetYear > 0 ? $storedKebutuhanTargetYear : $activeFiscalYear + 1;
 
         $settings = [
-            'fiscal_year' => Setting::getValue('fiscal_year', date('Y')),
+            'fiscal_year' => $activeFiscalYear,
+            'kebutuhan_target_year' => $kebutuhanTargetYear,
             'is_system_locked' => Setting::getValue('is_system_locked', 'false') === 'true',
+            'is_satker_locked' => Setting::getValue('is_satker_locked', 'false') === 'true',
             'is_review_locked' => Setting::getValue('is_review_locked', 'false') === 'true',
             'app_name' => Setting::getValue('app_name', 'SI-KAPOR Polda NTB'),
             'input_start_date' => Setting::getValue('input_start_date', date('Y-02-01')),
@@ -137,6 +142,7 @@ class SettingsController extends Controller
             'app_name' => 'required|string|max:255',
             'fiscal_year' => 'required|integer|min:2020|max:2099',
             'is_system_locked' => 'nullable|boolean',
+            'is_satker_locked' => 'nullable|boolean',
             'is_review_locked' => 'nullable|boolean',
             'input_start_date' => 'nullable|date',
             'input_end_date' => 'nullable|date|after_or_equal:input_start_date',
@@ -148,6 +154,7 @@ class SettingsController extends Controller
         Setting::setValue('app_name', $validated['app_name']);
         Setting::setValue('fiscal_year', $validated['fiscal_year']);
         Setting::setValue('is_system_locked', $request->has('is_system_locked') ? 'true' : 'false');
+        Setting::setValue('is_satker_locked', $request->has('is_satker_locked') ? 'true' : 'false');
         Setting::setValue('is_review_locked', $request->has('is_review_locked') ? 'true' : 'false');
 
         if (isset($validated['input_start_date'])) {
@@ -168,7 +175,38 @@ class SettingsController extends Controller
     }
 
     /**
-     * Transition to next fiscal year
+     * Open the next fiscal year as an early identification cycle without final cleanup.
+     */
+    public function openIdentificationCycle(Request $request)
+    {
+        $currentYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $targetYear = $currentYear + 1;
+
+        DB::transaction(function () use ($targetYear) {
+            Setting::setValue('kebutuhan_target_year', $targetYear);
+            Setting::setValue('is_system_locked', 'true');
+            Setting::setValue('is_satker_locked', 'false');
+            Setting::setValue('is_review_locked', 'true');
+        });
+
+        AuditLogger::log(
+            'Buka Masa Identifikasi Kebutuhan',
+            'Pengaturan Sistem',
+            null,
+            null,
+            [
+                'active_year' => $currentYear,
+                'target_year' => $targetYear,
+            ],
+            'success',
+            'Membuka siklus identifikasi kebutuhan untuk tahun anggaran berikutnya tanpa memindahkan tahun aktif, mengarsipkan paket, menonaktifkan akun personel, atau menghapus dataset personel aktif.'
+        );
+
+        return redirect()->back()->with('success', "Masa identifikasi kebutuhan TA $targetYear dibuka. Tahun aktif tetap TA $currentYear, input personel tetap tertutup, data personel tetap utuh, dan review item kapor ditutup sampai waktunya dibuka.");
+    }
+
+    /**
+     * Finalize the current fiscal year and transition to the next baseline year.
      */
     public function nextYear(Request $request)
     {
@@ -187,8 +225,10 @@ class SettingsController extends Controller
 
         DB::transaction(function () use ($currentYear, $nextYear) {
             Setting::setValue('is_system_locked', 'true');
-            Setting::setValue('is_review_locked', 'false');
+            Setting::setValue('is_satker_locked', 'true');
+            Setting::setValue('is_review_locked', 'true');
             Setting::setValue('fiscal_year', $nextYear);
+            Setting::setValue('kebutuhan_target_year', $nextYear + 1);
             Setting::setValue('input_start_date', $nextYear.'-02-01');
             Setting::setValue('input_end_date', $nextYear.'-08-31');
             Setting::setValue('review_start_date', $nextYear.'-10-01');
@@ -233,7 +273,7 @@ class SettingsController extends Controller
         }
 
         AuditLogger::log(
-            'Siapkan Tahun Anggaran Berikutnya',
+            'Finalisasi dan Reset Tahun Anggaran Berikutnya',
             'Pengaturan Sistem',
             null,
             null,
@@ -242,10 +282,10 @@ class SettingsController extends Controller
                 'next_year' => $nextYear,
             ],
             'success',
-            'Menyiapkan sistem untuk tahun anggaran berikutnya, mengarsipkan hasil final, menonaktifkan akun personel, mengosongkan satker akun personel, dan menghapus dataset aktif personel untuk import ulang.'
+            'Finalisasi siklus tahun berjalan, mengarsipkan hasil final, mengunci akses perubahan satker, menonaktifkan akun personel, mengosongkan satker akun personel, dan menghapus dataset aktif personel untuk unggah ulang.'
         );
 
-        return redirect()->back()->with('success', "Tahun Anggaran $nextYear siap digunakan. Sistem dikunci, paket tahun $currentYear diarsipkan, akun personel dinonaktifkan dan dilepas dari satker, lalu dataset aktif personel direset untuk import ulang SDM.");
+        return redirect()->back()->with('success', "Finalisasi menuju TA $nextYear selesai. Sistem dan data satker dikunci, paket tahun $currentYear diarsipkan, akun personel dinonaktifkan dan dilepas dari satker, lalu dataset aktif personel direset untuk unggah ulang SDM.");
     }
 
     public function updateSignatory(Request $request, ExportSignatorySettingService $signatoryService)
@@ -272,15 +312,15 @@ class SettingsController extends Controller
         ]);
 
         AuditLogger::log(
-            'Update Penanda Tangan Export (Global)',
+            'Update Penanda Tangan Dokumen (Global)',
             'Pengaturan',
             null,
             $oldValues,
             $signatoryService->getGlobalSettings(),
             'success',
-            'Superadmin memperbarui konfigurasi penanda tangan export global.',
+            'Superadmin memperbarui pengaturan penanda tangan dokumen global.',
         );
 
-        return redirect()->back()->with('success', 'Penanda tangan export (global) berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Penanda tangan dokumen global berhasil diperbarui.');
     }
 }
