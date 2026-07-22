@@ -19,7 +19,7 @@
             @if(auth()->user()->hasRole('superadmin'))
             <button type="button" class="btn" style="background:#4F46E5; color:#fff;" onclick="toggleSdmImportHistory()">
                 <i class="ri-file-list-3-line"></i>
-                <span id="sdmImportHistoryToggleLabel">Riwayat Import SDM</span>
+                <span id="sdmImportHistoryToggleLabel">Riwayat Unggah SDM</span>
             </button>
             @endif
             <button class="btn btn-primary btn-maroon" onclick="window.location.reload()">
@@ -73,14 +73,14 @@
 <div id="sdm-import-history" class="table-container shadow-sm" style="margin-bottom:24px; display:none;">
     <div style="padding:18px 20px; border-bottom:1px solid #F3F4F6; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
         <div>
-            <div style="font-size:16px; font-weight:800; color:#111827;">Riwayat Import SDM</div>
-            <div style="font-size:12px; color:#6B7280; margin-top:4px;">Ringkasan import terbaru beserta file error untuk troubleshooting.</div>
+            <div style="font-size:16px; font-weight:800; color:#111827;">Riwayat Unggah SDM</div>
+            <div style="font-size:12px; color:#6B7280; margin-top:4px;">Ringkasan unggahan terbaru beserta file data yang gagal diproses.</div>
         </div>
     </div>
 
     @if($recentSdmImportRuns->isEmpty())
     <div style="padding:24px 20px; color:#6B7280; font-size:13px;">
-        Belum ada riwayat import SDM.
+        Belum ada riwayat unggah SDM.
     </div>
     @else
     <div style="display:grid; gap:10px; padding:16px 20px;">
@@ -462,7 +462,7 @@
 
         const isHidden = panel.style.display === 'none' || panel.style.display === '';
         panel.style.display = isHidden ? 'block' : 'none';
-        label.textContent = isHidden ? 'Sembunyikan Riwayat Import SDM' : 'Riwayat Import SDM';
+        label.textContent = isHidden ? 'Sembunyikan Riwayat Unggah SDM' : 'Riwayat Unggah SDM';
 
         if (isHidden) {
             window.setTimeout(() => {

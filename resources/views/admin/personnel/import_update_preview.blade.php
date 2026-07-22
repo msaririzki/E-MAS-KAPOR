@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Preview Sinkronisasi Personel')
-@section('breadcrumb', 'Preview Import Update')
+@section('breadcrumb', 'Pratinjau Sinkronisasi')
 
 
 
@@ -21,7 +21,7 @@
 
 {{-- ═══ Page Header ════════════════════════════════════════════ --}}
 <div style="margin-bottom:20px;">
-    <h1 style="font-size:20px; font-weight:800; color:var(--slate-900); letter-spacing:-.3px;">Preview Sinkronisasi Personel</h1>
+    <h1 style="font-size:20px; font-weight:800; color:var(--slate-900); letter-spacing:-.3px;">Pratinjau Sinkronisasi Personel</h1>
     <p style="font-size:13px; color:var(--slate-500); margin-top:3px;">
         Satker: <strong style="color:var(--slate-700);">{{ $satker->name }}</strong>
         <span style="margin: 0 8px; color:var(--slate-300);">·</span>

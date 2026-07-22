@@ -34,7 +34,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        if ($user->hasRole('superadmin')) {
+        if ($user->hasSuperadminReadAccess()) {
             return $this->superadminDashboard($request);
         }
 

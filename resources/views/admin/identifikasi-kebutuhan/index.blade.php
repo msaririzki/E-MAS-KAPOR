@@ -9,18 +9,41 @@
     <div class="page-header-row">
         <div>
             <h1>Identifikasi Kebutuhan</h1>
-            <p>Data pengajuan kebutuhan kapor dari seluruh satker.</p>
+            <p>Data pengajuan kebutuhan kapor seluruh satker untuk TA {{ $selectedYear }}.</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <a href="{{ route('admin.identifikasi-kebutuhan.export-pdf') }}" class="btn-export-pdf" title="Ekspor Rekapitulasi">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+            <a href="{{ route('admin.identifikasi-kebutuhan.export-pdf', ['year' => $selectedYear]) }}" class="btn-export-pdf" title="Unduh Rekapitulasi PDF">
                 <i class="ri-file-chart-line"></i>
                 Rekap PDF
             </a>
-            <a href="{{ route('admin.identifikasi-kebutuhan.export-detail-pdf') }}" class="btn-export-pdf btn-export-detail" title="Ekspor Detail Satker">
+            <a href="{{ route('admin.identifikasi-kebutuhan.export-word', ['year' => $selectedYear]) }}" class="btn-export-word" title="Unduh Rekapitulasi Word">
+                <i class="ri-file-word-line"></i>
+                Rekap Word
+            </a>
+            <a href="{{ route('admin.identifikasi-kebutuhan.export-detail-pdf', ['year' => $selectedYear]) }}" class="btn-export-pdf btn-export-detail" title="Unduh Detail Satker PDF">
                 <i class="ri-file-list-3-line"></i>
                 Detail PDF
             </a>
+            <a href="{{ route('admin.identifikasi-kebutuhan.export-detail-word', ['year' => $selectedYear]) }}" class="btn-export-word btn-export-detail-word" title="Unduh Detail Satker Word">
+                <i class="ri-file-word-line"></i>
+                Detail Word
+            </a>
         </div>
+    </div>
+</div>
+
+<div class="cycle-context-bar">
+    <div class="cycle-context-item">
+        <span>Tahun Sistem Aktif</span>
+        <strong>TA {{ $activeFiscalYear }}</strong>
+    </div>
+    <div class="cycle-context-item primary">
+        <span>Target Identifikasi</span>
+        <strong>TA {{ $targetFiscalYear }}</strong>
+    </div>
+    <div class="cycle-context-item {{ (int) $selectedYear === (int) $targetFiscalYear ? 'success' : 'archive' }}">
+        <span>Tampilan Saat Ini</span>
+        <strong>TA {{ $selectedYear }} {{ (int) $selectedYear === (int) $targetFiscalYear ? '(Berjalan)' : '(Arsip)' }}</strong>
     </div>
 </div>
 
@@ -135,22 +158,56 @@
 <div class="card" style="margin-bottom: 16px;">
     <div class="card-body" style="padding: 14px 20px;">
         <form method="GET" action="{{ route('admin.identifikasi-kebutuhan.index') }}" class="responsive-filter" id="filterForm" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 180px;">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari Satker" class="search-input" style="width: 100%;">
+            <div class="filter-field filter-search">
+                <label>Cari Satker</label>
+                <div class="filter-search-wrap">
+                    <i class="ri-search-line"></i>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Ketik nama satker..." class="search-input">
+                </div>
             </div>
-            <div style="width: 220px;">
-                <select name="satker_id" class="filter-select">
-                    <option value="">Semua Satker</option>
-                    @foreach($satkers as $satker)
-                        <option value="{{ $satker->id }}" @selected((string) request('satker_id') === (string) $satker->id)>
-                            {{ $satker->name }}
+            <div class="filter-field filter-year">
+                <label>Tahun</label>
+                <div class="filter-select-wrap">
+                    <i class="ri-calendar-event-line"></i>
+                    <select name="year" class="filter-select" data-auto-submit>
+                    @foreach($availableYears as $year)
+                        <option value="{{ $year }}" @selected((int) $selectedYear === (int) $year)>
+                            TA {{ $year }}{{ (int) $year === (int) $targetFiscalYear ? ' - Target' : '' }}
                         </option>
                     @endforeach
-                </select>
+                    </select>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm"><i class="ri-search-line"></i> Filter</button>
-            @if(request()->hasAny(['search', 'satker_id']))
-                <a href="{{ route('admin.identifikasi-kebutuhan.index') }}" class="btn btn-ghost btn-sm"><i class="ri-refresh-line"></i> Reset</a>
+            <div class="filter-field filter-satker">
+                <label>Satker</label>
+                <div class="filter-select-wrap">
+                    <i class="ri-building-line"></i>
+                    <select name="satker_id" class="filter-select" data-auto-submit>
+                        <option value="">Semua Satker</option>
+                        @foreach($satkers as $satker)
+                            <option value="{{ $satker->id }}" @selected((string) request('satker_id') === (string) $satker->id)>
+                                {{ $satker->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="filter-field filter-status">
+                <label>Status</label>
+                <div class="filter-select-wrap">
+                    <i class="ri-checkbox-circle-line"></i>
+                    <select name="status" class="filter-select" data-auto-submit>
+                        <option value="">Semua Status</option>
+                        <option value="diajukan" @selected(request('status') === 'diajukan')>Diajukan</option>
+                        <option value="disetujui" @selected(request('status') === 'disetujui')>Disetujui</option>
+                        <option value="ditolak" @selected(request('status') === 'ditolak')>Ditolak</option>
+                        <option value="draft" @selected(request('status') === 'draft')>Draft</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm filter-submit"><i class="ri-search-line"></i> Cari</button>
+            @if(request()->hasAny(['search', 'satker_id', 'status', 'year']))
+                <a href="{{ route('admin.identifikasi-kebutuhan.index') }}" class="btn btn-ghost btn-sm filter-reset"><i class="ri-refresh-line"></i> Reset</a>
             @endif
         </form>
     </div>
@@ -165,6 +222,8 @@
                 <tr>
                     <th width="50" style="text-align: center;">No</th>
                     <th>Satker</th>
+                    <th style="text-align: center;">TA</th>
+                    <th style="text-align: center;">Status</th>
                     <th style="text-align: center;">Jumlah Item</th>
                     <th>Tanggal</th>
                     <th style="text-align: center;">Aksi</th>
@@ -175,6 +234,8 @@
                 <tr>
                     <td style="text-align: center;">{{ $kebutuhans->firstItem() + $index }}</td>
                     <td><span style="font-size: 12px; font-weight: 500;">{{ $k->satker->name ?? '-' }}</span></td>
+                    <td style="text-align: center;"><span class="badge badge-neutral">TA {{ $k->fiscal_year }}</span></td>
+                    <td style="text-align: center;"><span class="badge {{ $k->status_badge }}">{{ $k->status_label }}</span></td>
                     <td style="text-align: center;"><span class="badge badge-neutral">{{ $k->items->count() }}</span></td>
                     <td style="font-size: 12px;">{{ $k->submitted_at ? $k->submitted_at->format('d/m/Y') : $k->created_at->format('d/m/Y') }}</td>
                     <td style="text-align: center;">
@@ -196,9 +257,9 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                    <td colspan="7" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
                         <i class="ri-file-list-3-line" style="font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.5;"></i>
-                        Belum ada pengajuan kebutuhan dari satker.
+                        Belum ada pengajuan kebutuhan dari satker untuk TA {{ $selectedYear }}.
                     </td>
                 </tr>
                 @endforelse
@@ -236,6 +297,58 @@
 
 @section('styles')
 <style>
+    .cycle-context-bar {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .cycle-context-item {
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .cycle-context-item span {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .cycle-context-item strong {
+        font-size: 13px;
+        color: var(--text-main);
+        white-space: nowrap;
+    }
+    .cycle-context-item.primary {
+        border-color: #BFDBFE;
+        background: #EFF6FF;
+    }
+    .cycle-context-item.primary strong,
+    .cycle-context-item.primary span {
+        color: #1D4ED8;
+    }
+    .cycle-context-item.success {
+        border-color: #A7F3D0;
+        background: #ECFDF5;
+    }
+    .cycle-context-item.success strong,
+    .cycle-context-item.success span {
+        color: #047857;
+    }
+    .cycle-context-item.archive {
+        border-color: #FDE68A;
+        background: #FFFBEB;
+    }
+    .cycle-context-item.archive strong,
+    .cycle-context-item.archive span {
+        color: #B45309;
+    }
+
     /* Modern SweetAlert Custom Styles */
     .modern-swal-popup {
         border-radius: 16px !important;
@@ -371,23 +484,73 @@
         font-weight: 600;
     }
 
+    .filter-field {
+        display: grid;
+        gap: 6px;
+    }
+    .filter-field label {
+        font-size: 11px;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .filter-search {
+        flex: 1;
+        min-width: 220px;
+    }
+    .filter-year { width: 170px; }
+    .filter-satker { width: 240px; }
+    .filter-status { width: 180px; }
+    .filter-search-wrap,
+    .filter-select-wrap {
+        position: relative;
+    }
+    .filter-search-wrap i,
+    .filter-select-wrap i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94A3B8;
+        font-size: 16px;
+        pointer-events: none;
+        z-index: 1;
+    }
+    .filter-search-wrap .search-input {
+        width: 100%;
+        height: 40px;
+        padding-left: 36px;
+    }
     .filter-select {
         width: 100%;
-        height: 38px;
-        padding: 0 12px;
+        height: 40px;
+        padding: 0 34px 0 36px;
         border: 1px solid var(--border-color);
-        border-radius: var(--radius-sm);
+        border-radius: 10px;
         background: var(--input-bg);
         color: var(--text-main);
         font-size: 13px;
-        font-weight: 500;
+        font-weight: 700;
         outline: none;
+        cursor: pointer;
+        appearance: none;
+        background-image: linear-gradient(45deg, transparent 50%, #64748B 50%), linear-gradient(135deg, #64748B 50%, transparent 50%);
+        background-position: calc(100% - 17px) 17px, calc(100% - 12px) 17px;
+        background-size: 5px 5px, 5px 5px;
+        background-repeat: no-repeat;
+        transition: border-color .2s, box-shadow .2s, background-color .2s;
     }
 
     .filter-select:focus {
         border-color: #B91C1C;
         box-shadow: 0 0 0 4px #FEF2F2;
         background: #fff;
+    }
+    .filter-submit,
+    .filter-reset {
+        align-self: end;
+        min-height: 40px;
     }
 
     /* ── Table Footer (Pagination) ────────────────────── */
@@ -511,15 +674,33 @@
     .btn-export-pdf:hover { background: #991B1B; color: #fff; }
     .btn-export-detail { background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; box-shadow: none; }
     .btn-export-detail:hover { background: #e5e7eb; color: #111827; }
+    .btn-export-word {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 14px;
+        border-radius: 10px;
+        background: #0f766e;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+    .btn-export-word:hover { background: #115e59; color: #fff; }
+    .btn-export-detail-word { background: #ecfeff; color: #155e75; border: 1px solid #a5f3fc; box-shadow: none; }
+    .btn-export-detail-word:hover { background: #cffafe; color: #0f766e; }
 
     @media (max-width: 768px) {
+        .cycle-context-bar { grid-template-columns: 1fr !important; }
         .stats-row { grid-template-columns: 1fr !important; }
         .category-cards-grid { grid-template-columns: 1fr !important; }
         .responsive-filter { flex-direction: column !important; align-items: stretch !important; }
         .responsive-filter > * { width: 100% !important; flex: none !important; margin-bottom: 8px; }
         .responsive-filter > .btn { justify-content: center; }
         .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
-        .table-wrap table { min-width: 700px; }
+        .table-wrap table { min-width: 860px; }
         .top-item {
             display: grid !important;
             grid-template-columns: auto 1fr;
@@ -638,6 +819,32 @@
         input.value = value;
         
         document.getElementById('filterForm').submit();
+    }
+
+    function submitCleanFilters(form) {
+        const url = new URL(form.action, window.location.origin);
+        const formData = new FormData(form);
+
+        for (const [key, rawValue] of formData.entries()) {
+            const value = String(rawValue).trim();
+            if (value !== '') {
+                url.searchParams.set(key, value);
+            }
+        }
+
+        window.location.assign(url.toString());
+    }
+
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            submitCleanFilters(this);
+        });
+
+        filterForm.querySelectorAll('[data-auto-submit]').forEach((field) => {
+            field.addEventListener('change', () => submitCleanFilters(filterForm));
+        });
     }
 
     // ── Delete confirmation ──

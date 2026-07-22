@@ -56,7 +56,7 @@ class ExportSignatorySettingsTest extends TestCase
         $response = $this->actingAs($superadmin)->get(route('superadmin.settings.index'));
 
         $response->assertOk();
-        $response->assertSeeText('Penanda Tangan Export');
+        $response->assertSeeText('Penanda Tangan Dokumen');
     }
 
     public function test_admin_satker_settings_override_global_and_fallback_remains_available(): void
@@ -98,7 +98,7 @@ class ExportSignatorySettingsTest extends TestCase
         $this->assertSame('AKBP SATKER A', $resolvedA['signatory_name']);
         $this->assertSame('KABAG LOG POLRES A', $resolvedA['signatory_title']);
         $this->assertSame('GLOBAL NAME', $resolvedB['signatory_name']);
-        $this->assertSame('KASUBBAG RENMIN', $resolvedB['signatory_title']);
+        $this->assertSame('.............................', $resolvedB['signatory_title']);
     }
 
     public function test_admin_satker_settings_page_displays_signatory_form(): void
@@ -110,7 +110,8 @@ class ExportSignatorySettingsTest extends TestCase
         $response = $this->actingAs($adminSatker)->get(route('admin-satker.settings'));
 
         $response->assertOk();
-        $response->assertSeeText('Penanda Tangan Export');
+        $response->assertSeeText('Penanda Tangan Dokumen');
+        $response->assertSee('value="............................."', false);
     }
 
     private function createSatker(string $code, string $name, int $sortOrder): Satker

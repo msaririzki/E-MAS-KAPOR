@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Exports\BudgetYearSatkerDetailExport;
 use App\Exports\BudgetYearSatkerDetailSheet;
+use App\Exports\PackageDetailSheet;
 use App\Exports\PackageSatkerDetailExport;
 use App\Exports\PackageSatkerDetailSheet;
 use App\Models\BudgetPackage;
@@ -14,7 +15,9 @@ use App\Models\PackageItemRecipient;
 use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
+use App\Models\Setting;
 use App\Models\User;
+use App\Services\PersonnelItemAllocationSnapshotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
@@ -206,6 +209,43 @@ class PackageSatkerDetailExportTest extends TestCase
         $response->assertSeeText('42');
     }
 
+    public function test_archived_satker_detail_sheet_uses_allocation_snapshot_after_personnel_reset(): void
+    {
+        [$package, $satker] = $this->createPackageWithRecipient();
+        Setting::setValue('fiscal_year', '2027');
+
+        app(PersonnelItemAllocationSnapshotService::class)->regenerateForBudgetPackage($package->fresh());
+
+        Personnel::query()->delete();
+        $package->update(['status' => 'archived']);
+
+        $sheet = new PackageSatkerDetailSheet($package->fresh('budgetYear'), $satker, 'Polres Bima');
+        $rows = $sheet->array();
+
+        $this->assertContains('Budi Santoso', array_column($rows, 1));
+        $this->assertContains("BARET LAPANGAN\nSEPATU PDL", array_column($rows, 8));
+        $this->assertContains("58\n42", array_column($rows, 10));
+    }
+
+    public function test_archived_item_detail_sheet_uses_allocation_snapshot_after_personnel_reset(): void
+    {
+        [$package] = $this->createPackageWithRecipient();
+        Setting::setValue('fiscal_year', '2027');
+
+        app(PersonnelItemAllocationSnapshotService::class)->regenerateForBudgetPackage($package->fresh());
+
+        Personnel::query()->delete();
+        $package->update(['status' => 'archived']);
+
+        $packageItem = $package->items()->with('kaporItem')->firstOrFail();
+        $sheet = new PackageDetailSheet($packageItem, 'Baret', $package->fresh('budgetYear'));
+        $rows = $sheet->array();
+
+        $this->assertContains('Budi Santoso', array_column($rows, 1));
+        $this->assertContains("'76110001", array_column($rows, 2));
+        $this->assertContains('58', array_column($rows, 7));
+    }
+
     private function createPackageWithRecipient(): array
     {
         $satker = Satker::create([
@@ -279,7 +319,14 @@ class PackageSatkerDetailExportTest extends TestCase
             'matched_count' => 1,
         ]);
 
+        $user = User::factory()->create([
+            'name' => 'Budi Santoso',
+            'nrp_nip' => '76110001',
+            'satker_id' => $satker->id,
+        ]);
+
         Personnel::create([
+            'user_id' => $user->id,
             'nrp' => '76110001',
             'full_name' => 'Budi Santoso',
             'satker_id' => $satker->id,

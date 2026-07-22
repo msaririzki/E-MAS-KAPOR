@@ -108,7 +108,7 @@
         .signature-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 30px;
             page-break-inside: avoid;
         }
         .signature-table td {
@@ -119,13 +119,13 @@
             width: 330px;
             text-align: center;
             font-size: 9pt;
-            line-height: 1.5;
+            line-height: 1.6;
         }
         .signature-title {
             font-weight: bold;
         }
         .signature-space {
-            height: 58px;
+            height: 96px;
         }
         .signature-name {
             font-weight: bold;

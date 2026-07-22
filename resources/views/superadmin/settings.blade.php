@@ -14,6 +14,12 @@
     $systemStatusClass = $settings['is_system_locked']
         ? 'danger'
         : ($isWithinInputPeriod ? 'success' : 'warning');
+    $satkerLockLabel = $settings['is_satker_locked']
+        ? 'Data satker terkunci'
+        : 'Data satker terbuka';
+    $satkerLockClass = $settings['is_satker_locked']
+        ? 'danger'
+        : 'success';
     $reviewStatusLabel = $settings['is_review_locked']
         ? 'Review ditutup paksa'
         : ($isWithinReviewPeriod ? 'Periode review aktif' : 'Di luar periode review');
@@ -29,6 +35,7 @@
     $reviewPeriodSummary = \Illuminate\Support\Carbon::parse($settings['review_start_date'])->translatedFormat('d M Y')
         .' - '.
         \Illuminate\Support\Carbon::parse($settings['review_end_date'])->translatedFormat('d M Y');
+    $kebutuhanTargetYear = (int) ($settings['kebutuhan_target_year'] ?? ($settings['fiscal_year'] + 1));
 @endphp
 <div class="page-header">
     <div class="page-header-row">
@@ -73,6 +80,14 @@
             </div>
             <div class="ssb-divider"></div>
             <div class="ssb-item">
+                <div class="ssb-icon"><i class="ri-file-list-3-line"></i></div>
+                <div class="ssb-content">
+                    <span class="ssb-label">Target Identifikasi</span>
+                    <span class="ssb-val">TA {{ $kebutuhanTargetYear }}</span>
+                </div>
+            </div>
+            <div class="ssb-divider"></div>
+            <div class="ssb-item">
                 <div class="ssb-icon"><i class="{{ $settings['is_system_locked'] ? 'ri-lock-line text-danger' : 'ri-time-line' }}"></i></div>
                 <div class="ssb-content">
                     <span class="ssb-label">Sistem Input</span>
@@ -85,6 +100,14 @@
                 <div class="ssb-content">
                     <span class="ssb-label">Review Item</span>
                     <span class="ssb-status {{ $reviewStatusClass }}">{{ $reviewStatusLabel }}</span>
+                </div>
+            </div>
+            <div class="ssb-divider"></div>
+            <div class="ssb-item">
+                <div class="ssb-icon"><i class="{{ $settings['is_satker_locked'] ? 'ri-lock-line text-danger' : 'ri-shield-user-line' }}"></i></div>
+                <div class="ssb-content">
+                    <span class="ssb-label">Data Satker</span>
+                    <span class="ssb-status {{ $satkerLockClass }}">{{ $satkerLockLabel }}</span>
                 </div>
             </div>
             <div class="ssb-divider"></div>
@@ -166,6 +189,17 @@
                             <div class="toggle-slider"></div>
                         </label>
                     </div>
+                </div>
+
+                <div class="modern-toggle-group" style="border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px;">
+                    <div class="toggle-info">
+                        <strong style="font-size:13px; color:#1e293b;">Kunci Data Satker</strong>
+                        <span style="font-size:11px;">Cegah perubahan data personel dan data satker</span>
+                    </div>
+                    <label class="modern-toggle">
+                        <input type="checkbox" name="is_satker_locked" value="1" {{ $settings['is_satker_locked'] ? 'checked' : '' }}>
+                        <div class="toggle-slider"></div>
+                    </label>
                 </div>
 
                 <div class="period-card" style="margin-bottom: 16px;">
@@ -358,10 +392,10 @@
     {{-- 2. Penanda Tangan Export --}}
     <div class="settings-section">
         <div class="settings-info">
-            <span class="settings-eyebrow">Default export</span>
-            <h3><i class="ri-quill-pen-line"></i> Penanda Tangan Export</h3>
-            <p>Konfigurasi ini dipakai sebagai default penanda tangan export pada akun superadmin dan menjadi fallback jika admin satker belum mengisi penanda tangan satkernya.</p>
-            <div class="impact-pill">Dipakai pada dokumen export</div>
+            <span class="settings-eyebrow">Dokumen bawaan</span>
+            <h3><i class="ri-quill-pen-line"></i> Penanda Tangan Dokumen</h3>
+            <p>Pengaturan ini menjadi penanda tangan bawaan pada dokumen yang diunduh dan digunakan jika admin satker belum mengisi penanda tangan satkernya.</p>
+            <div class="impact-pill">Dipakai pada dokumen unduhan</div>
         </div>
         <div class="settings-card">
             <form method="POST" action="{{ route('superadmin.settings.signatory.update') }}">
@@ -371,7 +405,7 @@
                 <div class="compact-guide-alert">
                     <i class="ri-file-text-line"></i>
                     <div>
-                        <strong>Format Dokumen Resmi:</strong> Data ini akan muncul sebagai penanda tangan bawaan ekspor. Pengaturan satker masing-masing tetap akan diprioritaskan jika tersedia.
+                        <strong>Format Dokumen Resmi:</strong> Data ini akan muncul sebagai penanda tangan bawaan pada dokumen yang diunduh. Pengaturan masing-masing satker tetap diprioritaskan jika tersedia.
                     </div>
                 </div>
 
@@ -498,7 +532,7 @@
     {{-- 4. Alias Satker SDM --}}
     <div class="settings-section">
         <div class="settings-info">
-            <span class="settings-eyebrow">Resolver import SDM</span>
+            <span class="settings-eyebrow">Pencocokan Unggahan SDM</span>
             <h3><i class="ri-links-line"></i> Alias Satker SDM</h3>
             <p>Kelola alias tambahan yang dipakai resolver SDM saat membaca satker dari teks jabatan. Alias khusus di sini diprioritaskan lebih tinggi daripada alias turunan otomatis.</p>
             <div class="impact-pill neutral">{{ number_format($sdmSatkerAliases->count()) }} alias tersimpan</div>
@@ -600,35 +634,64 @@
         <div class="settings-info">
             <span class="settings-eyebrow">Aksi sensitif</span>
             <h3><i class="ri-history-line"></i> Riwayat & Transisi</h3>
-            <p>Kelola perpindahan Tahun Anggaran. Saat satu siklus tahun sudah ditutup, Anda bisa melangkah ke siklus tahun berikutnya.</p>
+            <p>Kelola tahapan siklus tahun anggaran. Identifikasi kebutuhan dapat dibuka lebih dulu, sedangkan reset personel dan arsip final tetap dilakukan di akhir siklus.</p>
             <div class="impact-pill warning">Perlu kehati-hatian tinggi</div>
         </div>
         <div class="settings-card transparent-card">
             
-            {{-- Warning Box --}}
-            <div class="danger-zone-box">
+            {{-- Cycle Opening Box --}}
+            <div class="danger-zone-box cycle-start-box">
                 <div class="danger-header">
-                    <i class="ri-alert-line"></i>
+                    <i class="ri-play-circle-line"></i>
                     <div>
-                        <strong>Siapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}</strong>
-                        <p>Tindakan ini akan mengunci sistem, mengarsipkan paket anggaran tahun {{ $settings['fiscal_year'] }}, membuat Tahun Anggaran {{ $settings['fiscal_year'] + 1 }} menjadi aktif, menonaktifkan akun personel, mengosongkan satker pada akun personel, lalu mereset dataset aktif personel agar siap diimport ulang dari SDM tanpa menghapus akun user.</p>
+                        <strong>Buka Masa Identifikasi Kebutuhan TA {{ $settings['fiscal_year'] + 1 }}</strong>
+                        <p>Aksi ini dipakai di awal siklus saat satker mulai mengajukan kebutuhan tahunan. Target identifikasi diarahkan ke TA {{ $settings['fiscal_year'] + 1 }}, tahun aktif tetap TA {{ $settings['fiscal_year'] }}, dan data personel, akun user, serta paket anggaran lama tidak direset.</p>
                     </div>
                 </div>
                 <div class="danger-checklist">
                     <span>Yang akan terjadi:</span>
                     <ul>
-                        <li>Sistem langsung dikunci.</li>
-                        <li>Paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan.</li>
-                        <li>Tahun Anggaran {{ $settings['fiscal_year'] + 1 }} menjadi aktif.</li>
-                        <li>Akun personel dinonaktifkan, tetapi akun user tetap disimpan.</li>
-                        <li>Satker pada akun user personel dikosongkan untuk persiapan import ulang SDM.</li>
-                        <li>Dataset personel aktif dihapus agar tahun berikutnya dimulai dari baseline baru hasil import.</li>
+                        <li>Target pengajuan satker ditetapkan ke TA {{ $settings['fiscal_year'] + 1 }}.</li>
+                        <li>Tahun aktif tetap TA {{ $settings['fiscal_year'] }} sampai proses finalisasi/reset dijalankan.</li>
+                        <li>Pengajuan kebutuhan satker dibuka tanpa membuka input data personel.</li>
+                        <li>Data personel aktif tetap disimpan dan tidak dihapus.</li>
+                        <li>Akun personel tetap aktif dan satker akun tidak dikosongkan.</li>
+                        <li>Review item kapor ditutup dulu sampai masa review benar-benar dibuka.</li>
                     </ul>
                 </div>
-                <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menyiapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}? Sistem akan dikunci, paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan, akun personel dinonaktifkan, satker akun personel dikosongkan, dan dataset aktif personel akan direset untuk import ulang SDM.')">
+                <form action="{{ route('superadmin.settings.open-identification-cycle') }}" method="POST" onsubmit="return confirm('Buka masa identifikasi kebutuhan TA {{ $settings['fiscal_year'] + 1 }}? Tahun aktif tetap TA {{ $settings['fiscal_year'] }} dan data personel tidak dihapus.')">
+                    @csrf
+                    <button type="submit" class="btn-cycle-modern">
+                        Buka Masa Identifikasi TA {{ $settings['fiscal_year'] + 1 }}
+                    </button>
+                </form>
+            </div>
+
+            {{-- Finalization Box --}}
+            <div class="danger-zone-box finalize-year-box">
+                <div class="danger-header">
+                    <i class="ri-alert-line"></i>
+                    <div>
+                        <strong>Finalisasi & Reset ke TA {{ $settings['fiscal_year'] + 1 }}</strong>
+                        <p>Tindakan ini dipakai di akhir siklus setelah data sudah valid. Sistem dan data satker akan dikunci, paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan, Tahun Anggaran {{ $settings['fiscal_year'] + 1 }} menjadi aktif, akun personel dinonaktifkan, satker pada akun personel dikosongkan, lalu dataset aktif personel direset agar siap diunggah ulang dari SDM tanpa menghapus akun user.</p>
+                    </div>
+                </div>
+                <div class="danger-checklist">
+                    <span>Yang akan terjadi:</span>
+                    <ul>
+                        <li>Sistem dan data satker langsung dikunci.</li>
+                        <li>Paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan.</li>
+                        <li>Tahun Anggaran {{ $settings['fiscal_year'] + 1 }} menjadi aktif.</li>
+                        <li>Target identifikasi berikutnya disiapkan untuk TA {{ $settings['fiscal_year'] + 2 }}, tetapi tetap terkunci sampai dibuka manual.</li>
+                        <li>Akun personel dinonaktifkan, tetapi akun user tetap disimpan.</li>
+                        <li>Satker pada akun user personel dikosongkan untuk persiapan unggah ulang SDM.</li>
+                        <li>Dataset personel aktif dihapus agar tahun berikutnya dimulai dari data baru hasil unggahan.</li>
+                    </ul>
+                </div>
+                <form action="{{ route('superadmin.settings.next-year') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin finalisasi dan reset ke Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}? Sistem dan data satker akan dikunci, paket anggaran tahun {{ $settings['fiscal_year'] }} diarsipkan, akun personel dinonaktifkan, satker akun personel dikosongkan, dan dataset aktif personel akan direset untuk unggah ulang SDM.')">
                     @csrf
                     <button type="submit" class="btn-danger-modern">
-                        Siapkan Tahun Anggaran {{ $settings['fiscal_year'] + 1 }}
+                        Finalisasi & Reset ke TA {{ $settings['fiscal_year'] + 1 }}
                     </button>
                 </form>
             </div>
@@ -1211,6 +1274,24 @@
         flex-direction: column;
         gap: 16px;
     }
+    .cycle-start-box {
+        border-color: #BFDBFE;
+        background: #EFF6FF;
+        margin-bottom: 18px;
+    }
+    .cycle-start-box .danger-header i,
+    .cycle-start-box .danger-header strong,
+    .cycle-start-box .danger-header p,
+    .cycle-start-box .danger-checklist > span,
+    .cycle-start-box .danger-checklist ul {
+        color: #1D4ED8;
+    }
+    .cycle-start-box .danger-checklist {
+        border-top-color: rgba(37, 99, 235, 0.2);
+    }
+    .finalize-year-box {
+        margin-bottom: 22px;
+    }
     .danger-header {
         display: flex;
         align-items: flex-start;
@@ -1269,6 +1350,24 @@
         background: #FEF3C7;
         color: #B45309;
         border-color: #D97706;
+    }
+    .btn-cycle-modern {
+        background: #2563EB;
+        border: 1px solid #1D4ED8;
+        color: #FFFFFF;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        display: block;
+        text-align: center;
+    }
+    .btn-cycle-modern:hover {
+        background: #1D4ED8;
+        border-color: #1E40AF;
     }
 
     /* ── Table Card ── */

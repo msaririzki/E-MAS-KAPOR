@@ -12,6 +12,7 @@ class SettingSeeder extends Seeder
         $settings = [
             ['key' => 'fiscal_year', 'value' => '2026'],
             ['key' => 'is_system_locked', 'value' => 'false'],
+            ['key' => 'is_satker_locked', 'value' => 'false'],
             ['key' => 'app_title', 'value' => 'SI-KAPOR Polda NTB'],
             ['key' => 'submission_deadline', 'value' => '2026-12-31'],
         ];

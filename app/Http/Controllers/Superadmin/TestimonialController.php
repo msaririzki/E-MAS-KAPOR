@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\ItemReview;
 use App\Models\Setting;
 use App\Services\TestimonialExportService;
+use App\Services\TestimonialWordExportService;
 use Illuminate\Http\Request;
 
 class TestimonialController extends Controller
 {
     public function __construct(
-        private readonly TestimonialExportService $testimonialExportService
+        private readonly TestimonialExportService $testimonialExportService,
+        private readonly TestimonialWordExportService $testimonialWordExportService
     ) {}
 
     public function index(Request $request)
@@ -117,5 +119,21 @@ class TestimonialController extends Controller
         ]);
 
         return $pdf->download('Hasil_Review_Kapor_TA_'.$fiscalYear.'.pdf');
+    }
+
+    public function exportWord(Request $request)
+    {
+        $activeYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $fiscalYear = (int) $request->query('year', $activeYear);
+        $commentsPerRating = min(max($request->integer('comments_per_rating', 2), 1), 50);
+        $data = $this->testimonialExportService->build($fiscalYear, $commentsPerRating);
+
+        $tempFile = $this->testimonialWordExportService->generate($data);
+
+        return response()
+            ->download($tempFile, 'Hasil_Review_Kapor_TA_'.$fiscalYear.'.docx', [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ])
+            ->deleteFileAfterSend(true);
     }
 }

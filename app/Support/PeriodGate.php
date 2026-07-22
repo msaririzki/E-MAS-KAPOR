@@ -10,6 +10,38 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PeriodGate
 {
+    public static function resolveSatkerStatus(): array
+    {
+        $isLocked = Setting::getValue('is_satker_locked', 'false');
+
+        if ($isLocked === 'true' || $isLocked === '1') {
+            return [
+                'state' => 'manual_locked',
+                'is_open' => false,
+                'title' => 'Data Satker Dikunci',
+                'message' => 'Superadmin sedang mengunci perubahan data personel dan data satker. Data tetap bisa dilihat, tetapi perubahan baru tidak dapat disimpan.',
+                'period_label' => 'Mode kunci global aktif',
+                'tone' => 'error',
+            ];
+        }
+
+        return [
+            'state' => 'open',
+            'is_open' => true,
+            'title' => 'Data Satker Terbuka',
+            'message' => 'Perubahan data personel dan data satker dapat disimpan.',
+            'period_label' => 'Mode kunci global nonaktif',
+            'tone' => 'success',
+        ];
+    }
+
+    public static function resolveSatkerLockMessage(): ?string
+    {
+        $status = self::resolveSatkerStatus();
+
+        return $status['is_open'] ? null : $status['title'].'. '.$status['message'].' Status saat ini: '.$status['period_label'].'.';
+    }
+
     public static function resolveInputStatus(): array
     {
         $fiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));

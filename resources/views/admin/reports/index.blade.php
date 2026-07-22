@@ -98,7 +98,7 @@
         </div>
         <div class="report-body">
             <h3>Riwayat Audit Log</h3>
-            <p>Rekap seluruh aktivitas yang tercatat oleh sistem: Login, impor data, perubahan ukuran, dan aksi lainnya.</p>
+            <p>Rekap seluruh aktivitas yang tercatat oleh sistem: login, unggah data, perubahan ukuran, dan aksi lainnya.</p>
             <div class="report-meta">
                 <span class="report-badge"><i class="ri-file-excel-2-line"></i> Excel (.xlsx)</span>
             </div>

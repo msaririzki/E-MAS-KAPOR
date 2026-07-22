@@ -35,7 +35,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 // ── Authenticated Routes (Semua Role) ──────────────────────────
 
-Route::middleware(['auth', 'satker.scope'])->group(function () {
+Route::middleware(['auth', 'satker.write.lock', 'read.only', 'satker.scope'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', function () {
@@ -47,7 +47,7 @@ Route::middleware(['auth', 'satker.scope'])->group(function () {
 
 // ── Personil Routes ──────────────────────────────────────────────────
 
-Route::middleware(['auth', 'role:personil'])->prefix('personil')->name('personil.')->group(function () {
+Route::middleware(['auth', 'satker.write.lock', 'role:personil'])->prefix('personil')->name('personil.')->group(function () {
     Route::get('/kapor', fn () => redirect()->route('dashboard'))->name('kapor.index');
     Route::post('/kapor', [PersonilPortalController::class, 'storeKapor'])->middleware('system.lock')->name('kapor.store');
     Route::get('/testimoni', [PersonilPortalController::class, 'showTestimoni'])->name('testimoni.index');
@@ -57,7 +57,7 @@ Route::middleware(['auth', 'role:personil'])->prefix('personil')->name('personil
 
 // ── Admin Satker Routes ──────────────────────────────────────────────
 
-Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope::class, 'system.lock'])->prefix('admin-satker')->name('admin-satker.')->group(function () {
+Route::middleware(['auth', 'satker.write.lock', 'role:admin_satker', \App\Http\Middleware\SatkerScope::class, 'system.lock'])->prefix('admin-satker')->name('admin-satker.')->group(function () {
     Route::get('/monitor', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'monitor'])->name('monitor');
     Route::get('/reports', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'reports'])->name('reports');
     Route::get('/allocations', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'allocations'])->name('allocations');
@@ -65,23 +65,25 @@ Route::middleware(['auth', 'role:admin_satker', \App\Http\Middleware\SatkerScope
     Route::get('/settings', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'settings'])->name('settings');
     Route::put('/settings/signatory', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'updateSignatorySettings'])->name('settings.signatory.update');
 
-    // Identifikasi Kebutuhan (Admin Satker)
-    Route::get('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'index'])->name('kebutuhan.index');
-    Route::get('/kebutuhan/create', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'create'])->name('kebutuhan.create');
-    Route::post('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'store'])->name('kebutuhan.store');
-    Route::get('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'show'])->name('kebutuhan.show');
-    Route::get('/kebutuhan/{kebutuhan}/edit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'edit'])->name('kebutuhan.edit');
-    Route::put('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'update'])->name('kebutuhan.update');
-    Route::delete('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'destroy'])->name('kebutuhan.destroy');
-    Route::post('/kebutuhan/{kebutuhan}/submit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'submit'])->name('kebutuhan.submit');
-    Route::get('/kebutuhan/{kebutuhan}/print', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'printPdf'])->name('kebutuhan.print');
-    Route::get('/kebutuhan/{kebutuhan}/export-excel', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'exportExcel'])->name('kebutuhan.export-excel');
-    Route::get('/kebutuhan/{kebutuhan}/export-pdf', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'exportPdf'])->name('kebutuhan.export-pdf');
+    // Identifikasi Kebutuhan (Admin Satker) dibuka sebagai fase terpisah dari input data personel.
+    Route::withoutMiddleware('system.lock')->group(function () {
+        Route::get('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'index'])->name('kebutuhan.index');
+        Route::get('/kebutuhan/create', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'create'])->name('kebutuhan.create');
+        Route::post('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'store'])->name('kebutuhan.store');
+        Route::get('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'show'])->name('kebutuhan.show');
+        Route::get('/kebutuhan/{kebutuhan}/edit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'edit'])->name('kebutuhan.edit');
+        Route::put('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'update'])->name('kebutuhan.update');
+        Route::delete('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'destroy'])->name('kebutuhan.destroy');
+        Route::post('/kebutuhan/{kebutuhan}/submit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'submit'])->name('kebutuhan.submit');
+        Route::get('/kebutuhan/{kebutuhan}/print', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'printPdf'])->name('kebutuhan.print');
+        Route::get('/kebutuhan/{kebutuhan}/export-excel', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'exportExcel'])->name('kebutuhan.export-excel');
+        Route::get('/kebutuhan/{kebutuhan}/export-pdf', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'exportPdf'])->name('kebutuhan.export-pdf');
+    });
 });
 
 // ── Admin Central Routes ──────────────────────────────────────────────
 
-Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superadmin|kabak_bekum|admin_gudang|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
 
     // User Management
     Route::get('/users/template', [\App\Http\Controllers\UserController::class, 'downloadTemplate'])->name('users.template');
@@ -147,11 +149,13 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
     Route::get('/identifikasi-kebutuhan', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'index'])->name('identifikasi-kebutuhan.index');
     Route::get('/identifikasi-kebutuhan/export-pdf', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'exportPdf'])->name('identifikasi-kebutuhan.export-pdf');
     Route::get('/identifikasi-kebutuhan/export-detail-pdf', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'exportDetailPdf'])->name('identifikasi-kebutuhan.export-detail-pdf');
+    Route::get('/identifikasi-kebutuhan/export-word', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'exportWord'])->name('identifikasi-kebutuhan.export-word');
+    Route::get('/identifikasi-kebutuhan/export-detail-word', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'exportDetailWord'])->name('identifikasi-kebutuhan.export-detail-word');
     Route::get('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'show'])->name('identifikasi-kebutuhan.show');
     Route::post('/identifikasi-kebutuhan/{kebutuhan}/reject', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'reject'])->name('identifikasi-kebutuhan.reject');
     Route::delete('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'destroy'])->name('identifikasi-kebutuhan.destroy');
 
-    Route::middleware('role:superadmin|admin_gudang')->group(function () {
+    Route::middleware('role:superadmin|kabak_bekum|admin_gudang')->group(function () {
         // Warehouse Data Gudang (Unified)
         Route::post('/warehouse-items/import', [WarehouseController::class, 'import'])->name('warehouse-items.import');
         Route::get('/warehouse-items/template', [WarehouseController::class, 'downloadTemplate'])->name('warehouse-items.download-template');
@@ -211,6 +215,10 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
         Route::post('/years/{budgetYear}/packages', [\App\Http\Controllers\Admin\BudgetController::class, 'storePackage'])->name('store-package');
         Route::put('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'updatePackage'])->name('update-package');
         Route::delete('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'destroyPackage'])->name('destroy-package');
+        Route::get('/packages/{budgetPackage}/sppm-assignments', [\App\Http\Controllers\Admin\BudgetPackageSppmAssignmentController::class, 'index'])->name('sppm-assignments.index');
+        Route::post('/packages/{budgetPackage}/sppm-assignments', [\App\Http\Controllers\Admin\BudgetPackageSppmAssignmentController::class, 'store'])->name('sppm-assignments.store');
+        Route::patch('/packages/{budgetPackage}/sppm-assignments/{assignment}', [\App\Http\Controllers\Admin\BudgetPackageSppmAssignmentController::class, 'update'])->name('sppm-assignments.update');
+        Route::delete('/packages/{budgetPackage}/sppm-assignments/{assignment}', [\App\Http\Controllers\Admin\BudgetPackageSppmAssignmentController::class, 'destroy'])->name('sppm-assignments.destroy');
         Route::get('/packages/{budgetPackage}', [\App\Http\Controllers\Admin\BudgetController::class, 'showPackage'])->name('show-package');
         Route::post('/packages/{budgetPackage}/recalculate', [\App\Http\Controllers\Admin\BudgetController::class, 'recalculatePackage'])->name('recalculate-package');
         Route::get('/packages/{budgetPackage}/select-items', [\App\Http\Controllers\Admin\PackageItemController::class, 'selectItems'])->name('wizard.step1');
@@ -235,7 +243,7 @@ Route::middleware(['auth', 'role:admin|superadmin|admin_gudang|admin_satker', 's
 
 // ── Superadmin Routes ────────────────────────────────────────────────
 
-Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+Route::middleware(['auth', 'read.only', 'role:superadmin|kabak_bekum'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/satkers', [SatkerController::class, 'index'])->name('satkers.index');
     Route::post('/satkers', [SatkerController::class, 'store'])->name('satkers.store');
     Route::put('/satkers/{satker}', [SatkerController::class, 'update'])->name('satkers.update');
@@ -252,10 +260,12 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
     Route::put('/settings/signatory', [\App\Http\Controllers\SettingsController::class, 'updateSignatory'])->name('settings.signatory.update');
+    Route::post('/settings/open-identification-cycle', [\App\Http\Controllers\SettingsController::class, 'openIdentificationCycle'])->name('settings.open-identification-cycle');
     Route::post('/settings/next-year', [\App\Http\Controllers\SettingsController::class, 'nextYear'])->name('settings.next-year');
 
     Route::get('/statistik', [StatisticsController::class, 'index'])->name('statistics');
     Route::get('/testimonials/export-pdf', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'exportPdf'])->name('testimonials.export-pdf');
+    Route::get('/testimonials/export-word', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'exportWord'])->name('testimonials.export-word');
     Route::get('/testimonials', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'index'])->name('testimonials.index');
 
     Route::resource('identifikasi-items', \App\Http\Controllers\Superadmin\IdentifikasiItemController::class)

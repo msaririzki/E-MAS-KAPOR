@@ -1359,7 +1359,7 @@ class PersonnelImport implements SkipsUnknownSheets, ToCollection, WithMultipleS
         }
 
         if (! empty($data['duplicate_nrp'])) {
-            $notes[] = 'NRP duplikat dalam file import';
+            $notes[] = 'NRP duplikat dalam file unggahan';
         }
 
         return ! empty($notes) ? implode('; ', $notes) : null;

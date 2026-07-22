@@ -112,6 +112,18 @@
             vertical-align: top;
             padding: 8px 10px;
         }
+        .review-source {
+            color: #1f2937;
+            font-size: 7.8pt;
+            font-weight: bold;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        .review-comment {
+            color: #111827;
+            font-size: 8.5pt;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -275,10 +287,10 @@
                     <td class="text-left">
                         @forelse($comments as $comment)
                             <div style="margin-bottom: {{ $loop->last ? '0' : '10px' }};">
-                                <div style="color: #000; font-size: 8.5pt;">"{{ $comment['comment'] }}"</div>
-                                <div style="color: #000; font-size: 7.5pt; margin-top: 2px;">
+                                <div class="review-source">
                                     {{ $comment['personnel'] }} - {{ $comment['satker'] }} - {{ $comment['item'] }}
                                 </div>
+                                <div class="review-comment">"{{ $comment['comment'] }}"</div>
                             </div>
                         @empty
                             <div style="color: #000; font-size: 8.5pt;">Tidak ada komentar.</div>
