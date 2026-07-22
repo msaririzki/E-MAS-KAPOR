@@ -2409,7 +2409,7 @@
                     <i class="ri-lock-line" style="font-size: 18px; margin-top: 2px;"></i>
                     <div>
                         <div style="font-weight: 700; font-size: 14px;">Mode baca saja aktif</div>
-                        <div style="font-size: 13px; line-height: 1.5;">Superadmin sedang mengunci perubahan data satker dan personel. Lihat, cetak, dan ekspor tetap bisa, tetapi penyimpanan perubahan baru ditolak.</div>
+                        <div style="font-size: 13px; line-height: 1.5;">Superadmin sedang mengunci perubahan data satker dan personel. Data tetap bisa dilihat, dicetak, dan diunduh, tetapi penyimpanan perubahan baru ditolak.</div>
                     </div>
                 </div>
             @endif

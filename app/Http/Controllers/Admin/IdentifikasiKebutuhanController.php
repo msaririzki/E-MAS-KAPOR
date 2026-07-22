@@ -7,6 +7,7 @@ use App\Models\IdentifikasiItem;
 use App\Models\Kebutuhan;
 use App\Models\KebutuhanItem;
 use App\Models\Satker;
+use App\Models\Setting;
 use App\Services\ExportSignatorySettingService;
 use App\Services\IdentifikasiKebutuhanWordExportService;
 use App\Services\KebutuhanExportService;
@@ -20,7 +21,13 @@ class IdentifikasiKebutuhanController extends Controller
      */
     public function index(Request $request)
     {
+        $activeFiscalYear = (int) Setting::getValue('fiscal_year', date('Y'));
+        $targetFiscalYear = (int) Setting::getValue('kebutuhan_target_year', 0);
+        $targetFiscalYear = $targetFiscalYear > 0 ? $targetFiscalYear : $activeFiscalYear + 1;
+        $selectedYear = $request->integer('year') ?: $targetFiscalYear;
+
         $query = Kebutuhan::with(['satker', 'user', 'items'])
+            ->where('fiscal_year', (string) $selectedYear)
             ->orderByDesc('created_at');
 
         // Filter by satker
@@ -45,12 +52,29 @@ class IdentifikasiKebutuhanController extends Controller
         $kebutuhans = $query->paginate(15)->withQueryString();
 
         $satkers = Satker::orderBy('name')->get();
+        $availableYears = Kebutuhan::query()
+            ->select('fiscal_year')
+            ->distinct()
+            ->pluck('fiscal_year')
+            ->map(fn ($year): int => (int) $year)
+            ->merge([$activeFiscalYear, $targetFiscalYear])
+            ->filter(fn (int $year): bool => $year > 0)
+            ->unique()
+            ->sortDesc()
+            ->values();
+
+        $baseYearQuery = Kebutuhan::query()
+            ->where('fiscal_year', (string) $selectedYear);
 
         // Stats
         $stats = [
-            'totalPengajuan' => Kebutuhan::count(),
-            'totalSatker' => Kebutuhan::distinct('satker_id')->count('satker_id'),
-            'totalItem' => \App\Models\KebutuhanItem::distinct('identifikasi_item_id')->count('identifikasi_item_id'),
+            'totalPengajuan' => (clone $baseYearQuery)->count(),
+            'totalSatker' => (clone $baseYearQuery)->distinct('satker_id')->count('satker_id'),
+            'totalItem' => KebutuhanItem::query()
+                ->join('kebutuhans', 'kebutuhans.id', '=', 'kebutuhan_items.kebutuhan_id')
+                ->where('kebutuhans.fiscal_year', (string) $selectedYear)
+                ->distinct('identifikasi_item_id')
+                ->count('identifikasi_item_id'),
         ];
 
         // ── Item Popularity Statistics ─────────────────────────────
@@ -78,6 +102,7 @@ class IdentifikasiKebutuhanController extends Controller
                     ->select('identifikasi_item_id', DB::raw('COUNT(DISTINCT kebutuhans.satker_id) as satker_count'))
                     ->join('kebutuhans', 'kebutuhans.id', '=', 'kebutuhan_items.kebutuhan_id')
                     ->whereIn('identifikasi_item_id', $categoryItemIds)
+                    ->where('kebutuhans.fiscal_year', (string) $selectedYear)
                     ->whereIn('kebutuhans.status', ['diajukan', 'disetujui'])
                     ->groupBy('identifikasi_item_id')
                     ->get()
@@ -111,6 +136,10 @@ class IdentifikasiKebutuhanController extends Controller
             'stats',
             'itemStatsByCategory',
             'totalKebutuhans',
+            'selectedYear',
+            'targetFiscalYear',
+            'activeFiscalYear',
+            'availableYears',
         ));
     }
 

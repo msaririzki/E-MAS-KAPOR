@@ -28,7 +28,7 @@
                 <i class="ri-printer-line"></i> Cetak
             </button>
             <a href="{{ route('admin.personnel.export-personnel', array_merge(request()->only(['search', 'status', 'bagian']), ['mode' => 'monitoring'])) }}" class="btn btn-success">
-                <i class="ri-file-excel-2-line"></i> Export Excel
+                <i class="ri-file-excel-2-line"></i> Unduh Excel
             </a>
         </div>
     </div>

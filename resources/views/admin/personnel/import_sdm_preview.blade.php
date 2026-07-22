@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Preview Import Data SDM')
-@section('breadcrumb', 'Preview Import SDM')
+@section('title', 'Pratinjau Unggah Data SDM')
+@section('breadcrumb', 'Pratinjau Unggah SDM')
 
 @section('content')
 @if(session('error'))
@@ -23,7 +23,7 @@
     <div class="page-header">
         <div class="page-header-row">
             <div>
-                <h1 class="page-title">Preview Import Data SDM</h1>
+                <h1 class="page-title">Pratinjau Unggah Data SDM</h1>
                 <p class="page-subtitle">
                     Total baris: <strong>{{ $stats['total'] }}</strong>
                     <span style="color:#6B7280;">| Estimasi personel unik: <strong>{{ $stats['unique_personnel_estimate'] ?? $stats['total'] }}</strong></span>
@@ -52,7 +52,7 @@
                 <i class="ri-list-check-2"></i> Semua <span class="badge">{{ $stats['total'] }}</span>
             </div>
             <div class="filter-pill ok" onclick="setFilter('ok')" id="pill-ok">
-                <i class="ri-checkbox-circle-line"></i> Siap Import <span class="badge">{{ $stats['ok'] }}</span>
+                <i class="ri-checkbox-circle-line"></i> Siap Diunggah <span class="badge">{{ $stats['ok'] }}</span>
             </div>
             @if($stats['corrected'] > 0)
             <div class="filter-pill warn" onclick="setFilter('corrected')" id="pill-corrected">
@@ -76,7 +76,7 @@
                 <i class="ri-close-line"></i> Batalkan
             </button>
             <button type="submit" class="btn btn-primary btn-submit-import" id="sdmConfirmSubmitBtn" style="background:#059669; border-color:#059669;">
-                <i class="ri-check-double-line"></i> Konfirmasi Import SDM
+                <i class="ri-check-double-line"></i> Konfirmasi Unggah SDM
             </button>
         </div>
     </div>
@@ -196,7 +196,7 @@
                             <div style="font-size:11px; color:{{ $row['status'] === 'error' ? '#B91C1C' : '#92400E' }}; margin-bottom:4px;">• {{ $note }}</div>
                             @endforeach
                         @else
-                            <span style="font-size:11px; color:#059669;">Siap import</span>
+                            <span style="font-size:11px; color:#059669;">Siap diunggah</span>
                         @endif
                     </td>
                 </tr>
@@ -217,10 +217,10 @@
     <div class="sdm-progress-card">
         <div class="sdm-progress-chip">
             <i class="ri-loader-4-line"></i>
-            <span id="sdmConfirmProgressBadge">Konfirmasi Import SDM</span>
+            <span id="sdmConfirmProgressBadge">Konfirmasi Unggah SDM</span>
         </div>
         <div style="margin-top: 18px;">
-            <div id="sdmConfirmProgressTitle" style="font-size: 24px; font-weight: 800; color: #0F172A; line-height: 1.2;">Menyiapkan impor SDM</div>
+            <div id="sdmConfirmProgressTitle" style="font-size: 24px; font-weight: 800; color: #0F172A; line-height: 1.2;">Menyiapkan unggah SDM</div>
             <div id="sdmConfirmProgressMessage" style="margin-top: 10px; font-size: 14px; color: #475569; line-height: 1.6;">Data preview akan disimpan ke database setelah semua pengecekan lolos.</div>
         </div>
         <div class="sdm-progress-track">
@@ -483,7 +483,7 @@ function openConfirmProgressOverlay() {
     requestAnimationFrame(() => {
         setConfirmProgress(
             6,
-            'Mengirim konfirmasi import',
+            'Mengirim konfirmasi unggah',
             `Sistem sedang memproses ${previewTotalRows} baris preview SDM ke database.`,
             'Validasi koreksi manual',
         );
@@ -527,7 +527,7 @@ function doConfirm(event) {
     if (fatalErrorIndexes.length > 0) {
         event.preventDefault();
         setFilter('error');
-        alert('Masih ada error fatal pada file SDM. Perbaiki file sumber lalu upload ulang.');
+        alert('Masih ada error fatal pada file SDM. Perbaiki file sumber lalu unggah ulang.');
         return false;
     }
 
@@ -589,7 +589,7 @@ function doConfirm(event) {
             percent,
             'Mengirim data konfirmasi',
             'Koreksi manual dan data preview sedang dikirim ke server.',
-            'Upload data konfirmasi',
+            'Unggah data konfirmasi',
         );
     };
 
@@ -611,7 +611,7 @@ function doConfirm(event) {
     xhr.onerror = function() {
         closeConfirmProgressOverlay();
         setConfirmButtonState(false);
-        alert('Koneksi ke server terputus saat konfirmasi import SDM.');
+        alert('Koneksi ke server terputus saat konfirmasi unggah SDM.');
     };
 
     xhr.onload = function() {
@@ -624,8 +624,8 @@ function doConfirm(event) {
 
             setConfirmProgress(
                 100,
-                'Import SDM selesai',
-                payload.message || 'Seluruh proses import SDM selesai diproses.',
+                'Unggah SDM selesai',
+                payload.message || 'Seluruh proses unggah SDM selesai diproses.',
                 'Mengalihkan ke halaman personel',
             );
 
@@ -644,7 +644,7 @@ function doConfirm(event) {
 
         closeConfirmProgressOverlay();
         setConfirmButtonState(false);
-        alert(extractAjaxError(xhr, 'Konfirmasi import SDM gagal diproses.'));
+        alert(extractAjaxError(xhr, 'Konfirmasi unggah SDM gagal diproses.'));
     };
 
     xhr.send(formData);

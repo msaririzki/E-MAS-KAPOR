@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Preview Import Personel')
-@section('breadcrumb', 'Preview Import')
+@section('title', 'Pratinjau Unggah Personel')
+@section('breadcrumb', 'Pratinjau Unggah')
 
 @section('content')
 
@@ -37,7 +37,7 @@
     <div class="page-header">
         <div class="page-header-row">
             <div>
-                <h1 class="page-title">Preview Import Personel</h1>
+                <h1 class="page-title">Pratinjau Unggah Personel</h1>
                 <p class="page-subtitle">Satker: <strong>{{ $satker->name }}</strong>
                     &mdash; <span style="color:#6B7280;">{{ $stats['total'] }} baris data</span>
                 </p>
@@ -58,7 +58,7 @@
                 <i class="ri-list-check-2"></i> Semua <span class="badge">{{ $stats['total'] }}</span>
             </div>
             <div class="filter-pill ok" onclick="setFilter('ok')" id="pill-ok">
-                <i class="ri-checkbox-circle-line"></i> Siap Import <span class="badge">{{ $stats['ok'] }}</span>
+                <i class="ri-checkbox-circle-line"></i> Siap Diunggah <span class="badge">{{ $stats['ok'] }}</span>
             </div>
             @if($stats['corrected'] > 0)
             <div class="filter-pill warn" onclick="setFilter('corrected')" id="pill-corrected">
@@ -243,7 +243,7 @@
                         @if(!empty($row['db_duplicate']) || !empty($row['duplicate_nrp']))
                         <div style="margin-top: 6px;">
                             <select name="action_overrides[{{ $i }}]" onchange="updateDuplicateAction({{ $i }}, this)" style="font-size: 11px; padding: 4px; border: 1px solid #EF4444; border-radius: 4px; background: #fff; color: #B91C1C; cursor: pointer;">
-                                <option value="import">⚠️ Tetap Import</option>
+                                <option value="import">Tetap Unggah</option>
                                 <option value="skip">❌ Abaikan Baris Ini</option>
                             </select>
                         </div>
@@ -283,7 +283,7 @@
                 <i class="ri-close-line"></i> Batalkan
             </button>
             <button type="submit" class="btn btn-primary btn-submit-import" style="background:#059669; padding:10px 24px; border-radius:8px; font-weight:700; box-shadow:0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -1px rgba(5, 150, 105, 0.1);">
-                <i class="ri-check-double-line" style="margin-right:6px;"></i> Konfirmasi Import 
+                <i class="ri-check-double-line" style="margin-right:6px;"></i> Konfirmasi Unggah
                 <span style="background:rgba(255,255,255,0.25); margin-left:8px; padding:2px 8px; border-radius:12px; font-size:12px;">{{ $stats['total'] }}</span>
             </button>
         </div>

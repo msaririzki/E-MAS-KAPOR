@@ -322,18 +322,18 @@ class UserController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return redirect()->route('admin.users.index')->with('error', 'Terjadi kesalahan sistem saat impor: '.$e->getMessage());
+            return redirect()->route('admin.users.index')->with('error', 'Terjadi kesalahan sistem saat unggah data: '.$e->getMessage());
         }
 
         fclose($handle);
 
-        AuditLogger::log('Import User', 'Manajemen Pengguna', null, null, null, 'success', "Berhasil memproses {$successCount} pengguna. Gagal: {$errorCount}");
+        AuditLogger::log('Unggah Pengguna', 'Manajemen Pengguna', null, null, null, 'success', "Berhasil memproses {$successCount} pengguna. Gagal: {$errorCount}");
 
         if ($errorCount > 0) {
             return redirect()->route('admin.users.index')->with('warning', "Berhasil memproses {$successCount} data. Gagal: {$errorCount}. Contoh error: ".implode(', ', array_slice($errors, 0, 3)));
         }
 
-        return redirect()->route('admin.users.index')->with('success', "Berhasil mengimpor {$successCount} pengguna.");
+        return redirect()->route('admin.users.index')->with('success', "Berhasil mengunggah {$successCount} pengguna.");
     }
 
     private function applyFilters($query, Request $request): void

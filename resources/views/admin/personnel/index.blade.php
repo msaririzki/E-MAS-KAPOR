@@ -25,7 +25,7 @@
                 <button type="button" class="btn personnel-header-btn btn-export" onclick="this.parentElement.classList.toggle('open')">
                     <div class="btn-content">
                         <i class="ri-exchange-line"></i>
-                        <span>Impor / Ekspor</span>
+                        <span>Unggah / Unduh</span>
                         <i class="ri-arrow-down-s-line arrow-icon"></i>
                     </div>
                 </button>
@@ -33,14 +33,14 @@
 
                     {{-- Export Personel (Update) --}}
                     <div class="dropdown-section-label">
-                        EKSPOR
+                        UNDUH
                     </div>
                     @if(auth()->user()->hasRole('admin_satker'))
                     {{-- Admin Satker: langsung export tanpa modal --}}
                     <a href="{{ route('admin.personnel.export-personnel') }}" class="dropdown-item personnel-dropdown-item">
                         <i class="ri-file-excel-2-line" style="color: #059669; font-size: 16px;"></i>
                         <div>
-                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Export Data Personel</div>
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Unduh Data Personel</div>
                             <div style="font-size: 11px; color: #6B7280;">Download Excel untuk diedit &amp; update</div>
                         </div>
                     </a>
@@ -49,7 +49,7 @@
                     <button class="dropdown-item personnel-dropdown-item" onclick="openModal('exportPersonnelModal')">
                         <i class="ri-file-excel-2-line" style="color: #059669; font-size: 16px;"></i>
                         <div style="text-align: left;">
-                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Export Data Personel</div>
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Unduh Data Personel</div>
                             <div style="font-size: 11px; color: #6B7280;">Download Excel untuk diedit & update</div>
                         </div>
                     </button>
@@ -59,7 +59,7 @@
                     <a href="{{ route('admin.personnel.export-keterangan') }}" class="dropdown-item personnel-dropdown-item">
                         <i class="ri-file-list-3-line" style="color: #7C3AED; font-size: 16px;"></i>
                         <div>
-                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Export Referensi Keterangan</div>
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Unduh Referensi Keterangan</div>
                             <div style="font-size: 11px; color: #6B7280;">Download file acuan update keterangan</div>
                         </div>
                     </a>
@@ -68,19 +68,19 @@
                     <div class="dropdown-divider"></div>
 
                     {{-- IMPOR --}}
-                    <div class="dropdown-section-label">IMPOR</div>
+                    <div class="dropdown-section-label">UNGGAH DATA</div>
                     @if(auth()->user()->hasRole('superadmin'))
                     <button class="dropdown-item personnel-dropdown-item" onclick="openModal('importSdmModal')">
                         <i class="ri-database-2-line" style="color: #8B5CF6; font-size: 16px;"></i>
                         <div style="text-align: left;">
-                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Import Data SDM</div>
-                            <div style="font-size: 11px; color: #6B7280;">Upload data pokok awal (Sdm)</div>
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Unggah Data SDM</div>
+                            <div style="font-size: 11px; color: #6B7280;">Unggah data pokok awal (SDM)</div>
                         </div>
                     </button>
                     <button class="dropdown-item personnel-dropdown-item" onclick="openModal('importKeteranganModal')">
                         <i class="ri-file-edit-line" style="color: #7C3AED; font-size: 16px;"></i>
                         <div style="text-align: left;">
-                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Import Referensi Keterangan</div>
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Unggah Referensi Keterangan</div>
                             <div style="font-size: 11px; color: #6B7280;">Update `keterangan_2/3/4` berbasis ID</div>
                         </div>
                     </button>
@@ -89,8 +89,8 @@
                     <button class="dropdown-item personnel-dropdown-item" onclick="openModal('importModal')">
                         <i class="ri-file-upload-line" style="color: #F59E0B; font-size: 16px;"></i>
                         <div style="text-align: left;">
-                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Impor Data Baru</div>
-                            <div style="font-size: 11px; color: #6B7280;">Upload personel dari template Excel</div>
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Unggah Data Baru</div>
+                            <div style="font-size: 11px; color: #6B7280;">Unggah personel dari template Excel</div>
                         </div>
                     </button>
                     @endif
@@ -98,7 +98,7 @@
                     <button class="dropdown-item personnel-dropdown-item" onclick="openModal('importUpdateModal')">
                         <i class="ri-refresh-line" style="color: #3B82F6; font-size: 16px;"></i>
                         <div style="text-align: left;">
-                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Impor Update Data</div>
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Unggah Pembaruan Data</div>
                             <div style="font-size: 11px; color: #6B7280;">Tambah atau revisi jabatan, bag/fungsi, dan keterangan via Excel</div>
                         </div>
                     </button>
@@ -390,7 +390,7 @@
 
         <div>
             <button type="button" class="btn" style="background: var(--slate-600); color: white;" onclick="window.spaNavigate()">
-                <i class="ri-download-line"></i> Ekspor
+                <i class="ri-download-line"></i> Unduh
             </button>
         </div>
     </form>
@@ -669,7 +669,7 @@
 <div id="importKeteranganModal" class="modal">
     <div class="modal-content" style="max-width: 760px;">
         <div class="modal-header">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">Import Referensi Keterangan</h3>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">Unggah Referensi Keterangan</h3>
             <button class="modal-close" onclick="closeModal('importKeteranganModal')">
                 <i class="ri-close-line"></i>
             </button>
@@ -680,16 +680,16 @@
                 <div class="form-group" style="margin-bottom: 24px;">
                     <label style="font-weight: 700; color: #374151;">Pilih File Referensi Keterangan <span style="color: #EF4444;">*</span></label>
                     <input type="file" name="file" accept=".xlsx,.xls,.csv" required class="form-input" style="padding: 12px; border: 2px dashed #E5E7EB; background: #F9FAFB;">
-                    <p style="font-size: 12px; color: #6B7280; margin-top: 8px;">Gunakan file hasil export referensi keterangan dari sistem agar kolom `id` tetap akurat.</p>
+                    <p style="font-size: 12px; color: #6B7280; margin-top: 8px;">Gunakan file referensi keterangan yang diunduh dari sistem agar kolom `id` tetap akurat.</p>
                 </div>
 
                 <div style="background: #F5F3FF; border: 1px solid #DDD6FE; border-radius: 12px; padding: 16px;">
                     <div style="display: flex; gap: 12px;">
                         <i class="ri-information-line" style="font-size: 24px; color: #7C3AED;"></i>
                         <div>
-                            <h4 style="font-size: 14px; font-weight: 700; color: #5B21B6; margin-bottom: 4px;">Aturan Import Referensi Keterangan</h4>
+                            <h4 style="font-size: 14px; font-weight: 700; color: #5B21B6; margin-bottom: 4px;">Aturan Unggah Referensi Keterangan</h4>
                             <p style="font-size: 13px; color: #6D28D9; line-height: 1.6; margin-bottom: 8px;">Matching utama menggunakan <strong>ID personel</strong>. Sistem hanya akan memperbarui <strong>`keterangan_2`</strong>, <strong>`keterangan_3`</strong>, dan <strong>`keterangan_4`</strong>.</p>
-                            <p style="font-size: 13px; color: #6D28D9; line-height: 1.6; margin: 0;">Kolom lain seperti nama, satker, pangkat, jabatan, dan `keterangan_1` dipakai sebagai referensi visual pada halaman preview dan tidak akan diubah oleh proses import ini.</p>
+                            <p style="font-size: 13px; color: #6D28D9; line-height: 1.6; margin: 0;">Kolom lain seperti nama, satker, pangkat, jabatan, dan `keterangan_1` dipakai sebagai referensi visual pada halaman pratinjau dan tidak akan diubah oleh proses unggah ini.</p>
                         </div>
                     </div>
                 </div>
@@ -697,7 +697,7 @@
             <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">
                 <button type="button" class="btn btn-outline" onclick="closeModal('importKeteranganModal')">Batal</button>
                 <button type="submit" class="btn btn-primary" style="background:#7C3AED; border-color:#7C3AED;">
-                    <i class="ri-eye-line"></i> Upload & Preview
+                    <i class="ri-eye-line"></i> Unggah & Pratinjau
                 </button>
             </div>
         </form>
@@ -707,7 +707,7 @@
 <div id="importSdmModal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">Impor Data SDM (Awal)</h3>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">Unggah Data SDM (Awal)</h3>
             <button class="modal-close" onclick="closeModal('importSdmModal')">
                 <i class="ri-close-line"></i>
             </button>
@@ -725,8 +725,8 @@
                     <div style="display: flex; gap: 12px;">
                         <i class="ri-information-line" style="font-size: 24px; color: #9333EA;"></i>
                         <div>
-                            <h4 style="font-size: 14px; font-weight: 700; color: #6B21A8; margin-bottom: 4px;">Informasi Import SDM</h4>
-                            <p style="font-size: 13px; color: #7E22CE; line-height: 1.5;">Import ini membaca format SDM sebagai baseline tahunan. Sistem akan menentukan satker otomatis dari kolom <strong>Jabatan</strong>, memetakan pangkat ke rank, dan membiarkan ukuran kapor tetap kosong.</p>
+                            <h4 style="font-size: 14px; font-weight: 700; color: #6B21A8; margin-bottom: 4px;">Informasi Unggah SDM</h4>
+                            <p style="font-size: 13px; color: #7E22CE; line-height: 1.5;">Unggah ini membaca format SDM sebagai data awal tahunan. Sistem akan menentukan satker otomatis dari kolom <strong>Jabatan</strong>, memetakan pangkat ke rank, dan membiarkan ukuran kapor tetap kosong.</p>
                         </div>
                     </div>
                 </div>
@@ -734,7 +734,7 @@
             <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">
                 <button type="button" class="btn btn-outline" onclick="closeModal('importSdmModal')">Batal</button>
                 <button type="submit" class="btn btn-primary" id="sdmImportSubmitBtn" style="background:#8B5CF6; border-color:#8B5CF6;">
-                    <i class="ri-upload-cloud-2-line"></i> Upload & Preview
+                    <i class="ri-upload-cloud-2-line"></i> Unggah & Pratinjau
                 </button>
             </div>
         </form>
@@ -744,10 +744,10 @@
     <div class="sdm-progress-card">
         <div class="sdm-progress-chip">
             <i class="ri-loader-4-line"></i>
-            <span id="sdmProgressBadge">Upload Preview SDM</span>
+            <span id="sdmProgressBadge">Pratinjau Unggah SDM</span>
         </div>
         <div style="margin-top: 18px;">
-            <div id="sdmProgressTitle" style="font-size: 24px; font-weight: 800; color: #0F172A; line-height: 1.2;">Menyiapkan upload SDM</div>
+            <div id="sdmProgressTitle" style="font-size: 24px; font-weight: 800; color: #0F172A; line-height: 1.2;">Menyiapkan unggah SDM</div>
             <div id="sdmProgressMessage" style="margin-top: 10px; font-size: 14px; color: #475569; line-height: 1.6;">File sedang dipersiapkan untuk dikirim ke server.</div>
         </div>
         <div class="sdm-progress-track">
@@ -784,7 +784,7 @@
                         <i class="ri-error-warning-fill" style="font-size: 24px; color: #991B1B;"></i>
                         <div>
                             <h4 style="font-size: 14px; font-weight: 700; color: #7F1D1D; margin-bottom: 4px;">Peringatan Sangat Merusak!</h4>
-                            <p style="font-size: 13px; color: #991B1B; line-height: 1.5;">Tindakan ini akan mengosongkan <strong>SELURUH</strong> data personil, akun login personil, dan riwayat ukuran kapor di semua satker database. Gunakan ini hanya untuk persiapan import ulang database yang bersih.</p>
+                            <p style="font-size: 13px; color: #991B1B; line-height: 1.5;">Tindakan ini akan mengosongkan <strong>SELURUH</strong> data personil, akun login personil, dan riwayat ukuran kapor di semua satker database. Gunakan ini hanya untuk persiapan unggah ulang database yang bersih.</p>
                         </div>
                     </div>
                 </div>
@@ -809,7 +809,7 @@
 <div id="importModal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">Impor Data Personel & Ukuran Kapor</h3>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">Unggah Data Personel & Ukuran Kapor</h3>
             <button class="modal-close" onclick="closeModal('importModal')">
                 <i class="ri-close-line"></i>
             </button>
@@ -836,7 +836,7 @@
                         <input type="hidden" name="satker_id" id="import_satker_id" required>
                     </div>
 
-                    <p style="font-size: 12px; color: #6B7280; margin-top: 4px;">Pilih satker yang sesuai dengan isi file yang akan diimport.</p>
+                    <p style="font-size: 12px; color: #6B7280; margin-top: 4px;">Pilih satker yang sesuai dengan isi file yang akan diunggah.</p>
                 </div>
                 @endif
                 
@@ -868,7 +868,7 @@
     <div class="modal-content" style="max-width: 480px;">
         <div class="modal-header">
             <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">
-                <i class="ri-file-excel-2-line" style="color: #059669;"></i> Export Data Personel
+                <i class="ri-file-excel-2-line" style="color: #059669;"></i> Unduh Data Personel
             </h3>
             <button class="modal-close" onclick="closeModal('exportPersonnelModal')">
                 <i class="ri-close-line"></i>
@@ -883,7 +883,7 @@
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-weight: 700; color: #374151; margin-bottom: 10px; display: block;">PILIH CAKUPAN EXPORT</label>
+                <label style="font-weight: 700; color: #374151; margin-bottom: 10px; display: block;">PILIH DATA YANG DIUNDUH</label>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     {{-- Opsi Semua Satker --}}
                     <label style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid #E5E7EB; border-radius: 10px; cursor: pointer; transition: border-color 0.15s;" onclick="setExportScope('all', this)">
@@ -892,7 +892,7 @@
                         </div>
                         <div>
                             <div style="font-weight: 600; color: #111827; font-size: 14px;">Semua Satker</div>
-                            <div style="font-size: 12px; color: #6B7280;">Export seluruh personel dari semua satker</div>
+                            <div style="font-size: 12px; color: #6B7280;">Unduh seluruh personel dari semua satker</div>
                         </div>
                     </label>
                     {{-- Opsi Satker Tertentu --}}
@@ -902,7 +902,7 @@
                         </div>
                         <div>
                             <div style="font-weight: 600; color: #111827; font-size: 14px;">Pilih Satker Tertentu</div>
-                            <div style="font-size: 12px; color: #6B7280;">Export personel dari satu satker saja</div>
+                            <div style="font-size: 12px; color: #6B7280;">Unduh personel dari satu satker saja</div>
                         </div>
                     </label>
                     {{-- Dropdown pilih satker --}}
@@ -946,7 +946,7 @@
     <div class="modal-content" style="max-width: 560px;">
         <div class="modal-header">
             <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">
-                <i class="ri-refresh-line" style="color: #3B82F6;"></i> Impor Update Data Personel
+                <i class="ri-refresh-line" style="color: #3B82F6;"></i> Unggah Pembaruan Data Personel
             </h3>
             <button class="modal-close" onclick="closeModal('importUpdateModal')">
                 <i class="ri-close-line"></i>
@@ -959,7 +959,7 @@
                 <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; display: flex; gap: 10px;">
                     <i class="ri-information-fill" style="color: #3B82F6; font-size: 18px; flex-shrink: 0;"></i>
                     <div style="font-size: 13px; color: #1E3A5F; line-height: 1.5;">
-                        <strong>Mode Update:</strong> Upload file Excel hasil export yang sudah diedit. Data akan dicocokan via <strong>NRP/NIP</strong> — hanya data yang sudah ada di database yang akan diperbarui. Data baru tidak akan ditambahkan.
+                        <strong>Mode Update:</strong> Unggah file Excel hasil unduhan yang sudah diedit. Data akan dicocokkan melalui <strong>NRP/NIP</strong> — hanya data yang sudah ada di database yang akan diperbarui. Data baru tidak akan ditambahkan.
                     </div>
                 </div>
 
@@ -3917,7 +3917,7 @@
             return;
         }
 
-        document.getElementById('sdmProgressBadge').innerText = config.badge || 'Upload Preview SDM';
+        document.getElementById('sdmProgressBadge').innerText = config.badge || 'Pratinjau Unggah SDM';
         overlay.style.display = 'flex';
         document.body.style.overflow = 'hidden';
         requestAnimationFrame(() => {
@@ -3993,7 +3993,7 @@
         const xhr = new XMLHttpRequest();
 
         openSdmProgressOverlay({
-            badge: 'Upload Preview SDM',
+            badge: 'Pratinjau Unggah SDM',
             percent: 3,
             title: 'Mengunggah file SDM',
             message: `${totalFiles} file sedang disiapkan untuk preview.`,
@@ -4016,12 +4016,12 @@
                 percent,
                 'Mengunggah file SDM',
                 `${totalFiles} file sedang dikirim ke server untuk dibaca.`,
-                'Upload file berjalan',
+                'Unggah file sedang berjalan',
             );
         };
 
         xhr.onloadstart = function() {
-            animateSdmProgress(24, 'Memulai upload', {
+            animateSdmProgress(24, 'Memulai unggah', {
                 interval: 240,
                 fastUntil: 24,
                 fastIncrement: 2,
@@ -4033,7 +4033,7 @@
             setSdmProgress(
                 72,
                 'Menyusun preview SDM',
-                'Upload selesai. Sistem sedang membaca sheet, memetakan pangkat, dan mendeteksi satker.',
+                'Unggah selesai. Sistem sedang membaca sheet, memetakan pangkat, dan mendeteksi satker.',
                 'Parsing file dan membangun preview',
             );
             animateSdmProgress(94, 'Memproses isi file', {
@@ -4047,7 +4047,7 @@
         xhr.onerror = function() {
             closeSdmProgressOverlay();
             setImportSdmButtonState(false);
-            showToast('Koneksi ke server terputus saat upload SDM.', 'error');
+            showToast('Koneksi ke server terputus saat unggah SDM.', 'error');
         };
 
         xhr.onload = function() {
@@ -4071,7 +4071,7 @@
              if (xhr.status >= 200 && xhr.status < 300 && payload.status_url) {
                 setSdmProgress(
                     80,
-                    'Masuk antrean import SDM',
+                    'Masuk antrean unggah SDM',
                     payload.message || 'File berhasil diunggah. Server akan memproses preview di background.',
                     'Menunggu worker queue memproses file',
                 );
@@ -4090,7 +4090,7 @@
 
             closeSdmProgressOverlay();
             setImportSdmButtonState(false);
-            showToast(extractAjaxError(xhr, 'Upload SDM gagal diproses.'), 'error');
+            showToast(extractAjaxError(xhr, 'Unggah SDM gagal diproses.'), 'error');
         };
 
         xhr.onloadend = function() {
@@ -4109,7 +4109,7 @@
         if (!statusUrl) {
             closeSdmProgressOverlay();
             setImportSdmButtonState(false);
-            showToast('Status import SDM tidak dapat dipantau.', 'error');
+            showToast('Status unggah SDM tidak dapat dipantau.', 'error');
             return;
         }
 
@@ -4124,7 +4124,7 @@
             .then(response => response.json().then(data => ({ ok: response.ok, data })))
             .then(({ ok, data }) => {
                 if (!ok) {
-                    throw new Error(data.message || 'Gagal membaca status import SDM.');
+                    throw new Error(data.message || 'Gagal membaca status unggah SDM.');
                 }
 
                 if (data.status === 'preview_ready' && data.redirect_url) {
@@ -4139,7 +4139,7 @@
                 if (data.status === 'failed') {
                     closeSdmProgressOverlay();
                     setImportSdmButtonState(false);
-                    showToast(data.message || 'Import SDM gagal diproses.', 'error');
+                    showToast(data.message || 'Unggah SDM gagal diproses.', 'error');
                     return;
                 }
 
@@ -4149,7 +4149,7 @@
                 setSdmProgress(
                     nextPercent,
                     isQueued ? (isStaleQueue ? 'Queue belum bergerak' : 'Masih antre') : 'Sedang diproses',
-                    data.message || 'Import SDM masih diproses di background.',
+                    data.message || 'Unggah SDM masih diproses di background.',
                     isQueued
                         ? (isStaleQueue ? 'Periksa container queue bila antrean tidak bergerak' : 'Menunggu giliran worker queue')
                         : 'Worker queue sedang membangun preview'
@@ -4160,7 +4160,7 @@
             .catch((error) => {
                 closeSdmProgressOverlay();
                 setImportSdmButtonState(false);
-                showToast(error.message || 'Gagal memantau status import SDM.', 'error');
+                showToast(error.message || 'Gagal memantau status unggah SDM.', 'error');
             });
         }, attempt === 0 ? 1200 : 1800);
     }

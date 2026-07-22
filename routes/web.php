@@ -65,18 +65,20 @@ Route::middleware(['auth', 'satker.write.lock', 'role:admin_satker', \App\Http\M
     Route::get('/settings', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'settings'])->name('settings');
     Route::put('/settings/signatory', [\App\Http\Controllers\AdminSatker\AdminSatkerController::class, 'updateSignatorySettings'])->name('settings.signatory.update');
 
-    // Identifikasi Kebutuhan (Admin Satker)
-    Route::get('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'index'])->name('kebutuhan.index');
-    Route::get('/kebutuhan/create', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'create'])->name('kebutuhan.create');
-    Route::post('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'store'])->name('kebutuhan.store');
-    Route::get('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'show'])->name('kebutuhan.show');
-    Route::get('/kebutuhan/{kebutuhan}/edit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'edit'])->name('kebutuhan.edit');
-    Route::put('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'update'])->name('kebutuhan.update');
-    Route::delete('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'destroy'])->name('kebutuhan.destroy');
-    Route::post('/kebutuhan/{kebutuhan}/submit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'submit'])->name('kebutuhan.submit');
-    Route::get('/kebutuhan/{kebutuhan}/print', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'printPdf'])->name('kebutuhan.print');
-    Route::get('/kebutuhan/{kebutuhan}/export-excel', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'exportExcel'])->name('kebutuhan.export-excel');
-    Route::get('/kebutuhan/{kebutuhan}/export-pdf', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'exportPdf'])->name('kebutuhan.export-pdf');
+    // Identifikasi Kebutuhan (Admin Satker) dibuka sebagai fase terpisah dari input data personel.
+    Route::withoutMiddleware('system.lock')->group(function () {
+        Route::get('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'index'])->name('kebutuhan.index');
+        Route::get('/kebutuhan/create', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'create'])->name('kebutuhan.create');
+        Route::post('/kebutuhan', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'store'])->name('kebutuhan.store');
+        Route::get('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'show'])->name('kebutuhan.show');
+        Route::get('/kebutuhan/{kebutuhan}/edit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'edit'])->name('kebutuhan.edit');
+        Route::put('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'update'])->name('kebutuhan.update');
+        Route::delete('/kebutuhan/{kebutuhan}', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'destroy'])->name('kebutuhan.destroy');
+        Route::post('/kebutuhan/{kebutuhan}/submit', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'submit'])->name('kebutuhan.submit');
+        Route::get('/kebutuhan/{kebutuhan}/print', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'printPdf'])->name('kebutuhan.print');
+        Route::get('/kebutuhan/{kebutuhan}/export-excel', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'exportExcel'])->name('kebutuhan.export-excel');
+        Route::get('/kebutuhan/{kebutuhan}/export-pdf', [\App\Http\Controllers\AdminSatker\KebutuhanController::class, 'exportPdf'])->name('kebutuhan.export-pdf');
+    });
 });
 
 // ── Admin Central Routes ──────────────────────────────────────────────
@@ -256,6 +258,7 @@ Route::middleware(['auth', 'read.only', 'role:superadmin|kabak_bekum'])->prefix(
     Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
     Route::put('/settings/signatory', [\App\Http\Controllers\SettingsController::class, 'updateSignatory'])->name('settings.signatory.update');
+    Route::post('/settings/open-identification-cycle', [\App\Http\Controllers\SettingsController::class, 'openIdentificationCycle'])->name('settings.open-identification-cycle');
     Route::post('/settings/next-year', [\App\Http\Controllers\SettingsController::class, 'nextYear'])->name('settings.next-year');
 
     Route::get('/statistik', [StatisticsController::class, 'index'])->name('statistics');

@@ -683,9 +683,9 @@ class WarehouseController extends Controller
         try {
             \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\WarehouseImport, $request->file('file'));
 
-            return redirect()->back()->with('success', 'Data Gudang berhasil diimport');
+            return redirect()->back()->with('success', 'Data Gudang berhasil diunggah');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal import: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengunggah data: '.$e->getMessage());
         }
     }
 

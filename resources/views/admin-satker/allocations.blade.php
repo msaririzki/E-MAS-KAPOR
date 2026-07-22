@@ -57,7 +57,7 @@
 
     <div>
         <button type="button" onclick="exportPdf()" class="btn btn-outline" style="padding: 10px 18px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; border: 1px solid #FECACA; background: #FEF2F2; color: #DC2626; transition: all 0.2s; box-shadow: 0 1px 2px rgba(220, 38, 38, 0.05); font-size: 13.5px;">
-            <i class="ri-file-pdf-2-line" style="font-size: 16px;"></i> Export PDF
+            <i class="ri-file-pdf-2-line" style="font-size: 16px;"></i> Unduh PDF
         </button>
     </div>
 </div>

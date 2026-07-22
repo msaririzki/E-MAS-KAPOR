@@ -366,15 +366,15 @@ class AdminSatkerController extends Controller
         $signatoryService->updateSatkerSettings($satkerId, $validated);
 
         AuditLogger::log(
-            'Update Penanda Tangan Export (Satker)',
+            'Update Penanda Tangan Dokumen (Satker)',
             'Pengaturan',
             $request->user()->satker,
             $oldValues,
             $signatoryService->getSatkerSettings($satkerId),
             'success',
-            'Admin Satker memperbarui konfigurasi penanda tangan export satker.',
+            'Admin Satker memperbarui pengaturan penanda tangan dokumen satker.',
         );
 
-        return redirect()->back()->with('success', 'Penanda tangan export satker berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Penanda tangan dokumen satker berhasil diperbarui.');
     }
 }

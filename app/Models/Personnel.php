@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\GolonganNormalizer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -94,6 +95,13 @@ class Personnel extends Model
     public function getWhatsappLinkAttribute(): ?string
     {
         return User::buildWhatsappLink($this->phone ?: $this->user?->phone);
+    }
+
+    public function setGolonganAttribute(mixed $value): void
+    {
+        $rawValue = trim((string) $value);
+
+        $this->attributes['golongan'] = GolonganNormalizer::major($rawValue) ?? ($rawValue !== '' ? $rawValue : null);
     }
 
     // ── Scopes ────────────────────────────────────────────────

@@ -234,7 +234,7 @@ class SdmImportRunService
 
             if ((bool) ($row['duplicate_nrp'] ?? false)) {
                 $status = 'error';
-                $notes[] = 'NRP/NIP duplikat pada file/sheet import';
+                $notes[] = 'NRP/NIP duplikat pada file/sheet unggahan';
             }
 
             if ($isFatal) {

@@ -784,13 +784,13 @@ class PersonnelController extends Controller
         $fileName = 'template_import_keterangan_personel_'.date('Ymd').'.xlsx';
 
         AuditLogger::log(
-            'Export Template Keterangan Personel',
+            'Unduh Template Keterangan Personel',
             'Manajemen Personil',
             null,
             null,
             null,
             'info',
-            'Mengunduh file referensi untuk import keterangan personel.'
+            'Mengunduh file referensi untuk unggah keterangan personel.'
         );
 
         return Excel::download(new PersonnelKeteranganExport, $fileName);
@@ -805,7 +805,7 @@ class PersonnelController extends Controller
         ini_set('memory_limit', '2G');
 
         if (auth()->user()?->hasRole('admin_satker')) {
-            abort(403, 'Admin satker harus menggunakan Impor Update Data untuk menambah atau menyesuaikan data personel.');
+            abort(403, 'Admin satker harus menggunakan Unggah Pembaruan Data untuk menambah atau menyesuaikan data personel.');
         }
 
         $request->validate([
@@ -851,7 +851,7 @@ class PersonnelController extends Controller
                 ],
             ]);
 
-            AuditLogger::log('Preview Import Personil', 'Manajemen Personil', null, null, null, 'info', "Preview: {$totalOk} siap, {$totalCorrected} dikoreksi, {$totalError} error");
+            AuditLogger::log('Pratinjau Unggah Personil', 'Manajemen Personil', null, null, null, 'info', "Pratinjau: {$totalOk} siap, {$totalCorrected} dikoreksi, {$totalError} error");
 
             return redirect()->route('admin.personnel.import-preview');
         } catch (\Exception $e) {
@@ -869,7 +869,7 @@ class PersonnelController extends Controller
         $stats = session('import_stats');
 
         if (! $preview || ! $satkerId) {
-            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview sudah kadaluwarsa. Silakan upload ulang file.');
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi pratinjau sudah kadaluwarsa. Silakan unggah ulang file.');
         }
 
         $satker = Satker::find($satkerId);
@@ -891,7 +891,7 @@ class PersonnelController extends Controller
 
         if (! $satkerId || ! $preview) {
             return redirect()->route('admin.personnel.index')
-                ->with('error', 'Sesi preview sudah kadaluwarsa. Silakan upload ulang file.');
+                ->with('error', 'Sesi pratinjau sudah kadaluwarsa. Silakan unggah ulang file.');
         }
 
         // Ambil koreksi rank_id manual dari form (hanya baris yang diedit)
@@ -934,15 +934,15 @@ class PersonnelController extends Controller
             // Hapus session setelah selesai
             session()->forget(['import_preview', 'import_satker_id', 'import_stats']);
 
-            AuditLogger::log('Konfirmasi Import Personil', 'Manajemen Personil', null, null, null, 'success', "Berhasil: {$successCount}. Gagal: {$errorCount}");
+            AuditLogger::log('Konfirmasi Unggah Personel', 'Manajemen Personil', null, null, null, 'success', "Berhasil: {$successCount}. Gagal: {$errorCount}");
 
             if ($errorCount > 0) {
                 return redirect()->route('admin.personnel.index')
-                    ->with('warning', "Berhasil mengimpor {$successCount} data. Gagal: {$errorCount}.");
+                    ->with('warning', "Berhasil mengunggah {$successCount} data. Gagal: {$errorCount}.");
             }
 
             return redirect()->route('admin.personnel.index')
-                ->with('success', "Berhasil mengimpor {$successCount} data personil.");
+                ->with('success', "Berhasil mengunggah {$successCount} data personil.");
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal menyimpan data: '.$e->getMessage());
         }
@@ -955,7 +955,7 @@ class PersonnelController extends Controller
     {
         session()->forget(['import_preview', 'import_satker_id', 'import_stats']);
 
-        return redirect()->route('admin.personnel.index')->with('info', 'Proses import dibatalkan.');
+        return redirect()->route('admin.personnel.index')->with('info', 'Proses unggah dibatalkan.');
     }
 
     /**
@@ -994,11 +994,11 @@ class PersonnelController extends Controller
         $fileName = 'Data_Personel_'.$safeName.'_'.date('Ymd').'.xlsx';
 
         AuditLogger::log(
-            'Export Data Personel',
+            'Unduh Data Personel',
             'Manajemen Personil',
             null, null, null,
             'info',
-            "Export: {$satkerName}"
+            "Unduh: {$satkerName}"
         );
 
         $personnelIds = $this->resolvePersonnelExportIds($request, $satkerIds);
@@ -1066,11 +1066,11 @@ class PersonnelController extends Controller
             ]);
 
             AuditLogger::log(
-                'Preview Import Update/Tambah Personil',
+                'Pratinjau Unggah Pembaruan/Tambah Personel',
                 'Manajemen Personil',
                 null, null, null,
                 'info',
-                "Preview: {$totalUpdate} diupdate, {$totalNew} baru, {$totalError} error, {$totalNoChange} tidak berubah"
+                "Pratinjau: {$totalUpdate} diupdate, {$totalNew} baru, {$totalError} error, {$totalNoChange} tidak berubah"
             );
 
             return redirect()->route('admin.personnel.import-update-preview');
@@ -1090,7 +1090,7 @@ class PersonnelController extends Controller
 
         if (! $preview || ! $satkerId) {
             return redirect()->route('admin.personnel.index')
-                ->with('error', 'Sesi preview update sudah kadaluwarsa. Silakan upload ulang file.');
+                ->with('error', 'Sesi pratinjau pembaruan sudah kadaluwarsa. Silakan unggah ulang file.');
         }
 
         $satker = Satker::find($satkerId);
@@ -1113,7 +1113,7 @@ class PersonnelController extends Controller
 
         if (! $satkerId || ! $preview) {
             return redirect()->route('admin.personnel.index')
-                ->with('error', 'Sesi preview update sudah kadaluwarsa. Silakan upload ulang file.');
+                ->with('error', 'Sesi pratinjau pembaruan sudah kadaluwarsa. Silakan unggah ulang file.');
         }
 
         // Terapkan override rank_id manual dari form
@@ -1140,7 +1140,7 @@ class PersonnelController extends Controller
             session()->forget(['update_import_preview', 'update_import_satker_id', 'update_import_stats']);
 
             AuditLogger::log(
-                'Konfirmasi Import Update/Tambah Personil',
+                'Konfirmasi Unggah Pembaruan/Tambah Personel',
                 'Manajemen Personil',
                 null, null, null,
                 'success',
@@ -1175,7 +1175,7 @@ class PersonnelController extends Controller
 
         session()->forget(['update_import_preview', 'update_import_satker_id', 'update_import_stats']);
 
-        return redirect()->route('admin.personnel.index')->with('info', 'Proses import update dibatalkan.');
+        return redirect()->route('admin.personnel.index')->with('info', 'Proses unggah pembaruan dibatalkan.');
     }
 
     public function importKeterangan(Request $request)
@@ -1214,13 +1214,13 @@ class PersonnelController extends Controller
             ]);
 
             AuditLogger::log(
-                'Preview Import Keterangan Personel',
+                'Pratinjau Unggah Keterangan Personel',
                 'Manajemen Personil',
                 null,
                 null,
                 null,
                 'info',
-                'Menyiapkan preview import keterangan personel.'
+                'Menyiapkan pratinjau unggah keterangan personel.'
             );
 
             return redirect()->route('admin.personnel.import-keterangan-preview');
@@ -1238,7 +1238,7 @@ class PersonnelController extends Controller
         $stats = $payload['stats'] ?? session('keterangan_import_stats');
 
         if (! $preview) {
-            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview import keterangan sudah kadaluwarsa. Silakan upload ulang file.');
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi pratinjau unggah keterangan sudah kadaluwarsa. Silakan unggah ulang file.');
         }
 
         return view('admin.personnel.import_keterangan_preview', compact('preview', 'stats'));
@@ -1252,7 +1252,7 @@ class PersonnelController extends Controller
         $preview = $payload['preview'] ?? null;
 
         if (! $preview) {
-            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview import keterangan sudah kadaluwarsa. Silakan upload ulang file.');
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi pratinjau unggah keterangan sudah kadaluwarsa. Silakan unggah ulang file.');
         }
 
         try {
@@ -1262,7 +1262,7 @@ class PersonnelController extends Controller
             $this->clearKeteranganPreviewPayload();
 
             AuditLogger::log(
-                'Konfirmasi Import Keterangan Personel',
+                'Konfirmasi Unggah Keterangan Personel',
                 'Manajemen Personil',
                 null,
                 null,
@@ -1283,7 +1283,7 @@ class PersonnelController extends Controller
 
             return redirect()->route('admin.personnel.index')->with('success', $message);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyimpan import keterangan: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyimpan unggah keterangan: '.$e->getMessage());
         }
     }
 
@@ -1293,7 +1293,7 @@ class PersonnelController extends Controller
 
         $this->clearKeteranganPreviewPayload();
 
-        return redirect()->route('admin.personnel.index')->with('info', 'Proses import keterangan dibatalkan.');
+        return redirect()->route('admin.personnel.index')->with('info', 'Proses unggah keterangan dibatalkan.');
     }
 
     /**
@@ -1312,7 +1312,7 @@ class PersonnelController extends Controller
         $user = auth()->user();
 
         if (! $user->hasRole('superadmin')) {
-            $message = 'Hanya Super Admin yang bisa melakukan Impor Data SDM.';
+            $message = 'Hanya Super Admin yang bisa melakukan Unggah Data SDM.';
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -1347,11 +1347,11 @@ class PersonnelController extends Controller
 
                 $stats = $importRun->summary ?? [];
 
-                AuditLogger::log('Preview Import Data SDM', 'Manajemen Personil', null, null, null, 'info', "Preview SDM: {$stats['ok']} siap, {$stats['corrected']} dikoreksi, {$stats['error']} error");
+                AuditLogger::log('Pratinjau Unggah Data SDM', 'Manajemen Personil', null, null, null, 'info', "Pratinjau SDM: {$stats['ok']} siap, {$stats['corrected']} dikoreksi, {$stats['error']} error");
 
                 if ($request->expectsJson()) {
                     return response()->json([
-                        'message' => 'Preview import SDM berhasil disiapkan.',
+                        'message' => 'Pratinjau unggah SDM berhasil disiapkan.',
                         'redirect_url' => route('admin.personnel.import-sdm-preview'),
                         'stats' => $stats,
                     ]);
@@ -1370,7 +1370,7 @@ class PersonnelController extends Controller
                 ]);
             }
 
-            return redirect()->route('admin.personnel.index')->with('info', 'Upload SDM sedang diproses di background. Silakan cek Riwayat Import SDM.');
+            return redirect()->route('admin.personnel.index')->with('info', 'Unggah SDM sedang diproses di background. Silakan cek Riwayat Unggah SDM.');
         } catch (\Exception $e) {
             $message = 'Gagal memproses file SDM: '.$e->getMessage();
 
@@ -1395,11 +1395,11 @@ class PersonnelController extends Controller
         $importRun = $payload['run'] ?? $this->getCurrentSdmImportRun();
 
         if ($importRun !== null && in_array($importRun->status, ['queued', 'processing'], true)) {
-            return redirect()->route('admin.personnel.index')->with('info', 'Preview SDM masih diproses di background. Silakan tunggu beberapa saat.');
+            return redirect()->route('admin.personnel.index')->with('info', 'Pratinjau SDM masih diproses di background. Silakan tunggu beberapa saat.');
         }
 
         if (! $preview) {
-            return redirect()->route('admin.personnel.index')->with('error', 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.');
+            return redirect()->route('admin.personnel.index')->with('error', 'Sesi pratinjau SDM sudah kadaluwarsa. Silakan unggah ulang file.');
         }
 
         $ranks = Rank::orderBy('sort_order')->get();
@@ -1420,7 +1420,7 @@ class PersonnelController extends Controller
         $importRun = $payload['run'] ?? $this->getCurrentSdmImportRun();
 
         if (! $preview) {
-            $message = 'Sesi preview SDM sudah kadaluwarsa. Silakan upload ulang file.';
+            $message = 'Sesi pratinjau SDM sudah kadaluwarsa. Silakan unggah ulang file.';
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -1472,7 +1472,7 @@ class PersonnelController extends Controller
         }
 
         if (($stats['error'] ?? 0) > 0) {
-            $message = "Masih ada {$stats['error']} baris error pada preview SDM. Perbaiki dulu sebelum konfirmasi import.";
+            $message = "Masih ada {$stats['error']} baris error pada pratinjau SDM. Perbaiki dulu sebelum konfirmasi unggah.";
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -1499,7 +1499,7 @@ class PersonnelController extends Controller
             $notificationType = $errorCount > 0 ? 'warning' : 'success';
             $notificationMessage = $errorCount > 0
                 ? $this->buildSdmImportWarningMessage($successCount, $errorCount, $failedRowSummary)
-                : "Berhasil mengimpor {$successCount} data personil (SDM).";
+                : "Berhasil mengunggah {$successCount} data personil (SDM).";
 
             if ($importRun !== null) {
                 $summary = array_merge($stats, [
@@ -1526,7 +1526,7 @@ class PersonnelController extends Controller
 
             $this->clearSdmPreviewPayload();
 
-            AuditLogger::log('Konfirmasi Import Data SDM', 'Manajemen Personil', null, null, null, 'success', "Berhasil: {$successCount}. Gagal: {$errorCount}");
+            AuditLogger::log('Konfirmasi Unggah Data SDM', 'Manajemen Personil', null, null, null, 'success', "Berhasil: {$successCount}. Gagal: {$errorCount}");
 
             if ($request->expectsJson()) {
                 return response()->json([
@@ -1575,7 +1575,7 @@ class PersonnelController extends Controller
 
         $this->clearSdmPreviewPayload();
 
-        return redirect()->route('admin.personnel.index')->with('info', 'Proses import Data SDM dibatalkan.');
+        return redirect()->route('admin.personnel.index')->with('info', 'Proses unggah Data SDM dibatalkan.');
     }
 
     public function downloadSdmImportErrorReport(SdmImportRun $sdmImportRun)
@@ -1604,11 +1604,11 @@ class PersonnelController extends Controller
             'message' => match ($sdmImportRun->status) {
                 'queued' => $isStaleQueue
                     ? "Job preview SDM masih antre lebih dari {$elapsedSeconds} detik. Worker queue kemungkinan belum mengambil job ini."
-                    : 'Import SDM masuk antrean dan menunggu diproses.',
-                'processing' => "Import SDM sedang diproses di background ({$elapsedSeconds} detik).",
-                'preview_ready' => 'Preview SDM siap dibuka.',
-                'failed' => $sdmImportRun->summary['error_message'] ?? 'Import SDM gagal diproses.',
-                default => 'Status import SDM diperbarui.',
+                    : 'Unggah SDM masuk antrean dan menunggu diproses.',
+                'processing' => "Unggah SDM sedang diproses di background ({$elapsedSeconds} detik).",
+                'preview_ready' => 'Pratinjau SDM siap dibuka.',
+                'failed' => $sdmImportRun->summary['error_message'] ?? 'Unggah SDM gagal diproses.',
+                default => 'Status unggah SDM diperbarui.',
             },
             'redirect_url' => $sdmImportRun->status === 'preview_ready' ? route('admin.personnel.import-sdm-preview') : null,
             'summary' => $sdmImportRun->summary,
@@ -1674,7 +1674,7 @@ class PersonnelController extends Controller
 
     private function buildSdmImportWarningMessage(int $successCount, int $errorCount, string $failedNames): string
     {
-        $message = "Berhasil mengimpor {$successCount} data SDM. Gagal: {$errorCount}.";
+        $message = "Berhasil mengunggah {$successCount} data SDM. Gagal: {$errorCount}.";
 
         if ($failedNames !== '') {
             $message .= ' Gagal pada: '.$failedNames.'.';
@@ -1772,7 +1772,7 @@ class PersonnelController extends Controller
         ], JSON_UNESCAPED_UNICODE);
 
         if ($payload === false) {
-            throw new \RuntimeException('Gagal menyusun payload preview import keterangan.');
+            throw new \RuntimeException('Gagal menyusun data pratinjau unggah keterangan.');
         }
 
         Storage::disk('local')->put($path, $payload);

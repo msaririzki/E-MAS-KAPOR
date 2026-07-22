@@ -21,12 +21,12 @@
                 <a href="{{ route('superadmin.testimonials.export-pdf', request()->except('comments_per_rating')) }}"
                     class="btn-export-pdf" onclick="exportReviewPdf(event, this, 'testimonialCommentLimit')">
                     <i class="ri-file-pdf-2-line"></i>
-                    Export PDF
+                    Unduh PDF
                 </a>
                 <a href="{{ route('superadmin.testimonials.export-word', request()->except('comments_per_rating')) }}"
                     class="btn-export-word" onclick="exportReviewPdf(event, this, 'testimonialCommentLimit')">
                     <i class="ri-file-word-2-line"></i>
-                    Export Word
+                    Unduh Word
                 </a>
 
                 {{-- Filter Tahun Anggaran --}}

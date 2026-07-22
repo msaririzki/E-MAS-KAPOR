@@ -16,14 +16,14 @@
             <button class="btn btn-import" onclick="openModal('importModal')">
                 <div class="btn-content">
                     <i class="ri-file-excel-line"></i>
-                    <span>Import Data</span>
+                    <span>Unggah Data</span>
                 </div>
             </button>
             <div class="dropdown-container d-inline-block" id="exportDropdown">
                 <button class="btn btn-export" onclick="document.getElementById('exportDropdown').classList.toggle('open')">
                     <div class="btn-content">
                         <i class="ri-download-line"></i>
-                        <span>Export</span>
+                        <span>Unduh</span>
                         <i class="ri-arrow-down-s-line arrow-icon"></i>
                     </div>
                 </button>
@@ -210,7 +210,7 @@
 <div id="importModal" class="modal">
     <div class="modal-content" style="max-width: 550px;">
         <div class="modal-header">
-            <h2 class="modal-title">Import Data Gudang</h2>
+            <h2 class="modal-title">Unggah Data Gudang</h2>
             <button class="modal-close" onclick="closeModal('importModal')"><i class="ri-close-line"></i></button>
         </div>
         <form action="{{ route('admin.warehouse-items.import') }}" method="POST" enctype="multipart/form-data">
@@ -222,7 +222,7 @@
                             <i class="ri-file-download-line"></i>
                             <div>
                                 <p class="template-title">Belum punya formatnya?</p>
-                                <p class="template-desc">Gunakan file contoh agar import data berjalan lancar.</p>
+                                <p class="template-desc">Gunakan file contoh agar unggah data berjalan lancar.</p>
                             </div>
                         </div>
                         <a href="{{ route('admin.warehouse-items.download-template') }}" class="btn btn-sm btn-template">
@@ -265,7 +265,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('importModal')">Batal</button>
                 <button type="submit" class="btn btn-import" style="padding: 0 24px;">
-                    <i class="ri-upload-2-line" style="margin-right:8px;"></i> Mulai Import Data
+                    <i class="ri-upload-2-line" style="margin-right:8px;"></i> Mulai Unggah Data
                 </button>
             </div>
         </form>

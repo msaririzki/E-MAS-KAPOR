@@ -56,7 +56,7 @@ class ExportSignatorySettingsTest extends TestCase
         $response = $this->actingAs($superadmin)->get(route('superadmin.settings.index'));
 
         $response->assertOk();
-        $response->assertSeeText('Penanda Tangan Export');
+        $response->assertSeeText('Penanda Tangan Dokumen');
     }
 
     public function test_admin_satker_settings_override_global_and_fallback_remains_available(): void
@@ -110,7 +110,7 @@ class ExportSignatorySettingsTest extends TestCase
         $response = $this->actingAs($adminSatker)->get(route('admin-satker.settings'));
 
         $response->assertOk();
-        $response->assertSeeText('Penanda Tangan Export');
+        $response->assertSeeText('Penanda Tangan Dokumen');
         $response->assertSee('value="............................."', false);
     }
 
