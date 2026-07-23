@@ -70,9 +70,6 @@ class StudentPersonnelImportService
             if ($row['jabatan'] === '') {
                 $errors[] = 'Jabatan wajib diisi.';
             }
-            if ($row['bagian'] === '') {
-                $errors[] = 'Bag/fungsi wajib diisi.';
-            }
             if ($gender === null) {
                 $errors[] = 'Jenis kelamin harus P untuk pria atau W untuk wanita.';
             }
@@ -108,7 +105,7 @@ class StudentPersonnelImportService
                 'rank_name' => $rank?->name ?? $row['rank_input'],
                 'golongan' => $golongan !== '' ? $golongan : null,
                 'jabatan' => $row['jabatan'],
-                'bagian' => $row['bagian'],
+                'bagian' => $row['bagian'] !== '' ? $row['bagian'] : null,
                 'gender' => $gender,
                 'gender_label' => $gender === 'P' ? 'Wanita' : ($gender === 'L' ? 'Pria' : '-'),
                 'personnel_type' => $rank?->category === 'PNS' ? 'PNS' : 'Polri',

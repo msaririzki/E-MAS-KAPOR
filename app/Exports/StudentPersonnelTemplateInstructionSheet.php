@@ -22,7 +22,7 @@ class StudentPersonnelTemplateInstructionSheet implements FromCollection, Should
         return collect([
             ['PETUNJUK UNGGAH DATA SISWA LENGKAP'],
             ['1', 'Isi data pada sheet Data Siswa mulai baris 12. Jangan mengubah posisi atau nama kolom.'],
-            ['2', 'NAMA, PANGKAT, NRP/NIP, JABATAN, BAG/FUNGSI, dan JENIS KELAMIN wajib diisi.'],
+            ['2', 'NAMA, PANGKAT, NRP/NIP, JABATAN, dan JENIS KELAMIN wajib diisi. BAG/FUNGSI boleh dikosongkan khusus untuk siswa.'],
             ['3', 'Pangkat harus dipilih dari daftar yang tersedia pada sheet Referensi Pangkat.'],
             ['4', 'Gunakan P untuk pria dan W untuk wanita. NRP/NIP harus unik dan disimpan sebagai teks.'],
             ['5', 'Untuk pangkat PNS, isi GOLONGAN dengan angka 1, 2, 3, atau 4.'],

@@ -208,6 +208,37 @@ class StudentPersonnelImportTest extends TestCase
         @unlink($path);
     }
 
+    public function test_student_import_allows_blank_bagian(): void
+    {
+        $row = $this->validPolriRow('SISWA2027UJI001', 'SISWA TANPA BAGIAN');
+        unset($row['G']);
+        $path = $this->filledTemplate([12 => $row]);
+
+        $payload = app(StudentPersonnelImportService::class)->preview(
+            $this->uploadedFile($path),
+            $this->satker->id,
+        );
+
+        $this->assertSame(1, $payload['stats']['create']);
+        $this->assertSame(0, $payload['stats']['error']);
+        $this->assertNull($payload['rows'][0]['bagian']);
+
+        $result = app(StudentPersonnelImportService::class)->save(
+            $payload['rows'],
+            $this->satker->id,
+            null,
+        );
+
+        $this->assertSame(1, $result['created']);
+        $this->assertDatabaseHas('personnels', [
+            'nrp' => 'SISWA2027UJI001',
+            'bagian' => null,
+            'user_id' => null,
+        ]);
+
+        @unlink($path);
+    }
+
     public function test_reupload_updates_student_but_never_creates_login(): void
     {
         $firstPath = $this->filledTemplate([
