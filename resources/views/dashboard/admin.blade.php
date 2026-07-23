@@ -95,7 +95,9 @@
         </div>
         <div class="card-body" style="display:flex; gap:12px; flex-wrap:wrap;">
             <a href="{{ route('admin.warehouse-items.index') }}" class="btn btn-primary"><i class="ri-archive-line"></i> Data Gudang</a>
-            <a href="{{ route('admin.warehouse-items.dispense-form') }}" class="btn btn-outline"><i class="ri-inbox-unarchive-line"></i> Pengeluaran Barang</a>
+            @if(auth()->user()->hasRole('superadmin'))
+                <a href="{{ route('admin.warehouse-items.dispense-form') }}" class="btn btn-outline"><i class="ri-inbox-unarchive-line"></i> Pengeluaran Barang</a>
+            @endif
             <a href="{{ route('admin.warehouse-items.reports') }}" class="btn btn-outline"><i class="ri-file-chart-line"></i> Laporan Gudang</a>
         </div>
     </div>

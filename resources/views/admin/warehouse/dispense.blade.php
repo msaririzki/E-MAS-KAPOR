@@ -118,7 +118,22 @@
 
                     <hr class="section-divider" style="margin-top:30px;">
                     
-                    <div class="section-label"><i class="ri-equalizer-line"></i> Jumlah Per Barang (Otomatis)</div>
+                    <div class="section-label"><i class="ri-equalizer-fill"></i> Mode Pembagian Barang</div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <input type="radio" name="m2_mode" id="m2_mode_acak" value="acak" checked onchange="regenerateGridM2()">
+                        <label for="m2_mode_acak" style="display:inline-block; font-size:13px; font-weight:600; cursor:pointer;" title="Sistem akan otomatis memotong ukuran dengan metode FIFO (Acak) saat Anda hanya memasukkan jumlah barang.">
+                            Acak (Otomatis)
+                        </label>
+                        &nbsp;&nbsp;&nbsp;
+                        <input type="radio" name="m2_mode" id="m2_mode_ukuran" value="ukuran" onchange="regenerateGridM2()">
+                        <label for="m2_mode_ukuran" style="display:inline-block; font-size:13px; font-weight:600; cursor:pointer;" title="Isi form jumlah sesuai dengan spesifikasi ukuran yang diterima masing-masing satker.">
+                            Berdasarkan Ukuran
+                        </label>
+                    </div>
+
+                    <hr class="section-divider">
+                    
+                    <div class="section-label"><i class="ri-equalizer-line"></i> Jumlah Per Barang</div>
                     <p style="font-size: 13px; color: #6B7280; margin-bottom: 12px; margin-top:-10px;">
                         Isi angka 0 jika satker tersebut tidak menerima barang yang bersangkutan.
                     </p>
@@ -137,7 +152,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <p class="stock-warning" id="globalStockWarn_m2" style="margin-top:12px; text-align:center;"><i class="ri-error-warning-line"></i> Total kebutuhan dari semua satker melebihi stok gudang!</p>
+                    <p class="stock-warning" id="globalStockWarn_m2" style="margin-top:12px; text-align:center;"><i class="ri-error-warning-line"></i> Total kebutuhan dari satker melebihi stok gudang!</p>
                 </div>
 
             </div>
@@ -272,7 +287,30 @@
         align-items: center; justify-content: center; font-size: 16px; transition: all 0.15s;
     }
     .btn-remove-item:hover { background: #FEE2E2; border-color: #F87171; }
-    .item-row-fields { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; }
+    .item-row-fields { display: flex; gap: 16px; align-items: flex-start; }
+    .item-row-left { flex: 0 0 280px; }
+    .item-row-right { flex: 1; min-width: 0; }
+    .size-sub-rows { display: flex; flex-direction: column; gap: 8px; }
+    .size-sub-row {
+        display: grid; grid-template-columns: 1fr 100px 28px; gap: 8px; align-items: start;
+        background: var(--bg-card, #fff); border: 1px solid var(--border-color, #E5E7EB);
+        border-radius: 8px; padding: 8px 10px;
+    }
+    .btn-remove-size {
+        width: 28px; height: 28px; border-radius: 6px; border: 1px solid #FECACA;
+        background: #FEF2F2; color: #DC2626; cursor: pointer; display: flex;
+        align-items: center; justify-content: center; font-size: 14px; transition: all 0.15s;
+        margin-top: 18px;
+    }
+    .btn-remove-size:hover { background: #FEE2E2; border-color: #F87171; }
+    .btn-add-size {
+        display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+        border: 1px dashed #D97706; border-radius: 8px; background: transparent;
+        color: #D97706; font-size: 11px; font-weight: 700; cursor: pointer;
+        transition: all 0.2s; font-family: inherit; margin-top: 4px;
+    }
+    .btn-add-size:hover { background: #FFFBEB; }
+    .stock-remaining { font-size: 10px; color: #D97706; font-weight: 600; margin-top: 2px; }
     .m2-row-fields { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
     
     .stock-badge {
@@ -371,6 +409,11 @@
         border-radius: 6px; font-size: 13px; outline: none; background: #fff;
     }
     .f-input-small:focus { border-color: #D97706; }
+    .f-input-mini {
+        width: 55px; padding: 6px 8px; border: 1px solid var(--border-color, #D1D5DB);
+        border-radius: 6px; font-size: 13px; outline: none; background: #fff; text-align: center;
+    }
+    .f-input-mini:focus { border-color: #D97706; }
 
     @media (max-width: 768px) {
         .form-row { grid-template-columns: 1fr; }
@@ -385,7 +428,7 @@
 @section('scripts')
 <script>
     // Data setup
-    const itemsData = @json(collect($items)->map(fn($i) => ['id' => $i->id, 'name' => $i->name, 'stock' => $i->sizes_sum_stock ?? 0]));
+    const itemsData = {!! $items->map(fn($i) => ['id' => $i->id, 'name' => $i->name, 'stock' => $i->sizes_sum_stock ?? 0, 'sizes' => $i->sizes->map(fn($s) => ['id' => $s->id, 'size_label' => $s->size_label, 'stock' => $s->stock])])->toJson() !!};
     const satkersData = @json(collect($satkers)->map(fn($s) => ['id' => $s->id, 'name' => $s->name]));
     
     // Core Methods Tracking
@@ -546,13 +589,16 @@
             loadSizesM1(value, id.split('_').pop());
         } 
         else if (id.startsWith('sizeSelect_m1_')) {
-            const idx = id.split('_').pop();
+            // id format: sizeSelect_m1_{itemIdx}_{subIdx}
+            const parts = id.replace('sizeSelect_m1_', '').split('_');
+            const itemIdx = parts[0];
+            const subIdx = parts[1];
             const opt = document.querySelector(`#${id}_dd .ss-opt[data-val="${value}"]`);
-            const stock = parseInt(opt.dataset.stock || 0);
-            stockLimitsM1[idx] = stock;
-            document.getElementById('stockVal_m1_' + idx).textContent = stock;
-            document.getElementById('stockBadge_m1_' + idx).style.display = stock > 0 ? 'inline-flex' : 'none';
-            checkStockM1(idx);
+            const stock = parseInt(opt?.dataset?.stock || 0);
+            document.getElementById('stockVal_m1_' + itemIdx + '_' + subIdx).textContent = stock;
+            document.getElementById('stockBadge_m1_' + itemIdx + '_' + subIdx).style.display = stock > 0 ? 'inline-flex' : 'none';
+            recalcRemainingStock(parseInt(itemIdx));
+            checkStockM1Sub(parseInt(itemIdx), parseInt(subIdx));
         }
     }
     
@@ -586,106 +632,223 @@
                 </button>
             </div>
             <div class="item-row-fields">
-                <div class="form-group" style="margin-bottom:0;">
-                    <label>Nama Barang <span class="req">*</span></label>
-                    <div class="ss-wrap" id="itemSelect_m1_${idx}">
-                        <div class="ss-trigger" onclick="ssToggle('itemSelect_m1_${idx}')">
-                            <span class="ss-text ss-placeholder" id="item_text_m1_${idx}">-- Pilih Barang --</span>
-                            <i class="ri-arrow-down-s-line ss-arrow"></i>
+                <div class="item-row-left">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Nama Barang <span class="req">*</span></label>
+                        <div class="ss-wrap" id="itemSelect_m1_${idx}">
+                            <div class="ss-trigger" onclick="ssToggle('itemSelect_m1_${idx}')">
+                                <span class="ss-text ss-placeholder" id="item_text_m1_${idx}">-- Pilih Barang --</span>
+                                <i class="ri-arrow-down-s-line ss-arrow"></i>
+                            </div>
+                            <div class="ss-dropdown" id="itemSelect_m1_${idx}_dd" style="z-index:900;">
+                                <div class="ss-search"><input type="text" placeholder="Cari barang..." oninput="ssFilter(this, 'itemSelect_m1_${idx}')"></div>
+                                <div class="ss-list">${itemOptsHTML}</div>
+                            </div>
+                            <input type="hidden" class="item-val-m1" id="itemSelect_m1_${idx}_val">
                         </div>
-                        <div class="ss-dropdown" id="itemSelect_m1_${idx}_dd" style="z-index:900;">
-                            <div class="ss-search"><input type="text" placeholder="Cari barang..." oninput="ssFilter(this, 'itemSelect_m1_${idx}')"></div>
-                            <div class="ss-list">${itemOptsHTML}</div>
-                        </div>
-                        <input type="hidden" class="item-val-m1" id="itemSelect_m1_${idx}_val">
                     </div>
                 </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label>Ukuran <span class="req">*</span></label>
-                    <div class="ss-wrap disabled" id="sizeSelect_m1_${idx}">
-                        <div class="ss-trigger" onclick="ssToggle('sizeSelect_m1_${idx}')">
-                            <span class="ss-text ss-placeholder" id="size_text_m1_${idx}">-- Pilih Barang Dulu --</span>
-                            <i class="ri-arrow-down-s-line ss-arrow"></i>
-                        </div>
-                        <div class="ss-dropdown" id="sizeSelect_m1_${idx}_dd" style="z-index:900;">
-                            <div class="ss-search"><input type="text" placeholder="Cari ukuran..." oninput="ssFilter(this, 'sizeSelect_m1_${idx}')"></div>
-                            <div class="ss-list"><!-- dynamic --></div>
-                        </div>
-                        <input type="hidden" name="items[${idx}][warehouse_item_size_id]" class="size-val-m1" id="sizeSelect_m1_${idx}_val">
-                    </div>
-                    <div class="stock-badge" id="stockBadge_m1_${idx}" style="display:none;">
-                        <i class="ri-information-line"></i> Stok: <span id="stockVal_m1_${idx}">0</span>
-                    </div>
-                </div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <label>Jumlah <span class="req">*</span></label>
-                    <input type="number" name="items[${idx}][quantity]" class="f-input qty-input-m1" placeholder="0" min="1" oninput="checkStockM1(${idx})" data-index="${idx}">
-                    <p class="stock-warning" id="stockWarn_m1_${idx}"><i class="ri-error-warning-line"></i> Melebihi stok!</p>
+                <div class="item-row-right">
+                    <div class="size-sub-rows" id="sizeSubRows_m1_${idx}"></div>
+                    <button type="button" class="btn-add-size" id="btnAddSize_m1_${idx}" onclick="addSizeSubRow(${idx})" style="display:none;">
+                        <i class="ri-add-line"></i> Tambah Ukuran
+                    </button>
                 </div>
             </div>`;
         container.appendChild(div);
         renumberRows('itemRowsContainer_m1');
     }
 
+    let sizeSubCounters = {}; // track sub-row count per item row
+    let loadedSizesCache = {}; // cache loaded sizes per item row idx
+
+    function addSizeSubRow(itemIdx, preselect = null) {
+        if (!sizeSubCounters[itemIdx]) sizeSubCounters[itemIdx] = 0;
+        const subIdx = sizeSubCounters[itemIdx]++;
+        const container = document.getElementById('sizeSubRows_m1_' + itemIdx);
+        const cachedSizes = loadedSizesCache[itemIdx] || [];
+
+        let sizeOptsHTML = '';
+        cachedSizes.forEach(s => {
+            sizeOptsHTML += `<div class="ss-opt" data-val="${s.id}" data-label="${s.size_label}" data-stock="${s.stock}" onclick="ssSelect('sizeSelect_m1_${itemIdx}_${subIdx}', '${s.id}', '${s.size_label} (stok: ${s.stock})')">
+                ${s.size_label} <span class="ss-badge">Stok: ${s.stock}</span>
+            </div>`;
+        });
+
+        const row = document.createElement('div');
+        row.className = 'size-sub-row';
+        row.dataset.subindex = subIdx;
+        row.innerHTML = `
+            <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size:10px;">Ukuran <span class="req">*</span></label>
+                <div class="ss-wrap" id="sizeSelect_m1_${itemIdx}_${subIdx}">
+                    <div class="ss-trigger" onclick="ssToggle('sizeSelect_m1_${itemIdx}_${subIdx}')" style="min-height:38px; padding:8px 12px;">
+                        <span class="ss-text ss-placeholder" id="size_text_m1_${itemIdx}_${subIdx}">-- Pilih Ukuran --</span>
+                        <i class="ri-arrow-down-s-line ss-arrow"></i>
+                    </div>
+                    <div class="ss-dropdown" id="sizeSelect_m1_${itemIdx}_${subIdx}_dd" style="z-index:900;">
+                        <div class="ss-search"><input type="text" placeholder="Cari ukuran..." oninput="ssFilter(this, 'sizeSelect_m1_${itemIdx}_${subIdx}')"></div>
+                        <div class="ss-list">${sizeOptsHTML}</div>
+                    </div>
+                    <input type="hidden" name="items[${itemIdx}][sizes][${subIdx}][warehouse_item_size_id]" class="size-val-m1" id="sizeSelect_m1_${itemIdx}_${subIdx}_val">
+                </div>
+                <div class="stock-badge" id="stockBadge_m1_${itemIdx}_${subIdx}" style="display:none;">
+                    <i class="ri-information-line"></i> Stok: <span id="stockVal_m1_${itemIdx}_${subIdx}">0</span>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label style="font-size:10px;">Jumlah <span class="req">*</span></label>
+                <input type="number" name="items[${itemIdx}][sizes][${subIdx}][quantity]" class="f-input qty-input-m1" placeholder="0" min="1" style="padding:8px 10px;" oninput="onQtyChangeM1(${itemIdx})" data-itemindex="${itemIdx}" data-subindex="${subIdx}">
+                <p class="stock-warning" id="stockWarnSub_m1_${itemIdx}_${subIdx}"><i class="ri-error-warning-line"></i> Melebihi stok!</p>
+            </div>
+            <button type="button" class="btn-remove-size" onclick="removeSizeSubRow(this, ${itemIdx})" title="Hapus ukuran">
+                <i class="ri-close-line"></i>
+            </button>`;
+        container.appendChild(row);
+        
+        // Ensure the newly added row dropdown options have dynamically updated stock
+        recalcRemainingStock(itemIdx);
+    }
+
+    function removeSizeSubRow(btn, itemIdx) {
+        btn.closest('.size-sub-row').remove();
+        recalcRemainingStock(itemIdx);
+        evaluateGlobalStockM1();
+    }
+
     function removeItemRowM1(btn) {
-        btn.closest('.item-row').remove();
-        delete stockLimitsM1[btn.closest('.item-row').dataset.index];
+        const row = btn.closest('.item-row');
+        const idx = row.dataset.index;
+        row.remove();
+        if (stockLimitsM1) delete stockLimitsM1[idx];
         renumberRows('itemRowsContainer_m1');
         evaluateGlobalStockM1();
     }
 
     function loadSizesM1(itemId, index) {
-        const sizeWrap = document.getElementById('sizeSelect_m1_' + index);
-        const sizeList = sizeWrap.querySelector('.ss-list');
-        const sizeText = document.getElementById('size_text_m1_' + index);
-        const sizeVal = document.getElementById('sizeSelect_m1_' + index + '_val');
-        const stockBadge = document.getElementById('stockBadge_m1_' + index);
+        const btnAddSize = document.getElementById('btnAddSize_m1_' + index);
+        const subRowsContainer = document.getElementById('sizeSubRows_m1_' + index);
 
-        sizeList.innerHTML = '<div style="padding:10px; font-size:12px; color:#9CA3AF;">Memuat...</div>';
-        sizeWrap.classList.add('disabled');
-        sizeText.textContent = '-- Pilih --';
-        sizeText.classList.add('ss-placeholder');
-        sizeVal.value = '';
-        if (stockBadge) stockBadge.style.display = 'none';
-        stockLimitsM1[index] = 0;
-        checkStockM1(index);
+        // Clear existing sub-rows
+        subRowsContainer.innerHTML = '';
+        sizeSubCounters[index] = 0;
+        loadedSizesCache[index] = [];
+        btnAddSize.style.display = 'none';
 
         if (!itemId) return;
 
         fetch(`{{ url('admin/warehouse-items/api/item-sizes') }}/${itemId}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(r => r.json())
         .then(sizes => {
-            if (!sizes.length) {
-                sizeList.innerHTML = '<div style="padding:10px; font-size:12px; color:#9CA3AF;">Tidak ada stok / ukuran</div>';
-                return;
-            }
-            let html = '';
-            sizes.forEach(s => {
-                html += `<div class="ss-opt" data-val="${s.id}" data-label="${s.size_label}" data-stock="${s.stock}" onclick="ssSelect('sizeSelect_m1_${index}', '${s.id}', '${s.size_label} (stok: ${s.stock})')">
-                            ${s.size_label} <span class="ss-badge">Stok: ${s.stock}</span>
-                         </div>`;
-            });
-            sizeList.innerHTML = html;
-            sizeWrap.classList.remove('disabled');
-            sizeText.textContent = '-- Pilih Ukuran --';
+            if (!sizes.length) return;
+            loadedSizesCache[index] = sizes;
+            btnAddSize.style.display = 'inline-flex';
+            // Auto add first sub-row
+            addSizeSubRow(index);
         });
     }
 
-    function checkStockM1(index) {
-        const qtyInput = document.querySelector(`.qty-input-m1[data-index="${index}"]`);
+    function checkStockM1Sub(itemIdx, subIdx) {
+        const qtyInput = document.querySelector(`.qty-input-m1[data-itemindex="${itemIdx}"][data-subindex="${subIdx}"]`);
         if (!qtyInput) return;
         const qty = parseInt(qtyInput.value) || 0;
-        const max = stockLimitsM1[index] || 0;
-        const warn = document.getElementById('stockWarn_m1_' + index);
+        const sizeId = document.getElementById('sizeSelect_m1_' + itemIdx + '_' + subIdx + '_val').value;
+        
+        // Fallback to original stock if no remaining calculated yet
+        const stockEl = document.getElementById('stockVal_m1_' + itemIdx + '_' + subIdx);
+        let max = stockEl ? parseInt(stockEl.textContent) || 0 : 0;
+        
+        if (max === 0 && sizeId) {
+            const opt = document.querySelector(`#sizeSelect_m1_${itemIdx}_${subIdx}_dd .ss-opt[data-val="${sizeId}"]`);
+            max = parseInt(opt?.dataset?.stock || 0);
+        }
+        
+        const warn = document.getElementById('stockWarnSub_m1_' + itemIdx + '_' + subIdx);
         if (max > 0 && qty > max) { warn.style.display = 'block'; } else { warn.style.display = 'none'; }
         evaluateGlobalStockM1();
     }
+
+    // Recalculate remaining stock for all sub-rows with the same size within an item row
+    function recalcRemainingStock(itemIdx) {
+        const subRows = document.querySelectorAll(`#sizeSubRows_m1_${itemIdx} .size-sub-row`);
+        const cachedSizes = loadedSizesCache[itemIdx] || [];
+        
+        let consumed = {};
+        cachedSizes.forEach(s => { consumed[s.id] = 0; });
+        
+        subRows.forEach(row => {
+            const subIdx = row.dataset.subindex;
+            const sizeIdInput = document.getElementById('sizeSelect_m1_' + itemIdx + '_' + subIdx + '_val');
+            const selectedSizeId = sizeIdInput ? sizeIdInput.value : '';
+            const qtyInput = row.querySelector('.qty-input-m1');
+            const qty = parseInt(qtyInput?.value || 0);
+            
+            // 1. Update dropdown options in THIS row based on CURRENT consumed values
+            cachedSizes.forEach(s => {
+                const avail = s.stock - consumed[s.id];
+                const optDiv = document.querySelector(`#sizeSelect_m1_${itemIdx}_${subIdx}_dd .ss-opt[data-val="${s.id}"]`);
+                if (optDiv) {
+                    const badge = optDiv.querySelector('.ss-badge');
+                    if (badge) badge.textContent = `Stok: ${avail}`;
+                }
+            });
+            
+            // 2. If a size is selected, update its yellow badge & trigger text, THEN add to consumed
+            if (selectedSizeId && consumed[selectedSizeId] !== undefined) {
+                const origStock = cachedSizes.find(s => s.id == selectedSizeId)?.stock || 0;
+                const sizeLabel = cachedSizes.find(s => s.id == selectedSizeId)?.size_label || '';
+                const avail = origStock - consumed[selectedSizeId];
+                
+                const stockVal = document.getElementById('stockVal_m1_' + itemIdx + '_' + subIdx);
+                const stockBadge = document.getElementById('stockBadge_m1_' + itemIdx + '_' + subIdx);
+                if (stockVal && stockBadge) {
+                    stockVal.textContent = avail;
+                    stockBadge.style.display = 'inline-flex';
+                    if (avail < 0) {
+                        stockBadge.style.background = '#FEE2E2';
+                        stockBadge.style.color = '#DC2626';
+                    } else {
+                        stockBadge.style.background = '#FEF3C7';
+                        stockBadge.style.color = '#92400E';
+                    }
+                }
+                
+                const sizeTextEl = document.getElementById('size_text_m1_' + itemIdx + '_' + subIdx);
+                if (sizeTextEl && !sizeTextEl.classList.contains('ss-placeholder')) {
+                    sizeTextEl.textContent = `${sizeLabel} (stok: ${avail})`;
+                }
+                
+                const warn = document.getElementById('stockWarnSub_m1_' + itemIdx + '_' + subIdx);
+                if (warn) {
+                    if (qty > avail) { warn.style.display = 'block'; } else { warn.style.display = 'none'; }
+                }
+                
+                // Add to consumed for NEXT rows
+                consumed[selectedSizeId] += (qty > 0 ? qty : 0);
+            } else {
+                const stockBadge = document.getElementById('stockBadge_m1_' + itemIdx + '_' + subIdx);
+                if (stockBadge) stockBadge.style.display = 'none';
+            }
+        });
+
+        evaluateGlobalStockM1();
+    }
+
+    function onQtyChangeM1(itemIdx) {
+        recalcRemainingStock(itemIdx);
+    }
     
     function evaluateGlobalStockM1() {
-        const warnings = document.querySelectorAll('#wrapper_method_1 .stock-warning[id^="stockWarn_m1_"]');
+        const warnings = document.querySelectorAll('#wrapper_method_1 .size-sub-row .stock-warning');
         let any = false;
-        warnings.forEach(w => { if(w.style.display === 'block') any = true; });
-        document.getElementById('globalStockWarn_m1').style.display = any ? 'block' : 'none';
+        warnings.forEach(w => { 
+            // Hanya aktifkan peringatan global jika teks merah benar-benar sedang tampil di UI
+            if(w.style.display === 'block' && w.offsetParent !== null) {
+                any = true;
+            } 
+        });
+        const globalWarn = document.getElementById('globalStockWarn_m1');
+        if (globalWarn) globalWarn.style.display = any ? 'block' : 'none';
     }
 
     function regenerateGridM2() {
@@ -702,7 +865,10 @@
         });
 
         const tbody = document.getElementById('m2_table_body');
-        const thead_tr = document.getElementById('m2_table_head');
+        const thead = document.getElementById('m2_table').querySelector('thead');
+        
+        const modeInput = document.querySelector('input[name="m2_mode"]:checked');
+        const mode = modeInput ? modeInput.value : 'acak';
 
         // Store old values from inputs currently in DOM
         const oldValues = {};
@@ -711,54 +877,107 @@
         });
 
         if (selectedItems.length === 0 || selectedSatkers.length === 0) {
-            thead_tr.innerHTML = `<th>Satker Penerima</th><th>Pilih minimal 1 barang & 1 satker</th>`;
+            thead.innerHTML = `<tr id="m2_table_head"><th>Satker Penerima</th><th>Pilih minimal 1 barang & 1 satker</th></tr>`;
             tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#9CA3AF; padding:20px;">Belum ada data barang dan satker yang dipilih lengkap. Centang barang dan satker di atas.</td></tr>`;
-            evaluateGridStockM2();
+            evaluateGridStockM2(mode);
             return;
         }
 
         // Build header
-        let thHtml = '<th>Satker Penerima</th>';
-        selectedItems.forEach(item => {
-            const max = stockLimitsM2[item.id] || 0;
-            thHtml += `<th><span style="display:block; max-width:140px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${item.label}">${item.label}</span> <div style="font-size:10px; color:#D97706; margin-top:4px;">Stok Max: ${max}</div></th>`;
-        });
-        thead_tr.innerHTML = thHtml;
+        if (mode === 'ukuran') {
+            let thHtml1 = '<tr><th rowspan="2" style="vertical-align:bottom; border-right:1px solid #E5E7EB;">Satker Penerima</th>';
+            let thHtml2 = '<tr>';
+            
+            selectedItems.forEach(item => {
+                const itemObj = itemsData.find(i => i.id == item.id);
+                if (itemObj && itemObj.sizes && itemObj.sizes.length > 0) {
+                    const colspan = itemObj.sizes.length;
+                    thHtml1 += `<th colspan="${colspan}" style="text-align:center; border-bottom:1px solid #E5E7EB; border-right:1px solid #E5E7EB; background:#F9FAFB;"><span style="display:block; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; color:#374151; font-weight:700;" title="${item.label}">${item.label}</span></th>`;
+                    
+                    itemObj.sizes.forEach(sz => {
+                        thHtml2 += `<th style="text-align:center; min-width:60px; padding:12px 6px; border-right:1px solid #E5E7EB;"><strong style="color:#D97706; display:block;">${sz.size_label}</strong> <div style="font-size:10px; color:#D97706; margin-top:4px;">Stok: ${sz.stock}</div></th>`;
+                    });
+                } else {
+                    thHtml1 += `<th rowspan="2" style="text-align:center; border-right:1px solid #E5E7EB;"><span style="display:block; max-width:140px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${item.label}">${item.label}</span> <div style="font-size:10px; color:#D97706; margin-top:4px;">Stok: 0</div></th>`;
+                }
+            });
+            
+            thHtml1 += '</tr>';
+            thHtml2 += '</tr>';
+            thead.innerHTML = thHtml1 + thHtml2;
+        } else {
+            let thHtml = '<tr id="m2_table_head"><th style="border-right:1px solid #E5E7EB;">Satker Penerima</th>';
+            selectedItems.forEach(item => {
+                const max = stockLimitsM2[item.id] || 0;
+                thHtml += `<th style="text-align:center; border-right:1px solid #E5E7EB;"><span style="display:block; max-width:140px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin:0 auto;" title="${item.label}">${item.label}</span> <div style="font-size:10px; color:#D97706; margin-top:4px;">Stok Max: ${max}</div></th>`;
+            });
+            thHtml += '</tr>';
+            thead.innerHTML = thHtml;
+        }
 
         // Build body
         let tbHtml = '';
         selectedSatkers.forEach(sat => {
             tbHtml += `<tr><td><strong>${sat.label}</strong></td>`;
             selectedItems.forEach(item => {
-                const nameAttr = `quantities[${sat.id}][${item.id}]`;
-                const oldVal = oldValues[nameAttr] || '0';
-                tbHtml += `<td><input type="number" name="${nameAttr}" data-sizeid="${item.id}" class="f-input-small m2-qty-grid-input" value="${oldVal}" min="0" oninput="evaluateGridStockM2()"></td>`;
+                const itemObj = itemsData.find(i => i.id == item.id);
+                if (mode === 'ukuran' && itemObj && itemObj.sizes && itemObj.sizes.length > 0) {
+                    itemObj.sizes.forEach(sz => {
+                        const nameAttr = `quantities_size[${sat.id}][${item.id}][${sz.id}]`;
+                        const oldVal = oldValues[nameAttr] || '0';
+                        tbHtml += `<td style="text-align:center; padding: 8px 6px;"><input type="number" name="${nameAttr}" data-sizeid="${sz.id}" class="f-input-mini m2-qty-grid-input" value="${oldVal}" min="0" oninput="evaluateGridStockM2()"></td>`;
+                    });
+                } else {
+                    const nameAttr = `quantities[${sat.id}][${item.id}]`;
+                    const oldVal = oldValues[nameAttr] || '0';
+                    tbHtml += `<td><input type="number" name="${nameAttr}" data-itemid="${item.id}" class="f-input-small m2-qty-grid-input" value="${oldVal}" min="0" oninput="evaluateGridStockM2()"></td>`;
+                }
             });
             tbHtml += `</tr>`;
         });
         tbody.innerHTML = tbHtml;
-        evaluateGridStockM2();
+        evaluateGridStockM2(mode);
     }
 
-    function evaluateGridStockM2() {
+    function evaluateGridStockM2(forcedMode = null) {
+        let mode = forcedMode;
+        if (!mode) {
+            const modeInput = document.querySelector('input[name="m2_mode"]:checked');
+            mode = modeInput ? modeInput.value : 'acak';
+        }
+        
         const inputs = document.querySelectorAll('.m2-qty-grid-input');
         const sums = {};
+        
         inputs.forEach(inp => {
-            const itemId = inp.dataset.sizeid; // wait, sizeid -> itemid
+            let id = mode === 'ukuran' && inp.dataset.sizeid ? inp.dataset.sizeid : inp.dataset.itemid;
+            // Prevent issue if mode was changed but inputs haven't refreshed fully yet
+            if (!id && inp.dataset.sizeid) id = inp.dataset.sizeid; 
+            if (!id && inp.dataset.itemid) id = inp.dataset.itemid; 
+            
             const val = parseInt(inp.value) || 0;
-            if (!sums[itemId]) sums[itemId] = 0;
-            sums[itemId] += val;
+            if (!sums[id]) sums[id] = 0;
+            sums[id] += val;
         });
 
         let anyExceed = false;
-        Object.keys(sums).forEach(itemId => {
-            const max = stockLimitsM2[itemId] || 0;
-            if (sums[itemId] > max) anyExceed = true;
+        Object.keys(sums).forEach(id => {
+            let max = 0;
+            if (mode === 'ukuran') {
+                // Cari max. berdasarkan id size
+                itemsData.forEach(item => {
+                   if (item.sizes) {
+                       const sz = item.sizes.find(s => s.id == id);
+                       if (sz) max = parseInt(sz.stock);
+                   } 
+                });
+            } else {
+                max = stockLimitsM2[id] || 0;
+            }
+            if (sums[id] > max) anyExceed = true;
         });
 
         document.getElementById('globalStockWarn_m2').style.display = anyExceed ? 'block' : 'none';
-        
-        // Highlight logic could be added to specific columns, but a global warning is enough for MVP
     }
 
     function renumberRows(containerId) {

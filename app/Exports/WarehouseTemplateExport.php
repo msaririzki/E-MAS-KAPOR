@@ -18,12 +18,16 @@ class WarehouseTemplateExport implements FromArray, ShouldAutoSize, WithHeadings
                 'nama_barang' => 'CONTOH BARANG A',
                 'kuantitas' => '50',
                 'harga_satuan' => '150000',
+                'sumber_pengadaan' => 'Mabes Polri',
+                'kategori_stok' => 'Stok',
             ],
             [
                 'no' => '2',
                 'nama_barang' => 'CONTOH BARANG B',
                 'kuantitas' => '100',
                 'harga_satuan' => '25000',
+                'sumber_pengadaan' => 'Polda NTB',
+                'kategori_stok' => 'Luar Stok',
             ],
         ];
     }
@@ -35,6 +39,8 @@ class WarehouseTemplateExport implements FromArray, ShouldAutoSize, WithHeadings
             'nama_barang',
             'kuantitas',
             'harga_satuan',
+            'sumber_pengadaan',
+            'kategori_stok',
         ];
     }
 

@@ -30,10 +30,18 @@ class WarehouseImport implements ToCollection, WithHeadingRow
                 $sizeLabel = '-';
                 $stock = isset($rowArray['kuantitas']) ? intval($rowArray['kuantitas']) : (isset($rowArray['stok']) ? intval($rowArray['stok']) : 0);
 
+                $sumberPengadaan = isset($rowArray['sumber_pengadaan']) ? trim($rowArray['sumber_pengadaan']) : 'Mabes Polri';
+                $kategoriStok = isset($rowArray['kategori_stok']) ? trim($rowArray['kategori_stok']) : 'Stok';
+
                 // Update or create WarehouseItem
                 $item = WarehouseItem::updateOrCreate(
                     ['name' => $itemName],
-                    ['unit' => $unit, 'price' => $price]
+                    [
+                        'unit' => $unit, 
+                        'price' => $price,
+                        'sumber_pengadaan' => $sumberPengadaan,
+                        'kategori_stok' => $kategoriStok
+                    ]
                 );
 
                 // Jika ada data kuantitas, update or create ukurannya
