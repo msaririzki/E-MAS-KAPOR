@@ -50,9 +50,13 @@ if [ "$DB_CONNECTION" = "mysql" ] || [ "$DB_CONNECTION" = "mariadb" ] || [ -n "$
     " || exit 1
 fi
 
-# 5. Jalankan migrasi database
-echo "==> [Entrypoint] Menjalankan migrasi database..."
-php artisan migrate --force
+# 5. Jalankan migrasi database hanya pada container aplikasi utama.
+if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+    echo "==> [Entrypoint] Menjalankan migrasi database..."
+    php artisan migrate --force
+else
+    echo "==> [Entrypoint] Migrasi dilewati untuk proses ini."
+fi
 
 # 6. Buat symlink storage jika belum ada
 if [ ! -d /var/www/html/public/storage ]; then
@@ -61,12 +65,18 @@ if [ ! -d /var/www/html/public/storage ]; then
 fi
 
 # 7. Optimasi Laravel & Fix Permission Akhir
-echo "==> [Entrypoint] Optimasi Laravel..."
-php artisan optimize
+if [ "${RUN_OPTIMIZE:-true}" = "true" ]; then
+    echo "==> [Entrypoint] Optimasi Laravel..."
+    php artisan optimize
+else
+    echo "==> [Entrypoint] Optimasi dilewati untuk proses ini."
+fi
 
 echo "==> [Entrypoint] Memastikan hak akses storage milik www-data..."
 chown -R www-data:www-data /var/www/html/storage
 chmod -R 775 /var/www/html/storage
+
+touch /tmp/app-ready
 
 echo "==> [Entrypoint] Setup selesai! Menjalankan: $@"
 exec "$@"
