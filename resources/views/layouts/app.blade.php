@@ -2209,7 +2209,7 @@
             {{-- ══ Admin / Superadmin Roles ══ --}}
             @if(auth()->user()->hasSuperadminReadAccess())
                 <div
-                    class="nav-group {{ request()->routeIs('admin.identifikasi-kebutuhan.*') || request()->routeIs('admin.personnel.*') || request()->routeIs('admin.students.*') || request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
+                    class="nav-group {{ request()->routeIs('admin.identifikasi-kebutuhan.*') || request()->routeIs('admin.personnel.*') || request()->routeIs('admin.budget.*') || request()->routeIs('admin.reports*') ? 'open' : '' }}">
                     <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
                         <i class="ri-t-shirt-2-line group-icon"></i> Data Kapor
                         <i class="ri-arrow-down-s-line group-chevron"></i>
@@ -2223,12 +2223,6 @@
                             class="nav-link {{ request()->routeIs('admin.personnel.*') ? 'active' : '' }}">
                             Data Personel
                         </a>
-                        @if(auth()->user()->hasRole('superadmin'))
-                            <a href="{{ route('admin.students.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
-                                Manajemen Siswa
-                            </a>
-                        @endif
                         <a href="{{ route('admin.budget.index') }}"
                             class="nav-link {{ request()->routeIs('admin.budget.*') ? 'active' : '' }}">
                             Rencana Pengadaan Kapor

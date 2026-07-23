@@ -96,20 +96,6 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
     Route::delete('/users/{user}', [\App\Http\Controllers\UserController::class, 'destroy'])->name('users.destroy');
     Route::post('/users/{user}/toggle-status', [\App\Http\Controllers\Admin\UserStatusController::class, 'toggle'])->name('users.toggle-status');
 
-    Route::middleware('role:superadmin')->prefix('students')->name('students.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\StudentBatchController::class, 'index'])->name('index');
-        Route::post('/', [\App\Http\Controllers\Admin\StudentBatchController::class, 'store'])->name('store');
-        Route::get('/{studentBatch}/export', [\App\Http\Controllers\Admin\StudentBatchController::class, 'export'])->name('export');
-        Route::post('/{studentBatch}/add-students', [\App\Http\Controllers\Admin\StudentBatchController::class, 'addStudents'])->name('add-students');
-        Route::post('/{studentBatch}/size-distribution', [\App\Http\Controllers\Admin\StudentBatchController::class, 'applySizeDistribution'])->name('size-distribution');
-        Route::post('/{studentBatch}/import', [\App\Http\Controllers\Admin\StudentBatchController::class, 'import'])->name('import');
-        Route::get('/{studentBatch}/import-preview', [\App\Http\Controllers\Admin\StudentBatchController::class, 'importPreview'])->name('import-preview');
-        Route::post('/{studentBatch}/import-confirm', [\App\Http\Controllers\Admin\StudentBatchController::class, 'importConfirm'])->name('import-confirm');
-        Route::post('/{studentBatch}/import-cancel', [\App\Http\Controllers\Admin\StudentBatchController::class, 'importCancel'])->name('import-cancel');
-        Route::patch('/{studentBatch}/archive', [\App\Http\Controllers\Admin\StudentBatchController::class, 'toggleArchive'])->name('archive');
-        Route::get('/{studentBatch}', [\App\Http\Controllers\Admin\StudentBatchController::class, 'show'])->name('show');
-    });
-
     // Personnel Management
     Route::get('/personnel/template', [\App\Http\Controllers\Admin\PersonnelController::class, 'downloadTemplate'])->name('personnel.template');
     Route::post('/personnel/import', [\App\Http\Controllers\Admin\PersonnelController::class, 'import'])->name('personnel.import');
@@ -142,6 +128,15 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
     Route::post('/personnel/import-sdm-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdmConfirm'])->name('personnel.import-sdm-confirm');
     Route::post('/personnel/import-sdm-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importSdmCancel'])->name('personnel.import-sdm-cancel');
     Route::get('/personnel/import-sdm-runs/{sdmImportRun}/error-report', [\App\Http\Controllers\Admin\PersonnelController::class, 'downloadSdmImportErrorReport'])->name('personnel.import-sdm-runs.error-report');
+
+    // Unggah Siswa Lengkap (Superadmin Only)
+    Route::middleware('role:superadmin')->group(function () {
+        Route::get('/personnel/student-template', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'downloadTemplate'])->name('personnel.student-template');
+        Route::post('/personnel/student-import', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'import'])->name('personnel.student-import');
+        Route::get('/personnel/student-import-preview', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'preview'])->name('personnel.student-import-preview');
+        Route::post('/personnel/student-import-confirm', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'confirm'])->name('personnel.student-import-confirm');
+        Route::post('/personnel/student-import-cancel', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'cancel'])->name('personnel.student-import-cancel');
+    });
 
     // Personnel Print & Actions
     Route::get('/personnel/print-satker', [\App\Http\Controllers\Admin\PersonnelController::class, 'printSatker'])->name('personnel.print-satker');

@@ -6,12 +6,12 @@ use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 
-class StudentBatchRowsImport implements ToCollection, WithStartRow
+class StudentPersonnelRowsImport implements ToCollection, WithStartRow
 {
     public function collection(Collection $collection): void {}
 
     public function startRow(): int
     {
-        return 5;
+        return 11;
     }
 }

@@ -77,6 +77,13 @@
                             <div style="font-size: 11px; color: #6B7280;">Unggah data pokok awal (SDM)</div>
                         </div>
                     </button>
+                    <button class="dropdown-item personnel-dropdown-item" onclick="openModal('studentCompleteImportModal')">
+                        <i class="ri-graduation-cap-line" style="color: #B91C1C; font-size: 16px;"></i>
+                        <div style="text-align: left;">
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Unggah Siswa Lengkap</div>
+                            <div style="font-size: 11px; color: #6B7280;">Buat banyak siswa dari identitas dan ukuran Excel</div>
+                        </div>
+                    </button>
                     <button class="dropdown-item personnel-dropdown-item" onclick="openModal('importKeteranganModal')">
                         <i class="ri-file-edit-line" style="color: #7C3AED; font-size: 16px;"></i>
                         <div style="text-align: left;">
@@ -665,6 +672,90 @@
 
 {{-- Import SDM Modal (Superadmin) --}}
 @if(auth()->user()->hasRole('superadmin'))
+
+<div id="studentCompleteImportModal" class="modal">
+    <div class="modal-content" style="max-width: 780px;">
+        <div class="modal-header">
+            <div>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: #111827;">Unggah Siswa Lengkap</h3>
+                <p style="margin: 4px 0 0; font-size: 12px; color: #64748B;">Buat data siswa sebagai personel aktif tanpa akun login.</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('studentCompleteImportModal')">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <form action="{{ route('admin.personnel.student-import') }}" method="POST" enctype="multipart/form-data" onsubmit="return submitStudentCompleteImport(this)">
+            @csrf
+            <div class="modal-body" style="padding: 24px;">
+                <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden; margin-bottom: 22px;">
+                    <div style="padding: 13px 14px; display: flex; gap: 9px; align-items: center; border-right: 1px solid #E5E7EB;">
+                        <span style="width: 26px; height: 26px; border-radius: 7px; background: #FEE2E2; color: #B91C1C; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">1</span>
+                        <span style="font-size: 12px; color: #334155; font-weight: 700;">Unduh template</span>
+                    </div>
+                    <div style="padding: 13px 14px; display: flex; gap: 9px; align-items: center; border-right: 1px solid #E5E7EB;">
+                        <span style="width: 26px; height: 26px; border-radius: 7px; background: #F1F5F9; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">2</span>
+                        <span style="font-size: 12px; color: #334155; font-weight: 700;">Isi data dan ukuran</span>
+                    </div>
+                    <div style="padding: 13px 14px; display: flex; gap: 9px; align-items: center;">
+                        <span style="width: 26px; height: 26px; border-radius: 7px; background: #F1F5F9; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800;">3</span>
+                        <span style="font-size: 12px; color: #334155; font-weight: 700;">Unggah dan periksa</span>
+                    </div>
+                </div>
+
+                <a href="{{ route('admin.personnel.student-template') }}" class="btn" style="width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 9px; background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; border-radius: 8px; font-size: 13px; font-weight: 800; text-decoration: none; margin-bottom: 20px;">
+                    <i class="ri-file-excel-2-line" style="font-size: 19px;"></i>
+                    Unduh Template Siswa Lengkap
+                </a>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label style="font-weight: 700; color: #374151; margin-bottom: 8px; display: block;">SATKER PENEMPATAN <span style="color: #EF4444;">*</span></label>
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select" onclick="toggleDropdown(this)">
+                            <div class="select-trigger">
+                                <span id="student_import_satker_label">Pilih satker tujuan siswa</span>
+                                <i class="ri-arrow-down-s-line"></i>
+                            </div>
+                            <div class="custom-options">
+                                <div class="select-search-container">
+                                    <input type="text" class="select-search-input" placeholder="Cari satker..." onclick="event.stopPropagation()" onkeyup="filterSatkerOptions(this)">
+                                </div>
+                                <div class="options-scroll">
+                                    @foreach($satkers as $satkerOption)
+                                        <div class="option" data-value="{{ $satkerOption->id }}" data-label="{{ $satkerOption->name }}" onclick="selectSatkerOptionSimple(this, 'student_import')">{{ $satkerOption->name }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="satker_id" id="student_import_satker_id" value="{{ old('satker_id') }}">
+                    </div>
+                    <p id="studentImportSatkerError" style="display: none; margin: 6px 0 0; color: #B91C1C; font-size: 11px; font-weight: 700;">Pilih satker penempatan terlebih dahulu.</p>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label style="font-weight: 700; color: #374151; margin-bottom: 8px; display: block;">FILE EXCEL SISWA <span style="color: #EF4444;">*</span></label>
+                    <label for="studentCompleteImportFile" style="min-height: 92px; border: 1.5px dashed #CBD5E1; border-radius: 8px; background: #F8FAFC; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 5px; cursor: pointer; padding: 14px; text-align: center;">
+                        <i class="ri-upload-cloud-2-line" style="font-size: 25px; color: #B91C1C;"></i>
+                        <strong id="studentCompleteImportFileLabel" style="font-size: 13px; color: #334155;">Pilih file .xlsx atau .xls</strong>
+                        <span style="font-size: 11px; color: #94A3B8;">Maksimal 50 MB</span>
+                    </label>
+                    <input type="file" name="file" id="studentCompleteImportFile" accept=".xlsx,.xls" required style="position: absolute; width: 1px; height: 1px; opacity: 0;" onchange="document.getElementById('studentCompleteImportFileLabel').textContent = this.files[0]?.name || 'Pilih file .xlsx atau .xls'">
+                </div>
+
+                <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 8px; padding: 13px 15px; display: flex; gap: 10px; color: #9A3412;">
+                    <i class="ri-shield-user-line" style="font-size: 19px; flex: 0 0 auto;"></i>
+                    <p style="font-size: 12px; line-height: 1.55; margin: 0;">NRP/NIP wajib unik. Data siswa akan tampil pada Data Personel, nominatif paket, dan SPPM, tetapi <strong>tidak dibuatkan akun login</strong>.</p>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('studentCompleteImportModal')">Batal</button>
+                <button type="submit" class="btn btn-primary" id="studentCompleteImportSubmit" style="background: #B91C1C; border-color: #B91C1C;">
+                    <i class="ri-eye-line"></i>
+                    <span>Unggah &amp; Pratinjau</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <div id="importKeteranganModal" class="modal">
     <div class="modal-content" style="max-width: 760px;">
@@ -4482,5 +4573,26 @@ function showGlobalLoader(msg) {
             dropdown.style.display = 'none';
         }
     });
+
+    function submitStudentCompleteImport(form) {
+        const satkerInput = document.getElementById('student_import_satker_id');
+        const satkerError = document.getElementById('studentImportSatkerError');
+        if (!satkerInput || !satkerInput.value) {
+            if (satkerError) satkerError.style.display = 'block';
+            return false;
+        }
+
+        if (satkerError) satkerError.style.display = 'none';
+        const button = document.getElementById('studentCompleteImportSubmit');
+        if (button) {
+            button.disabled = true;
+            button.style.opacity = '0.8';
+            button.querySelector('i').className = 'ri-loader-4-line spin';
+            button.querySelector('i').style.animation = 'spin .8s linear infinite';
+            button.querySelector('span').textContent = 'Membaca Excel...';
+        }
+
+        return true;
+    }
 </script>
 @endsection

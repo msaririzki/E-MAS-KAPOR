@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-class StudentBatchSizeReferenceSheet implements FromCollection, ShouldAutoSize, WithEvents, WithTitle
+class StudentPersonnelTemplateSizeSheet implements FromCollection, ShouldAutoSize, WithEvents, WithTitle
 {
     public function title(): string
     {
@@ -24,7 +24,7 @@ class StudentBatchSizeReferenceSheet implements FromCollection, ShouldAutoSize, 
             ['Topi', 'Angka', '54, 55, 56'],
             ['Kemeja', 'Pria angka; wanita kode pakaian', '15, 15.5, 16 / K, SD, B, EB'],
             ['Celana/Rok', 'Pria angka; wanita kode pakaian', '31, 32, 34 / K, SD, B, EB'],
-            ['Kaos Olahraga', 'Kode ukuran pakaian', 'K, SD, B, EB, EEB'],
+            ['T-Shirt/Olahraga', 'Kode ukuran pakaian', 'K, SD, B, EB, EEB'],
             ['Sepatu Dinas', 'Angka', '38, 39, 40, 41'],
             ['Sepatu Olahraga', 'Angka', '38, 39, 40, 41'],
             ['Jaket', 'Kode ukuran pakaian', 'K, SD, B, EB, EEB'],

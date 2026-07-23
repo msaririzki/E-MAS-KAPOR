@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-class StudentBatchRankReferenceSheet implements FromCollection, ShouldAutoSize, WithEvents, WithTitle
+class StudentPersonnelTemplateRankSheet implements FromCollection, ShouldAutoSize, WithEvents, WithTitle
 {
     public function title(): string
     {
@@ -22,7 +22,6 @@ class StudentBatchRankReferenceSheet implements FromCollection, ShouldAutoSize, 
     {
         return collect([['NAMA PANGKAT', 'KATEGORI']])->concat(
             Rank::query()
-                ->where('category', '!=', 'PNS')
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get(['name', 'category'])
