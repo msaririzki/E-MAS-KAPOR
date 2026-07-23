@@ -56,7 +56,7 @@ class StudentPersonnelImportController extends Controller
 
         if ((int) data_get($payload, 'stats.total', 0) === 0) {
             return back()->withInput()->withErrors([
-                'file' => 'File tidak berisi data siswa. Isi data mulai baris 11 pada sheet Data Siswa.',
+                'file' => 'File tidak berisi data siswa. Isi data mulai baris 12 pada sheet Data Siswa.',
             ]);
         }
 

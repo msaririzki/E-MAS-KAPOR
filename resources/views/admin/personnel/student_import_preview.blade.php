@@ -179,7 +179,6 @@
                         <td>
                             <div class="stacked-cell compact">
                                 <strong>{{ $row['keterangan'] ?: '-' }}</strong>
-                                <span>{{ collect([$row['keterangan_2'], $row['keterangan_3'], $row['keterangan_4']])->filter()->implode(' - ') ?: '-' }}</span>
                             </div>
                         </td>
                         <td>

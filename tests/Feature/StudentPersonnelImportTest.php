@@ -79,9 +79,17 @@ class StudentPersonnelImportTest extends TestCase
         );
         $sheet = $workbook->getSheetByName('Data Siswa');
         $this->assertSame('NAMA', $sheet->getCell('B8')->getValue());
-        $this->assertSame('AGAMA', $sheet->getCell('I8')->getValue());
-        $this->assertSame('JILBAB', $sheet->getCell('V9')->getValue());
-        $this->assertSame(1000, $sheet->getCell('A1010')->getValue());
+        $this->assertSame('U K U R A N', $sheet->getCell('I8')->getValue());
+        $this->assertSame('SEPATU', $sheet->getCell('M10')->getValue());
+        $this->assertSame('DINAS', $sheet->getCell('M11')->getValue());
+        $this->assertSame('JILBAB', $sheet->getCell('Q9')->getValue());
+        $this->assertSame('KETERANGAN', $sheet->getCell('R8')->getValue());
+        $this->assertSame('R', $sheet->getHighestColumn());
+        $this->assertSame(1, $sheet->getCell('A12')->getValue());
+        $this->assertSame(1000, $sheet->getCell('A1011')->getValue());
+        $this->assertContains('I8:Q8', $sheet->getMergeCells());
+        $this->assertContains('M10:N10', $sheet->getMergeCells());
+        $this->assertContains('R8:R11', $sheet->getMergeCells());
 
         @unlink($path);
     }
@@ -89,7 +97,7 @@ class StudentPersonnelImportTest extends TestCase
     public function test_complete_excel_creates_polri_and_pns_students_without_login_accounts(): void
     {
         $path = $this->filledTemplate([
-            11 => [
+            12 => [
                 'B' => 'I KADE SISWA POLRI',
                 'C' => 'BRIPDA',
                 'D' => 'BINTARA',
@@ -97,19 +105,17 @@ class StudentPersonnelImportTest extends TestCase
                 'F' => 'SISWA DIKTUKBA',
                 'G' => 'PENDIDIKAN',
                 'H' => 'P',
-                'I' => 'Hindu',
-                'J' => 'SISWA',
-                'K' => 'GELOMBANG I',
-                'N' => '57',
-                'O' => '16',
-                'P' => '34',
-                'Q' => 'B',
-                'R' => '41',
-                'S' => '42',
-                'T' => 'B',
-                'U' => '42',
+                'I' => '57',
+                'J' => '16',
+                'K' => '34',
+                'L' => 'B',
+                'M' => '41',
+                'N' => '42',
+                'O' => 'B',
+                'P' => '42',
+                'R' => 'SISWA',
             ],
-            12 => [
+            13 => [
                 'B' => 'NI LUH SISWA PNS',
                 'C' => 'Penata Muda',
                 'D' => '3',
@@ -117,17 +123,16 @@ class StudentPersonnelImportTest extends TestCase
                 'F' => 'SISWA ADMINISTRASI',
                 'G' => 'PENDIDIKAN',
                 'H' => 'W',
-                'I' => 'Hindu',
-                'J' => 'SISWA PNS',
-                'N' => '56',
+                'I' => '56',
+                'J' => 'B',
+                'K' => 'B',
+                'L' => 'B',
+                'M' => '39',
+                'N' => '39',
                 'O' => 'B',
-                'P' => 'B',
+                'P' => '40',
                 'Q' => 'B',
-                'R' => '39',
-                'S' => '39',
-                'T' => 'B',
-                'U' => '40',
-                'V' => 'B',
+                'R' => 'SISWA PNS',
             ],
         ]);
 
@@ -172,7 +177,7 @@ class StudentPersonnelImportTest extends TestCase
     {
         $superadmin = $this->superadmin();
         $path = $this->filledTemplate([
-            11 => $this->validPolriRow('99000002', 'SISWA ROUTE UJI'),
+            12 => $this->validPolriRow('99000002', 'SISWA ROUTE UJI'),
         ]);
 
         $this->actingAs($superadmin)
@@ -206,15 +211,15 @@ class StudentPersonnelImportTest extends TestCase
     public function test_reupload_updates_student_but_never_creates_login(): void
     {
         $firstPath = $this->filledTemplate([
-            11 => $this->validPolriRow('99000003', 'SISWA LAMA'),
+            12 => $this->validPolriRow('99000003', 'SISWA LAMA'),
         ]);
         $firstPayload = app(StudentPersonnelImportService::class)->preview($this->uploadedFile($firstPath), $this->satker->id);
         app(StudentPersonnelImportService::class)->save($firstPayload['rows'], $this->satker->id, null);
 
         $secondRow = $this->validPolriRow('99000003', 'SISWA DIPERBARUI');
         $secondRow['F'] = 'SISWA TITIPAN';
-        $secondRow['N'] = '58';
-        $secondPath = $this->filledTemplate([11 => $secondRow]);
+        $secondRow['I'] = '58';
+        $secondPath = $this->filledTemplate([12 => $secondRow]);
         $secondPayload = app(StudentPersonnelImportService::class)->preview($this->uploadedFile($secondPath), $this->satker->id);
 
         $this->assertSame(1, $secondPayload['stats']['update']);
@@ -248,9 +253,9 @@ class StudentPersonnelImportTest extends TestCase
         ]);
 
         $path = $this->filledTemplate([
-            11 => $this->validPolriRow('77000001', 'MENCOBA TIMPA PERSONEL'),
-            12 => $this->validPolriRow('99000004', 'DUPLIKAT SATU'),
-            13 => $this->validPolriRow('99000004', 'DUPLIKAT DUA'),
+            12 => $this->validPolriRow('77000001', 'MENCOBA TIMPA PERSONEL'),
+            13 => $this->validPolriRow('99000004', 'DUPLIKAT SATU'),
+            14 => $this->validPolriRow('99000004', 'DUPLIKAT DUA'),
         ]);
         $payload = app(StudentPersonnelImportService::class)->preview($this->uploadedFile($path), $this->satker->id);
 
@@ -265,7 +270,7 @@ class StudentPersonnelImportTest extends TestCase
     public function test_imported_student_is_included_in_final_package_snapshot(): void
     {
         $path = $this->filledTemplate([
-            11 => $this->validPolriRow('99000005', 'SISWA NOMINATIF'),
+            12 => $this->validPolriRow('99000005', 'SISWA NOMINATIF'),
         ]);
         $payload = app(StudentPersonnelImportService::class)->preview($this->uploadedFile($path), $this->satker->id);
         app(StudentPersonnelImportService::class)->save($payload['rows'], $this->satker->id, null);
@@ -370,16 +375,15 @@ class StudentPersonnelImportTest extends TestCase
             'F' => 'SISWA',
             'G' => 'PENDIDIKAN',
             'H' => 'P',
-            'I' => 'Islam',
-            'J' => 'SISWA',
-            'N' => '57',
-            'O' => '16',
-            'P' => '34',
-            'Q' => 'B',
-            'R' => '41',
-            'S' => '41',
-            'T' => 'B',
-            'U' => '42',
+            'I' => '57',
+            'J' => '16',
+            'K' => '34',
+            'L' => 'B',
+            'M' => '41',
+            'N' => '41',
+            'O' => 'B',
+            'P' => '42',
+            'R' => 'SISWA',
         ];
     }
 }

@@ -12,6 +12,6 @@ class StudentPersonnelRowsImport implements ToCollection, WithStartRow
 
     public function startRow(): int
     {
-        return 11;
+        return 12;
     }
 }

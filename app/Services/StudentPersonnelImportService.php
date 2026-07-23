@@ -20,15 +20,15 @@ use RuntimeException;
 class StudentPersonnelImportService
 {
     private const SIZE_COLUMNS = [
-        13 => 'topi',
-        14 => 'kemeja',
-        15 => 'celana',
-        16 => 'olahraga',
-        17 => 'sepatu_dinas',
-        18 => 'sepatu_olahraga',
-        19 => 'jaket',
-        20 => 'sabuk',
-        21 => 'jilbab',
+        8 => 'topi',
+        9 => 'kemeja',
+        10 => 'celana',
+        11 => 'olahraga',
+        12 => 'sepatu_dinas',
+        13 => 'sepatu_olahraga',
+        14 => 'jaket',
+        15 => 'sabuk',
+        16 => 'jilbab',
     ];
 
     public function __construct(private readonly KaporRequirementService $kaporRequirementService) {}
@@ -113,11 +113,11 @@ class StudentPersonnelImportService
                 'gender_label' => $gender === 'P' ? 'Wanita' : ($gender === 'L' ? 'Pria' : '-'),
                 'personnel_type' => $rank?->category === 'PNS' ? 'PNS' : 'Polri',
                 'procurement_group' => $this->procurementGroup($rank),
-                'religion' => $row['religion'] !== '' ? $row['religion'] : null,
+                'religion' => $existing?->religion,
                 'keterangan' => $row['keterangan'] !== '' ? $row['keterangan'] : null,
-                'keterangan_2' => $row['keterangan_2'] !== '' ? $row['keterangan_2'] : null,
-                'keterangan_3' => $row['keterangan_3'] !== '' ? $row['keterangan_3'] : null,
-                'keterangan_4' => $row['keterangan_4'] !== '' ? $row['keterangan_4'] : null,
+                'keterangan_2' => $existing?->keterangan_2,
+                'keterangan_3' => $existing?->keterangan_3,
+                'keterangan_4' => $existing?->keterangan_4,
                 'satker_id' => $satker->id,
                 'satker_name' => $satker->name,
                 'sizes' => $sizes,
@@ -271,7 +271,7 @@ class StudentPersonnelImportService
             }
 
             return [
-                'row_number' => $index + 11,
+                'row_number' => $index + 12,
                 'name' => $name,
                 'rank_input' => $this->cleanText($values[2] ?? null),
                 'golongan' => $this->cleanText($values[3] ?? null),
@@ -279,11 +279,7 @@ class StudentPersonnelImportService
                 'jabatan' => $this->cleanText($values[5] ?? null),
                 'bagian' => $this->cleanText($values[6] ?? null),
                 'gender_input' => $this->cleanText($values[7] ?? null),
-                'religion' => $this->cleanText($values[8] ?? null),
-                'keterangan' => $this->cleanText($values[9] ?? null),
-                'keterangan_2' => $this->cleanText($values[10] ?? null),
-                'keterangan_3' => $this->cleanText($values[11] ?? null),
-                'keterangan_4' => $this->cleanText($values[12] ?? null),
+                'keterangan' => $this->cleanText($values[17] ?? null),
                 'size_inputs' => collect(self::SIZE_COLUMNS)
                     ->mapWithKeys(fn (string $key, int $column): array => [$key => $values[$column] ?? null])
                     ->all(),
