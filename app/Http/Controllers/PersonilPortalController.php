@@ -126,13 +126,13 @@ class PersonilPortalController extends Controller
         $isComplete = $personnel ? $kaporRequirementService->personnelHasAllRequiredSizes($personnel) : false;
 
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
-        
+
         $requiresBagian = ($personnel->satker ?? $user->satker)?->recipientScope() === 'polres';
         $contactPhone = User::normalizePhone($personnel->phone ?? $user->phone);
         $identityReady = $personnel && filled(trim((string) $personnel->jabatan))
             && (! $requiresBagian || filled(trim((string) $personnel->bagian)))
             && filled(trim((string) $contactPhone));
-            
+
         $identityStepLabel = $requiresBagian ? '1. Jabatan, Bag/Fungsi + No. WA' : '1. Jabatan + No. WA';
         $progressPct = ($identityReady ? 50 : 0) + ($isComplete ? 50 : ($hasSubmitted ? 14 : 0));
 
@@ -155,7 +155,7 @@ class PersonilPortalController extends Controller
         $identityReady = $personnel && filled(trim((string) $personnel->jabatan))
             && (! $requiresBagian || filled(trim((string) $personnel->bagian)))
             && filled(trim((string) $contactPhone));
-            
+
         $identityStepLabel = $requiresBagian ? '1. Jabatan, Bag/Fungsi + No. WA' : '1. Jabatan + No. WA';
         $progressPct = ($identityReady ? 50 : 0) + ($isComplete ? 50 : ($hasSubmitted ? 14 : 0));
 

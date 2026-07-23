@@ -34,6 +34,7 @@ class WarehouseItem extends Model
     {
         $price = (float) $this->price;
         $decimals = floor($price) == $price ? 0 : 2;
+
         return 'Rp '.number_format($price, $decimals, ',', '.');
     }
 

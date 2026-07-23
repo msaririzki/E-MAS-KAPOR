@@ -37,10 +37,10 @@ class WarehouseImport implements ToCollection, WithHeadingRow
                 $item = WarehouseItem::updateOrCreate(
                     ['name' => $itemName],
                     [
-                        'unit' => $unit, 
+                        'unit' => $unit,
                         'price' => $price,
                         'sumber_pengadaan' => $sumberPengadaan,
-                        'kategori_stok' => $kategoriStok
+                        'kategori_stok' => $kategoriStok,
                     ]
                 );
 

@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Models\BudgetPackage;
 use App\Models\InvoiceSetting;
 use App\Models\Satker;
-use App\Services\BudgetCalculationService;
+use App\Services\BudgetPackageSppmAssignmentService;
 use App\Services\SppmWordExportService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -35,49 +35,51 @@ class SppmWordExportServiceTest extends TestCase
             'organization_name' => 'KEPALA BIRO LOGISTIK POLDA NTB',
         ]);
 
-        $calcService = Mockery::mock(BudgetCalculationService::class);
-        $calcService->shouldReceive('calculatePackage')
+        $assignmentService = Mockery::mock(BudgetPackageSppmAssignmentService::class);
+        $assignmentService->shouldReceive('buildSppmSatkerData')
             ->once()
             ->andReturn([
-                'items' => [
-                    [
-                        'item_name' => 'Rompi Keselamatan',
-                        'unit' => 'PCS',
-                        'price' => 250000,
-                        'recipients' => [
-                            [
-                                'satker_id' => $satker->id,
-                                'matched_count' => 12,
-                                'subtotal' => 3000000,
-                            ],
-                            [
-                                'satker_id' => $secondSatker->id,
-                                'matched_count' => 4,
-                                'subtotal' => 1000000,
-                            ],
+                $satker->id => [
+                    'satker' => $satker,
+                    'items' => [
+                        [
+                            'item_name' => 'Rompi Keselamatan',
+                            'unit' => 'PCS',
+                            'price' => 250000,
+                            'qty' => 12,
+                            'total' => 3000000,
+                        ],
+                        [
+                            'item_name' => 'Jaket Lapangan',
+                            'unit' => 'PCS',
+                            'price' => 175000,
+                            'qty' => 3,
+                            'total' => 525000,
                         ],
                     ],
-                    [
-                        'item_name' => 'Jaket Lapangan',
-                        'unit' => 'PCS',
-                        'price' => 175000,
-                        'recipients' => [
-                            [
-                                'satker_id' => $satker->id,
-                                'matched_count' => 3,
-                                'subtotal' => 525000,
-                            ],
-                            [
-                                'satker_id' => $secondSatker->id,
-                                'matched_count' => 6,
-                                'subtotal' => 1050000,
-                            ],
+                ],
+                $secondSatker->id => [
+                    'satker' => $secondSatker,
+                    'items' => [
+                        [
+                            'item_name' => 'Rompi Keselamatan',
+                            'unit' => 'PCS',
+                            'price' => 250000,
+                            'qty' => 4,
+                            'total' => 1000000,
+                        ],
+                        [
+                            'item_name' => 'Jaket Lapangan',
+                            'unit' => 'PCS',
+                            'price' => 175000,
+                            'qty' => 6,
+                            'total' => 1050000,
                         ],
                     ],
                 ],
             ]);
 
-        $service = new SppmWordExportService($calcService);
+        $service = new SppmWordExportService($assignmentService);
 
         $filePath = $service->generateForPackage(new BudgetPackage, [
             'sppm_number' => 'SPPM/001/III/LOG.5.16.1./2026/ROLOG',
