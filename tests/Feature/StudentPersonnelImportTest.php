@@ -18,6 +18,7 @@ use App\Services\PersonnelItemAllocationSnapshotService;
 use App\Services\StudentPersonnelImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Maatwebsite\Excel\Excel as ExcelFormat;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -346,6 +347,44 @@ class StudentPersonnelImportTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.personnel.student-template'))
             ->assertForbidden();
+    }
+
+    public function test_student_preview_renders_clear_previous_and_next_buttons(): void
+    {
+        $this->actingAs($this->superadmin());
+
+        $rows = new LengthAwarePaginator(
+            collect(),
+            300,
+            100,
+            2,
+            [
+                'path' => route('admin.personnel.student-import-preview'),
+            ],
+        );
+
+        $response = $this->view('admin.personnel.student_import_preview', [
+            'payload' => [
+                'satker_name' => $this->satker->name,
+                'source_file' => 'siswa-uji.xlsx',
+            ],
+            'rows' => $rows,
+            'stats' => [
+                'total' => 300,
+                'create' => 300,
+                'update' => 0,
+                'no_change' => 0,
+                'error' => 0,
+            ],
+            'statusFilter' => '',
+        ]);
+
+        $response->assertSeeText('Halaman');
+        $response->assertSeeText('Sebelumnya');
+        $response->assertSeeText('Selanjutnya');
+        $response->assertSee('page=1', false);
+        $response->assertSee('page=3', false);
+        $response->assertSee('student-page-button primary', false);
     }
 
     private function superadmin(): User

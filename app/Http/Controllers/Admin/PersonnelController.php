@@ -153,7 +153,11 @@ class PersonnelController extends Controller
         }
 
         // Pagination
-        $perPage = $request->get('per_page', $isIncompleteFilter ? 100 : 10);
+        $defaultPerPage = $isIncompleteFilter ? 100 : 10;
+        $requestedPerPage = $request->integer('per_page', $defaultPerPage);
+        $perPage = in_array($requestedPerPage, [10, 25, 50, 100], true)
+            ? $requestedPerPage
+            : $defaultPerPage;
         $filteredStatsCollection = collect();
         if ($isIncompleteFilter && ! empty($missingSizeFilter) && $kaporItemId > 0) {
             $kaporItem = KaporItem::with('sizes')->find($kaporItemId);

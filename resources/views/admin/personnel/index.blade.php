@@ -575,10 +575,15 @@
                             </div>
                             <div class="custom-options" style="background: #fff !important; bottom: calc(100% + 8px); top: auto;">
                                 <div class="options-scroll">
-                                    <div class="option {{ $perPage == 10 ? 'selected' : '' }}" onclick="window.spaNavigate()">10</div>
-                                    <div class="option {{ $perPage == 25 ? 'selected' : '' }}" onclick="window.spaNavigate()">25</div>
-                                    <div class="option {{ $perPage == 50 ? 'selected' : '' }}" onclick="window.spaNavigate()">50</div>
-                                    <div class="option {{ $perPage == 100 ? 'selected' : '' }}" onclick="window.spaNavigate()">100</div>
+                                    @foreach([10, 25, 50, 100] as $pageSize)
+                                        <a
+                                            href="{{ request()->fullUrlWithQuery(['per_page' => $pageSize, 'page' => 1]) }}"
+                                            class="option per-page-option {{ $perPage === $pageSize ? 'selected' : '' }}"
+                                            onclick="event.stopPropagation(); event.preventDefault(); window.spaNavigate(this.href)"
+                                        >
+                                            {{ $pageSize }}
+                                        </a>
+                                    @endforeach
                                 </div>
                             </div>
                         </div>
@@ -2505,6 +2510,7 @@
     .footer-left { display: flex; align-items: center; gap: 12px; color: #6B7280; font-size: 13px; }
     
     .per-page-selector { display: flex; align-items: center; margin-left: 12px; }
+    .per-page-option { text-decoration: none; }
 
     .pagination-controls { display: flex; align-items: center; gap: 4px; }
     .page-btn {
