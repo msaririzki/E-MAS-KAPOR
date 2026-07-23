@@ -44,7 +44,11 @@ class KaporRequirementService
             $golonganFilters = array_merge($golonganFilters, $legacyGolonganFilters);
 
             if ($rankCategories !== []) {
-                $query->whereHas('rank', fn ($rankQuery) => $rankQuery->whereIn('category', $rankCategories));
+                $query->where(function (Builder $rankFilterQuery) use ($rankCategories): void {
+                    $rankFilterQuery
+                        ->whereHas('rank', fn ($rankQuery) => $rankQuery->whereIn('category', $rankCategories))
+                        ->orWhereIn('procurement_group', $rankCategories);
+                });
             }
         }
 

@@ -554,6 +554,9 @@ class PersonnelController extends Controller
         $oldSatkerId = $personnel->satker_id;
         $validated['phone'] = User::normalizePhone($validated['phone'] ?? null);
         $validated['nrp'] = User::normalizeLoginIdentifier($validated['nrp']);
+        if ($personnel->isStudentRecord()) {
+            $validated['satker_id'] = $oldSatkerId;
+        }
         $duplicateIdentity = $this->findDuplicatePersonnelIdentity($validated['nrp'], $personnel, $personnel->user);
 
         if ($duplicateIdentity !== null) {
@@ -574,6 +577,19 @@ class PersonnelController extends Controller
             }
 
             $personnel->fill($validated);
+
+            if ($personnel->isStudentRecord()) {
+                if (! $personnel->isDirty()) {
+                    DB::rollBack();
+
+                    return redirect()->back()->with('info', 'Tidak ada perubahan pada data siswa.');
+                }
+
+                $personnel->forceFill(['user_id' => null])->save();
+                DB::commit();
+
+                return redirect()->back()->with('success', 'Data siswa berhasil diperbarui tanpa membuat akun login.');
+            }
 
             $user = $personnel->user;
             $targetUserState = [
@@ -681,6 +697,19 @@ class PersonnelController extends Controller
             }
 
             $personnel->fill($validated);
+
+            if ($personnel->isStudentRecord()) {
+                if (! $personnel->isDirty()) {
+                    DB::rollBack();
+
+                    return redirect()->back()->with('info', 'Tidak ada perubahan pada data siswa.');
+                }
+
+                $personnel->forceFill(['user_id' => null])->save();
+                DB::commit();
+
+                return redirect()->back()->with('success', 'Data siswa berhasil diperbarui tanpa membuat akun login.');
+            }
 
             $user = $personnel->user;
             $targetUserState = [

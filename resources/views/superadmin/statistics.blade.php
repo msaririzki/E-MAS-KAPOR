@@ -272,44 +272,81 @@
                 </div>
 
 
-                <div class="card">
-                    <div class="card-head">
-                        <h3><i class="ri-building-line" style="margin-right: 8px; color: var(--brand);"></i>Satker Paling Aktif
-                            Memberi
-                            Ulasan</h3>
+                <div class="card satker-recap-card">
+                    <div class="card-head satker-recap-head">
+                        <div>
+                            <h3><i class="ri-building-2-line"></i> Rekap Ulasan Seluruh Satker</h3>
+                            <p>{{ number_format($satkerStats->count()) }} satker terdaftar pada T.A. {{ $fiscal_year }}. Buka detail untuk melihat personel dan ulasannya.</p>
+                        </div>
+                        <div class="satker-recap-actions">
+                            <label class="satker-search">
+                                <i class="ri-search-line"></i>
+                                <input type="search" id="satkerRecapSearch" placeholder="Cari satker..." autocomplete="off">
+                            </label>
+                            <a href="{{ route('superadmin.statistics.satkers.export-pdf', ['year' => $fiscal_year]) }}"
+                                class="satker-pdf-button" target="_blank">
+                                <i class="ri-file-pdf-2-line"></i>
+                                PDF Rekap Satker
+                            </a>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="satker-list">
-                            @forelse($topSatkers as $index => $satker)
-                                <div class="satker-item">
-                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                        <div style="display: flex; align-items: center; gap: 12px;">
-                                            <div
-                                                style="width: 36px; height: 36px; border-radius: 12px; background: var(--bg-body); color: var(--brand); display: flex; align-items: center; justify-content: center; font-weight: 800;">
-                                                {{ $index + 1 }}
-                                            </div>
-                                            <div>
-                                                <div style="font-weight: 700; color: var(--text-main);">{{ $satker->satker_name }}</div>
-                                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                                                    {{ number_format($satker->total_feedback) }} testimoni
+                    <div class="satker-recap-table-wrap">
+                        <table class="satker-recap-table">
+                            <thead>
+                                <tr>
+                                    <th>Satker</th>
+                                    <th>Personel Merespons</th>
+                                    <th>Total Ulasan</th>
+                                    <th>Belum Menerima</th>
+                                    <th>Rata-rata</th>
+                                    <th><span class="sr-only">Aksi</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="satkerRecapBody">
+                                @foreach($satkerStats as $satker)
+                                    <tr data-satker-row data-search="{{ Str::lower($satker['satker_name'].' '.$satker['satker_code']) }}">
+                                        <td>
+                                            <div class="satker-name-cell">
+                                                <span class="satker-building-icon"><i class="ri-government-line"></i></span>
+                                                <div>
+                                                    <strong>{{ $satker['satker_name'] }}</strong>
+                                                    <small>{{ $satker['satker_code'] }}</small>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div style="text-align: right;">
-                                            <div style="font-size: 18px; font-weight: 800; color: var(--text-main);">
-                                                {{ number_format((float) $satker->average_rating, 1) }}
-                                            </div>
-                                            <div style="font-size: 12px; color: #f59e0b;">rata-rata bintang</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div
-                                    style="padding: 24px; text-align: center; color: var(--text-muted); background: var(--bg-body); border-radius: 16px; border: 1px dashed var(--border-color);">
-                                    Belum ada satker yang tercatat mengirim masukan.
-                                </div>
-                            @endforelse
+                                        </td>
+                                        <td><strong class="table-number">{{ number_format($satker['respondent_count']) }}</strong></td>
+                                        <td><strong class="table-number">{{ number_format($satker['total_feedback']) }}</strong></td>
+                                        <td>
+                                            <span class="not-received-value {{ $satker['not_received_count'] > 0 ? 'has-report' : '' }}">
+                                                {{ number_format($satker['not_received_count']) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if($satker['average_rating'] !== null)
+                                                <span class="satker-rating"><i class="ri-star-fill"></i> {{ number_format($satker['average_rating'], 1) }}</span>
+                                            @else
+                                                <span class="no-rating">Belum ada nilai</span>
+                                            @endif
+                                        </td>
+                                        <td class="satker-action-cell">
+                                            <a href="{{ route('superadmin.statistics.satkers.show', ['satker' => $satker['satker_id'], 'year' => $fiscal_year]) }}"
+                                                class="satker-detail-button">
+                                                Lihat Detail <i class="ri-arrow-right-line"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                        <div class="satker-search-empty" id="satkerSearchEmpty" hidden>
+                            <i class="ri-building-line"></i>
+                            <strong>Satker tidak ditemukan</strong>
+                            <span>Periksa kembali kata pencarian.</span>
                         </div>
+                    </div>
+                    <div class="satker-recap-foot">
+                        <span id="satkerVisibleCount">Menampilkan {{ number_format($satkerStats->count()) }} satker</span>
+                        <span><i class="ri-information-line"></i> Satker tanpa ulasan tetap ditampilkan.</span>
                     </div>
                 </div>
             </div>
@@ -871,32 +908,43 @@
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
         }
 
-        .satker-item {
-            padding: 18px 0;
-            border-bottom: 1px dashed #e2e8f0;
-            transition: var(--transition);
-        }
-
-        .satker-item:hover {
-            background-color: #f8fafc;
-            border-radius: 12px;
-            padding-left: 12px;
-            padding-right: 12px;
-            margin-left: -12px;
-            margin-right: -12px;
-            border-bottom-color: transparent;
-        }
-
-        .satker-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .satker-item:last-child:hover {
-            border-bottom-color: transparent;
-            padding-bottom: 12px;
-            margin-bottom: -12px;
-        }
+        .satker-recap-card { margin-bottom: 32px; border-radius: 8px; }
+        .satker-recap-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 20px; }
+        .satker-recap-head h3 { gap: 8px; font-size: 18px; }
+        .satker-recap-head h3 i { color: var(--brand); }
+        .satker-recap-head p { margin: 5px 0 0; color: var(--text-muted); font-size: 12px; }
+        .satker-recap-actions { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
+        .satker-search { width: 220px; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 11px; border: 1px solid #dce3ec; border-radius: 7px; color: #94a3b8; background: #fff; }
+        .satker-search:focus-within { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, .08); }
+        .satker-search input { width: 100%; border: 0; outline: 0; color: #1e293b; font-size: 12px; }
+        .satker-pdf-button { height: 40px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; border-radius: 7px; background: #b91c1c; color: #fff; text-decoration: none; font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .satker-pdf-button:hover { background: #991b1b; color: #fff; }
+        .satker-recap-table-wrap { max-height: 590px; overflow: auto; }
+        .satker-recap-table { width: 100%; min-width: 900px; border-collapse: collapse; }
+        .satker-recap-table thead { position: sticky; top: 0; z-index: 2; }
+        .satker-recap-table th { padding: 10px 14px; border-top: 1px solid #edf1f5; border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; text-align: left; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .satker-recap-table th:not(:first-child) { text-align: center; }
+        .satker-recap-table td { padding: 11px 14px; border-bottom: 1px solid #f0f3f7; color: #334155; text-align: center; font-size: 12px; }
+        .satker-recap-table tbody tr:hover { background: #fbfcfe; }
+        .satker-name-cell { display: flex; align-items: center; gap: 10px; min-width: 230px; text-align: left; }
+        .satker-building-icon { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; border-radius: 7px; background: #fef2f2; color: #b91c1c; font-size: 17px; }
+        .satker-name-cell div { display: grid; gap: 1px; }
+        .satker-name-cell strong { color: #182235; font-size: 12px; }
+        .satker-name-cell small { color: #94a3b8; font-size: 10px; }
+        .table-number { color: #1e293b; font-size: 13px; }
+        .not-received-value { min-width: 28px; display: inline-flex; justify-content: center; padding: 4px 7px; border-radius: 6px; background: #f1f5f9; color: #64748b; font-weight: 800; }
+        .not-received-value.has-report { background: #fff7ed; color: #c2410c; }
+        .satker-rating { color: #b45309; font-weight: 800; white-space: nowrap; }
+        .no-rating { color: #94a3b8; font-size: 10px; white-space: nowrap; }
+        .satker-action-cell { text-align: right !important; }
+        .satker-detail-button { display: inline-flex; align-items: center; gap: 5px; color: #b91c1c; text-decoration: none; font-size: 11px; font-weight: 800; white-space: nowrap; }
+        .satker-detail-button:hover { color: #7f1d1d; }
+        .satker-search-empty { padding: 38px 20px; display: grid; justify-items: center; gap: 5px; color: #94a3b8; }
+        .satker-search-empty[hidden] { display: none; }
+        .satker-search-empty i { font-size: 28px; }
+        .satker-search-empty strong { color: #475569; }
+        .satker-search-empty span { font-size: 11px; }
+        .satker-recap-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-top: 1px solid #edf1f5; background: #fbfcfe; color: #7c899b; font-size: 10px; }
 
         /* Spotlights */
         .spotlight-grid {
@@ -1200,6 +1248,26 @@
             .page-header h1 {
                 font-size: 2rem;
             }
+
+            .satker-recap-head,
+            .satker-recap-foot {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .satker-recap-actions {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .satker-search {
+                width: 100%;
+            }
+
+            .satker-pdf-button {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 @endsection
@@ -1218,6 +1286,27 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            const satkerSearch = document.getElementById('satkerRecapSearch');
+            const satkerRows = Array.from(document.querySelectorAll('[data-satker-row]'));
+            const satkerEmpty = document.getElementById('satkerSearchEmpty');
+            const satkerVisibleCount = document.getElementById('satkerVisibleCount');
+
+            if (satkerSearch && satkerRows.length) {
+                satkerSearch.addEventListener('input', () => {
+                    const query = satkerSearch.value.toLocaleLowerCase('id').trim();
+                    let visible = 0;
+
+                    satkerRows.forEach((row) => {
+                        const matches = query === '' || (row.dataset.search || '').includes(query);
+                        row.hidden = !matches;
+                        if (matches) visible += 1;
+                    });
+
+                    if (satkerEmpty) satkerEmpty.hidden = visible !== 0;
+                    if (satkerVisibleCount) satkerVisibleCount.textContent = `Menampilkan ${visible} satker`;
+                });
+            }
+
             const comparisonForm = document.getElementById('comparisonFilterForm');
             if (!comparisonForm) {
                 return;

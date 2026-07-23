@@ -96,6 +96,20 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
     Route::delete('/users/{user}', [\App\Http\Controllers\UserController::class, 'destroy'])->name('users.destroy');
     Route::post('/users/{user}/toggle-status', [\App\Http\Controllers\Admin\UserStatusController::class, 'toggle'])->name('users.toggle-status');
 
+    Route::middleware('role:superadmin')->prefix('students')->name('students.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\StudentBatchController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\StudentBatchController::class, 'store'])->name('store');
+        Route::get('/{studentBatch}/export', [\App\Http\Controllers\Admin\StudentBatchController::class, 'export'])->name('export');
+        Route::post('/{studentBatch}/add-students', [\App\Http\Controllers\Admin\StudentBatchController::class, 'addStudents'])->name('add-students');
+        Route::post('/{studentBatch}/size-distribution', [\App\Http\Controllers\Admin\StudentBatchController::class, 'applySizeDistribution'])->name('size-distribution');
+        Route::post('/{studentBatch}/import', [\App\Http\Controllers\Admin\StudentBatchController::class, 'import'])->name('import');
+        Route::get('/{studentBatch}/import-preview', [\App\Http\Controllers\Admin\StudentBatchController::class, 'importPreview'])->name('import-preview');
+        Route::post('/{studentBatch}/import-confirm', [\App\Http\Controllers\Admin\StudentBatchController::class, 'importConfirm'])->name('import-confirm');
+        Route::post('/{studentBatch}/import-cancel', [\App\Http\Controllers\Admin\StudentBatchController::class, 'importCancel'])->name('import-cancel');
+        Route::patch('/{studentBatch}/archive', [\App\Http\Controllers\Admin\StudentBatchController::class, 'toggleArchive'])->name('archive');
+        Route::get('/{studentBatch}', [\App\Http\Controllers\Admin\StudentBatchController::class, 'show'])->name('show');
+    });
+
     // Personnel Management
     Route::get('/personnel/template', [\App\Http\Controllers\Admin\PersonnelController::class, 'downloadTemplate'])->name('personnel.template');
     Route::post('/personnel/import', [\App\Http\Controllers\Admin\PersonnelController::class, 'import'])->name('personnel.import');
@@ -262,6 +276,9 @@ Route::middleware(['auth', 'read.only', 'role:superadmin|kabak_bekum'])->prefix(
     Route::post('/settings/next-year', [\App\Http\Controllers\SettingsController::class, 'nextYear'])->name('settings.next-year');
 
     Route::get('/statistik', [StatisticsController::class, 'index'])->name('statistics');
+    Route::get('/statistik/satker/export-pdf', [StatisticsController::class, 'exportSatkerSummaryPdf'])->name('statistics.satkers.export-pdf');
+    Route::get('/statistik/satker/{satker}/export-pdf', [StatisticsController::class, 'exportSatkerDetailPdf'])->name('statistics.satkers.detail.export-pdf');
+    Route::get('/statistik/satker/{satker}', [StatisticsController::class, 'showSatker'])->name('statistics.satkers.show');
     Route::get('/testimonials/export-pdf', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'exportPdf'])->name('testimonials.export-pdf');
     Route::get('/testimonials/export-word', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'exportWord'])->name('testimonials.export-word');
     Route::get('/testimonials', [\App\Http\Controllers\Superadmin\TestimonialController::class, 'index'])->name('testimonials.index');

@@ -20,10 +20,13 @@ class Personnel extends Model
 
     protected $fillable = [
         'user_id',
+        'student_batch_id',
+        'student_code',
         'nrp',
         'full_name',
         'gender',
         'personnel_type',
+        'procurement_group',
         'rank_id',
         'golongan',
         'jabatan',
@@ -60,6 +63,16 @@ class Personnel extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function studentBatch(): BelongsTo
+    {
+        return $this->belongsTo(StudentBatch::class);
+    }
+
+    public function isStudentRecord(): bool
+    {
+        return $this->student_batch_id !== null;
     }
 
     public function rank(): BelongsTo
