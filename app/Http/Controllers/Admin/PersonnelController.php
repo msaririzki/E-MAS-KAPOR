@@ -1041,7 +1041,17 @@ class PersonnelController extends Controller
             ? PersonnelSheetExport::MODE_MONITORING
             : PersonnelSheetExport::MODE_UPDATE;
 
-        return Excel::download(new PersonnelExport($satkerIds, $satkerName, $personnelIds, $signatorySettings, $mode), $fileName);
+        return Excel::download(
+            new PersonnelExport(
+                $satkerIds,
+                $satkerName,
+                $personnelIds,
+                $signatorySettings,
+                $mode,
+                $user->hasRole('superadmin'),
+            ),
+            $fileName,
+        );
     }
 
     /**

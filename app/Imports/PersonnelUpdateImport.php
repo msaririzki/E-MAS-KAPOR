@@ -130,11 +130,12 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
             $nrp = User::normalizeLoginIdentifier($row[4] ?? '');
 
             $usesMonitoringLayout = $this->usesMonitoringLayout($row);
+            $usesPhoneColumn = ! $usesMonitoringLayout && array_key_exists(10, $row);
             $jabatan = trim($row[5] ?? '');
             $bagian = trim($row[6] ?? '');
             $genderRaw = strtoupper(trim($row[7] ?? ''));
             $religion = $usesMonitoringLayout ? '' : trim($row[8] ?? '');
-            $keterangan = trim($row[$usesMonitoringLayout ? 17 : 9] ?? '');
+            $keterangan = trim($row[$usesMonitoringLayout ? 17 : ($usesPhoneColumn ? 10 : 9)] ?? '');
             $keterangan2 = $usesMonitoringLayout ? trim($row[18] ?? '') : '';
             $keterangan3 = $usesMonitoringLayout ? trim($row[19] ?? '') : '';
             $keterangan4 = $usesMonitoringLayout ? trim($row[20] ?? '') : '';
@@ -278,17 +279,12 @@ class PersonnelUpdateImport implements SkipsUnknownSheets, ToCollection, WithMul
 
     /**
      * Older exports include size columns I-Q and place keterangan in R.
-     * The newer admin-satker update template has only A-J and places agama/keterangan in I/J.
+     * The newer update templates place agama in I and keterangan in J or K
+     * when the superadmin-only phone column is present.
      */
     private function usesMonitoringLayout(array $row): bool
     {
-        foreach ([10, 11, 12, 13, 14, 15, 16, 17] as $index) {
-            if (array_key_exists($index, $row)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_key_exists(17, $row);
     }
 
     private function extractSizes(array $row, string $gender): array
