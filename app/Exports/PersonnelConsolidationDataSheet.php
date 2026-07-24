@@ -16,7 +16,6 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-use PhpOffice\PhpSpreadsheet\Style\Protection;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PersonnelConsolidationDataSheet implements FromCollection, WithColumnFormatting, WithColumnWidths, WithEvents, WithHeadings, WithTitle
@@ -75,8 +74,6 @@ class PersonnelConsolidationDataSheet implements FromCollection, WithColumnForma
                 'KETERANGAN',
                 'KODE DATA (JANGAN DIUBAH)',
             ],
-            array_fill(0, 11, ' '),
-            array_fill(0, 11, ' '),
         ];
     }
 
@@ -111,20 +108,19 @@ class PersonnelConsolidationDataSheet implements FromCollection, WithColumnForma
             AfterSheet::class => function (AfterSheet $event): void {
                 $sheet = $event->sheet->getDelegate();
                 // Keep one editable blank row when a sheet has no personnel yet.
-                $lastRow = max(11, $sheet->getHighestDataRow());
+                $lastRow = max(9, $sheet->getHighestDataRow());
 
                 $this->styleHeader($sheet);
-                $sheet->freezePane('A11');
-                $sheet->getRowDimension(8)->setRowHeight(20);
-                $sheet->getRowDimension(9)->setRowHeight(20);
-                $sheet->getRowDimension(10)->setRowHeight(24);
+                $sheet->freezePane('A9');
+                $sheet->setAutoFilter("A8:K{$lastRow}");
+                $sheet->getRowDimension(8)->setRowHeight(42);
                 $sheet->getStyle("A8:K{$lastRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getStyle("A11:K{$lastRow}")->getAlignment()->setWrapText(true);
-                $sheet->getStyle("A11:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $sheet->getStyle("H11:I{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("A9:K{$lastRow}")->getAlignment()->setWrapText(true);
+                $sheet->getStyle("A9:A{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("H9:I{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                if ($lastRow >= 11) {
-                    $sheet->getStyle("A11:K{$lastRow}")->applyFromArray([
+                if ($lastRow >= 9) {
+                    $sheet->getStyle("A9:K{$lastRow}")->applyFromArray([
                         'borders' => [
                             'allBorders' => [
                                 'borderStyle' => Border::BORDER_THIN,
@@ -137,19 +133,12 @@ class PersonnelConsolidationDataSheet implements FromCollection, WithColumnForma
                         ],
                     ]);
 
-                    for ($row = 11; $row <= $lastRow; $row++) {
+                    for ($row = 9; $row <= $lastRow; $row++) {
                         $nrp = trim((string) $sheet->getCell("E{$row}")->getValue());
                         $sheet->getCell("E{$row}")->setValueExplicit($nrp, DataType::TYPE_STRING);
                         $code = trim((string) $sheet->getCell("K{$row}")->getValue());
                         $sheet->getCell("K{$row}")->setValueExplicit($code, DataType::TYPE_STRING);
                     }
-
-                    $sheet->getStyle("A11:K{$lastRow}")
-                        ->getProtection()
-                        ->setLocked(Protection::PROTECTION_PROTECTED);
-                    $sheet->getStyle("A11:J{$lastRow}")
-                        ->getProtection()
-                        ->setLocked(Protection::PROTECTION_UNPROTECTED);
                 }
 
                 $sheet->getStyle("K8:K{$lastRow}")
@@ -161,13 +150,6 @@ class PersonnelConsolidationDataSheet implements FromCollection, WithColumnForma
                 $sheet->getComment('K8')->getText()->createTextRun(
                     'Kode ini dipakai untuk mengenali personel walaupun baris dipindah atau diurutkan. Jangan diubah atau dihapus.'
                 );
-
-                $sheet->getProtection()->setSheet(true);
-                $sheet->getProtection()->setSort(false);
-                $sheet->getProtection()->setInsertRows(false);
-                $sheet->getProtection()->setDeleteRows(false);
-                $sheet->getProtection()->setFormatCells(false);
-                $sheet->getProtection()->setPassword('EMAS-KAPOR');
             },
         ];
     }
@@ -185,11 +167,7 @@ class PersonnelConsolidationDataSheet implements FromCollection, WithColumnForma
         $sheet->getStyle('A5:A6')->getFont()->setBold(true)->setSize(12);
         $sheet->getStyle('A7')->getFont()->setItalic(true)->getColor()->setARGB('64748B');
 
-        foreach (range('A', 'K') as $column) {
-            $sheet->mergeCells($column.'8:'.$column.'10');
-        }
-
-        $sheet->getStyle('A8:K10')->applyFromArray([
+        $sheet->getStyle('A8:K8')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['argb' => '111827'],

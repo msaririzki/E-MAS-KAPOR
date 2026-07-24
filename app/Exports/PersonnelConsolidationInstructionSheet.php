@@ -32,7 +32,7 @@ class PersonnelConsolidationInstructionSheet implements FromCollection, ShouldAu
             ['Tahun Anggaran', $this->year],
             [''],
             ['1', 'Bagikan data kepada unit bawahan dan gabungkan kembali dalam satu file.'],
-            ['2', 'Baris boleh dipindah, disalin, dan diurutkan berdasarkan BAG/FUNGSI.'],
+            ['2', 'Filter pada judul kolom sudah aktif. Baris boleh dipindah, disalin, dan diurutkan berdasarkan BAG/FUNGSI.'],
             ['3', 'Jangan mengubah KODE DATA. Jika kode hilang, sistem masih mencoba mencocokkan NRP/NIP.'],
             ['4', 'Tambahkan personel baru di baris bawah. KODE DATA untuk personel baru dikosongkan.'],
             ['5', 'NRP/NIP ganda atau milik satker lain tidak langsung disimpan dan akan ditampilkan untuk diperiksa.'],

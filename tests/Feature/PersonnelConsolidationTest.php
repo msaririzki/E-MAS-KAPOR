@@ -75,10 +75,12 @@ class PersonnelConsolidationTest extends TestCase
             $sheet = IOFactory::load($path)->getSheetByName('Data Polri');
             $this->assertSame('KETERANGAN', $sheet->getCell('J8')->getValue());
             $this->assertSame('KODE DATA (JANGAN DIUBAH)', $sheet->getCell('K8')->getValue());
-            $this->assertSame($personnel->sync_token, $sheet->getCell('K11')->getValue());
-            $this->assertSame('90010001', $sheet->getCell('E11')->getValue());
+            $this->assertSame($personnel->sync_token, $sheet->getCell('K9')->getValue());
+            $this->assertSame('90010001', $sheet->getCell('E9')->getValue());
             $this->assertSame('K', $sheet->getHighestColumn());
             $this->assertNotNull($sheet->getComment('K8')->getText()->getPlainText());
+            $this->assertSame('A8:K9', $sheet->getAutoFilter()->getRange());
+            $this->assertFalse((bool) $sheet->getProtection()->getSheet());
             $this->assertNotNull(IOFactory::load($path)->getSheetByName('Petunjuk'));
         } finally {
             @unlink($path);
@@ -120,7 +122,7 @@ class PersonnelConsolidationTest extends TestCase
 
         try {
             $spreadsheet = IOFactory::load($path);
-            $spreadsheet->getSheetByName('Data Polri')->setCellValue('J11', 'STAF BARU');
+            $spreadsheet->getSheetByName('Data Polri')->setCellValue('J9', 'STAF BARU');
             IOFactory::createWriter($spreadsheet, 'Xlsx')->save($path);
             $preview = app(PersonnelConsolidationService::class)
                 ->buildPreview($path, $this->satker, 'simple-update.xlsx');
