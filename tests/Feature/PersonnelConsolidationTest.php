@@ -102,6 +102,40 @@ class PersonnelConsolidationTest extends TestCase
         $this->assertSame('15.5', $preview['rows'][0]['data']['sizes']['kemeja']);
     }
 
+    public function test_round_trip_export_preserves_long_nip_as_text(): void
+    {
+        $pnsRank = Rank::create([
+            'name' => 'Penata',
+            'category' => 'PNS',
+            'sort_order' => 20,
+        ]);
+        $personnel = $this->createPersonnel(
+            $this->satker,
+            '197004041992032005',
+            'NI NYOMAN SANTRINI',
+        );
+        $personnel->update([
+            'rank_id' => $pnsRank->id,
+            'personnel_type' => 'PNS',
+            'gender' => 'P',
+        ]);
+
+        $binary = Excel::raw(new PersonnelConsolidationExport($this->satker), ExcelFormat::XLSX);
+        $path = tempnam(sys_get_temp_dir(), 'kapor-long-nip-').'.xlsx';
+        file_put_contents($path, $binary);
+
+        try {
+            $preview = app(PersonnelConsolidationService::class)
+                ->buildPreview($path, $this->satker, 'long-nip.xlsx');
+        } finally {
+            @unlink($path);
+        }
+
+        $this->assertSame(0, $preview['stats']['error']);
+        $this->assertSame(1, $preview['stats']['no_change']);
+        $this->assertSame('197004041992032005', $preview['rows'][0]['nrp']);
+    }
+
     public function test_missing_system_codes_are_filled_before_download(): void
     {
         $personnel = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');

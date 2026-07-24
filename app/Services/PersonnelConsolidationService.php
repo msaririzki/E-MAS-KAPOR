@@ -590,8 +590,8 @@ class PersonnelConsolidationService
         $nrpCellRawValue = $sheet->getCell([5, $rowNumber])->getValue();
         $nrpRaw = $value(5);
         $nrp = User::normalizeLoginIdentifier($nrpRaw);
-        $nrpWasUnsafeNumeric = is_numeric($nrpCellRawValue)
-            && (float) $nrpCellRawValue >= 1_000_000_000_000_000;
+        $nrpWasUnsafeNumeric = (is_int($nrpCellRawValue) || is_float($nrpCellRawValue))
+            && abs((float) $nrpCellRawValue) >= 1_000_000_000_000_000;
 
         if ($name === '' && $nrp === '') {
             return null;
