@@ -50,9 +50,14 @@ class PersonnelConsolidationInstructionSheet implements FromCollection, ShouldAu
                 $sheet->getStyle('A1:B1')->applyFromArray([
                     'font' => ['bold' => true, 'size' => 16, 'color' => ['argb' => 'FFFFFF']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => '991B1B']],
-                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_CENTER,
+                        'vertical' => Alignment::VERTICAL_CENTER,
+                    ],
                 ]);
+                $sheet->getRowDimension(1)->setRowHeight(30);
                 $sheet->getStyle('A2:A3')->getFont()->setBold(true);
+                $sheet->getStyle('B2:B3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
                 $sheet->getStyle('A5:A11')->getFont()->setBold(true)->getColor()->setARGB('991B1B');
                 $sheet->getStyle('B5:B11')->getAlignment()->setWrapText(true);
                 $sheet->getColumnDimension('A')->setWidth(20);

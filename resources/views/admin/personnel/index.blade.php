@@ -31,7 +31,7 @@
                 </button>
                 <div class="dropdown-menu personnel-dropdown-menu personnel-dropdown-menu-wide">
 
-                    @if(auth()->user()->hasAnyRole(['superadmin', 'admin', 'admin_satker']))
+                    @if(auth()->user()->hasAnyRole(['superadmin', 'admin']))
                     <div class="dropdown-section-label">KELOLA DATA SATKER</div>
                     <a href="{{ route('admin.personnel.consolidation.index') }}" class="dropdown-item personnel-dropdown-item">
                         <i class="ri-file-shield-2-line" style="color: #B91C1C; font-size: 16px;"></i>
@@ -49,11 +49,11 @@
                     </div>
                     @if(auth()->user()->hasRole('admin_satker'))
                     {{-- Admin Satker: langsung export tanpa modal --}}
-                    <a href="{{ route('admin.personnel.export-personnel') }}" class="dropdown-item personnel-dropdown-item">
+                    <a href="{{ route('admin.personnel.consolidation.download') }}" class="dropdown-item personnel-dropdown-item">
                         <i class="ri-file-excel-2-line" style="color: #059669; font-size: 16px;"></i>
                         <div>
                             <div style="font-weight: 600; color: #111827; font-size: 13px;">Unduh Data Personel</div>
-                            <div style="font-size: 11px; color: #6B7280;">Download Excel untuk diedit &amp; update</div>
+                            <div style="font-size: 11px; color: #6B7280;">File Excel berkode untuk diperbarui</div>
                         </div>
                     </a>
                     @else
@@ -1059,20 +1059,24 @@
     <div class="modal-content" style="max-width: 560px;">
         <div class="modal-header">
             <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">
-                <i class="ri-refresh-line" style="color: #3B82F6;"></i> Unggah Pembaruan Data Personel
+                <i class="ri-refresh-line" style="color: #3B82F6;"></i> Unggah Pembaruan Data
             </h3>
             <button class="modal-close" onclick="closeModal('importUpdateModal')">
                 <i class="ri-close-line"></i>
             </button>
         </div>
-        <form action="{{ route('admin.personnel.import-update') }}" method="POST" enctype="multipart/form-data" onsubmit="showGlobalLoader('Sedang membaca file Excel. Harap tunggu sebentar...')">
+        <form action="{{ auth()->user()->hasRole('admin_satker') ? route('admin.personnel.consolidation.import') : route('admin.personnel.import-update') }}" method="POST" enctype="multipart/form-data" onsubmit="showGlobalLoader('Sedang membaca dan memeriksa file Excel. Harap tunggu sebentar...')">
             @csrf
             <div class="modal-body" style="padding: 24px;">
 
                 <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; display: flex; gap: 10px;">
                     <i class="ri-information-fill" style="color: #3B82F6; font-size: 18px; flex-shrink: 0;"></i>
                     <div style="font-size: 13px; color: #1E3A5F; line-height: 1.5;">
-                        <strong>Mode Update:</strong> Unggah file Excel hasil unduhan yang sudah diedit. Data akan dicocokkan melalui <strong>NRP/NIP</strong> — hanya data yang sudah ada di database yang akan diperbarui. Data baru tidak akan ditambahkan.
+                        @if(auth()->user()->hasRole('admin_satker'))
+                        Unggah file dari menu <strong>Unduh Data Personel</strong> setelah selesai diperbarui. Sistem memeriksa kode data, NRP/NIP, duplikasi, dan perpindahan satker sebelum menampilkan pratinjau.
+                        @else
+                        <strong>Mode Update:</strong> Unggah file Excel hasil unduhan yang sudah diedit. Data akan dicocokkan melalui <strong>NRP/NIP</strong>; hanya data yang sudah ada di database yang akan diperbarui.
+                        @endif
                     </div>
                 </div>
 
@@ -1104,9 +1108,11 @@
 
                 <div class="form-group">
                     <label style="font-weight: 700; color: #374151;">PILIH FILE EXCEL HASIL EDIT <span style="color: #EF4444;">*</span></label>
-                    <input type="file" name="file" accept=".xlsx,.xls,.csv" required
+                    <input type="file" name="file" accept="{{ auth()->user()->hasRole('admin_satker') ? '.xlsx,.xls' : '.xlsx,.xls,.csv' }}" required
                            class="form-input" style="padding: 12px; border: 2px dashed #BFDBFE; background: #F0F9FF; margin-top: 8px;">
-                    <p style="font-size: 12px; color: #6B7280; margin-top: 8px;">Format yang didukung: .xlsx, .xls, atau .csv</p>
+                    <p style="font-size: 12px; color: #6B7280; margin-top: 8px;">
+                        Format yang didukung: {{ auth()->user()->hasRole('admin_satker') ? '.xlsx atau .xls' : '.xlsx, .xls, atau .csv' }}
+                    </p>
                 </div>
             </div>
             <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">

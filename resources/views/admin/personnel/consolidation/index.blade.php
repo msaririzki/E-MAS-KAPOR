@@ -54,7 +54,7 @@
             <span class="section-icon download"><i class="ri-file-excel-2-line"></i></span>
             <div>
                 <h2>File Induk Personel</h2>
-                <p>Berisi data aktif, ukuran kapor, dan kode pencocokan.</p>
+                <p>Berisi data aktif, informasi kedinasan, dan kode pencocokan.</p>
             </div>
         </div>
 

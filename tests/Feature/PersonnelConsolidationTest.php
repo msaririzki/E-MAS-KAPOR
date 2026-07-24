@@ -60,7 +60,7 @@ class PersonnelConsolidationTest extends TestCase
         $this->adminSatker->assignRole('admin_satker');
     }
 
-    public function test_export_contains_stable_system_code_and_full_personnel_columns(): void
+    public function test_export_uses_simple_personnel_columns_with_stable_system_code(): void
     {
         $personnel = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');
 
@@ -73,16 +73,19 @@ class PersonnelConsolidationTest extends TestCase
 
         try {
             $sheet = IOFactory::load($path)->getSheetByName('Data Polri');
-            $this->assertSame('KODE DATA (JANGAN DIUBAH)', $sheet->getCell('T8')->getValue());
-            $this->assertSame($personnel->sync_token, $sheet->getCell('T9')->getValue());
-            $this->assertSame('90010001', $sheet->getCell('E9')->getValue());
-            $this->assertSame('TUTUP KEPALA', $sheet->getCell('J8')->getValue());
+            $this->assertSame('KETERANGAN', $sheet->getCell('J8')->getValue());
+            $this->assertSame('KODE DATA (JANGAN DIUBAH)', $sheet->getCell('K8')->getValue());
+            $this->assertSame($personnel->sync_token, $sheet->getCell('K11')->getValue());
+            $this->assertSame('90010001', $sheet->getCell('E11')->getValue());
+            $this->assertSame('K', $sheet->getHighestColumn());
+            $this->assertNotNull($sheet->getComment('K8')->getText()->getPlainText());
+            $this->assertNotNull(IOFactory::load($path)->getSheetByName('Petunjuk'));
         } finally {
             @unlink($path);
         }
     }
 
-    public function test_round_trip_export_does_not_change_decimal_sizes_or_create_false_updates(): void
+    public function test_round_trip_simple_export_omits_sizes_without_false_updates(): void
     {
         $personnel = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');
         $personnel->update(['kapor_sizes' => ['topi' => '57', 'kemeja' => '15.5']]);
@@ -99,7 +102,39 @@ class PersonnelConsolidationTest extends TestCase
 
         $this->assertSame(0, $preview['stats']['update']);
         $this->assertSame(1, $preview['stats']['no_change']);
-        $this->assertSame('15.5', $preview['rows'][0]['data']['sizes']['kemeja']);
+        $this->assertFalse($preview['rows'][0]['data']['has_sizes']);
+        $this->assertSame('', $preview['rows'][0]['data']['sizes']['kemeja']);
+        $this->assertSame('15.5', $personnel->fresh()->kapor_sizes['kemeja']);
+    }
+
+    public function test_simple_export_update_preserves_existing_sizes(): void
+    {
+        $personnel = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');
+        $personnel->update([
+            'keterangan' => 'STAF LAMA',
+            'kapor_sizes' => ['topi' => '57', 'kemeja' => '15.5'],
+        ]);
+        $binary = Excel::raw(new PersonnelConsolidationExport($this->satker), ExcelFormat::XLSX);
+        $path = tempnam(sys_get_temp_dir(), 'kapor-simple-update-').'.xlsx';
+        file_put_contents($path, $binary);
+
+        try {
+            $spreadsheet = IOFactory::load($path);
+            $spreadsheet->getSheetByName('Data Polri')->setCellValue('J11', 'STAF BARU');
+            IOFactory::createWriter($spreadsheet, 'Xlsx')->save($path);
+            $preview = app(PersonnelConsolidationService::class)
+                ->buildPreview($path, $this->satker, 'simple-update.xlsx');
+        } finally {
+            @unlink($path);
+        }
+
+        $this->assertSame(1, $preview['stats']['update']);
+        app(PersonnelConsolidationService::class)->applyPreview($preview, [], $this->adminSatker);
+
+        $personnel->refresh();
+        $this->assertSame('STAF BARU', $personnel->keterangan);
+        $this->assertSame('57', $personnel->kapor_sizes['topi']);
+        $this->assertSame('15.5', $personnel->kapor_sizes['kemeja']);
     }
 
     public function test_round_trip_export_preserves_long_nip_as_text(): void
@@ -144,6 +179,20 @@ class PersonnelConsolidationTest extends TestCase
         app(PersonnelConsolidationService::class)->ensureSyncTokens($this->satker->id);
 
         $this->assertNotNull($personnel->fresh()->sync_token);
+    }
+
+    public function test_admin_satker_sees_only_simple_download_and_upload_entry_points(): void
+    {
+        $response = $this->actingAs($this->adminSatker)
+            ->get(route('admin.personnel.index'));
+
+        $response->assertOk();
+        $response->assertSee('Unduh Data Personel');
+        $response->assertSee('Unggah Pembaruan Data');
+        $response->assertSee(route('admin.personnel.consolidation.download'), false);
+        $response->assertSee(route('admin.personnel.consolidation.import'), false);
+        $response->assertDontSee('Konsolidasi Personel Satker');
+        $response->assertDontSee(route('admin.personnel.import-update'), false);
     }
 
     public function test_reordered_legacy_file_without_system_code_updates_by_nrp(): void

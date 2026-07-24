@@ -568,10 +568,14 @@ class PersonnelConsolidationService
             }
 
             $hasSystemCode = collect($values)->contains(fn (string $value) => str_contains($value, 'KODE DATA'));
+            $systemCodeColumn = collect($values)
+                ->search(fn (string $value) => str_contains($value, 'KODE DATA'));
 
             return [
                 'row' => $row,
-                'layout' => $hasSystemCode ? 'consolidation' : ($highestColumnIndex >= 18 ? 'monitoring' : 'legacy'),
+                'layout' => $hasSystemCode
+                    ? (((int) $systemCodeColumn <= 11) ? 'consolidation_simple' : 'consolidation')
+                    : ($highestColumnIndex >= 18 ? 'monitoring' : 'legacy'),
             ];
         }
 
@@ -601,7 +605,7 @@ class PersonnelConsolidationService
         }
 
         $layout = $header['layout'];
-        $hasSizes = $layout !== 'legacy';
+        $hasSizes = in_array($layout, ['consolidation', 'monitoring'], true);
         $genderRaw = Str::upper($value(8));
         $gender = match ($genderRaw) {
             'W', 'WANITA', 'PEREMPUAN' => 'P',
@@ -622,7 +626,11 @@ class PersonnelConsolidationService
             'monitoring' => $value(18),
             default => $value(10),
         };
-        $systemCode = $layout === 'consolidation' ? Str::lower($value(20)) : '';
+        $systemCode = match ($layout) {
+            'consolidation' => Str::lower($value(20)),
+            'consolidation_simple' => Str::lower($value(11)),
+            default => '',
+        };
 
         $errors = [];
         if ($name === '') {
