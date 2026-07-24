@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Personnel extends Model
 {
@@ -19,6 +20,7 @@ class Personnel extends Model
     ];
 
     protected $fillable = [
+        'sync_token',
         'user_id',
         'student_batch_id',
         'student_code',
@@ -56,6 +58,13 @@ class Personnel extends Model
             'nrp_issue_resolved_at' => 'datetime',
             'kapor_sizes' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Personnel $personnel): void {
+            $personnel->sync_token ??= (string) Str::uuid();
+        });
     }
 
     // ── Relationships ─────────────────────────────────────────
@@ -103,6 +112,11 @@ class Personnel extends Model
     public function sppmAssignments(): HasMany
     {
         return $this->hasMany(BudgetPackageSppmAssignment::class);
+    }
+
+    public function transferRequests(): HasMany
+    {
+        return $this->hasMany(PersonnelTransferRequest::class);
     }
 
     public function getWhatsappLinkAttribute(): ?string

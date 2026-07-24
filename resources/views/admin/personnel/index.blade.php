@@ -31,6 +31,18 @@
                 </button>
                 <div class="dropdown-menu personnel-dropdown-menu personnel-dropdown-menu-wide">
 
+                    @if(auth()->user()->hasAnyRole(['superadmin', 'admin', 'admin_satker']))
+                    <div class="dropdown-section-label">KELOLA DATA SATKER</div>
+                    <a href="{{ route('admin.personnel.consolidation.index') }}" class="dropdown-item personnel-dropdown-item">
+                        <i class="ri-file-shield-2-line" style="color: #B91C1C; font-size: 16px;"></i>
+                        <div>
+                            <div style="font-weight: 700; color: #111827; font-size: 13px;">Konsolidasi Personel Satker</div>
+                            <div style="font-size: 11px; color: #6B7280;">Gabungkan, periksa, dan simpan koreksi Excel</div>
+                        </div>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    @endif
+
                     {{-- Export Personel (Update) --}}
                     <div class="dropdown-section-label">
                         UNDUH
@@ -124,6 +136,11 @@
                     </div>
                 </button>
                 <div class="dropdown-menu personnel-dropdown-menu">
+                    <a href="{{ route('admin.personnel.transfer-requests.index') }}" class="dropdown-item personnel-dropdown-item">
+                        <i class="ri-arrow-left-right-line" style="color: #7C3AED; font-size: 16px;"></i>
+                        <div style="font-weight: 600; color:#111827; font-size:13px;">Pemeriksaan Mutasi</div>
+                    </a>
+                    <div class="dropdown-divider"></div>
                     <button class="dropdown-item personnel-dropdown-item" onclick="openModal('printSatkerModal')">
                         <i class="ri-printer-line" style="color: #059669; font-size: 16px;"></i>
                         <div style="font-weight: 600; color: #111827; font-size: 13px;">Cetak Satker (PDF)</div>
