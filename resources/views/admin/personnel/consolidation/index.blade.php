@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Konsolidasi Personel')
-@section('breadcrumb', 'Konsolidasi Personel')
+@section('title', 'Pembaruan Data Personel')
+@section('breadcrumb', 'Pembaruan Data Personel')
 
 @section('content')
 <div class="consolidation-header">
@@ -11,8 +11,8 @@
         </a>
         <div>
             <span class="page-eyebrow">DATA PERSONEL SATKER</span>
-            <h1>Konsolidasi Personel</h1>
-            <p>Gabungkan hasil pemeriksaan unit bawahan dalam satu file Excel.</p>
+            <h1>Pembaruan Data Personel</h1>
+            <p>Gabungkan dan periksa perubahan data personel satker dari file Excel.</p>
         </div>
     </div>
 </div>

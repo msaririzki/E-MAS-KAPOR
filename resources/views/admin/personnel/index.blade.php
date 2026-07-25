@@ -36,8 +36,8 @@
                     <a href="{{ route('admin.personnel.consolidation.index') }}" class="dropdown-item personnel-dropdown-item">
                         <i class="ri-file-shield-2-line" style="color: #B91C1C; font-size: 16px;"></i>
                         <div>
-                            <div style="font-weight: 700; color: #111827; font-size: 13px;">Konsolidasi Personel Satker</div>
-                            <div style="font-size: 11px; color: #6B7280;">Gabungkan, periksa, dan simpan koreksi Excel</div>
+                            <div style="font-weight: 700; color: #111827; font-size: 13px;">Pembaruan Data Personel</div>
+                            <div style="font-size: 11px; color: #6B7280;">Gabungkan, periksa, dan simpan perubahan dari Excel</div>
                         </div>
                     </a>
                     <div class="dropdown-divider"></div>

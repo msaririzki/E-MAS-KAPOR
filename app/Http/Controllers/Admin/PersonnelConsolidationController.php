@@ -36,7 +36,7 @@ class PersonnelConsolidationController extends Controller
         $safeName = preg_replace('/[\\/:*?"<>|]/', '_', $satker->name);
 
         AuditLogger::log(
-            'Unduh Konsolidasi Personel',
+            'Unduh Data Personel untuk Pembaruan',
             'Manajemen Personil',
             null,
             null,
@@ -47,7 +47,7 @@ class PersonnelConsolidationController extends Controller
 
         return Excel::download(
             new PersonnelConsolidationExport($satker),
-            'Konsolidasi_Personel_'.$safeName.'_'.now()->format('Ymd').'.xlsx'
+            'Pembaruan_Data_Personel_'.$safeName.'_'.now()->format('Ymd').'.xlsx'
         );
     }
 
@@ -72,7 +72,7 @@ class PersonnelConsolidationController extends Controller
             session([self::SESSION_KEY => $preview]);
 
             AuditLogger::log(
-                'Pratinjau Konsolidasi Personel',
+                'Periksa Pembaruan Data Personel',
                 'Manajemen Personil',
                 null,
                 null,
@@ -102,7 +102,7 @@ class PersonnelConsolidationController extends Controller
         if (! is_array($preview)) {
             return redirect()
                 ->route('admin.personnel.consolidation.index')
-                ->with('error', 'Pratinjau sudah tidak tersedia. Unggah kembali file konsolidasi.');
+                ->with('error', 'Hasil pemeriksaan sudah tidak tersedia. Unggah kembali file pembaruan data.');
         }
         $this->assertPreviewSatkerAccess($request, $preview);
 
@@ -151,7 +151,7 @@ class PersonnelConsolidationController extends Controller
         if (! is_array($preview)) {
             return redirect()
                 ->route('admin.personnel.consolidation.index')
-                ->with('error', 'Pratinjau sudah tidak tersedia. Unggah kembali file konsolidasi.');
+                ->with('error', 'Hasil pemeriksaan sudah tidak tersedia. Unggah kembali file pembaruan data.');
         }
         $this->assertPreviewSatkerAccess($request, $preview);
 
@@ -201,7 +201,7 @@ class PersonnelConsolidationController extends Controller
         if (! is_array($preview)) {
             return redirect()
                 ->route('admin.personnel.consolidation.index')
-                ->with('error', 'Pratinjau sudah tidak tersedia. Unggah kembali file konsolidasi.');
+                ->with('error', 'Hasil pemeriksaan sudah tidak tersedia. Unggah kembali file pembaruan data.');
         }
         $this->assertPreviewSatkerAccess($request, $preview);
 
@@ -232,7 +232,7 @@ class PersonnelConsolidationController extends Controller
         session()->forget(self::SESSION_KEY);
 
         AuditLogger::log(
-            'Simpan Konsolidasi Personel',
+            'Simpan Pembaruan Data Personel',
             'Manajemen Personil',
             null,
             null,
@@ -266,7 +266,7 @@ class PersonnelConsolidationController extends Controller
 
         return redirect()
             ->route('admin.personnel.consolidation.index')
-            ->with('info', 'Pratinjau konsolidasi dibatalkan. Tidak ada data yang diubah.');
+            ->with('info', 'Pemeriksaan pembaruan dibatalkan. Tidak ada data yang diubah.');
     }
 
     private function resolveSatker(Request $request, bool $required = true): ?Satker
