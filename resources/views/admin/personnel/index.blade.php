@@ -730,11 +730,15 @@
                 </a>
 
                 <div class="form-group" style="margin-bottom: 18px;">
+                    @php
+                        $selectedStudentSatkerId = (int) old('satker_id', $defaultStudentSatker?->id);
+                        $selectedStudentSatker = $satkers->firstWhere('id', $selectedStudentSatkerId);
+                    @endphp
                     <label style="font-weight: 700; color: #374151; margin-bottom: 8px; display: block;">SATKER PENEMPATAN <span style="color: #EF4444;">*</span></label>
                     <div class="custom-select-wrapper">
                         <div class="custom-select" onclick="toggleDropdown(this)">
                             <div class="select-trigger">
-                                <span id="student_import_satker_label">Pilih satker tujuan siswa</span>
+                                <span id="student_import_satker_label">{{ $selectedStudentSatker?->name ?? 'Pilih satker tujuan siswa' }}</span>
                                 <i class="ri-arrow-down-s-line"></i>
                             </div>
                             <div class="custom-options">
@@ -743,13 +747,18 @@
                                 </div>
                                 <div class="options-scroll">
                                     @foreach($satkers as $satkerOption)
-                                        <div class="option" data-value="{{ $satkerOption->id }}" data-label="{{ $satkerOption->name }}" onclick="selectSatkerOptionSimple(this, 'student_import')">{{ $satkerOption->name }}</div>
+                                        <div class="option {{ $selectedStudentSatkerId === $satkerOption->id ? 'selected' : '' }}" data-value="{{ $satkerOption->id }}" data-label="{{ $satkerOption->name }}" onclick="selectSatkerOptionSimple(this, 'student_import')">{{ $satkerOption->name }}</div>
                                     @endforeach
                                 </div>
                             </div>
                         </div>
-                        <input type="hidden" name="satker_id" id="student_import_satker_id" value="{{ old('satker_id') }}">
+                        <input type="hidden" name="satker_id" id="student_import_satker_id" value="{{ $selectedStudentSatkerId ?: '' }}">
                     </div>
+                    @if($selectedStudentSatker)
+                        <p style="margin: 7px 0 0; color: #047857; font-size: 12px; font-weight: 700;">
+                            <i class="ri-checkbox-circle-fill"></i> Dipilih otomatis untuk data siswa.
+                        </p>
+                    @endif
                     <p id="studentImportSatkerError" style="display: none; margin: 6px 0 0; color: #B91C1C; font-size: 11px; font-weight: 700;">Pilih satker penempatan terlebih dahulu.</p>
                 </div>
 

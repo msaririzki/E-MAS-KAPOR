@@ -95,6 +95,19 @@ class StudentPersonnelImportTest extends TestCase
         @unlink($path);
     }
 
+    public function test_student_satker_is_selected_automatically_on_personnel_page(): void
+    {
+        $response = $this->actingAs($this->superadmin())
+            ->get(route('admin.personnel.index'));
+
+        $response->assertOk();
+        $response->assertSee(
+            'id="student_import_satker_id" value="'.$this->satker->id.'"',
+            false,
+        );
+        $response->assertSeeText('Dipilih otomatis untuk data siswa.');
+    }
+
     public function test_complete_excel_creates_polri_and_pns_students_without_login_accounts(): void
     {
         $path = $this->filledTemplate([
