@@ -364,6 +364,8 @@ class PersonnelConsolidationTest extends TestCase
         $this->get(route('admin.personnel.consolidation.preview', ['status' => 'error']))
             ->assertOk()
             ->assertSee('Perbaiki di Web')
+            ->assertSee('onclick="openConsolidationFixModal(this)"', false)
+            ->assertSee('data-fix-row=', false)
             ->assertSee('Nama wajib diisi.');
 
         $this->post(route('admin.personnel.consolidation.fix-row'), [

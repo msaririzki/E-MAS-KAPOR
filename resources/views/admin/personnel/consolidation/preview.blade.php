@@ -179,7 +179,12 @@
                                         <div class="message-list error">
                                             @foreach($row['errors'] as $message)<span><i class="ri-close-circle-fill"></i>{{ $message }}</span>@endforeach
                                         </div>
-                                        <button type="button" class="fix-row-button" onclick="openConsolidationFixModal(@json($row))">
+                                        <button
+                                            type="button"
+                                            class="fix-row-button"
+                                            data-fix-row="{{ base64_encode(json_encode($row)) }}"
+                                            onclick="openConsolidationFixModal(this)"
+                                        >
                                             <i class="ri-edit-box-line"></i> Perbaiki di Web
                                         </button>
                                     @elseif($row['warnings'] !== [])
@@ -366,7 +371,8 @@ document.getElementById('consolidationConfirmForm')?.addEventListener('submit', 
     button.querySelector('span').textContent = 'Menyimpan data...';
 });
 
-function openConsolidationFixModal(row) {
+function openConsolidationFixModal(button) {
+    const row = JSON.parse(atob(button.dataset.fixRow));
     const data = row.data || {};
     const modal = document.getElementById('consolidationFixModal');
     document.getElementById('consolidation_fix_sheet').value = row.sheet || '';

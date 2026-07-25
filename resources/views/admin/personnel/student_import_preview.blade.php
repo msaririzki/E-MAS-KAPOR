@@ -195,7 +195,12 @@
                                         <span><i class="ri-close-circle-fill"></i>{{ $error }}</span>
                                     @endforeach
                                 </div>
-                                <button type="button" class="student-fix-button" onclick="openStudentFixModal(@json($row))">
+                                <button
+                                    type="button"
+                                    class="student-fix-button"
+                                    data-fix-row="{{ base64_encode(json_encode($row)) }}"
+                                    onclick="openStudentFixModal(this)"
+                                >
                                     <i class="ri-edit-box-line"></i>
                                     Perbaiki di Web
                                 </button>
@@ -372,7 +377,8 @@ document.getElementById('studentImportConfirmForm')?.addEventListener('submit', 
     button.querySelector('span').textContent = 'Menyimpan data...';
 });
 
-function openStudentFixModal(row) {
+function openStudentFixModal(button) {
+    const row = JSON.parse(atob(button.dataset.fixRow));
     const modal = document.getElementById('studentFixModal');
     document.getElementById('student_fix_row_number').value = row.row_number || '';
     document.getElementById('student_fix_full_name').value = row.full_name || '';

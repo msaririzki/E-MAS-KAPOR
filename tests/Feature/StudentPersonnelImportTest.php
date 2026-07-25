@@ -227,7 +227,9 @@ class StudentPersonnelImportTest extends TestCase
             ->get(route('admin.personnel.student-import-preview', ['status' => 'error']))
             ->assertOk()
             ->assertSeeText('Nama wajib diisi.')
-            ->assertSeeText('Perbaiki di Web');
+            ->assertSeeText('Perbaiki di Web')
+            ->assertSee('onclick="openStudentFixModal(this)"', false)
+            ->assertSee('data-fix-row=', false);
 
         $this->actingAs($superadmin)
             ->post(route('admin.personnel.student-import-fix-row'), [
