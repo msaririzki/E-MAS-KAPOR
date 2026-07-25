@@ -209,6 +209,70 @@ class StudentPersonnelImportTest extends TestCase
         @unlink($path);
     }
 
+    public function test_error_row_can_be_fixed_from_preview_and_final_save_starts_download(): void
+    {
+        $superadmin = $this->superadmin();
+        $row = $this->validPolriRow('99000009', 'SISWA PERBAIKAN WEB');
+        unset($row['B']);
+        $path = $this->filledTemplate([12 => $row]);
+
+        $this->actingAs($superadmin)
+            ->post(route('admin.personnel.student-import'), [
+                'satker_id' => $this->satker->id,
+                'file' => $this->uploadedFile($path),
+            ])
+            ->assertRedirect(route('admin.personnel.student-import-preview'));
+
+        $this->actingAs($superadmin)
+            ->get(route('admin.personnel.student-import-preview', ['status' => 'error']))
+            ->assertOk()
+            ->assertSeeText('Nama wajib diisi.')
+            ->assertSeeText('Perbaiki di Web');
+
+        $this->actingAs($superadmin)
+            ->post(route('admin.personnel.student-import-fix-row'), [
+                'row_number' => 12,
+                'full_name' => 'SISWA DIPERBAIKI DARI WEB',
+                'rank_id' => $this->polriRank->id,
+                'golongan' => 'BINTARA',
+                'nrp' => '99000009',
+                'jabatan' => 'SISWA',
+                'bagian' => 'PENDIDIKAN',
+                'gender' => 'L',
+                'keterangan' => 'Diperbaiki',
+                'sizes' => [
+                    'topi' => '57',
+                    'kemeja' => '16',
+                    'celana' => '34',
+                    'olahraga' => 'B',
+                    'sepatu_dinas' => '41',
+                    'sepatu_olahraga' => '41',
+                    'jaket' => 'B',
+                    'sabuk' => '42',
+                ],
+            ])
+            ->assertRedirect(route('admin.personnel.student-import-preview', ['status' => 'error']))
+            ->assertSessionHas('success');
+
+        $this->actingAs($superadmin)
+            ->get(route('admin.personnel.student-import-preview'))
+            ->assertOk()
+            ->assertSeeText('Data siap disimpan.')
+            ->assertDontSeeText('Nama wajib diisi.');
+
+        $this->actingAs($superadmin)
+            ->post(route('admin.personnel.student-import-confirm'))
+            ->assertRedirect(route('admin.personnel.index', ['satker_id' => $this->satker->id]))
+            ->assertSessionHas('personnel_auto_download_url', route('admin.personnel.consolidation.download', ['satker_id' => $this->satker->id]));
+
+        $this->assertDatabaseHas('personnels', [
+            'nrp' => '99000009',
+            'full_name' => 'SISWA DIPERBAIKI DARI WEB',
+        ]);
+
+        @unlink($path);
+    }
+
     public function test_student_import_allows_blank_bagian(): void
     {
         $row = $this->validPolriRow('SISWA2027UJI001', 'SISWA TANPA BAGIAN');

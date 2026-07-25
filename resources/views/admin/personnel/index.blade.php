@@ -4358,6 +4358,18 @@
     window.onload = function() {
         consumeStoredSdmToast();
 
+        @if(session('personnel_auto_download_url'))
+            setTimeout(function () {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = @json(session('personnel_auto_download_url'));
+                downloadLink.setAttribute('download', '');
+                downloadLink.style.display = 'none';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                downloadLink.remove();
+            }, 650);
+        @endif
+
         const searchInput = document.getElementById('searchInput');
         if (searchInput && "{{ request('search') }}") {
             const val = searchInput.value;

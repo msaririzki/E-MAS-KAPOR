@@ -144,6 +144,7 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
         Route::get('/personnel/student-template', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'downloadTemplate'])->name('personnel.student-template');
         Route::post('/personnel/student-import', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'import'])->name('personnel.student-import');
         Route::get('/personnel/student-import-preview', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'preview'])->name('personnel.student-import-preview');
+        Route::post('/personnel/student-import-fix-row', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'fixRow'])->name('personnel.student-import-fix-row');
         Route::post('/personnel/student-import-confirm', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'confirm'])->name('personnel.student-import-confirm');
         Route::post('/personnel/student-import-cancel', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'cancel'])->name('personnel.student-import-cancel');
     });

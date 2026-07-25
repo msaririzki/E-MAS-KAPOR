@@ -200,7 +200,11 @@ class PersonnelConsolidationController extends Controller
         return redirect()
             ->route('admin.personnel.index')
             ->with($results['errors'] === [] ? 'success' : 'warning', $message)
-            ->with('consolidation_errors', $results['errors']);
+            ->with('consolidation_errors', $results['errors'])
+            ->with(
+                'personnel_auto_download_url',
+                route('admin.personnel.consolidation.download', ['satker_id' => $preview['satker_id']]),
+            );
     }
 
     public function cancel(Request $request)

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\StudentPersonnelTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Models\Rank;
 use App\Services\AuditLogger;
 use App\Services\StudentPersonnelImportService;
 use Illuminate\Http\Request;
@@ -118,7 +119,56 @@ class StudentPersonnelImportController extends Controller
             'rows' => $rows,
             'stats' => $payload['stats'],
             'statusFilter' => $status,
+            'ranks' => Rank::query()->orderBy('category')->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'category']),
         ]);
+    }
+
+    public function fixRow(Request $request)
+    {
+        set_time_limit(0);
+
+        $payload = $this->previewPayload($request);
+        if ($payload === null) {
+            return redirect()->route('admin.personnel.index')
+                ->with('error', 'Pratinjau siswa sudah tidak tersedia. Unggah kembali file Excel.');
+        }
+
+        $validated = $request->validate([
+            'row_number' => ['required', 'integer', 'min:1'],
+            'full_name' => ['required', 'string', 'max:255'],
+            'rank_id' => ['required', 'integer', 'exists:ranks,id'],
+            'golongan' => ['nullable', 'string', 'max:50'],
+            'nrp' => ['required', 'string', 'max:100'],
+            'jabatan' => ['required', 'string', 'max:255'],
+            'bagian' => ['nullable', 'string', 'max:255'],
+            'gender' => ['required', 'in:L,P'],
+            'keterangan' => ['nullable', 'string', 'max:255'],
+            'sizes' => ['nullable', 'array'],
+            'sizes.*' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        try {
+            $payload = $this->importService->fixPreviewRow(
+                $payload,
+                $validated,
+                (int) $payload['satker_id'],
+            );
+        } catch (RuntimeException $exception) {
+            return redirect()->route('admin.personnel.student-import-preview', ['status' => 'error'])
+                ->withInput()
+                ->with('error', $exception->getMessage());
+        }
+
+        $path = $request->session()->get(self::SESSION_KEY);
+        if (! is_string($path)) {
+            return redirect()->route('admin.personnel.index')
+                ->with('error', 'Sesi pratinjau siswa sudah kedaluwarsa. Unggah kembali file Excel.');
+        }
+        Storage::disk('local')->put($path, json_encode($payload, JSON_THROW_ON_ERROR));
+
+        return redirect()
+            ->route('admin.personnel.student-import-preview', ['status' => 'error'])
+            ->with('success', 'Baris diperbarui di web. Pemeriksaan seluruh file sudah dihitung ulang.');
     }
 
     public function confirm(Request $request)
@@ -178,6 +228,10 @@ class StudentPersonnelImportController extends Controller
                     $result['updated'],
                     $result['unchanged'],
                 ),
+            )
+            ->with(
+                'personnel_auto_download_url',
+                route('admin.personnel.consolidation.download', ['satker_id' => $payload['satker_id']]),
             );
     }
 

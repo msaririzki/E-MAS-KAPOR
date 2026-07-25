@@ -43,6 +43,105 @@ class StudentPersonnelImportService
             ->keyBy(fn (Rank $rank): string => Str::upper(trim($rank->name)));
 
         $prepared = $this->prepareRows($rows);
+        $preview = $this->buildPreviewRows($prepared, $satker, $ranks);
+
+        return [
+            'satker_id' => $satker->id,
+            'satker_name' => $satker->name,
+            'source_file' => $file->getClientOriginalName(),
+            'rows' => $preview->all(),
+            'stats' => [
+                'total' => $preview->count(),
+                'create' => $preview->where('status', 'create')->count(),
+                'update' => $preview->where('status', 'update')->count(),
+                'no_change' => $preview->where('status', 'no_change')->count(),
+                'error' => $preview->where('status', 'error')->count(),
+            ],
+        ];
+    }
+
+    /**
+     * Recheck a row edited from the preview page and then recheck all rows.
+     * Rechecking the whole payload is important when the correction resolves a duplicate NRP.
+     */
+    public function fixPreviewRow(array $payload, array $input, int $satkerId): array
+    {
+        $rowNumber = (int) $input['row_number'];
+        $rowIndex = collect($payload['rows'] ?? [])->search(
+            fn (array $row): bool => (int) ($row['row_number'] ?? 0) === $rowNumber,
+        );
+
+        if ($rowIndex === false) {
+            throw new RuntimeException('Baris yang akan diperbaiki tidak ditemukan dalam pratinjau.');
+        }
+
+        $rank = Rank::query()->findOrFail((int) $input['rank_id']);
+        $gender = $input['gender'];
+        $golongan = trim((string) ($input['golongan'] ?? ''));
+        if ($rank->category === 'PNS') {
+            $golongan = GolonganNormalizer::major($golongan) ?? '';
+            if ($golongan === '') {
+                throw new RuntimeException('Golongan PNS harus diisi dengan angka 1, 2, 3, atau 4.');
+            }
+        }
+
+        [$sizes, $sizeErrors] = $this->parseSizes($input['sizes'] ?? [], $gender);
+        if ($sizeErrors !== []) {
+            throw new RuntimeException(implode(' ', $sizeErrors));
+        }
+
+        $rows = collect($payload['rows'])->map(function (array $row, int $index) use ($rowIndex, $input, $rank, $golongan, $gender, $sizes): array {
+            if ($index !== $rowIndex) {
+                return $row;
+            }
+
+            return array_merge($row, [
+                'full_name' => trim((string) $input['full_name']),
+                'nrp' => User::normalizeLoginIdentifier($input['nrp']),
+                'rank_id' => $rank->id,
+                'rank_name' => $rank->name,
+                'golongan' => $golongan !== '' ? $golongan : null,
+                'jabatan' => trim((string) $input['jabatan']),
+                'bagian' => trim((string) ($input['bagian'] ?? '')) ?: null,
+                'gender' => $gender,
+                'gender_label' => $gender === 'P' ? 'Wanita' : 'Pria',
+                'personnel_type' => $rank->category === 'PNS' ? 'PNS' : 'Polri',
+                'procurement_group' => $this->procurementGroup($rank),
+                'keterangan' => trim((string) ($input['keterangan'] ?? '')) ?: null,
+                'sizes' => $sizes,
+            ]);
+        })->values();
+
+        $satker = Satker::query()->findOrFail($satkerId);
+        $ranks = Rank::query()
+            ->get(['id', 'name', 'category'])
+            ->keyBy(fn (Rank $rank): string => Str::upper(trim($rank->name)));
+
+        $refreshed = $this->buildPreviewRows(
+            $rows->map(fn (array $row): array => [
+                'row_number' => $row['row_number'],
+                'name' => $row['full_name'],
+                'rank_input' => $row['rank_name'],
+                'golongan' => $row['golongan'] ?? '',
+                'nrp' => $row['nrp'],
+                'jabatan' => $row['jabatan'],
+                'bagian' => $row['bagian'] ?? '',
+                'gender_input' => $row['gender'],
+                'keterangan' => $row['keterangan'] ?? '',
+                'size_inputs' => $row['sizes'] ?? [],
+            ]),
+            $satker,
+            $ranks,
+        );
+
+        $payload['rows'] = $refreshed->all();
+        $payload['stats'] = $this->buildStats($refreshed);
+
+        return $payload;
+    }
+
+    private function buildPreviewRows(Collection $prepared, Satker $satker, Collection $ranks): Collection
+    {
         $nrpCounts = $prepared->pluck('nrp')->filter()->countBy();
         $nrps = $nrpCounts->keys()->values();
         $personnelByNrp = Personnel::query()
@@ -51,7 +150,7 @@ class StudentPersonnelImportService
             ->groupBy('nrp');
         $userNrps = User::query()->whereIn('nrp_nip', $nrps)->pluck('nrp_nip')->flip();
 
-        $preview = $prepared->map(function (array $row) use ($nrpCounts, $personnelByNrp, $ranks, $satker, $userNrps): array {
+        return $prepared->map(function (array $row) use ($nrpCounts, $personnelByNrp, $ranks, $satker, $userNrps): array {
             $errors = [];
             $rank = $ranks->get(Str::upper($row['rank_input']));
             $gender = $this->normalizeGender($row['gender_input']);
@@ -138,19 +237,16 @@ class StudentPersonnelImportService
                 'status' => $status,
             ]);
         })->values();
+    }
 
+    private function buildStats(Collection $rows): array
+    {
         return [
-            'satker_id' => $satker->id,
-            'satker_name' => $satker->name,
-            'source_file' => $file->getClientOriginalName(),
-            'rows' => $preview->all(),
-            'stats' => [
-                'total' => $preview->count(),
-                'create' => $preview->where('status', 'create')->count(),
-                'update' => $preview->where('status', 'update')->count(),
-                'no_change' => $preview->where('status', 'no_change')->count(),
-                'error' => $preview->where('status', 'error')->count(),
-            ],
+            'total' => $rows->count(),
+            'create' => $rows->where('status', 'create')->count(),
+            'update' => $rows->where('status', 'update')->count(),
+            'no_change' => $rows->where('status', 'no_change')->count(),
+            'error' => $rows->where('status', 'error')->count(),
         ];
     }
 
