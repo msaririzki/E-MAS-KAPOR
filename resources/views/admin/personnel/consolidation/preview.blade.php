@@ -274,21 +274,21 @@
         <div class="missing-review-backdrop" onclick="closeMissingReviewModal()"></div>
         <section class="missing-review-dialog" role="dialog" aria-modal="true" aria-labelledby="missingReviewTitle">
             <div class="missing-review-icon"><i class="ri-eye-line"></i></div>
-            <h2 id="missingReviewTitle">Data belum bisa disimpan</h2>
+            <h2 id="missingReviewTitle">Ada data yang belum lengkap</h2>
             <p>
                 Ada <strong>{{ number_format(count($preview['missing_rows'])) }} personel</strong>
-                yang ada di aplikasi tetapi tidak ada di file Excel ini. Data tersebut harus dimasukkan kembali ke Excel atau dinonaktifkan jika memang sudah keluar.
+                yang masih ada di aplikasi, tetapi tidak ada di file Excel.
             </p>
             <div class="missing-review-summary">
                 <i class="ri-shield-check-line"></i>
-                <span>Jika masih bertugas, masukkan kembali ke file Excel agar keterangan dan data lainnya dapat diperbarui.</span>
+                <span><strong>Masih bertugas?</strong> Masukkan kembali ke Excel. <strong>Sudah keluar?</strong> Pilih namanya untuk menonaktifkan akun.</span>
             </div>
             <div class="missing-review-actions">
                 <button type="button" class="preview-button secondary" onclick="closeMissingReviewModal(true)">
-                    <i class="ri-arrow-down-line"></i> Kembali ke daftar
+                    <i class="ri-user-unfollow-line"></i> Pilih yang sudah keluar
                 </button>
                 <a href="{{ route('admin.personnel.consolidation.index') }}" class="preview-button primary">
-                    <i class="ri-upload-2-line"></i> Unggah ulang file
+                    <i class="ri-upload-2-line"></i> Kembali ke unggah file
                 </a>
             </div>
         </section>
