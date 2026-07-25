@@ -479,7 +479,7 @@ class PersonnelConsolidationTest extends TestCase
         ]);
     }
 
-    public function test_missing_personnel_stays_active_unless_explicitly_selected(): void
+    public function test_missing_personnel_must_be_readded_or_explicitly_deactivated(): void
     {
         $included = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');
         $missing = $this->createPersonnel($this->satker, '90010002', 'PERSONEL HILANG');
@@ -488,7 +488,8 @@ class PersonnelConsolidationTest extends TestCase
         $this->actingAs($this->adminSatker)
             ->post(route('admin.personnel.consolidation.import'), ['file' => $file])
             ->assertSessionHas('personnel_consolidation_preview.stats.missing', 1);
-        $this->post(route('admin.personnel.consolidation.confirm'));
+        $this->post(route('admin.personnel.consolidation.confirm'))
+            ->assertSessionHas('error', 'Masih ada 1 personel yang belum ditangani. Masukkan kembali ke file Excel jika masih bertugas, atau pilih jika sudah keluar. Belum ada data yang disimpan.');
 
         $this->assertTrue($missing->fresh()->is_active);
         $this->assertTrue($missing->user->fresh()->is_active);

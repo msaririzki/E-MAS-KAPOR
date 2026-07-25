@@ -238,15 +238,15 @@
                 <div>
                     <span class="missing-icon"><i class="ri-user-unfollow-line"></i></span>
                     <div>
-                        <h2>Personel yang Tidak Ada di File Excel</h2>
-                        <p>Tidak perlu melakukan apa-apa jika mereka masih bertugas.</p>
+                        <h2>Perlu Tindakan: Personel Tidak Ada di File Excel</h2>
+                        <p>Masukkan kembali ke Excel jika masih bertugas, atau pilih jika sudah keluar.</p>
                     </div>
                 </div>
                 <label class="select-all"><input type="checkbox" id="selectAllMissing"> Pilih semua yang sudah keluar</label>
             </div>
             <div class="missing-guide">
                 <i class="ri-information-line"></i>
-                <span><strong>Pilihan aman:</strong> semua personel di bawah ini tetap aktif. Centang hanya personel yang benar-benar sudah keluar dari satker.</span>
+                <span><strong>Belum bisa disimpan:</strong> semua personel di bawah ini harus ditangani agar data aktif dan keterangan tetap lengkap.</span>
                 <strong class="missing-selected-count" id="missingSelectedCount">Belum ada yang dipilih</strong>
             </div>
             <div class="missing-list">
@@ -256,7 +256,7 @@
                         <span>
                             <strong>{{ $personnel['full_name'] }}</strong>
                             <small>{{ $personnel['rank_name'] ?: '-' }} &middot; {{ $personnel['nrp'] ?: 'NRP/NIP kosong' }} &middot; {{ $personnel['bagian'] ?: 'Bag/Fungsi kosong' }}</small>
-                            <em>Centang jika sudah keluar</em>
+                            <em>Masukkan kembali ke Excel atau centang jika sudah keluar</em>
                         </span>
                     </label>
                 @endforeach
@@ -274,22 +274,22 @@
         <div class="missing-review-backdrop" onclick="closeMissingReviewModal()"></div>
         <section class="missing-review-dialog" role="dialog" aria-modal="true" aria-labelledby="missingReviewTitle">
             <div class="missing-review-icon"><i class="ri-eye-line"></i></div>
-            <h2 id="missingReviewTitle">Periksa daftar personel terlebih dahulu</h2>
+            <h2 id="missingReviewTitle">Data belum bisa disimpan</h2>
             <p>
                 Ada <strong>{{ number_format(count($preview['missing_rows'])) }} personel</strong>
-                yang ada di aplikasi tetapi tidak ada di file Excel ini.
+                yang ada di aplikasi tetapi tidak ada di file Excel ini. Data tersebut harus dimasukkan kembali ke Excel atau dinonaktifkan jika memang sudah keluar.
             </p>
             <div class="missing-review-summary">
                 <i class="ri-shield-check-line"></i>
-                <span>Yang tidak dicentang akan <strong>tetap aktif</strong>. Centang hanya personel yang benar-benar sudah keluar.</span>
+                <span>Jika masih bertugas, masukkan kembali ke file Excel agar keterangan dan data lainnya dapat diperbarui.</span>
             </div>
             <div class="missing-review-actions">
                 <button type="button" class="preview-button secondary" onclick="closeMissingReviewModal(true)">
-                    <i class="ri-arrow-down-line"></i> Cek daftar
+                    <i class="ri-arrow-down-line"></i> Kembali ke daftar
                 </button>
-                <button type="button" class="preview-button primary" onclick="continueAfterMissingReview()">
-                    <i class="ri-check-line"></i> Lanjutkan simpan
-                </button>
+                <a href="{{ route('admin.personnel.consolidation.index') }}" class="preview-button primary">
+                    <i class="ri-upload-2-line"></i> Unggah ulang file
+                </a>
             </div>
         </section>
     </div>
@@ -390,7 +390,6 @@ const missingSelectedCount = document.getElementById('missingSelectedCount');
 const deactivationConfirmRow = document.getElementById('deactivationConfirmRow');
 const deactivationConfirmText = document.getElementById('deactivationConfirmText');
 const missingReviewModal = document.getElementById('missingReviewModal');
-let missingReviewCompleted = false;
 const updateMissingSelection = () => {
     const selected = missingCheckboxes.filter((checkbox) => checkbox.checked).length;
     if (missingSelectedCount) {
@@ -422,7 +421,7 @@ document.getElementById('consolidationConfirmForm')?.addEventListener('submit', 
         confirmation?.scrollIntoView({behavior: 'smooth', block: 'center'});
         return;
     }
-    if (missingCheckboxes.length > 0 && !missingReviewCompleted) {
+    if (missingCheckboxes.length > selected) {
         event.preventDefault();
         openMissingReviewModal();
         return;
@@ -447,18 +446,6 @@ function closeMissingReviewModal(scrollToList = false) {
     }
 }
 
-function continueAfterMissingReview() {
-    missingReviewCompleted = true;
-    closeMissingReviewModal();
-    const button = document.getElementById('saveConsolidationButton');
-    if (button) {
-        button.disabled = true;
-        button.classList.add('is-loading');
-        button.querySelector('i').className = 'ri-loader-4-line';
-        button.querySelector('span').textContent = 'Menyimpan data...';
-    }
-    document.getElementById('consolidationConfirmForm')?.submit();
-}
 
 function openConsolidationFixModal(button) {
     const row = JSON.parse(atob(button.dataset.fixRow));

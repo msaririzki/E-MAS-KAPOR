@@ -166,7 +166,7 @@ class PersonnelConsolidationController extends Controller
             'bagian' => ['nullable', 'string', 'max:255'],
             'gender' => ['required', 'in:L,P'],
             'religion' => ['nullable', 'string', 'max:50'],
-            'keterangan' => ['nullable', 'string', 'max:255'],
+            'keterangan' => ['required', 'string', 'max:255'],
         ]);
 
         try {
@@ -226,6 +226,23 @@ class PersonnelConsolidationController extends Controller
         $deactivateIds = $request->input('deactivate_ids', []);
         if ($deactivateIds !== [] && ! $request->boolean('confirm_deactivation')) {
             return back()->with('error', 'Centang konfirmasi penonaktifan sebelum menyimpan.');
+        }
+
+        $missingIds = collect($preview['missing_rows'] ?? [])
+            ->pluck('personnel_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+        $selectedMissingIds = collect($deactivateIds)
+            ->map(fn ($id) => (int) $id)
+            ->intersect($missingIds)
+            ->unique();
+        $unresolvedMissingCount = $missingIds->diff($selectedMissingIds)->count();
+        if ($unresolvedMissingCount > 0) {
+            return back()->with(
+                'error',
+                "Masih ada {$unresolvedMissingCount} personel yang belum ditangani. Masukkan kembali ke file Excel jika masih bertugas, atau pilih jika sudah keluar. Belum ada data yang disimpan."
+            );
         }
 
         $results = $this->service->applyPreview($preview, $deactivateIds, $request->user());

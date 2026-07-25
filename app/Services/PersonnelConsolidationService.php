@@ -150,6 +150,9 @@ class PersonnelConsolidationService
                 if ($rank === null) {
                     $errors[] = 'Pangkat wajib dipilih dari referensi aplikasi.';
                 }
+                if (trim((string) ($data['keterangan'] ?? '')) === '') {
+                    $errors[] = 'Keterangan wajib diisi.';
+                }
 
                 $sizes = array_merge(
                     array_fill_keys(self::SIZE_KEYS, ''),
@@ -804,6 +807,9 @@ class PersonnelConsolidationService
             if (! $rank) {
                 $errors[] = "Pangkat '{$rankInput}' tidak ditemukan pada referensi aplikasi.";
             }
+        }
+        if ($keterangan === '') {
+            $errors[] = 'Keterangan wajib diisi.';
         }
 
         return [
