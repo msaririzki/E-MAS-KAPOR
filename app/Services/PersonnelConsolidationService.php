@@ -47,6 +47,8 @@ class PersonnelConsolidationService
     {
         $spreadsheet = IOFactory::load($path);
         $parsedRows = [];
+        $fileWarnings = [];
+        $unreadableSheets = [];
         $ranks = Rank::all()->keyBy(fn (Rank $rank) => Str::upper($rank->name));
 
         foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
@@ -56,7 +58,14 @@ class PersonnelConsolidationService
 
             $header = $this->detectHeader($sheet);
             if ($header === null) {
+                if ($this->isExpectedPersonnelSheet($sheet)) {
+                    $unreadableSheets[] = $sheet->getTitle();
+                }
+
                 continue;
+            }
+            foreach ($header['warnings'] as $warning) {
+                $fileWarnings[] = "Sheet {$sheet->getTitle()}: {$warning}";
             }
 
             for ($rowNumber = $header['row'] + 1; $rowNumber <= $sheet->getHighestDataRow(); $rowNumber++) {
@@ -66,6 +75,14 @@ class PersonnelConsolidationService
                     $parsedRows[] = $row;
                 }
             }
+        }
+
+        if ($unreadableSheets !== []) {
+            throw new RuntimeException(
+                'Sheet '.implode(', ', $unreadableSheets)
+                .' tidak dapat dibaca. Pastikan judul kolom pada baris 8 tidak dihapus atau dipindahkan. '
+                .'Tidak ada data yang diproses agar personel tidak keliru dianggap hilang.'
+            );
         }
 
         if ($parsedRows === []) {
@@ -118,6 +135,7 @@ class PersonnelConsolidationService
             'satker_name' => $targetSatker->name,
             'source_file' => $sourceFile,
             'created_at' => now()->toIso8601String(),
+            'warnings' => array_values(array_unique($fileWarnings)),
             'rows' => $previewRows,
             'missing_rows' => $missingRows,
             'stats' => $stats,
@@ -484,6 +502,7 @@ class PersonnelConsolidationService
             'golongan' => $row['golongan'],
             'jabatan' => $row['jabatan'],
             'bagian' => $row['bagian'],
+            'personnel_type' => $row['personnel_type'],
             'gender_label' => $row['gender'] === 'P' ? 'Wanita' : 'Pria',
             'system_code_present' => $row['system_code'] !== '',
             'errors' => $errors,
@@ -563,7 +582,12 @@ class PersonnelConsolidationService
 
             $hasName = collect($values)->contains(fn (string $value) => $value === 'NAMA' || $value === 'NAMA LENGKAP');
             $hasNrp = collect($values)->contains(fn (string $value) => str_contains($value, 'NRP'));
-            if (! $hasName || ! $hasNrp) {
+            $matchesFixedTemplate = ($values[3] ?? '') === 'PANGKAT'
+                && str_contains($values[5] ?? '', 'NRP')
+                && ($values[6] ?? '') === 'JABATAN'
+                && (str_contains($values[7] ?? '', 'BAG') || str_contains($values[7] ?? '', 'FUNGSI'))
+                && str_contains($values[8] ?? '', 'JENIS KELAMIN');
+            if (! $hasNrp || (! $hasName && ! $matchesFixedTemplate)) {
                 continue;
             }
 
@@ -576,10 +600,21 @@ class PersonnelConsolidationService
                 'layout' => $hasSystemCode
                     ? (((int) $systemCodeColumn <= 11) ? 'consolidation_simple' : 'consolidation')
                     : ($highestColumnIndex >= 18 ? 'monitoring' : 'legacy'),
+                'warnings' => $hasName
+                    ? []
+                    : ["judul kolom NAMA berubah menjadi '{$values[2]}'. Sistem tetap membaca kolom B sebagai NAMA."],
             ];
         }
 
         return null;
+    }
+
+    private function isExpectedPersonnelSheet($sheet): bool
+    {
+        $title = Str::lower($sheet->getTitle());
+
+        return $sheet->getHighestDataRow() >= 8
+            && Str::contains($title, ['polri', 'pns', 'personel']);
     }
 
     private function parseRow(

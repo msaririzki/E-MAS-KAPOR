@@ -109,6 +109,55 @@ class PersonnelConsolidationTest extends TestCase
         $this->assertSame('15.5', $personnel->fresh()->kapor_sizes['kemeja']);
     }
 
+    public function test_modified_name_header_is_recovered_without_skipping_polri_sheet(): void
+    {
+        $this->createPersonnel($this->satker, '90010001', 'PERSONEL POLRI');
+        $binary = Excel::raw(new PersonnelConsolidationExport($this->satker), ExcelFormat::XLSX);
+        $path = tempnam(sys_get_temp_dir(), 'kapor-header-recovery-').'.xlsx';
+        file_put_contents($path, $binary);
+
+        try {
+            $spreadsheet = IOFactory::load($path);
+            $spreadsheet->getSheetByName('Data Polri')->setCellValue('B8', 'DF');
+            IOFactory::createWriter($spreadsheet, 'Xlsx')->save($path);
+
+            $preview = app(PersonnelConsolidationService::class)
+                ->buildPreview($path, $this->satker, 'header-name-changed.xlsx');
+        } finally {
+            @unlink($path);
+        }
+
+        $this->assertSame(1, $preview['stats']['total']);
+        $this->assertSame(1, $preview['stats']['no_change']);
+        $this->assertSame(0, $preview['stats']['missing']);
+        $this->assertSame('Polri', $preview['rows'][0]['personnel_type']);
+        $this->assertStringContainsString('judul kolom NAMA berubah', $preview['warnings'][0]);
+    }
+
+    public function test_unreadable_personnel_sheet_stops_partial_preview(): void
+    {
+        $this->createPersonnel($this->satker, '90010001', 'PERSONEL POLRI');
+        $binary = Excel::raw(new PersonnelConsolidationExport($this->satker), ExcelFormat::XLSX);
+        $path = tempnam(sys_get_temp_dir(), 'kapor-unreadable-sheet-').'.xlsx';
+        file_put_contents($path, $binary);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Sheet Data Polri tidak dapat dibaca');
+
+        try {
+            $spreadsheet = IOFactory::load($path);
+            $sheet = $spreadsheet->getSheetByName('Data Polri');
+            $sheet->setCellValue('B8', 'DF');
+            $sheet->setCellValue('C8', 'KOLOM SALAH');
+            IOFactory::createWriter($spreadsheet, 'Xlsx')->save($path);
+
+            app(PersonnelConsolidationService::class)
+                ->buildPreview($path, $this->satker, 'unreadable-sheet.xlsx');
+        } finally {
+            @unlink($path);
+        }
+    }
+
     public function test_simple_export_update_preserves_existing_sizes(): void
     {
         $personnel = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');
@@ -210,6 +259,7 @@ class PersonnelConsolidationTest extends TestCase
             'golongan' => 'BINTARA',
             'jabatan' => 'BINTARA OPERASIONAL',
             'bagian' => 'SATKER',
+            'personnel_type' => 'Polri',
             'system_code_present' => true,
             'match_method' => 'system_code',
             'errors' => [],
@@ -220,6 +270,9 @@ class PersonnelConsolidationTest extends TestCase
             'satker_id' => $this->satker->id,
             'satker_name' => $this->satker->name,
             'source_file' => 'personel.xlsx',
+            'warnings' => [
+                "Sheet Data Polri: judul kolom NAMA berubah menjadi 'DF'. Sistem tetap membaca kolom B sebagai NAMA.",
+            ],
             'stats' => [
                 'total' => 3,
                 'update' => 1,
@@ -245,6 +298,9 @@ class PersonnelConsolidationTest extends TestCase
         $response->assertSeeInOrder(['PERSONEL BERUBAH', 'PERSONEL BARU', 'PERSONEL SAMA']);
         $response->assertSee('Berubah');
         $response->assertSee('Sesuai');
+        $response->assertSee('POLRI');
+        $response->assertDontSee('PNS');
+        $response->assertSee('Format Excel diperbaiki otomatis.');
         $response->assertDontSee('PENCOCOKAN');
     }
 

@@ -43,6 +43,18 @@
     <div class="preview-alert error"><i class="ri-error-warning-fill"></i><span>{{ session('error') }}</span></div>
 @endif
 
+@if(($preview['warnings'] ?? []) !== [])
+    <div class="preview-alert warning">
+        <i class="ri-alert-fill"></i>
+        <div>
+            <strong>Format Excel diperbaiki otomatis.</strong>
+            @foreach($preview['warnings'] as $warning)
+                <span>{{ $warning }}</span>
+            @endforeach
+        </div>
+    </div>
+@endif
+
 <div class="summary-grid">
     <a href="{{ route('admin.personnel.consolidation.preview') }}" class="summary-item total {{ $statusFilter === '' ? 'active' : '' }}">
         <small>Baris Dibaca</small><strong>{{ number_format($stats['total']) }}</strong>
@@ -108,9 +120,14 @@
                 </thead>
                 <tbody>
                     @forelse($rows as $row)
-                        @php($meta = $statusMeta[$row['status']])
+                        @php
+                            $meta = $statusMeta[$row['status']];
+                            $personnelType = $row['personnel_type']
+                                ?? data_get($row, 'data.personnel_type')
+                                ?? (str_contains(strtolower($row['sheet']), 'pns') ? 'PNS' : 'Polri');
+                        @endphp
                         <tr>
-                            <td><span class="source-cell">{{ $row['sheet'] === 'Data Polri' ? 'POLRI' : 'PNS' }}<small>Baris {{ $row['row_number'] }}</small></span></td>
+                            <td><span class="source-cell">{{ strtoupper($personnelType) }}<small>Baris {{ $row['row_number'] }}</small></span></td>
                             <td><span class="status-badge {{ $meta['class'] }}"><i class="{{ $meta['icon'] }}"></i>{{ $meta['badge'] }}</span></td>
                             <td>
                                 <div class="person-cell">
