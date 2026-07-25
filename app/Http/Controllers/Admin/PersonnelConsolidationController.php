@@ -112,10 +112,10 @@ class PersonnelConsolidationController extends Controller
         }
 
         $statusPriority = [
-            'update' => 0,
-            'new' => 1,
-            'transfer' => 2,
-            'error' => 3,
+            'error' => 0,
+            'update' => 1,
+            'new' => 2,
+            'transfer' => 3,
             'duplicate_ignored' => 4,
             'no_change' => 5,
         ];
@@ -152,6 +152,18 @@ class PersonnelConsolidationController extends Controller
                 ->with('error', 'Pratinjau sudah tidak tersedia. Unggah kembali file konsolidasi.');
         }
         $this->assertPreviewSatkerAccess($request, $preview);
+
+        $errorCount = collect($preview['rows'])
+            ->where('status', 'error')
+            ->count();
+        if ($errorCount > 0) {
+            return redirect()
+                ->route('admin.personnel.consolidation.preview', ['status' => 'error'])
+                ->with(
+                    'error',
+                    "{$errorCount} baris masih perlu diperbaiki. Perbaiki data wajib pada file Excel lalu unggah kembali. Belum ada data yang disimpan."
+                );
+        }
 
         $request->validate([
             'deactivate_ids' => ['nullable', 'array'],

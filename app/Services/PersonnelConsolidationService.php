@@ -144,6 +144,15 @@ class PersonnelConsolidationService
 
     public function applyPreview(array $preview, array $deactivateIds, User $actor): array
     {
+        $errorCount = collect($preview['rows'] ?? [])
+            ->where('status', 'error')
+            ->count();
+        if ($errorCount > 0) {
+            throw new RuntimeException(
+                "{$errorCount} baris masih perlu diperbaiki. Tidak ada data yang dapat disimpan sebelum seluruh kesalahan diselesaikan."
+            );
+        }
+
         $satkerId = (int) $preview['satker_id'];
         $results = [
             'updated' => 0,

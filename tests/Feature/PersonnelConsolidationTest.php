@@ -304,6 +304,51 @@ class PersonnelConsolidationTest extends TestCase
         $response->assertDontSee('PENCOCOKAN');
     }
 
+    public function test_required_field_errors_block_entire_save_and_keep_preview_available(): void
+    {
+        $missingNrp = $this->createPersonnel($this->satker, '90010001', 'NRP DIHAPUS');
+        $missingGender = $this->createPersonnel($this->satker, '90010002', 'JK DIHAPUS');
+        $missingName = $this->createPersonnel($this->satker, '90010003', 'NAMA DIHAPUS');
+        $safe = $this->createPersonnel($this->satker, '90010004', 'PERSONEL AMAN');
+
+        $missingNrpRow = $this->fullRow($missingNrp);
+        $missingNrpRow[4] = '';
+        $missingGenderRow = $this->fullRow($missingGender);
+        $missingGenderRow[7] = '';
+        $missingNameRow = $this->fullRow($missingName);
+        $missingNameRow[1] = '';
+        $safeRow = $this->fullRow($safe);
+        $safeRow[6] = 'BAGIAN BARU';
+
+        $file = $this->makeWorkbook([
+            $missingNrpRow,
+            $missingGenderRow,
+            $missingNameRow,
+            $safeRow,
+        ], true);
+
+        $this->actingAs($this->adminSatker)
+            ->post(route('admin.personnel.consolidation.import'), ['file' => $file])
+            ->assertSessionHas('personnel_consolidation_preview.stats.error', 3)
+            ->assertSessionHas('personnel_consolidation_preview.stats.update', 1);
+
+        $this->get(route('admin.personnel.consolidation.preview'))
+            ->assertOk()
+            ->assertSee('Data belum dapat disimpan.')
+            ->assertSee('Perbaiki 3 Baris Dulu')
+            ->assertSeeInOrder(['id="saveConsolidationButton"', 'disabled'], false);
+
+        $this->post(route('admin.personnel.consolidation.confirm'))
+            ->assertRedirect(route('admin.personnel.consolidation.preview', ['status' => 'error']))
+            ->assertSessionHas('error', fn (string $message): bool => str_contains($message, '3 baris masih perlu diperbaiki'))
+            ->assertSessionHas('personnel_consolidation_preview');
+
+        $this->assertSame('BAGIAN LAMA', $safe->fresh()->bagian);
+        $this->assertSame('90010001', $missingNrp->fresh()->nrp);
+        $this->assertSame('L', $missingGender->fresh()->gender);
+        $this->assertSame('NAMA DIHAPUS', $missingName->fresh()->full_name);
+    }
+
     public function test_reordered_legacy_file_without_system_code_updates_by_nrp(): void
     {
         $first = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');
@@ -346,7 +391,7 @@ class PersonnelConsolidationTest extends TestCase
         $this->assertSame(1, Personnel::where('nrp', '90010001')->count());
     }
 
-    public function test_duplicate_nrp_with_different_content_is_blocked_but_other_rows_can_continue(): void
+    public function test_duplicate_nrp_with_different_content_blocks_entire_save(): void
     {
         $personnel = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');
         $safe = $this->createPersonnel($this->satker, '90010002', 'PERSONEL AMAN');
@@ -362,10 +407,11 @@ class PersonnelConsolidationTest extends TestCase
             ->assertSessionHas('personnel_consolidation_preview.stats.error', 2)
             ->assertSessionHas('personnel_consolidation_preview.stats.update', 1);
 
-        $this->post(route('admin.personnel.consolidation.confirm'));
+        $this->post(route('admin.personnel.consolidation.confirm'))
+            ->assertRedirect(route('admin.personnel.consolidation.preview', ['status' => 'error']));
 
         $this->assertSame('BAGIAN LAMA', $personnel->fresh()->bagian);
-        $this->assertSame('SAT LANTAS BARU', $safe->fresh()->bagian);
+        $this->assertSame('BAGIAN LAMA', $safe->fresh()->bagian);
         $this->assertSame(1, Personnel::where('nrp', '90010001')->count());
     }
 
@@ -532,7 +578,7 @@ class PersonnelConsolidationTest extends TestCase
         $this->assertSame($this->satker->id, $oldAccount->fresh()->satker_id);
     }
 
-    public function test_large_mixed_file_keeps_safe_rows_moving_while_isolating_conflicts(): void
+    public function test_large_mixed_file_is_not_saved_until_all_conflicts_are_fixed(): void
     {
         $rows = [];
         $targetPersonnel = collect();
@@ -583,12 +629,13 @@ class PersonnelConsolidationTest extends TestCase
             ->assertSessionHas('personnel_consolidation_preview.stats.error', 6)
             ->assertSessionHas('personnel_consolidation_preview.stats.missing', 0);
 
-        $this->post(route('admin.personnel.consolidation.confirm'));
+        $this->post(route('admin.personnel.consolidation.confirm'))
+            ->assertRedirect(route('admin.personnel.consolidation.preview', ['status' => 'error']));
 
-        $this->assertSame('BAGIAN BARU 1', $targetPersonnel->first()->fresh()->bagian);
+        $this->assertSame('BAGIAN LAMA', $targetPersonnel->first()->fresh()->bagian);
         $this->assertSame('BAGIAN LAMA', $targetPersonnel[30]->fresh()->bagian);
-        $this->assertSame(10, Personnel::where('full_name', 'like', 'PERSONEL BARU %')->count());
-        $this->assertSame(5, PersonnelTransferRequest::where('status', 'pending')->count());
+        $this->assertSame(0, Personnel::where('full_name', 'like', 'PERSONEL BARU %')->count());
+        $this->assertSame(0, PersonnelTransferRequest::where('status', 'pending')->count());
     }
 
     private function createPersonnel(Satker $satker, string $nrp, string $name): Personnel
