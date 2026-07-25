@@ -349,6 +349,45 @@ class PersonnelConsolidationTest extends TestCase
         $this->assertSame('NAMA DIHAPUS', $missingName->fresh()->full_name);
     }
 
+    public function test_admin_satker_can_fix_error_row_from_consolidation_preview(): void
+    {
+        $personnel = $this->createPersonnel($this->satker, '90010010', 'NAMA AWAL');
+        $row = $this->fullRow($personnel);
+        $row[1] = '';
+
+        $this->actingAs($this->adminSatker)
+            ->post(route('admin.personnel.consolidation.import'), [
+                'file' => $this->makeWorkbook([$row], true),
+            ])
+            ->assertRedirect(route('admin.personnel.consolidation.preview'));
+
+        $this->get(route('admin.personnel.consolidation.preview', ['status' => 'error']))
+            ->assertOk()
+            ->assertSee('Perbaiki di Web')
+            ->assertSee('Nama wajib diisi.');
+
+        $this->post(route('admin.personnel.consolidation.fix-row'), [
+            'sheet' => 'Worksheet',
+            'row_number' => 9,
+            'full_name' => 'NAMA DIPERBAIKI DI WEB',
+            'nrp' => '90010010',
+            'rank_id' => $this->rank->id,
+            'golongan' => 'BINTARA',
+            'jabatan' => 'ANGGOTA',
+            'bagian' => 'OPERASIONAL',
+            'gender' => 'L',
+            'religion' => 'ISLAM',
+            'keterangan' => 'STAF',
+        ])
+            ->assertRedirect(route('admin.personnel.consolidation.preview'))
+            ->assertSessionHas('success', 'Semua baris sudah valid. Data sekarang siap disimpan.');
+
+        $preview = session('personnel_consolidation_preview');
+        $this->assertSame(0, $preview['stats']['error']);
+        $this->assertSame('NAMA DIPERBAIKI DI WEB', $preview['rows'][0]['full_name']);
+        $this->assertSame('update', $preview['rows'][0]['status']);
+    }
+
     public function test_reordered_legacy_file_without_system_code_updates_by_nrp(): void
     {
         $first = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');

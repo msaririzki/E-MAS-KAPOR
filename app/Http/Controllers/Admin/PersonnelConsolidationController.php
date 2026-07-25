@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\PersonnelConsolidationExport;
 use App\Http\Controllers\Controller;
+use App\Models\Rank;
 use App\Models\Satker;
 use App\Services\AuditLogger;
 use App\Services\PersonnelConsolidationService;
@@ -139,7 +140,58 @@ class PersonnelConsolidationController extends Controller
             'preview' => $preview,
             'rows' => $paginatedRows,
             'statusFilter' => $status,
+            'ranks' => Rank::query()->orderBy('category')->orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'category']),
         ]);
+    }
+
+    public function fixRow(Request $request)
+    {
+        $this->authorizeRole($request);
+        $preview = session(self::SESSION_KEY);
+        if (! is_array($preview)) {
+            return redirect()
+                ->route('admin.personnel.consolidation.index')
+                ->with('error', 'Pratinjau sudah tidak tersedia. Unggah kembali file konsolidasi.');
+        }
+        $this->assertPreviewSatkerAccess($request, $preview);
+
+        $validated = $request->validate([
+            'sheet' => ['required', 'string', 'max:100'],
+            'row_number' => ['required', 'integer', 'min:1'],
+            'full_name' => ['required', 'string', 'max:255'],
+            'nrp' => ['required', 'string', 'max:100'],
+            'rank_id' => ['required', 'integer', 'exists:ranks,id'],
+            'golongan' => ['nullable', 'string', 'max:50'],
+            'jabatan' => ['nullable', 'string', 'max:255'],
+            'bagian' => ['nullable', 'string', 'max:255'],
+            'gender' => ['required', 'in:L,P'],
+            'religion' => ['nullable', 'string', 'max:50'],
+            'keterangan' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $preview = $this->service->fixPreviewRow($preview, $validated);
+        } catch (\RuntimeException $exception) {
+            return redirect()
+                ->route('admin.personnel.consolidation.preview', ['status' => 'error'])
+                ->withInput()
+                ->with('error', $exception->getMessage());
+        }
+
+        session([self::SESSION_KEY => $preview]);
+        $remainingErrors = (int) data_get($preview, 'stats.error', 0);
+
+        return redirect()
+            ->route(
+                'admin.personnel.consolidation.preview',
+                $remainingErrors > 0 ? ['status' => 'error'] : [],
+            )
+            ->with(
+                'success',
+                $remainingErrors > 0
+                    ? "Baris berhasil diperbaiki. Masih ada {$remainingErrors} baris yang perlu diperiksa."
+                    : 'Semua baris sudah valid. Data sekarang siap disimpan.',
+            );
     }
 
     public function confirm(Request $request)

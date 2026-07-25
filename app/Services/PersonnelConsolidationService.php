@@ -90,6 +90,112 @@ class PersonnelConsolidationService
         }
 
         $previewRows = $this->matchRows($parsedRows, $targetSatker);
+
+        return $this->refreshPreviewSummary([
+            'version' => 1,
+            'satker_id' => $targetSatker->id,
+            'satker_name' => $targetSatker->name,
+            'source_file' => $sourceFile,
+            'created_at' => now()->toIso8601String(),
+            'warnings' => array_values(array_unique($fileWarnings)),
+        ], $previewRows, $targetSatker);
+    }
+
+    public function fixPreviewRow(array $preview, array $input): array
+    {
+        $targetSatker = Satker::query()->findOrFail((int) $preview['satker_id']);
+        $selectedRank = Rank::query()->findOrFail((int) $input['rank_id']);
+        $ranks = Rank::query()->get(['id', 'name', 'category'])->keyBy('id');
+        $targetFound = false;
+
+        $parsedRows = collect($preview['rows'] ?? [])
+            ->map(function (array $previewRow, int $index) use ($input, $selectedRank, $ranks, &$targetFound): array {
+                $data = $previewRow['data'] ?? [];
+                $isTarget = $previewRow['sheet'] === $input['sheet']
+                    && (int) $previewRow['row_number'] === (int) $input['row_number'];
+
+                if ($isTarget) {
+                    $targetFound = true;
+                    $data = array_merge($data, [
+                        'full_name' => trim((string) $input['full_name']),
+                        'nrp' => User::normalizeLoginIdentifier($input['nrp']),
+                        'rank_id' => $selectedRank->id,
+                        'rank_name' => $selectedRank->name,
+                        'golongan' => trim((string) ($input['golongan'] ?? '')),
+                        'jabatan' => trim((string) ($input['jabatan'] ?? '')),
+                        'bagian' => trim((string) ($input['bagian'] ?? '')),
+                        'gender' => $input['gender'],
+                        'religion' => trim((string) ($input['religion'] ?? '')),
+                        'keterangan' => trim((string) ($input['keterangan'] ?? '')),
+                    ]);
+                }
+
+                $rank = $ranks->get((int) ($data['rank_id'] ?? 0));
+                $fullName = trim((string) ($data['full_name'] ?? $previewRow['full_name'] ?? ''));
+                $nrp = User::normalizeLoginIdentifier($data['nrp'] ?? $previewRow['nrp'] ?? '');
+                $gender = in_array(($data['gender'] ?? null), ['L', 'P'], true) ? $data['gender'] : '';
+                $errors = [];
+
+                if ($fullName === '') {
+                    $errors[] = 'Nama wajib diisi.';
+                }
+                if ($nrp === '') {
+                    $errors[] = 'NRP/NIP wajib diisi.';
+                } elseif (strlen($nrp) < 4) {
+                    $errors[] = 'NRP/NIP terlalu pendek.';
+                }
+                if ($gender === '') {
+                    $errors[] = 'Jenis kelamin harus diisi P (pria) atau W (wanita).';
+                }
+                if ($rank === null) {
+                    $errors[] = 'Pangkat wajib dipilih dari referensi aplikasi.';
+                }
+
+                $sizes = array_merge(
+                    array_fill_keys(self::SIZE_KEYS, ''),
+                    is_array($data['sizes'] ?? null) ? $data['sizes'] : [],
+                );
+
+                return [
+                    '_index' => $index.'_'.sha1($previewRow['sheet'].'|'.$previewRow['row_number']),
+                    'sheet' => $previewRow['sheet'],
+                    'row_number' => (int) $previewRow['row_number'],
+                    'full_name' => $fullName,
+                    'nrp' => $nrp,
+                    'rank_id' => $rank?->id,
+                    'rank_name' => $rank?->name ?? trim((string) ($data['rank_name'] ?? $previewRow['rank_name'] ?? '')),
+                    'golongan' => trim((string) ($data['golongan'] ?? $previewRow['golongan'] ?? '')),
+                    'jabatan' => trim((string) ($data['jabatan'] ?? $previewRow['jabatan'] ?? '')),
+                    'bagian' => trim((string) ($data['bagian'] ?? $previewRow['bagian'] ?? '')),
+                    'gender' => $gender,
+                    'religion' => trim((string) ($data['religion'] ?? '')),
+                    'keterangan' => trim((string) ($data['keterangan'] ?? '')),
+                    'personnel_type' => PersonnelImport::resolvePersonnelType(
+                        $rank,
+                        trim((string) ($data['golongan'] ?? $previewRow['golongan'] ?? '')),
+                    ),
+                    'sizes' => $sizes,
+                    'has_sizes' => (bool) ($data['has_sizes'] ?? false),
+                    'system_code' => trim((string) ($data['system_code'] ?? '')),
+                    'errors' => $errors,
+                ];
+            })
+            ->values()
+            ->all();
+
+        if (! $targetFound) {
+            throw new RuntimeException('Baris yang akan diperbaiki tidak ditemukan dalam pratinjau.');
+        }
+
+        return $this->refreshPreviewSummary(
+            $preview,
+            $this->matchRows($parsedRows, $targetSatker),
+            $targetSatker,
+        );
+    }
+
+    private function refreshPreviewSummary(array $preview, array $previewRows, Satker $targetSatker): array
+    {
         $matchedIds = collect($previewRows)
             ->pluck('matched_personnel_id')
             ->filter()
@@ -129,17 +235,11 @@ class PersonnelConsolidationService
         ], $stats);
         $stats['actionable'] = $stats['update'] + $stats['new'] + $stats['transfer'];
 
-        return [
-            'version' => 1,
-            'satker_id' => $targetSatker->id,
-            'satker_name' => $targetSatker->name,
-            'source_file' => $sourceFile,
-            'created_at' => now()->toIso8601String(),
-            'warnings' => array_values(array_unique($fileWarnings)),
-            'rows' => $previewRows,
-            'missing_rows' => $missingRows,
-            'stats' => $stats,
-        ];
+        $preview['rows'] = $previewRows;
+        $preview['missing_rows'] = $missingRows;
+        $preview['stats'] = $stats;
+
+        return $preview;
     }
 
     public function applyPreview(array $preview, array $deactivateIds, User $actor): array

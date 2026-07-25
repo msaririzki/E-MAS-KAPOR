@@ -120,6 +120,7 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
     Route::get('/personnel/consolidation/download', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'download'])->name('personnel.consolidation.download');
     Route::post('/personnel/consolidation/import', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'import'])->name('personnel.consolidation.import');
     Route::get('/personnel/consolidation/preview', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'preview'])->name('personnel.consolidation.preview');
+    Route::post('/personnel/consolidation/fix-row', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'fixRow'])->name('personnel.consolidation.fix-row');
     Route::post('/personnel/consolidation/confirm', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'confirm'])->name('personnel.consolidation.confirm');
     Route::post('/personnel/consolidation/cancel', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'cancel'])->name('personnel.consolidation.cancel');
     Route::middleware('role:superadmin')->group(function () {
