@@ -197,6 +197,57 @@ class PersonnelConsolidationTest extends TestCase
         $response->assertDontSee(route('admin.personnel.import-update'), false);
     }
 
+    public function test_preview_prioritizes_actionable_rows_and_uses_compact_result_columns(): void
+    {
+        $row = static fn (string $status, string $name, int $rowNumber): array => [
+            'status' => $status,
+            'sheet' => 'Data Polri',
+            'row_number' => $rowNumber,
+            'full_name' => $name,
+            'nrp' => '9001000'.$rowNumber,
+            'gender_label' => 'Pria',
+            'rank_name' => 'BRIPKA',
+            'golongan' => 'BINTARA',
+            'jabatan' => 'BINTARA OPERASIONAL',
+            'bagian' => 'SATKER',
+            'system_code_present' => true,
+            'match_method' => 'system_code',
+            'errors' => [],
+            'warnings' => [],
+            'diff' => [],
+        ];
+        $preview = [
+            'satker_id' => $this->satker->id,
+            'satker_name' => $this->satker->name,
+            'source_file' => 'personel.xlsx',
+            'stats' => [
+                'total' => 3,
+                'update' => 1,
+                'new' => 1,
+                'transfer' => 0,
+                'duplicate_ignored' => 0,
+                'error' => 0,
+                'missing' => 0,
+            ],
+            'rows' => [
+                $row('no_change', 'PERSONEL SAMA', 9),
+                $row('new', 'PERSONEL BARU', 10),
+                $row('update', 'PERSONEL BERUBAH', 11),
+            ],
+            'missing_rows' => [],
+        ];
+
+        $response = $this->actingAs($this->adminSatker)
+            ->withSession(['personnel_consolidation_preview' => $preview])
+            ->get(route('admin.personnel.consolidation.preview'));
+
+        $response->assertOk();
+        $response->assertSeeInOrder(['PERSONEL BERUBAH', 'PERSONEL BARU', 'PERSONEL SAMA']);
+        $response->assertSee('Berubah');
+        $response->assertSee('Sesuai');
+        $response->assertDontSee('PENCOCOKAN');
+    }
+
     public function test_reordered_legacy_file_without_system_code_updates_by_nrp(): void
     {
         $first = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');

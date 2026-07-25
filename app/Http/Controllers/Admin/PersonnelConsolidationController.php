@@ -111,7 +111,24 @@ class PersonnelConsolidationController extends Controller
             $status = '';
         }
 
-        $rows = collect($preview['rows']);
+        $statusPriority = [
+            'update' => 0,
+            'new' => 1,
+            'transfer' => 2,
+            'error' => 3,
+            'duplicate_ignored' => 4,
+            'no_change' => 5,
+        ];
+        $rows = collect($preview['rows'])
+            ->sort(function (array $left, array $right) use ($statusPriority): int {
+                $priorityComparison = ($statusPriority[$left['status']] ?? 99)
+                    <=> ($statusPriority[$right['status']] ?? 99);
+
+                return $priorityComparison !== 0
+                    ? $priorityComparison
+                    : (($left['row_number'] ?? 0) <=> ($right['row_number'] ?? 0));
+            })
+            ->values();
         if ($status !== '') {
             $rows = $rows->where('status', $status);
         }
