@@ -74,6 +74,8 @@ class DashboardPersonnelCountConsistencyTest extends TestCase
                 && $stats['total_pns'] === 1
                 && $stats['total_personnel'] === 4;
         });
+        $response->assertSee('class="review-modern-select"', false);
+        $response->assertSee('class="review-select-shell has-leading-icon"', false);
     }
 
     public function test_dashboard_displays_real_audit_activity_without_mock_entries(): void

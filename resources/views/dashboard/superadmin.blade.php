@@ -13,14 +13,13 @@
             </div>
             <div class="page-header-actions">
                 {{-- Filter Tahun Anggaran --}}
-                <div
-                    style="display:flex;align-items:center;gap:8px;margin-right:8px;background:var(--input-bg);padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);">
-                    <i class="ri-calendar-line" style="color:var(--brand);"></i>
-                    <select onchange="window.spaNavigate('?year='+this.value)"
-                        style="border:none;outline:none;font-size:13px;font-weight:600;color:var(--text-main);cursor:pointer;background:transparent;">
+                <div class="review-select-shell has-leading-icon">
+                    <i class="ri-calendar-line" aria-hidden="true"></i>
+                    <select class="review-modern-select" aria-label="Pilih tahun anggaran"
+                        onchange="window.spaNavigate('?year='+this.value)">
                         @foreach($availableYears as $year)
                             <option value="{{ $year }}" {{ $fiscalYear == $year ? 'selected' : '' }}>
-                                TA {{ $year }} {{ $year == $defaultYear ? '(Aktif)' : '' }}
+                                T.A. {{ $year }} {{ $year == $defaultYear ? '(Aktif)' : '' }}
                             </option>
                         @endforeach
                     </select>
@@ -360,6 +359,7 @@
 @endsection
 
 @section('styles')
+    @include('components.review-select-styles')
 <style>
         .satisfaction-card {
             background:
@@ -1327,6 +1327,7 @@
 @endsection
 
 @section('scripts')
+    @include('components.review-select-script')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>

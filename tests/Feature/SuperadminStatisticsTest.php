@@ -93,6 +93,8 @@ class SuperadminStatisticsTest extends TestCase
         $response->assertViewHas('latestTestimonials', function ($reviews) {
             return $reviews->pluck('comment')->contains('Aplikasi sangat membantu rekap kapor menjadi cepat dan rapi.');
         });
+        $response->assertSee('class="review-modern-select"', false);
+        $response->assertSee('initializeReviewSelects', false);
     }
 
     public function test_statistics_page_shows_empty_state_when_no_testimonials_exist(): void
@@ -328,6 +330,7 @@ class SuperadminStatisticsTest extends TestCase
         $listResponse->assertViewHas('testimonials', fn ($reviews) => $reviews->total() === 1);
         $listResponse->assertSeeText('Review tahun 2026 tetap dapat dilihat.');
         $listResponse->assertSee('name="year"', false);
+        $listResponse->assertSee('class="review-modern-select"', false);
         $listResponse->assertSee('onchange="this.form.requestSubmit()"', false);
 
         $statisticsResponse = $this->actingAs($superadmin)->get(route('superadmin.statistics', [
@@ -554,13 +557,17 @@ class SuperadminStatisticsTest extends TestCase
             ]);
         }
 
-        $this->actingAs($superadmin)
+        $detailResponse = $this->actingAs($superadmin)
             ->get(route('superadmin.statistics.satkers.show', ['satker' => $satker, 'year' => 2026]))
-            ->assertOk()
+            ->assertOk();
+
+        $detailResponse
             ->assertSeeText('BRIPTU DETAIL PERSONEL')
             ->assertSeeText('99110002')
             ->assertSeeText('Komentar personel detail.')
-            ->assertDontSeeText('PERSONEL SATKER LAIN');
+            ->assertDontSeeText('PERSONEL SATKER LAIN')
+            ->assertSee('class="review-modern-select"', false)
+            ->assertSee('class="review-filter-field"', false);
 
         $this->actingAs($superadmin)
             ->get(route('superadmin.statistics.satkers.export-pdf', ['year' => 2026]))

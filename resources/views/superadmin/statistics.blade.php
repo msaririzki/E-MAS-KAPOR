@@ -34,8 +34,7 @@
 
                     {{-- Filter Tahun Anggaran --}}
                     <form method="GET" action="{{ route('superadmin.statistics') }}"
-                        class="year-filter-form"
-                        style="display:flex;align-items:center;gap:10px;background:#fff;padding:8px 16px;border-radius:14px;border:1px solid #E2E8F0;box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-family: 'Outfit', sans-serif;">
+                        class="year-filter-form review-year-form">
                         @if(filled($distributionFilters['group']) && $distributionFilters['group'] !== 'all')
                             <input type="hidden" name="distribution_group" value="{{ $distributionFilters['group'] }}">
                         @endif
@@ -45,15 +44,17 @@
                         @foreach($distributionFilters['compare_items'] as $itemId)
                             <input type="hidden" name="compare_items[]" value="{{ $itemId }}">
                         @endforeach
-                        <i class="ri-calendar-line" style="color:#B91C1C; font-size: 18px;"></i>
-                        <select name="year" aria-label="Pilih tahun anggaran" onchange="this.form.requestSubmit()"
-                            style="border:none;outline:none;font-size:14px;font-weight:700;color:#1e293b;cursor:pointer;background:transparent;">
-                            @foreach($availableYears as $year)
-                                <option value="{{ $year }}" {{ $fiscal_year == $year ? 'selected' : '' }}>
-                                    TA {{ $year }} {{ (string) $year === (string) $active_year ? '(Aktif)' : '' }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="review-select-shell has-leading-icon">
+                            <i class="ri-calendar-line" aria-hidden="true"></i>
+                            <select name="year" class="review-modern-select" aria-label="Pilih tahun anggaran"
+                                onchange="this.form.requestSubmit()">
+                                @foreach($availableYears as $year)
+                                    <option value="{{ $year }}" {{ $fiscal_year == $year ? 'selected' : '' }}>
+                                        T.A. {{ $year }} {{ (string) $year === (string) $active_year ? '(Aktif)' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -374,28 +375,30 @@
                         @if($distributionFilters['rating'] !== null)
                             <input type="hidden" name="distribution_rating" value="{{ $distributionFilters['rating'] }}">
                         @endif
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px;">
+                        <div class="review-comparison-selects">
                             @for($i = 0; $i < 3; $i++)
-                                <select name="compare_items[]" class="comparison-select" style="width: 100%;">
-                                    <option value="">Pilih Item Kapor...</option>
-                                    @php
-                                        $groupedItems = $availableItems->groupBy('group');
-                                    @endphp
-                                    @foreach($groupedItems as $groupName => $items)
-                                        <optgroup label="Tutup {{ $groupName }}">
-                                            @foreach($items as $item)
-                                                <option value="{{ $item->id }}" {{ ($comparisonStats[$i]['id'] ?? null) == $item->id ? 'selected' : '' }} data-category="{{ $item->group }}">
-                                                    {{ $item->item_name }}
-                                                </option>
-                                            @endforeach
-                                        </optgroup>
-                                    @endforeach
-                                </select>
+                                <div class="review-select-shell">
+                                    <select name="compare_items[]" class="comparison-select" style="width: 100%;">
+                                        <option value="">Pilih Item Kapor...</option>
+                                        @php
+                                            $groupedItems = $availableItems->groupBy('group');
+                                        @endphp
+                                        @foreach($groupedItems as $groupName => $items)
+                                            <optgroup label="Tutup {{ $groupName }}">
+                                                @foreach($items as $item)
+                                                    <option value="{{ $item->id }}" {{ ($comparisonStats[$i]['id'] ?? null) == $item->id ? 'selected' : '' }} data-category="{{ $item->group }}">
+                                                        {{ $item->item_name }}
+                                                    </option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endforeach
+                                    </select>
+                                </div>
                             @endfor
                         </div>
                     </form>
 
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;">
+                    <div class="review-comparison-results">
                         @foreach($comparisonStats as $stat)
                             <div style="padding: 24px; border-radius: 20px; background: #f8fafc; border: 1px solid #f1f5f9;">
                                 <div style="margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #fff;">
@@ -453,7 +456,63 @@
 @endsection
 
 @section('styles')
+@include('components.review-select-styles')
 <style>
+        .review-comparison-selects,
+        .review-comparison-results {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .review-comparison-selects {
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .review-comparison-results {
+            gap: 28px;
+        }
+
+        .comparison-select-dropdown .select2-results__option--selectable {
+            height: 48px;
+            margin: 2px 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+        }
+
+        .comparison-option {
+            width: 100%;
+            min-width: 0;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .comparison-option__name {
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            line-height: 1.35;
+        }
+
+        .comparison-option .badge {
+            margin: 0 !important;
+            flex: 0 0 auto;
+            padding: 3px 6px;
+            font-size: 9px;
+            line-height: 1.2;
+        }
+
+        @media (max-width: 900px) {
+            .review-comparison-selects,
+            .review-comparison-results {
+                grid-template-columns: 1fr;
+            }
+        }
+
         /* Google Fonts & Modern Variables */
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -1282,6 +1341,7 @@
 @endsection
 
 @section('scripts')
+@include('components.review-select-script')
 <script>
         function exportReviewPdf(event, link, inputId) {
             event.preventDefault();
@@ -1326,6 +1386,7 @@
                 placeholder: 'Cari atau pilih item kapor...',
                 allowClear: true,
                 containerCssClass: 'modern-select2',
+                dropdownCssClass: 'review-modern-select-dropdown comparison-select-dropdown',
                 templateResult: formatItem,
                 templateSelection: formatItemSelection
             }).on('change', function () {
@@ -1342,9 +1403,9 @@
                 if (category === 'Kaki') badgeClass = 'badge-warning';
                 if (category === 'Lainnya') badgeClass = 'badge-neutral';
 
-                const $item = $(
-                    '<span>' + item.text + ' <span class="badge ' + badgeClass + '" style="font-size: 9px; margin-left: 5px;">' + category + '</span></span>'
-                );
+                const $item = $('<span class="comparison-option"><span class="comparison-option__name"></span><span class="badge"></span></span>');
+                $item.find('.comparison-option__name').text(item.text.trim());
+                $item.find('.badge').addClass(badgeClass).text(category);
                 return $item;
             };
 

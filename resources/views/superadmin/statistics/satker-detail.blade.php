@@ -19,9 +19,10 @@
             </div>
 
             <div class="review-head-actions">
-                <label class="year-control">
+                <div class="review-select-shell has-leading-icon">
                     <i class="ri-calendar-line"></i>
-                    <select onchange="window.location.href = this.value">
+                    <select class="review-modern-select" aria-label="Pilih tahun anggaran"
+                        onchange="window.location.href = this.value">
                         @foreach($availableYears as $year)
                             <option value="{{ route('superadmin.statistics.satkers.show', ['satker' => $satker, 'year' => $year]) }}"
                                 {{ (int) $year === $fiscalYear ? 'selected' : '' }}>
@@ -29,7 +30,7 @@
                             </option>
                         @endforeach
                     </select>
-                </label>
+                </div>
                 <a href="{{ route('superadmin.statistics.satkers.detail.export-pdf', array_merge(['satker' => $satker, 'year' => $fiscalYear], array_filter($filters))) }}"
                     class="pdf-button" target="_blank">
                     <i class="ri-file-pdf-2-line"></i>
@@ -76,27 +77,31 @@
                 <input type="search" name="search" value="{{ $filters['search'] }}"
                     placeholder="Cari nama, NRP/NIP, item, atau komentar">
             </label>
-            <label class="select-control">
+            <label class="review-filter-field">
                 <span>Status</span>
-                <select name="response_status">
-                    <option value="">Semua status</option>
-                    @foreach(\App\Models\ItemReview::RESPONSE_STATUSES as $value => $label)
-                        <option value="{{ $value }}" {{ $filters['response_status'] === $value ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="review-select-shell">
+                    <select name="response_status" class="review-modern-select" aria-label="Filter status">
+                        <option value="">Semua status</option>
+                        @foreach(\App\Models\ItemReview::RESPONSE_STATUSES as $value => $label)
+                            <option value="{{ $value }}" {{ $filters['response_status'] === $value ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </label>
-            <label class="select-control">
+            <label class="review-filter-field">
                 <span>Rating</span>
-                <select name="rating">
-                    <option value="">Semua rating</option>
-                    @for($rating = 5; $rating >= 1; $rating--)
-                        <option value="{{ $rating }}" {{ (int) $filters['rating'] === $rating ? 'selected' : '' }}>
-                            {{ $rating }} bintang
-                        </option>
-                    @endfor
-                </select>
+                <div class="review-select-shell">
+                    <select name="rating" class="review-modern-select" aria-label="Filter rating">
+                        <option value="">Semua rating</option>
+                        @for($rating = 5; $rating >= 1; $rating--)
+                            <option value="{{ $rating }}" {{ (int) $filters['rating'] === $rating ? 'selected' : '' }}>
+                                {{ $rating }} bintang
+                            </option>
+                        @endfor
+                    </select>
+                </div>
             </label>
             <button type="submit" class="filter-button"><i class="ri-equalizer-2-line"></i> Terapkan</button>
             @if($filters['search'] !== '' || $filters['response_status'] !== '' || $filters['rating'] !== null)
@@ -193,6 +198,7 @@
 @endsection
 
 @section('styles')
+    @include('components.review-select-styles')
     <style>
         .satker-review-page { display: grid; gap: 20px; font-family: 'Outfit', sans-serif; }
         .review-page-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
@@ -203,8 +209,6 @@
         .review-title-group h1 { margin: 4px 0 3px; color: #0f172a; font-size: 26px; line-height: 1.2; }
         .review-title-group p { margin: 0; color: #64748b; font-size: 14px; }
         .review-head-actions { display: flex; align-items: center; gap: 10px; }
-        .year-control { height: 42px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; color: #b91c1c; }
-        .year-control select { border: 0; outline: 0; background: transparent; color: #1e293b; font-weight: 700; }
         .pdf-button { height: 42px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 8px; background: #b91c1c; color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; }
         .pdf-button:hover { background: #991b1b; color: #fff; }
         .review-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
@@ -221,9 +225,6 @@
         .search-control { height: 42px; display: flex; align-items: center; gap: 9px; padding: 0 12px; border: 1px solid #dbe2ea; border-radius: 7px; color: #94a3b8; }
         .search-control:focus-within { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, .08); }
         .search-control input { width: 100%; border: 0; outline: 0; color: #1e293b; font-size: 13px; }
-        .select-control { display: grid; gap: 4px; }
-        .select-control span { color: #64748b; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-        .select-control select { height: 42px; border: 1px solid #dbe2ea; border-radius: 7px; padding: 0 10px; background: #fff; color: #1e293b; font-size: 13px; font-weight: 600; }
         .filter-button { height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; border-radius: 7px; padding: 0 14px; background: #1e293b; color: #fff; font-weight: 700; cursor: pointer; }
         .review-table-panel { border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; overflow: hidden; }
         .table-panel-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #eef2f7; }
@@ -255,4 +256,8 @@
         @media (max-width: 1100px) { .review-metrics { grid-template-columns: repeat(2, 1fr); } .review-filters { grid-template-columns: 1fr 1fr; } .search-control { grid-column: 1 / -1; } }
         @media (max-width: 700px) { .review-page-head { align-items: flex-start; flex-direction: column; } .review-head-actions { width: 100%; flex-wrap: wrap; } .review-metrics, .review-filters { grid-template-columns: 1fr; } .search-control { grid-column: auto; } .pdf-button { flex: 1; justify-content: center; } }
     </style>
+@endsection
+
+@section('scripts')
+    @include('components.review-select-script')
 @endsection

@@ -31,22 +31,23 @@
 
                 {{-- Filter Tahun Anggaran --}}
                 <form method="GET" action="{{ route('superadmin.testimonials.index') }}"
-                    class="year-filter-form"
-                    style="display:flex;align-items:center;gap:8px;background:#fff;padding:6px 12px;border-radius:10px;border:1px solid #E5E7EB;box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                    class="year-filter-form review-year-form">
                     @foreach(['search', 'category', 'response_status', 'rating'] as $filter)
                         @if(request()->filled($filter))
                             <input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">
                         @endif
                     @endforeach
-                    <i class="ri-calendar-line" style="color:#B91C1C; font-size: 16px;"></i>
-                    <select name="year" aria-label="Pilih tahun anggaran" onchange="this.form.requestSubmit()"
-                        style="border:none;outline:none;font-size:13px;font-weight:700;color:#374151;cursor:pointer;background:transparent;">
-                        @foreach($availableYears as $year)
-                            <option value="{{ $year }}" {{ $fiscalYear == $year ? 'selected' : '' }}>
-                                TA {{ $year }} {{ $year == $activeYear ? '(Aktif)' : '' }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="review-select-shell has-leading-icon">
+                        <i class="ri-calendar-line" aria-hidden="true"></i>
+                        <select name="year" class="review-modern-select" aria-label="Pilih tahun anggaran"
+                            onchange="this.form.requestSubmit()">
+                            @foreach($availableYears as $year)
+                                <option value="{{ $year }}" {{ $fiscalYear == $year ? 'selected' : '' }}>
+                                    T.A. {{ $year }} {{ $year == $activeYear ? '(Aktif)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </form>
             </div>
         </div>
@@ -275,6 +276,7 @@
 @endsection
 
 @section('styles')
+@include('components.review-select-styles')
 <style>
         .page-header {
             margin-bottom: 24px;
@@ -646,6 +648,7 @@
 @endsection
 
 @section('scripts')
+@include('components.review-select-script')
 <script>
         function exportReviewPdf(event, link, inputId) {
             event.preventDefault();
