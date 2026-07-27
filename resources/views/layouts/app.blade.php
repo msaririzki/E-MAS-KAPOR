@@ -2327,7 +2327,7 @@
                             Pengaturan
                         </a>
                         <a href="{{ route('superadmin.statistics') }}"
-                            class="nav-link {{ request()->routeIs('superadmin.statistics') ? 'active' : '' }}">
+                            class="nav-link {{ request()->routeIs('superadmin.statistics*') ? 'active' : '' }}">
                             Statistik Testimoni
                         </a>
                         <a href="{{ route('superadmin.testimonials.index') }}"

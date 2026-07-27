@@ -99,7 +99,7 @@ class PersonnelKeteranganImportTest extends TestCase
         $this->actingAs($superadmin)
             ->get(route('admin.personnel.import-keterangan-preview'))
             ->assertOk()
-            ->assertSeeText('Preview Import Keterangan');
+            ->assertSeeText('Pratinjau Unggah Keterangan Referensi');
 
         $confirmResponse = $this->actingAs($superadmin)->post(route('admin.personnel.import-keterangan-confirm'));
 

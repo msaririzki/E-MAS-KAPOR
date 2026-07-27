@@ -202,14 +202,23 @@ class PersonnelSdmImport extends PersonnelImport
         $satkersById = Satker::all()->keyBy('id');
         $allNrp = collect($rows)
             ->pluck('nrp')
-            ->map(fn ($value) => trim((string) $value))
+            ->map(fn ($value) => User::normalizeLoginIdentifier($value))
             ->filter()
             ->unique()
             ->values()
             ->all();
 
-        $existingPersonnel = Personnel::whereIn('nrp', $allNrp)->get()->keyBy('nrp');
-        $existingUsers = User::whereIn('nrp_nip', $allNrp)->get()->keyBy('nrp_nip');
+        $nrpLookup = array_fill_keys($allNrp, true);
+        $existingPersonnel = Personnel::query()
+            ->whereNotNull('nrp')
+            ->get()
+            ->filter(fn (Personnel $personnel) => isset($nrpLookup[User::normalizeLoginIdentifier($personnel->nrp)]))
+            ->keyBy(fn (Personnel $personnel) => User::normalizeLoginIdentifier($personnel->nrp));
+        $existingUsers = User::query()
+            ->whereNotNull('nrp_nip')
+            ->get()
+            ->filter(fn (User $user) => isset($nrpLookup[User::normalizeLoginIdentifier($user->nrp_nip)]))
+            ->keyBy(fn (User $user) => User::normalizeLoginIdentifier($user->nrp_nip));
 
         DB::transaction(function () use (
             $rows,
@@ -226,7 +235,7 @@ class PersonnelSdmImport extends PersonnelImport
 
             foreach ($rows as $idx => $data) {
                 $fullName = trim((string) ($data['full_name'] ?? ''));
-                $nrp = trim((string) ($data['nrp'] ?? ''));
+                $nrp = User::normalizeLoginIdentifier($data['nrp'] ?? '');
                 $rankId = (int) ($data['rank_id'] ?? 0);
                 $satkerId = (int) ($data['satker_id'] ?? 0);
                 $jabatan = trim((string) ($data['jabatan'] ?? ''));
@@ -350,55 +359,35 @@ class PersonnelSdmImport extends PersonnelImport
                         $user = $personnel->user;
                     }
 
-                    if ($user === null) {
-                        try {
-                            $user = User::create([
-                                'name' => $fullName,
-                                'nrp_nip' => $effectiveNrp,
-                                'password' => password_hash($effectiveNrp, PASSWORD_BCRYPT, ['cost' => 4]),
-                                'satker_id' => $satker->id,
-                                'is_active' => true,
-                            ]);
-                            if (! $user->hasRole('personil')) {
-                                $user->assignRole('personil');
-                            }
-                            $existingUsers->put($effectiveNrp, $user);
-                        } catch (QueryException $exception) {
-                            if ((int) ($exception->errorInfo[1] ?? 0) !== 1062) {
-                                throw $exception;
-                            }
-
-                            $user = User::query()
-                                ->where('nrp_nip', $effectiveNrp)
-                                ->first();
-
-                            if ($user === null) {
-                                throw $exception;
-                            }
-
-                            $user->update([
-                                'name' => $fullName,
-                                'satker_id' => $satker->id,
-                                'is_active' => true,
-                            ]);
-
-                            if (! $user->hasRole('personil')) {
-                                $user->assignRole('personil');
-                            }
-
-                            $existingUsers->put($effectiveNrp, $user);
+                    try {
+                        $user = User::createOrUpdatePersonnelImportAccount(
+                            $user,
+                            $effectiveNrp,
+                            $fullName,
+                            $satker->id,
+                        );
+                    } catch (QueryException $exception) {
+                        if ((int) ($exception->errorInfo[1] ?? 0) !== 1062) {
+                            throw $exception;
                         }
-                    } else {
-                        $user->update([
-                            'name' => $fullName,
-                            'satker_id' => $satker->id,
-                            'is_active' => true,
-                        ]);
 
-                        if (! $user->hasRole('personil')) {
-                            $user->assignRole('personil');
+                        $user = User::query()
+                            ->where('nrp_nip', $effectiveNrp)
+                            ->first();
+
+                        if ($user === null) {
+                            throw $exception;
                         }
+
+                        $user = User::createOrUpdatePersonnelImportAccount(
+                            $user,
+                            $effectiveNrp,
+                            $fullName,
+                            $satker->id,
+                        );
                     }
+
+                    $existingUsers->put($effectiveNrp, $user);
 
                     $payload = [
                         'user_id' => $user->id,

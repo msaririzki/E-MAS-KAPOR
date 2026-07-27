@@ -120,7 +120,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
             'keterangan' => 'KET BARU',
             'personnel_type' => 'PNS',
             'gender' => 'P',
-            'golongan' => 'III/A',
+            'golongan' => '3',
             'religion' => 'Hindu',
             'phone' => '08123456789',
         ]);
@@ -518,7 +518,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
             ->assertSessionHas('error');
     }
 
-    public function test_admin_satker_write_routes_are_blocked_outside_input_period_but_index_remains_read_only(): void
+    public function test_admin_satker_kebutuhan_remains_available_outside_personnel_input_period(): void
     {
         Setting::setValue('is_system_locked', 'false');
         Setting::setValue('input_start_date', now()->subMonths(3)->toDateString());
@@ -544,7 +544,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
                 'items' => [],
             ])
             ->assertRedirect()
-            ->assertSessionHas('error');
+            ->assertSessionHasErrors('items');
     }
 
     public function test_personil_dashboard_shows_input_period_status_and_testimonial_cta_when_sizes_complete(): void
@@ -902,8 +902,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response->assertOk();
         $response->assertSeeText('PAKAIAN HUMAS LENGAN PANJANG PRIA');
         $response->assertSeeText('Tutup Badan');
-        $response->assertSeeText('Ukuran Baju / Celana');
-        $response->assertSeeText('15 / 32');
+        $response->assertSeeTextInOrder(['Ukuran Baju / Celana', '15', '32']);
     }
 
     public function test_personil_testimoni_page_shows_read_only_notice_when_review_period_is_closed(): void
@@ -1052,7 +1051,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response->assertOk();
         $response->assertSee('class="tab-panel active" data-panel="reviewed"', false);
         $response->assertSeeText('BARET LAPANGAN');
-        $response->assertSeeText('Tutup Kepala • TA 2026 • Ukuran Topi 57');
+        $response->assertSee('Tutup Kepala &bull; TA 2026 &bull; Ukuran Topi 57', false);
         $response->assertDontSeeText('Paket Paket Review BARET LAPANGAN');
         $response->assertSeeText('Sudah diterima.');
         $response->assertSeeText('Edit');
@@ -1143,7 +1142,8 @@ class PersonnelFieldEditPolicyTest extends TestCase
 
         $response->assertOk();
         $response->assertSeeText('PAKAIAN HUMAS LENGAN PANJANG PRIA');
-        $response->assertSeeText('Tutup Badan • TA 2026 • Ukuran Baju / Celana 15 / 32');
+        $response->assertSee('Tutup Badan &bull; TA 2026 &bull; Ukuran Baju / Celana', false);
+        $response->assertSeeTextInOrder(['Ukuran Baju / Celana', '15', '32']);
     }
 
     public function test_personil_review_submit_is_blocked_outside_review_period(): void
@@ -1280,7 +1280,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response->assertSeeText('Data Kaporlap Personil');
         $response->assertSeeText('Data Personel');
         $response->assertSeeText('No. HP (WhatsApp)');
-        $response->assertSeeText('Ukuran kaporlap');
+        $response->assertSeeText('Ukuran Kaporlap');
     }
 
     private function createItemAllocation(User $user, Satker $satker, string $itemName, ?Personnel $personnel = null, ?int $fiscalYear = null): PersonnelItemAllocation

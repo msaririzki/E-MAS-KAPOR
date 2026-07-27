@@ -154,14 +154,15 @@ class User extends Authenticatable
             $identifier = sprintf('%.15g', (float) $identifier);
         }
 
-        $normalized = trim((string) $identifier);
+        $normalized = preg_replace('/[\p{Z}\s\x{FEFF}]+/u', '', (string) $identifier);
+        $normalized ??= trim((string) $identifier);
         $normalized = ltrim($normalized, "'");
 
         if (is_numeric($normalized) && stripos($normalized, 'E') !== false) {
             $normalized = number_format((float) $normalized, 0, '', '');
         }
 
-        return trim($normalized);
+        return $normalized;
     }
 
     public static function normalizeWhatsappPhone(?string $phone): ?string

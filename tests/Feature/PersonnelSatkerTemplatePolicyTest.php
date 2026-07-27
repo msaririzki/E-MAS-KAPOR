@@ -14,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Maatwebsite\Excel\Excel as ExcelFormat;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -26,6 +27,7 @@ class PersonnelSatkerTemplatePolicyTest extends TestCase
     {
         parent::setUp();
 
+        Role::findOrCreate('superadmin');
         Role::findOrCreate('admin_satker');
         Role::findOrCreate('personil');
     }
@@ -75,6 +77,183 @@ class PersonnelSatkerTemplatePolicyTest extends TestCase
         $this->assertSame('AGAMA', $headers[7][8]);
         $this->assertSame('KETERANGAN', $headers[7][9]);
         $this->assertStringContainsString('TEMPLATE UPDATE JABATAN, BAG/FUNGSI, DAN KETERANGAN', $headers[5][0]);
+    }
+
+    public function test_superadmin_export_all_satkers_includes_phone_before_keterangan(): void
+    {
+        Excel::fake();
+
+        $firstSatker = Satker::create([
+            'name' => 'Biro Logistik',
+            'code' => 'ROLOG',
+            'sort_order' => 1,
+        ]);
+        $secondSatker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 2,
+        ]);
+        $rank = Rank::create([
+            'name' => 'IPDA',
+            'category' => 'PAMA',
+            'sort_order' => 1,
+        ]);
+        $superadmin = User::factory()->create();
+        $superadmin->assignRole('superadmin');
+
+        $this->createTemplatePersonnel($firstSatker, $rank, '78071191', 'SOFIAN HADI')
+            ->update(['phone' => '081234567891', 'keterangan' => 'STAF']);
+        $this->createTemplatePersonnel($secondSatker, $rank, '79071192', 'PERSONEL BIMA')
+            ->update(['phone' => '082345678912', 'keterangan' => 'ANGGOTA']);
+
+        $this->actingAs($superadmin)
+            ->get(route('admin.personnel.export-personnel'))
+            ->assertOk();
+
+        Excel::assertDownloaded(
+            'Data_Personel_SEMUA SATKER_'.date('Ymd').'.xlsx',
+            function (PersonnelExport $export): bool {
+                $sheets = collect($export->sheets());
+                $headings = $sheets->first()->headings();
+                $rows = $sheets->flatMap(fn (PersonnelSheetExport $sheet) => $sheet->collection());
+
+                return $headings[7][9] === 'NOMOR HP'
+                    && $headings[7][10] === 'KETERANGAN'
+                    && $rows->contains(fn (array $row) => ltrim($row[9], "\t") === '081234567891' && $row[10] === 'STAF')
+                    && $rows->contains(fn (array $row) => ltrim($row[9], "\t") === '082345678912' && $row[10] === 'ANGGOTA');
+            },
+        );
+    }
+
+    public function test_superadmin_export_selected_satker_only_includes_selected_personnel_and_phone(): void
+    {
+        Excel::fake();
+
+        $selectedSatker = Satker::create([
+            'name' => 'Biro Logistik',
+            'code' => 'ROLOG',
+            'sort_order' => 1,
+        ]);
+        $otherSatker = Satker::create([
+            'name' => 'Polres Bima',
+            'code' => 'POLRES-BIMA',
+            'sort_order' => 2,
+        ]);
+        $rank = Rank::create([
+            'name' => 'IPDA',
+            'category' => 'PAMA',
+            'sort_order' => 1,
+        ]);
+        $superadmin = User::factory()->create();
+        $superadmin->assignRole('superadmin');
+
+        $this->createTemplatePersonnel($selectedSatker, $rank, '78071191', 'SOFIAN HADI')
+            ->update(['phone' => '081234567891', 'keterangan' => 'STAF']);
+        $this->createTemplatePersonnel($otherSatker, $rank, '79071192', 'PERSONEL BIMA')
+            ->update(['phone' => '082345678912', 'keterangan' => 'ANGGOTA']);
+
+        $this->actingAs($superadmin)
+            ->get(route('admin.personnel.export-personnel', ['satker_id' => $selectedSatker->id]))
+            ->assertOk();
+
+        Excel::assertDownloaded(
+            'Data_Personel_Biro Logistik_'.date('Ymd').'.xlsx',
+            function (PersonnelExport $export): bool {
+                $rows = collect($export->sheets())
+                    ->flatMap(fn (PersonnelSheetExport $sheet) => $sheet->collection());
+
+                return $rows->contains(fn (array $row) => $row[1] === 'SOFIAN HADI' && ltrim($row[9], "\t") === '081234567891')
+                    && ! $rows->contains(fn (array $row) => $row[1] === 'PERSONEL BIMA');
+            },
+        );
+    }
+
+    public function test_superadmin_phone_export_can_be_read_without_shifting_keterangan(): void
+    {
+        $satker = Satker::create([
+            'name' => 'Biro Logistik',
+            'code' => 'ROLOG',
+            'sort_order' => 1,
+        ]);
+        $rank = Rank::create([
+            'name' => 'IPDA',
+            'category' => 'PAMA',
+            'sort_order' => 1,
+        ]);
+        $personnel = $this->createTemplatePersonnel($satker, $rank, '78071191', 'SOFIAN HADI');
+
+        $preview = (new PersonnelUpdateImport($satker->id))->generatePreview(collect([[
+            1,
+            'SOFIAN HADI',
+            'IPDA',
+            'PAMA',
+            '78071191',
+            'PAMIN ROLOG',
+            'SUBBAGRENMIN',
+            'P',
+            'Islam',
+            '081234567891',
+            'KETERANGAN BARU',
+        ]]));
+
+        $this->assertCount(1, $preview);
+        $this->assertSame($personnel->id, $preview[0]['personnel_id']);
+        $this->assertSame('KETERANGAN BARU', $preview[0]['keterangan']);
+        $this->assertSame([], $preview[0]['sizes']);
+    }
+
+    public function test_superadmin_phone_is_written_as_excel_text_with_leading_zero(): void
+    {
+        $satker = Satker::create([
+            'name' => 'Biro Logistik',
+            'code' => 'ROLOG',
+            'sort_order' => 1,
+        ]);
+        $rank = Rank::create([
+            'name' => 'IPDA',
+            'category' => 'PAMA',
+            'sort_order' => 1,
+        ]);
+        $user = User::factory()->create([
+            'phone' => '081234567891',
+            'satker_id' => $satker->id,
+        ]);
+        $user->assignRole('personil');
+        $personnel = $this->createTemplatePersonnel($satker, $rank, '78071191', 'SOFIAN HADI');
+        $personnel->update([
+            'user_id' => $user->id,
+            'phone' => null,
+            'keterangan' => 'STAF',
+        ]);
+
+        $binary = Excel::raw(
+            new PersonnelExport(
+                [$satker->id],
+                $satker->name,
+                null,
+                [],
+                PersonnelSheetExport::MODE_UPDATE,
+                true,
+            ),
+            ExcelFormat::XLSX,
+        );
+        $path = storage_path('framework/testing/personnel-export-with-phone.xlsx');
+        if (! is_dir(dirname($path))) {
+            mkdir(dirname($path), 0777, true);
+        }
+        file_put_contents($path, $binary);
+
+        try {
+            $sheet = IOFactory::load($path)->getSheetByName('Data Polri');
+
+            $this->assertSame('NOMOR HP', $sheet->getCell('J8')->getValue());
+            $this->assertSame('KETERANGAN', $sheet->getCell('K8')->getValue());
+            $this->assertSame('081234567891', $sheet->getCell('J11')->getValue());
+            $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('J11')->getDataType());
+            $this->assertSame('STAF', $sheet->getCell('K11')->getValue());
+        } finally {
+            @unlink($path);
+        }
     }
 
     public function test_satker_export_template_keeps_first_two_personnel_rows_visible(): void

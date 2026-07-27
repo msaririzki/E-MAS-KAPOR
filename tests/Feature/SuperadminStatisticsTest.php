@@ -461,6 +461,118 @@ class SuperadminStatisticsTest extends TestCase
             ->assertDownload('Hasil_Review_Kapor_TA_2026.docx');
     }
 
+    public function test_satker_recap_shows_every_satker_including_satkers_without_reviews(): void
+    {
+        Setting::setValue('fiscal_year', '2026');
+
+        $satkers = collect(range(1, 7))->map(fn (int $index) => Satker::create([
+            'name' => 'Satker '.$index,
+            'code' => 'SATKER-'.$index,
+            'sort_order' => $index,
+        ]));
+
+        $superadmin = User::factory()->create(['satker_id' => $satkers->first()->id]);
+        $superadmin->assignRole('superadmin');
+
+        $personil = User::factory()->create([
+            'name' => 'BRIPTU PERSONEL SATKER SATU',
+            'nrp_nip' => '99110001',
+            'satker_id' => $satkers->first()->id,
+        ]);
+        $personil->assignRole('personil');
+
+        $allocation = $this->createAllocation($personil, $satkers->first(), 'BARET LAPANGAN');
+        ItemReview::create([
+            'personnel_item_allocation_id' => $allocation->id,
+            'user_id' => $personil->id,
+            'kapor_item_id' => $allocation->kapor_item_id,
+            'fiscal_year' => 2026,
+            'response_status' => ItemReview::STATUS_REVIEWED,
+            'comment' => 'Ulasan Satker 1.',
+            'rating' => 5,
+            'submitted_at' => now(),
+        ]);
+
+        $response = $this->actingAs($superadmin)->get(route('superadmin.statistics'));
+
+        $response->assertOk()
+            ->assertSeeText('Rekap Ulasan Seluruh Satker')
+            ->assertSeeText('Satker 7')
+            ->assertViewHas('satkerStats', function ($stats): bool {
+                $emptySatker = $stats->firstWhere('satker_name', 'Satker 7');
+
+                return $stats->count() === 7
+                    && $stats->first()['total_feedback'] === 1
+                    && $emptySatker['total_feedback'] === 0;
+            });
+    }
+
+    public function test_superadmin_can_open_satker_review_detail_and_download_satker_pdfs(): void
+    {
+        Setting::setValue('fiscal_year', '2026');
+
+        $satker = Satker::create([
+            'name' => 'Polres Detail',
+            'code' => 'POLRES-DETAIL',
+            'sort_order' => 1,
+        ]);
+        $otherSatker = Satker::create([
+            'name' => 'Polres Lain',
+            'code' => 'POLRES-LAIN',
+            'sort_order' => 2,
+        ]);
+
+        $superadmin = User::factory()->create(['satker_id' => $satker->id]);
+        $superadmin->assignRole('superadmin');
+        $personil = User::factory()->create([
+            'name' => 'BRIPTU DETAIL PERSONEL',
+            'nrp_nip' => '99110002',
+            'satker_id' => $satker->id,
+        ]);
+        $personil->assignRole('personil');
+        $otherPersonil = User::factory()->create([
+            'name' => 'PERSONEL SATKER LAIN',
+            'nrp_nip' => '99110003',
+            'satker_id' => $otherSatker->id,
+        ]);
+        $otherPersonil->assignRole('personil');
+
+        foreach ([
+            [$personil, $satker, 'SEPATU DETAIL', 'Komentar personel detail.'],
+            [$otherPersonil, $otherSatker, 'SEPATU LAIN', 'Komentar satker lain.'],
+        ] as [$user, $reviewSatker, $item, $comment]) {
+            $allocation = $this->createAllocation($user, $reviewSatker, $item, 'Tutup Kaki', 'Tutup_Kaki');
+            ItemReview::create([
+                'personnel_item_allocation_id' => $allocation->id,
+                'user_id' => $user->id,
+                'kapor_item_id' => $allocation->kapor_item_id,
+                'fiscal_year' => 2026,
+                'response_status' => ItemReview::STATUS_REVIEWED,
+                'comment' => $comment,
+                'rating' => 4,
+                'submitted_at' => now(),
+            ]);
+        }
+
+        $this->actingAs($superadmin)
+            ->get(route('superadmin.statistics.satkers.show', ['satker' => $satker, 'year' => 2026]))
+            ->assertOk()
+            ->assertSeeText('BRIPTU DETAIL PERSONEL')
+            ->assertSeeText('99110002')
+            ->assertSeeText('Komentar personel detail.')
+            ->assertDontSeeText('PERSONEL SATKER LAIN');
+
+        $this->actingAs($superadmin)
+            ->get(route('superadmin.statistics.satkers.export-pdf', ['year' => 2026]))
+            ->assertOk()
+            ->assertDownload('Rekap_Ulasan_Seluruh_Satker_TA_2026.pdf');
+
+        $this->actingAs($superadmin)
+            ->get(route('superadmin.statistics.satkers.detail.export-pdf', ['satker' => $satker, 'year' => 2026]))
+            ->assertOk()
+            ->assertDownload('Detail_Ulasan_Polres_Detail_TA_2026.pdf');
+    }
+
     private function createAllocation(User $user, Satker $satker, string $itemName, string $snapshotCategory = 'Tutup Kepala', string $dbCategory = 'Tutup_Kepala', int $fiscalYear = 2026): PersonnelItemAllocation
     {
         $budgetYear = BudgetYear::firstOrCreate([

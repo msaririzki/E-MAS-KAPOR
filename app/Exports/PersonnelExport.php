@@ -25,24 +25,33 @@ class PersonnelExport implements WithMultipleSheets
 
     protected string $mode;
 
+    protected bool $includePhone;
+
     /**
      * @param  array|null  $satkerIds  Array of satker IDs to filter, null = semua.
      * @param  array|null  $personnelIds  Array of personnel IDs to filter, null = tanpa filter personel spesifik.
      * @param  string  $satkerName  Nama untuk header.
      * @param  array<string, string>  $signatorySettings  Resolved signatory settings.
      */
-    public function __construct(?array $satkerIds = null, string $satkerName = 'SEMUA SATKER', ?array $personnelIds = null, array $signatorySettings = [], string $mode = PersonnelSheetExport::MODE_UPDATE)
-    {
+    public function __construct(
+        ?array $satkerIds = null,
+        string $satkerName = 'SEMUA SATKER',
+        ?array $personnelIds = null,
+        array $signatorySettings = [],
+        string $mode = PersonnelSheetExport::MODE_UPDATE,
+        bool $includePhone = false,
+    ) {
         $this->satkerIds = $satkerIds;
         $this->satkerName = $satkerName;
         $this->personnelIds = $personnelIds;
         $this->signatorySettings = $signatorySettings;
         $this->mode = $mode;
+        $this->includePhone = $includePhone;
     }
 
     public function sheets(): array
     {
-        $query = Personnel::with(['rank', 'satker'])
+        $query = Personnel::with(['rank', 'satker', 'user:id,phone'])
             ->leftJoin('satkers', 'personnels.satker_id', '=', 'satkers.id')
             ->select('personnels.*')
             ->orderByRaw("CASE WHEN satkers.code = 'POLDA-NTB' THEN 1 ELSE 0 END ASC")
@@ -67,8 +76,8 @@ class PersonnelExport implements WithMultipleSheets
         $pns = $all->filter(fn ($p) => ! $this->isPolri($p));
 
         return [
-            new PersonnelSheetExport($polri, $this->satkerName, 'Data Polri', $this->signatorySettings, $this->mode),
-            new PersonnelSheetExport($pns, $this->satkerName, 'Data PNS', $this->signatorySettings, $this->mode),
+            new PersonnelSheetExport($polri, $this->satkerName, 'Data Polri', $this->signatorySettings, $this->mode, $this->includePhone),
+            new PersonnelSheetExport($pns, $this->satkerName, 'Data PNS', $this->signatorySettings, $this->mode, $this->includePhone),
         ];
     }
 

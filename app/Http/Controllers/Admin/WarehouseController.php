@@ -265,7 +265,7 @@ class WarehouseController extends Controller
                         if ($size->stock < $sizeData['quantity']) {
                             DB::rollBack();
 
-                            return back()->withInput()->with('error', 'Stok ' . $size->item->name . ' ukuran ' . $size->size_label . ' tidak mencukupi. (Stok tersisa: ' . $size->stock . ')');
+                            return back()->withInput()->with('error', 'Stok '.$size->item->name.' ukuran '.$size->size_label.' tidak mencukupi. (Stok tersisa: '.$size->stock.')');
                         }
 
                         // Kurangi stok
@@ -294,21 +294,21 @@ class WarehouseController extends Controller
                 $mode = $request->m2_mode ?? 'acak';
                 $totalsNeeded = [];
                 $totalsNeededSize = [];
-                
+
                 // Calculate total needed per ITEM id
                 foreach ($request->selected_satkers as $satkerId) {
                     foreach ($request->selected_items as $itemId) {
                         if ($mode === 'ukuran') {
                             if (isset($request->quantities_size[$satkerId][$itemId]) && is_array($request->quantities_size[$satkerId][$itemId])) {
                                 foreach ($request->quantities_size[$satkerId][$itemId] as $sizeId => $qty) {
-                                    $qty = (int)$qty;
+                                    $qty = (int) $qty;
                                     if ($qty > 0) {
                                         $totalsNeededSize[$itemId][$sizeId] = ($totalsNeededSize[$itemId][$sizeId] ?? 0) + $qty;
                                     }
                                 }
                             }
                         } else {
-                            $qty = isset($request->quantities[$satkerId][$itemId]) ? (int)$request->quantities[$satkerId][$itemId] : 0;
+                            $qty = isset($request->quantities[$satkerId][$itemId]) ? (int) $request->quantities[$satkerId][$itemId] : 0;
                             if ($qty > 0) {
                                 $totalsNeeded[$itemId] = ($totalsNeeded[$itemId] ?? 0) + $qty;
                             }
@@ -318,10 +318,12 @@ class WarehouseController extends Controller
 
                 if ($mode === 'ukuran' && empty($totalsNeededSize)) {
                     DB::rollBack();
+
                     return back()->withInput()->with('error', 'Tidak ada barang dengan jumlah > 0 yang dibagikan ke satker mana pun.');
                 }
                 if ($mode === 'acak' && empty($totalsNeeded)) {
                     DB::rollBack();
+
                     return back()->withInput()->with('error', 'Tidak ada barang dengan jumlah > 0 yang dibagikan ke satker mana pun.');
                 }
 
@@ -334,7 +336,8 @@ class WarehouseController extends Controller
                             $sizeObj = WarehouseItemSize::findOrFail($sizeId);
                             if ($sizeObj->stock < $totalQty) {
                                 DB::rollBack();
-                                return back()->withInput()->with('error', 'Total stok ' . $item->name . ' ukuran ' . $sizeObj->size_label . ' tidak mencukupi. (Dibutuhkan: ' . $totalQty . ', Stok: ' . $sizeObj->stock . ')');
+
+                                return back()->withInput()->with('error', 'Total stok '.$item->name.' ukuran '.$sizeObj->size_label.' tidak mencukupi. (Dibutuhkan: '.$totalQty.', Stok: '.$sizeObj->stock.')');
                             }
                         }
                     }
@@ -345,7 +348,8 @@ class WarehouseController extends Controller
                         if ($totalStock < $totalQty) {
                             $item = \App\Models\WarehouseItem::findOrFail($itemId);
                             DB::rollBack();
-                            return back()->withInput()->with('error', 'Total stok ' . $item->name . ' tidak mencukupi untuk total pembagian. (Dibutuhkan: ' . $totalQty . ', Stok tersisa: ' . $totalStock . ')');
+
+                            return back()->withInput()->with('error', 'Total stok '.$item->name.' tidak mencukupi untuk total pembagian. (Dibutuhkan: '.$totalQty.', Stok tersisa: '.$totalStock.')');
                         }
                     }
                 }
@@ -353,61 +357,63 @@ class WarehouseController extends Controller
                 // If sufficient, reduce stock and create outflow
                 foreach ($request->selected_satkers as $satkerId) {
                     foreach ($request->selected_items as $itemId) {
-                        
+
                         if ($mode === 'ukuran') {
                             if (isset($request->quantities_size[$satkerId][$itemId]) && is_array($request->quantities_size[$satkerId][$itemId])) {
                                 foreach ($request->quantities_size[$satkerId][$itemId] as $sizeId => $qty) {
-                                    $qtyRequired = (int)$qty;
+                                    $qtyRequired = (int) $qty;
                                     if ($qtyRequired > 0) {
                                         $sizeObj = WarehouseItemSize::findOrFail($sizeId);
                                         $sizeObj->stock -= $qtyRequired;
                                         $sizeObj->save();
-                                        
+
                                         WarehouseOutflow::create([
                                             'warehouse_item_size_id' => $sizeObj->id,
                                             'satker_id' => $satkerId,
                                             'quantity' => $qtyRequired,
                                             'outflow_date' => $request->outflow_date,
-                                            'recipient_name' => null, 
+                                            'recipient_name' => null,
                                             'reference_note' => 'Belum Ada',
                                             'letter_number' => $request->letter_number,
                                             'letter_date' => $request->letter_date,
                                         ]);
-                                        
+
                                         $createdCount++;
                                     }
                                 }
                             }
                         } else {
                             // Acak FIFO
-                            $qtyRequired = isset($request->quantities[$satkerId][$itemId]) ? (int)$request->quantities[$satkerId][$itemId] : 0;
+                            $qtyRequired = isset($request->quantities[$satkerId][$itemId]) ? (int) $request->quantities[$satkerId][$itemId] : 0;
                             if ($qtyRequired > 0) {
                                 $sizes = WarehouseItemSize::where('warehouse_item_id', $itemId)
-                                            ->where('stock', '>', 0)
-                                            ->orderBy('id')
-                                            ->get();
-                                
+                                    ->where('stock', '>', 0)
+                                    ->orderBy('id')
+                                    ->get();
+
                                 $remaining = $qtyRequired;
-                                
+
                                 foreach ($sizes as $size) {
-                                    if ($remaining <= 0) break;
-                                    
+                                    if ($remaining <= 0) {
+                                        break;
+                                    }
+
                                     $take = min($size->stock, $remaining);
-                                    
+
                                     $size->stock -= $take;
                                     $size->save();
-                                    
+
                                     WarehouseOutflow::create([
                                         'warehouse_item_size_id' => $size->id,
                                         'satker_id' => $satkerId,
                                         'quantity' => $take,
                                         'outflow_date' => $request->outflow_date,
-                                        'recipient_name' => null, 
+                                        'recipient_name' => null,
                                         'reference_note' => 'Belum Ada',
                                         'letter_number' => $request->letter_number,
                                         'letter_date' => $request->letter_date,
                                     ]);
-                                    
+
                                     $createdCount++;
                                     $remaining -= $take;
                                 }

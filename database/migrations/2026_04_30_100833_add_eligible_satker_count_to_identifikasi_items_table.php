@@ -17,9 +17,9 @@ return new class extends Migration
     {
         Schema::table('identifikasi_items', function (Blueprint $table) {
             $table->unsignedSmallInteger('eligible_satker_count')
-                  ->nullable()
-                  ->after('description')
-                  ->comment('Jumlah satker yang berhak memilih item ini. NULL = semua satker.');
+                ->nullable()
+                ->after('description')
+                ->comment('Jumlah satker yang berhak memilih item ini. NULL = semua satker.');
         });
     }
 
@@ -33,4 +33,3 @@ return new class extends Migration
         });
     }
 };
-

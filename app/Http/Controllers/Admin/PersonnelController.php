@@ -153,7 +153,11 @@ class PersonnelController extends Controller
         }
 
         // Pagination
-        $perPage = $request->get('per_page', $isIncompleteFilter ? 100 : 10);
+        $defaultPerPage = $isIncompleteFilter ? 100 : 10;
+        $requestedPerPage = $request->integer('per_page', $defaultPerPage);
+        $perPage = in_array($requestedPerPage, [10, 25, 50, 100], true)
+            ? $requestedPerPage
+            : $defaultPerPage;
         $filteredStatsCollection = collect();
         if ($isIncompleteFilter && ! empty($missingSizeFilter) && $kaporItemId > 0) {
             $kaporItem = KaporItem::with('sizes')->find($kaporItemId);
@@ -205,11 +209,16 @@ class PersonnelController extends Controller
 
         $ranks = Rank::orderBy('sort_order')->get();
         $satkers = Satker::orderBy('sort_order')->orderBy('name')->get();
+        $defaultStudentSatker = $satkers->first(
+            fn (Satker $satker): bool => Str::upper(trim($satker->name)) === 'POLDA NTB, SISWA, TA, BA, PAMA, PAMEN'
+        ) ?? $satkers->first(
+            fn (Satker $satker): bool => Str::contains(Str::upper($satker->name), 'SISWA')
+        );
         $bagians = $this->resolveAvailableBagians($request);
         $printSignatoryDefaults = app(ExportSignatorySettingService::class)->resolveForUser($request->user());
         // Note: kaporItems query removed as we now use decoupled JSON sizes in kapor_sizes column
 
-        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId', 'printSignatoryDefaults'));
+        return view('admin.personnel.index', compact('personnels', 'stats', 'ranks', 'satkers', 'defaultStudentSatker', 'bagians', 'perPage', 'isIncompleteFilter', 'missingSizeFilter', 'incompleteScope', 'kaporItemId', 'printSignatoryDefaults'));
 
     }
 
@@ -554,6 +563,9 @@ class PersonnelController extends Controller
         $oldSatkerId = $personnel->satker_id;
         $validated['phone'] = User::normalizePhone($validated['phone'] ?? null);
         $validated['nrp'] = User::normalizeLoginIdentifier($validated['nrp']);
+        if ($personnel->isStudentRecord()) {
+            $validated['satker_id'] = $oldSatkerId;
+        }
         $duplicateIdentity = $this->findDuplicatePersonnelIdentity($validated['nrp'], $personnel, $personnel->user);
 
         if ($duplicateIdentity !== null) {
@@ -574,6 +586,19 @@ class PersonnelController extends Controller
             }
 
             $personnel->fill($validated);
+
+            if ($personnel->isStudentRecord()) {
+                if (! $personnel->isDirty()) {
+                    DB::rollBack();
+
+                    return redirect()->back()->with('info', 'Tidak ada perubahan pada data siswa.');
+                }
+
+                $personnel->forceFill(['user_id' => null])->save();
+                DB::commit();
+
+                return redirect()->back()->with('success', 'Data siswa berhasil diperbarui tanpa membuat akun login.');
+            }
 
             $user = $personnel->user;
             $targetUserState = [
@@ -681,6 +706,19 @@ class PersonnelController extends Controller
             }
 
             $personnel->fill($validated);
+
+            if ($personnel->isStudentRecord()) {
+                if (! $personnel->isDirty()) {
+                    DB::rollBack();
+
+                    return redirect()->back()->with('info', 'Tidak ada perubahan pada data siswa.');
+                }
+
+                $personnel->forceFill(['user_id' => null])->save();
+                DB::commit();
+
+                return redirect()->back()->with('success', 'Data siswa berhasil diperbarui tanpa membuat akun login.');
+            }
 
             $user = $personnel->user;
             $targetUserState = [
@@ -1008,7 +1046,17 @@ class PersonnelController extends Controller
             ? PersonnelSheetExport::MODE_MONITORING
             : PersonnelSheetExport::MODE_UPDATE;
 
-        return Excel::download(new PersonnelExport($satkerIds, $satkerName, $personnelIds, $signatorySettings, $mode), $fileName);
+        return Excel::download(
+            new PersonnelExport(
+                $satkerIds,
+                $satkerName,
+                $personnelIds,
+                $signatorySettings,
+                $mode,
+                $user->hasRole('superadmin'),
+            ),
+            $fileName,
+        );
     }
 
     /**

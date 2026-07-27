@@ -8,6 +8,10 @@ use Illuminate\Support\Collection;
 
 class TestimonialInsightService
 {
+    public function __construct(
+        private readonly TestimonialSatkerReportService $satkerReportService,
+    ) {}
+
     private const DISTRIBUTION_GROUPS = [
         'kepala' => [
             'label' => 'Tutup Kepala',
@@ -121,18 +125,15 @@ class TestimonialInsightService
         $serviceScore = $totalReviewed > 0 ? (int) round(($averageRating / 5) * 100) : 0;
         $receivedRate = $this->percentage($totalReviewed, $totalTestimonials);
 
-        $topSatkers = (clone $baseQuery)
-            ->leftJoin('personnel_item_allocations', 'personnel_item_allocations.id', '=', 'item_reviews.personnel_item_allocation_id')
-            ->leftJoin('users', 'users.id', '=', 'item_reviews.user_id')
-            ->leftJoin('satkers', 'satkers.id', '=', 'users.satker_id')
-            ->selectRaw("COALESCE(personnel_item_allocations.satker_name_snapshot, satkers.name, 'Tanpa Satker') as satker_name")
-            ->selectRaw('COUNT(item_reviews.id) as total_feedback')
-            ->selectRaw("ROUND(AVG(CASE WHEN item_reviews.response_status = 'reviewed' THEN item_reviews.rating END), 1) as average_rating")
-            ->groupBy('satker_name')
-            ->orderByDesc('total_feedback')
-            ->orderByDesc('average_rating')
-            ->limit(5)
-            ->get();
+        $satkerStats = $this->satkerReportService->summaries((int) $fiscalYear);
+        $topSatkers = $satkerStats
+            ->where('total_feedback', '>', 0)
+            ->take(5)
+            ->map(fn (array $satker): object => (object) [
+                'satker_name' => $satker['satker_name'],
+                'total_feedback' => $satker['total_feedback'],
+                'average_rating' => $satker['average_rating'],
+            ]);
 
         $latestTestimonials = (clone $baseQuery)->with(['user.satker', 'kaporItem', 'allocation'])
             ->orderByRaw($this->submissionTimestampExpression().' DESC')
@@ -202,6 +203,7 @@ class TestimonialInsightService
             'sentimentBreakdown' => $sentimentBreakdown,
             'serviceInsight' => $serviceInsight,
             'serviceScore' => $serviceScore,
+            'satkerStats' => $satkerStats,
             'topSatkers' => $topSatkers,
             'totalTestimonials' => $totalTestimonials,
             'comparisonStats' => $this->buildComparisonStats($distributionFilters['compare_items'], $fiscalYear),
