@@ -116,6 +116,17 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
     Route::get('/personnel/import-update-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdatePreview'])->name('personnel.import-update-preview');
     Route::post('/personnel/import-update-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdateConfirm'])->name('personnel.import-update-confirm');
     Route::post('/personnel/import-update-cancel', [\App\Http\Controllers\Admin\PersonnelController::class, 'importUpdateCancel'])->name('personnel.import-update-cancel');
+    Route::get('/personnel/consolidation', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'index'])->name('personnel.consolidation.index');
+    Route::get('/personnel/consolidation/download', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'download'])->name('personnel.consolidation.download');
+    Route::post('/personnel/consolidation/import', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'import'])->name('personnel.consolidation.import');
+    Route::get('/personnel/consolidation/preview', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'preview'])->name('personnel.consolidation.preview');
+    Route::post('/personnel/consolidation/fix-row', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'fixRow'])->name('personnel.consolidation.fix-row');
+    Route::post('/personnel/consolidation/confirm', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'confirm'])->name('personnel.consolidation.confirm');
+    Route::post('/personnel/consolidation/cancel', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'cancel'])->name('personnel.consolidation.cancel');
+    Route::middleware('role:superadmin')->group(function () {
+        Route::get('/personnel/transfer-requests', [\App\Http\Controllers\Admin\PersonnelTransferRequestController::class, 'index'])->name('personnel.transfer-requests.index');
+        Route::post('/personnel/transfer-requests/review', [\App\Http\Controllers\Admin\PersonnelTransferRequestController::class, 'review'])->name('personnel.transfer-requests.review');
+    });
     Route::post('/personnel/import-keterangan', [\App\Http\Controllers\Admin\PersonnelController::class, 'importKeterangan'])->name('personnel.import-keterangan');
     Route::get('/personnel/import-keterangan-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importKeteranganPreview'])->name('personnel.import-keterangan-preview');
     Route::post('/personnel/import-keterangan-confirm', [\App\Http\Controllers\Admin\PersonnelController::class, 'importKeteranganConfirm'])->name('personnel.import-keterangan-confirm');
@@ -134,6 +145,7 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
         Route::get('/personnel/student-template', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'downloadTemplate'])->name('personnel.student-template');
         Route::post('/personnel/student-import', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'import'])->name('personnel.student-import');
         Route::get('/personnel/student-import-preview', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'preview'])->name('personnel.student-import-preview');
+        Route::post('/personnel/student-import-fix-row', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'fixRow'])->name('personnel.student-import-fix-row');
         Route::post('/personnel/student-import-confirm', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'confirm'])->name('personnel.student-import-confirm');
         Route::post('/personnel/student-import-cancel', [\App\Http\Controllers\Admin\StudentPersonnelImportController::class, 'cancel'])->name('personnel.student-import-cancel');
     });

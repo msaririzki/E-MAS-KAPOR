@@ -44,6 +44,7 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
         protected string $sheetTitle,
         protected array $signatorySettings = [],
         protected string $mode = self::MODE_UPDATE,
+        protected bool $includePhone = false,
     ) {}
 
     public function title(): string
@@ -66,7 +67,7 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
         foreach ($this->personnels as $personnel) {
             $genderExcel = $personnel->gender === 'P' ? 'W' : 'P';
 
-            $rows->push([
+            $row = [
                 $no++,
                 $personnel->full_name ?? '',
                 $personnel->rank->name ?? '',
@@ -76,8 +77,14 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
                 $personnel->bagian ?? '',
                 $genderExcel,
                 $personnel->religion ?? '',
-                $personnel->keterangan ?? '',
-            ]);
+            ];
+
+            if ($this->includePhone) {
+                $row[] = "\t".($personnel->phone ?: $personnel->user?->phone ?? '');
+            }
+
+            $row[] = $personnel->keterangan ?? '';
+            $rows->push($row);
         }
 
         return $rows;
@@ -118,9 +125,15 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
 
     public function columnFormats(): array
     {
-        return [
+        $formats = [
             'E' => NumberFormat::FORMAT_TEXT,
         ];
+
+        if ($this->mode === self::MODE_UPDATE && $this->includePhone) {
+            $formats['J'] = NumberFormat::FORMAT_TEXT;
+        }
+
+        return $formats;
     }
 
     public function headings(): array
@@ -134,6 +147,13 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
     {
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
 
+        $columns = ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP/NIP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'AGAMA'];
+        if ($this->includePhone) {
+            $columns[] = 'NOMOR HP';
+        }
+        $columns[] = 'KETERANGAN';
+        $columnCount = count($columns);
+
         return [
             ['KEPOLISIAN NEGARA REPUBLIK INDONESIA'],
             ['DAERAH NUSA TENGGARA BARAT'],
@@ -142,9 +162,9 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
             ['DATA PERSONEL SATKER '.strtoupper($this->satkerName)],
             ['TEMPLATE UPDATE JABATAN, BAG/FUNGSI, DAN KETERANGAN TA. '.$fiscalYear],
             [''],
-            ['NO', 'NAMA', 'PANGKAT', 'GOLONGAN', 'NRP/NIP', 'JABATAN', 'BAG/FUNGSI', 'JENIS KELAMIN P / W', 'AGAMA', 'KETERANGAN'],
-            array_fill(0, 10, ' '),
-            array_fill(0, 10, ' '),
+            $columns,
+            array_fill(0, $columnCount, ' '),
+            array_fill(0, $columnCount, ' '),
         ];
     }
 
@@ -204,25 +224,33 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
     private function applyUpdateTemplateSheet(Worksheet $sheet, int $lastDataRow): void
     {
         $this->normalizeDataRows($sheet, $lastDataRow);
+        $lastColumn = $this->includePhone ? 'K' : 'J';
+        $keteranganColumn = $this->includePhone ? 'K' : 'J';
 
         for ($row = 11; $row <= $lastDataRow; $row++) {
             $cell = $sheet->getCell('E'.$row);
             $rawValue = ltrim((string) $cell->getValue(), "\t");
             $cell->setValueExplicit($rawValue, DataType::TYPE_STRING);
+
+            if ($this->includePhone) {
+                $phoneCell = $sheet->getCell('J'.$row);
+                $phone = ltrim((string) $phoneCell->getValue(), "\t");
+                $phoneCell->setValueExplicit($phone, DataType::TYPE_STRING);
+            }
         }
 
-        $sheet->getStyle('A1:J6')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("A1:{$lastColumn}6")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->mergeCells('A1:C1');
         $sheet->mergeCells('A2:C2');
         $sheet->mergeCells('A3:C3');
-        $sheet->mergeCells('A5:J5');
-        $sheet->mergeCells('A6:J6');
+        $sheet->mergeCells("A5:{$lastColumn}5");
+        $sheet->mergeCells("A6:{$lastColumn}6");
 
-        foreach (range('A', 'J') as $column) {
+        foreach (range('A', $lastColumn) as $column) {
             $sheet->mergeCells($column.'8:'.$column.'10');
         }
 
-        $sheet->getStyle('A8:J10')->applyFromArray([
+        $sheet->getStyle("A8:{$lastColumn}10")->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
@@ -232,7 +260,7 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
         ]);
 
         if ($lastDataRow >= 11) {
-            $sheet->getStyle('A11:J'.$lastDataRow)->applyFromArray([
+            $sheet->getStyle("A11:{$lastColumn}{$lastDataRow}")->applyFromArray([
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
@@ -246,7 +274,7 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
             ]);
         }
 
-        $sheet->getStyle('A8:J10')->getFill()
+        $sheet->getStyle("A8:{$lastColumn}10")->getFill()
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setARGB('F2F2F2');
 
@@ -263,11 +291,11 @@ class PersonnelSheetExport implements FromCollection, ShouldAutoSize, WithColumn
             $sheet->getStyle('E11:E'.$lastDataRow)
                 ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-            $sheet->getStyle('A11:J'.$lastDataRow)
+            $sheet->getStyle("A11:{$lastColumn}{$lastDataRow}")
                 ->getProtection()
                 ->setLocked(Protection::PROTECTION_PROTECTED);
 
-            foreach (['F', 'G', 'J'] as $editableColumn) {
+            foreach (['F', 'G', $keteranganColumn] as $editableColumn) {
                 $sheet->getStyle($editableColumn.'11:'.$editableColumn.$lastDataRow)
                     ->getProtection()
                     ->setLocked(Protection::PROTECTION_UNPROTECTED);

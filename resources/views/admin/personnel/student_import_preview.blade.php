@@ -5,6 +5,7 @@
 
 @section('content')
 @php
+    $ranks = $ranks ?? collect();
     $statusMeta = [
         'create' => ['label' => 'Data Baru', 'icon' => 'ri-user-add-line', 'class' => 'new'],
         'update' => ['label' => 'Diperbarui', 'icon' => 'ri-refresh-line', 'class' => 'update'],
@@ -28,6 +29,12 @@
     <div class="student-alert error">
         <i class="ri-error-warning-fill"></i>
         <span>{{ session('error') }}</span>
+    </div>
+@endif
+@if(session('success'))
+    <div class="student-alert success">
+        <i class="ri-checkbox-circle-fill"></i>
+        <span>{{ session('success') }}</span>
     </div>
 @endif
 
@@ -188,6 +195,15 @@
                                         <span><i class="ri-close-circle-fill"></i>{{ $error }}</span>
                                     @endforeach
                                 </div>
+                                <button
+                                    type="button"
+                                    class="student-fix-button"
+                                    data-fix-row="{{ base64_encode(json_encode($row)) }}"
+                                    onclick="openStudentFixModal(this)"
+                                >
+                                    <i class="ri-edit-box-line"></i>
+                                    Perbaiki di Web
+                                </button>
                             @else
                                 <span class="valid-row"><i class="ri-checkbox-circle-fill"></i> Valid</span>
                             @endif
@@ -242,6 +258,95 @@
         </div>
     @endif
 </div>
+
+<div id="studentFixModal" class="student-fix-modal" aria-hidden="true">
+    <div class="student-fix-backdrop" onclick="closeStudentFixModal()"></div>
+    <section class="student-fix-dialog" role="dialog" aria-modal="true" aria-labelledby="studentFixTitle">
+        <div class="student-fix-header">
+            <div>
+                <span class="student-eyebrow">PERBAIKAN LANGSUNG</span>
+                <h2 id="studentFixTitle">Perbaiki Baris Siswa</h2>
+                <p id="studentFixSubtitle">Lengkapi kolom yang ditandai, lalu simpan untuk memeriksa ulang seluruh file.</p>
+            </div>
+            <button type="button" class="student-fix-close" onclick="closeStudentFixModal()" aria-label="Tutup">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <form method="POST" action="{{ route('admin.personnel.student-import-fix-row') }}" id="studentFixForm">
+            @csrf
+            <input type="hidden" name="row_number" id="student_fix_row_number">
+            <div class="student-fix-body">
+                <div class="student-fix-notice">
+                    <i class="ri-information-line"></i>
+                    <span>Perbaikan ini hanya mengubah pratinjau. Data baru masuk ke sistem setelah tombol <strong>Simpan Data Siswa</strong> berhasil.</span>
+                </div>
+                <div class="student-fix-grid">
+                    <label class="student-fix-field wide">
+                        <span>Nama Lengkap <b>*</b></span>
+                        <input type="text" name="full_name" id="student_fix_full_name" required>
+                    </label>
+                    <label class="student-fix-field">
+                        <span>NRP / NIP <b>*</b></span>
+                        <input type="text" name="nrp" id="student_fix_nrp" required>
+                    </label>
+                    <label class="student-fix-field">
+                        <span>Jenis Kelamin <b>*</b></span>
+                        <select name="gender" id="student_fix_gender" required>
+                            <option value="L">Pria</option>
+                            <option value="P">Wanita</option>
+                        </select>
+                    </label>
+                    <label class="student-fix-field">
+                        <span>Pangkat <b>*</b></span>
+                        <select name="rank_id" id="student_fix_rank_id" required>
+                            <option value="">Pilih pangkat</option>
+                            @foreach($ranks as $rank)
+                                <option value="{{ $rank->id }}">{{ $rank->name }}{{ $rank->category === 'PNS' ? ' (PNS)' : '' }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="student-fix-field">
+                        <span>Golongan</span>
+                        <input type="text" name="golongan" id="student_fix_golongan" placeholder="PNS: 1, 2, 3, atau 4">
+                    </label>
+                    <label class="student-fix-field wide">
+                        <span>Jabatan <b>*</b></span>
+                        <input type="text" name="jabatan" id="student_fix_jabatan" required>
+                    </label>
+                    <label class="student-fix-field">
+                        <span>Bagian / Fungsi</span>
+                        <input type="text" name="bagian" id="student_fix_bagian">
+                    </label>
+                    <label class="student-fix-field">
+                        <span>Keterangan</span>
+                        <input type="text" name="keterangan" id="student_fix_keterangan">
+                    </label>
+                </div>
+                <div class="student-fix-section">
+                    <div class="student-fix-section-title">
+                        <span>Ukuran Kapor</span>
+                        <small>Opsional, isi jika tersedia</small>
+                    </div>
+                    <div class="student-fix-size-grid">
+                        @foreach($sizeLabels as $key => $label)
+                            <label class="student-fix-field">
+                                <span>{{ $label }}</span>
+                                <input type="text" name="sizes[{{ $key }}]" id="student_fix_size_{{ $key }}">
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            <div class="student-fix-footer">
+                <button type="button" class="student-btn secondary" onclick="closeStudentFixModal()">Batal</button>
+                <button type="submit" class="student-btn primary" id="studentFixSubmitButton">
+                    <i class="ri-check-line"></i>
+                    Simpan Perbaikan
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
 @endsection
 
 @section('styles')
@@ -257,6 +362,7 @@
 .student-page-button.primary:hover{border-color:#991B1B;background:#991B1B;color:#fff}
 .student-page-button.disabled{border-color:#E2E8F0;background:#F8FAFC;color:#94A3B8;cursor:not-allowed}
 @media(max-width:640px){.student-pagination{align-items:stretch;flex-direction:column}.student-page-status{justify-content:center}.student-page-actions{display:grid;grid-template-columns:1fr 1fr}.student-page-button{width:100%;padding:0 8px}}
+.student-fix-button{margin-top:8px;height:30px;padding:0 9px;border:1px solid #FCA5A5;border-radius:6px;background:#FFF7F7;color:#B91C1C;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;cursor:pointer}.student-fix-button:hover{background:#FEF2F2;border-color:#EF4444}.student-fix-modal{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;padding:20px}.student-fix-modal.open{display:flex}.student-fix-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.48)}.student-fix-dialog{position:relative;width:min(720px,100%);max-height:calc(100vh - 40px);overflow:auto;border:1px solid #E2E8F0;border-radius:12px;background:#fff;box-shadow:0 24px 70px rgba(15,23,42,.22)}.student-fix-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 24px 18px;border-bottom:1px solid #E5E7EB}.student-fix-header h2{margin:3px 0 5px;color:#111827;font-size:21px}.student-fix-header p{margin:0;color:#64748B;font-size:13px;line-height:1.45}.student-fix-close{width:34px;height:34px;border:1px solid #CBD5E1;border-radius:7px;background:#fff;color:#475569;font-size:18px;cursor:pointer}.student-fix-body{padding:20px 24px}.student-fix-notice{display:flex;gap:8px;align-items:flex-start;padding:11px 12px;margin-bottom:18px;border:1px solid #BFDBFE;border-radius:8px;background:#EFF6FF;color:#1D4ED8;font-size:12px;line-height:1.45}.student-fix-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.student-fix-field{display:flex;flex-direction:column;gap:6px}.student-fix-field.wide{grid-column:span 2}.student-fix-field span{font-size:12px;color:#475569;font-weight:800}.student-fix-field b{color:#B91C1C}.student-fix-field input,.student-fix-field select{width:100%;height:39px;padding:0 10px;border:1px solid #CBD5E1;border-radius:7px;background:#fff;color:#1F2937;font-size:13px;outline:none}.student-fix-field input:focus,.student-fix-field select:focus{border-color:#B91C1C;box-shadow:0 0 0 3px rgba(185,28,28,.10)}.student-fix-section{margin-top:20px;padding-top:16px;border-top:1px solid #E5E7EB}.student-fix-section-title{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}.student-fix-section-title span{font-size:13px;color:#1F2937;font-weight:800}.student-fix-section-title small{color:#64748B;font-size:11px}.student-fix-size-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.student-fix-footer{display:flex;justify-content:flex-end;gap:9px;padding:15px 24px;border-top:1px solid #E5E7EB;background:#F8FAFC}.student-fix-footer .student-btn{min-width:130px}.student-fix-submit-loading{pointer-events:none;opacity:.75}.student-fix-submit-loading i{animation:student-spin .8s linear infinite}@media(max-width:640px){.student-fix-modal{padding:10px}.student-fix-header,.student-fix-body,.student-fix-footer{padding-left:16px;padding-right:16px}.student-fix-grid,.student-fix-size-grid{grid-template-columns:1fr}.student-fix-field.wide{grid-column:span 1}.student-fix-footer{position:sticky;bottom:0}}
 </style>
 @endsection
 
@@ -269,6 +375,50 @@ document.getElementById('studentImportConfirmForm')?.addEventListener('submit', 
     button.disabled = true;
     button.querySelector('i').className = 'ri-loader-4-line';
     button.querySelector('span').textContent = 'Menyimpan data...';
+});
+
+function openStudentFixModal(button) {
+    const row = JSON.parse(atob(button.dataset.fixRow));
+    const modal = document.getElementById('studentFixModal');
+    document.getElementById('student_fix_row_number').value = row.row_number || '';
+    document.getElementById('student_fix_full_name').value = row.full_name || '';
+    document.getElementById('student_fix_nrp').value = row.nrp || '';
+    document.getElementById('student_fix_gender').value = row.gender || 'L';
+    document.getElementById('student_fix_rank_id').value = row.rank_id || '';
+    document.getElementById('student_fix_golongan').value = row.golongan || '';
+    document.getElementById('student_fix_jabatan').value = row.jabatan || '';
+    document.getElementById('student_fix_bagian').value = row.bagian || '';
+    document.getElementById('student_fix_keterangan').value = row.keterangan || '';
+    const sizes = row.sizes || {};
+    Object.keys(sizes).forEach((key) => {
+        const input = document.getElementById('student_fix_size_' + key);
+        if (input) input.value = sizes[key] || '';
+    });
+    document.querySelectorAll('[id^="student_fix_size_"]').forEach((input) => {
+        if (!Object.prototype.hasOwnProperty.call(sizes, input.id.replace('student_fix_size_', ''))) input.value = '';
+    });
+    document.getElementById('studentFixSubtitle').textContent =
+        'Baris ' + (row.row_number || '-') + ': lengkapi data yang salah, lalu simpan untuk memeriksa ulang seluruh file.';
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.getElementById('student_fix_full_name').focus();
+}
+
+function closeStudentFixModal() {
+    const modal = document.getElementById('studentFixModal');
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+document.getElementById('studentFixForm')?.addEventListener('submit', function () {
+    const button = document.getElementById('studentFixSubmitButton');
+    button.classList.add('student-fix-submit-loading');
+    button.disabled = true;
+    button.querySelector('i').className = 'ri-loader-4-line';
+});
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') closeStudentFixModal();
 });
 </script>
 @endsection

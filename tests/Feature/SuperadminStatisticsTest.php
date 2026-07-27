@@ -277,6 +277,74 @@ class SuperadminStatisticsTest extends TestCase
         });
     }
 
+    public function test_testimonial_pages_show_historical_reviews_when_active_year_has_advanced(): void
+    {
+        Setting::setValue('fiscal_year', '2027');
+
+        $satker = Satker::create([
+            'name' => 'Polda NTB',
+            'code' => 'POLDA-NTB',
+            'sort_order' => 1,
+        ]);
+
+        $superadmin = User::factory()->create([
+            'satker_id' => $satker->id,
+        ]);
+        $superadmin->assignRole('superadmin');
+
+        $personil = User::factory()->create([
+            'name' => 'Personel Review 2026',
+            'satker_id' => $satker->id,
+        ]);
+        $personil->assignRole('personil');
+
+        $allocation = $this->createAllocation(
+            $personil,
+            $satker,
+            'SEPATU DINAS 2026',
+            'Tutup Kaki',
+            'Tutup_Kaki',
+            2026,
+        );
+
+        ItemReview::create([
+            'personnel_item_allocation_id' => $allocation->id,
+            'user_id' => $personil->id,
+            'kapor_item_id' => $allocation->kapor_item_id,
+            'fiscal_year' => 2026,
+            'response_status' => ItemReview::STATUS_REVIEWED,
+            'comment' => 'Review tahun 2026 tetap dapat dilihat.',
+            'rating' => 5,
+            'submitted_at' => now(),
+        ]);
+
+        $listResponse = $this->actingAs($superadmin)->get(route('superadmin.testimonials.index', [
+            'year' => 2026,
+        ]));
+
+        $listResponse->assertOk();
+        $listResponse->assertViewHas('fiscalYear', 2026);
+        $listResponse->assertViewHas('activeYear', 2027);
+        $listResponse->assertViewHas('testimonials', fn ($reviews) => $reviews->total() === 1);
+        $listResponse->assertSeeText('Review tahun 2026 tetap dapat dilihat.');
+        $listResponse->assertSee('name="year"', false);
+        $listResponse->assertSee('onchange="this.form.requestSubmit()"', false);
+
+        $statisticsResponse = $this->actingAs($superadmin)->get(route('superadmin.statistics', [
+            'year' => 2026,
+        ]));
+
+        $statisticsResponse->assertOk();
+        $statisticsResponse->assertViewHas('fiscal_year', '2026');
+        $statisticsResponse->assertViewHas('active_year', 2027);
+        $statisticsResponse->assertViewHas('totalTestimonials', 1);
+        $statisticsResponse->assertViewHas(
+            'latestTestimonials',
+            fn ($reviews) => $reviews->count() === 1
+                && $reviews->first()->comment === 'Review tahun 2026 tetap dapat dilihat.',
+        );
+    }
+
     public function test_testimonial_export_groups_percentages_by_category_item_and_satker(): void
     {
         Setting::setValue('fiscal_year', '2026');
