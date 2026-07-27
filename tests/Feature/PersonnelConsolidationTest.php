@@ -60,6 +60,26 @@ class PersonnelConsolidationTest extends TestCase
         $this->adminSatker->assignRole('admin_satker');
     }
 
+    public function test_superadmin_sees_searchable_satker_dropdowns_on_consolidation_page(): void
+    {
+        $superadmin = User::factory()->create([
+            'satker_id' => $this->satker->id,
+            'is_active' => true,
+        ]);
+        $superadmin->assignRole('superadmin');
+
+        $response = $this->actingAs($superadmin)
+            ->get(route('admin.personnel.consolidation.index'));
+
+        $response->assertOk();
+        $response->assertSee('id="download_satker_id"', false);
+        $response->assertSee('id="upload_satker_id"', false);
+        $response->assertSee('class="consolidation-satker-select"', false);
+        $response->assertSee('data-placeholder="Cari dan pilih satker"', false);
+        $response->assertSeeText('Polresta Mataram');
+        $response->assertSeeText('Polres Lombok Barat');
+    }
+
     public function test_export_uses_simple_personnel_columns_with_stable_system_code(): void
     {
         $personnel = $this->createPersonnel($this->satker, '90010001', 'PERSONEL SATU');
