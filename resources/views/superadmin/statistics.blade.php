@@ -33,11 +33,20 @@
                     </a>
 
                     {{-- Filter Tahun Anggaran --}}
-                    <div
+                    <form method="GET" action="{{ route('superadmin.statistics') }}"
+                        class="year-filter-form"
                         style="display:flex;align-items:center;gap:10px;background:#fff;padding:8px 16px;border-radius:14px;border:1px solid #E2E8F0;box-shadow: 0 4px 12px rgba(0,0,0,0.03); font-family: 'Outfit', sans-serif;">
+                        @if(filled($distributionFilters['group']) && $distributionFilters['group'] !== 'all')
+                            <input type="hidden" name="distribution_group" value="{{ $distributionFilters['group'] }}">
+                        @endif
+                        @if($distributionFilters['rating'] !== null)
+                            <input type="hidden" name="distribution_rating" value="{{ $distributionFilters['rating'] }}">
+                        @endif
+                        @foreach($distributionFilters['compare_items'] as $itemId)
+                            <input type="hidden" name="compare_items[]" value="{{ $itemId }}">
+                        @endforeach
                         <i class="ri-calendar-line" style="color:#B91C1C; font-size: 18px;"></i>
-                        <select
-                            onchange="const url = new URL(window.location.href); url.searchParams.set('year', this.value); window.spaNavigate(url.href);"
+                        <select name="year" aria-label="Pilih tahun anggaran" onchange="this.form.requestSubmit()"
                             style="border:none;outline:none;font-size:14px;font-weight:700;color:#1e293b;cursor:pointer;background:transparent;">
                             @foreach($availableYears as $year)
                                 <option value="{{ $year }}" {{ $fiscal_year == $year ? 'selected' : '' }}>
@@ -45,7 +54,7 @@
                                 </option>
                             @endforeach
                         </select>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
