@@ -282,6 +282,21 @@
 </div>
 @endif
 
+@if(request('active_status') === 'inactive')
+<div class="alert-bar" style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 12px; padding: 12px 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <i class="ri-user-unfollow-line" style="font-size: 18px; color: #C2410C;"></i>
+        <span style="font-size: 14px; font-weight: 600; color: #9A3412;">
+            Menampilkan <strong>personel nonaktif</strong>. Personel pada daftar ini tidak dapat login.
+        </span>
+    </div>
+    <a href="{{ route('admin.personnel.index', request()->except(['active_status', 'page'])) }}" class="compact-action-pill amber" style="margin-left: auto;">
+        <i class="ri-user-follow-line"></i>
+        <span>Kembali ke Personel Aktif</span>
+    </a>
+</div>
+@endif
+
 {{-- Filter Bar --}}
 {{-- Filter Bar --}}
 <div class="filter-bar">
@@ -357,6 +372,38 @@
                     </div>
                 </div>
                 <input type="hidden" name="bagian" value="{{ request('bagian') }}">
+            </div>
+
+            <div class="custom-select-wrapper" style="flex: 1; min-width: 150px;">
+                <div class="custom-select" onclick="toggleDropdown(this)">
+                    <div class="select-trigger">
+                        <span>
+                            @switch(request('active_status', 'active'))
+                                @case('inactive') Personel Nonaktif @break
+                                @case('all') Semua Status @break
+                                @default Personel Aktif
+                            @endswitch
+                        </span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="options-scroll">
+                            <div class="option {{ request('active_status', 'active') === 'active' ? 'selected' : '' }}"
+                                 onclick="selectOptionSearch(this, 'active_status', 'active', 'Personel Aktif')">
+                                Personel Aktif
+                            </div>
+                            <div class="option {{ request('active_status') === 'inactive' ? 'selected' : '' }}"
+                                 onclick="selectOptionSearch(this, 'active_status', 'inactive', 'Personel Nonaktif')">
+                                Personel Nonaktif
+                            </div>
+                            <div class="option {{ request('active_status') === 'all' ? 'selected' : '' }}"
+                                 onclick="selectOptionSearch(this, 'active_status', 'all', 'Semua Status')">
+                                Semua Status
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="active_status" value="{{ request('active_status', 'active') }}">
             </div>
 
             {{-- ── FILTER UKURAN (hanya muncul saat status=incomplete) ── --}}
@@ -519,6 +566,12 @@
                                 <div style="margin-top: 4px;">
                                     <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #FEF2F2; color: #B91C1C; font-size: 11px; font-weight: 700; border: 1px solid #FECACA;">
                                         <i class="ri-close-circle-line"></i> Ditolak
+                                    </span>
+                                </div>
+                                @elseif(!$p->is_active)
+                                <div style="margin-top: 4px;">
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #FFF7ED; color: #C2410C; font-size: 11px; font-weight: 700; border: 1px solid #FED7AA;">
+                                        <i class="ri-user-unfollow-line"></i> Nonaktif
                                     </span>
                                 </div>
                                 @endif

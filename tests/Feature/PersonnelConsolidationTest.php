@@ -266,6 +266,38 @@ class PersonnelConsolidationTest extends TestCase
         $response->assertDontSee(route('admin.personnel.import-update'), false);
     }
 
+    public function test_inactive_personnel_are_hidden_by_default_and_available_through_status_filter(): void
+    {
+        $active = $this->createPersonnel($this->satker, '90010001', 'PERSONEL AKTIF');
+        $inactive = $this->createPersonnel($this->satker, '90010002', 'PERSONEL NONAKTIF');
+        $inactive->update(['is_active' => false]);
+        $inactive->user->update(['is_active' => false]);
+
+        $defaultResponse = $this->actingAs($this->adminSatker)
+            ->get(route('admin.personnel.index'));
+
+        $defaultResponse->assertOk();
+        $defaultResponse->assertSeeText($active->full_name);
+        $defaultResponse->assertDontSeeText($inactive->full_name);
+
+        $inactiveResponse = $this->get(route('admin.personnel.index', [
+            'active_status' => 'inactive',
+        ]));
+
+        $inactiveResponse->assertOk();
+        $inactiveResponse->assertDontSeeText($active->full_name);
+        $inactiveResponse->assertSeeText($inactive->full_name);
+        $inactiveResponse->assertSeeText('Personel pada daftar ini tidak dapat login.');
+
+        $allResponse = $this->get(route('admin.personnel.index', [
+            'active_status' => 'all',
+        ]));
+
+        $allResponse->assertOk();
+        $allResponse->assertSeeText($active->full_name);
+        $allResponse->assertSeeText($inactive->full_name);
+    }
+
     public function test_preview_prioritizes_actionable_rows_and_uses_compact_result_columns(): void
     {
         $row = static fn (string $status, string $name, int $rowNumber): array => [

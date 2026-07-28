@@ -47,6 +47,17 @@ class PersonnelController extends Controller
         $sort = $request->get('sort', 'latest');
         $direction = $request->get('direction', 'desc');
         $query = Personnel::with(['rank', 'satker', 'user'])->forCurrentSatker();
+        $activeStatus = $request->get('active_status', 'active');
+
+        // Keep inactive records for historical reports, but exclude them from
+        // the normal operational list and search results.
+        if ($request->get('status') !== 'pending_verification') {
+            match ($activeStatus) {
+                'inactive' => $query->where('personnels.is_active', false),
+                'all' => null,
+                default => $query->where('personnels.is_active', true),
+            };
+        }
 
         // Filters
         if ($request->filled('search')) {
@@ -233,6 +244,7 @@ class PersonnelController extends Controller
             || $request->filled('bagian')
             || $request->get('status') === 'pending_verification'
             || $request->get('status') === 'incomplete'
+            || in_array($request->get('active_status'), ['inactive', 'all'], true)
             || $request->filled('missing_size')
             || $request->filled('kapor_item_id');
     }
@@ -273,6 +285,12 @@ class PersonnelController extends Controller
 
         if ($request->get('status') === 'incomplete') {
             $labels[] = 'Filter ukuran belum lengkap';
+        }
+
+        if ($request->get('active_status') === 'inactive') {
+            $labels[] = 'Personel nonaktif';
+        } elseif ($request->get('active_status') === 'all') {
+            $labels[] = 'Semua status keaktifan';
         }
 
         return $labels !== [] ? implode(' • ', $labels) : 'Berdasarkan filter aktif';
