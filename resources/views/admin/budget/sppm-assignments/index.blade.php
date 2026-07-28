@@ -404,6 +404,83 @@
         background: #f8fafc;
     }
 
+    .sppm-table tbody tr.is-selected {
+        background: #eff6ff;
+    }
+
+    .sppm-table tbody tr.is-selected:hover {
+        background: #dbeafe;
+    }
+
+    .sppm-selection-toolbar {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 9px 14px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .sppm-selection-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .sppm-selection-count i {
+        color: #2563eb;
+        font-size: 18px;
+    }
+
+    .sppm-selection-count strong {
+        color: #1d4ed8;
+        font-size: 14px;
+    }
+
+    .sppm-selection-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .sppm-selection-help,
+    .sppm-selection-clear {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dbe2ea;
+        border-radius: 7px;
+        background: #fff;
+        color: #64748b;
+    }
+
+    .sppm-selection-help {
+        cursor: help;
+    }
+
+    .sppm-selection-clear {
+        cursor: pointer;
+        transition: border-color .18s ease, background .18s ease, color .18s ease;
+    }
+
+    .sppm-selection-clear:hover:not(:disabled) {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    .sppm-selection-clear:disabled {
+        cursor: not-allowed;
+        opacity: .45;
+    }
+
     .sppm-person-name {
         display: block;
         color: #111827;
@@ -746,12 +823,30 @@
                     @endif
                 </div>
             @else
+                <div class="sppm-selection-toolbar">
+                    <div class="sppm-selection-count" aria-live="polite">
+                        <i class="ri-checkbox-multiple-line" aria-hidden="true"></i>
+                        <span><strong id="selectedPersonnelCount">0</strong> personel dipilih</span>
+                    </div>
+                    <div class="sppm-selection-actions">
+                        <span class="sppm-selection-help" role="img"
+                            title="Centang personel pertama, lalu tahan Shift atau Ctrl+Shift saat memilih personel terakhir untuk memilih seluruh rentang.">
+                            <i class="ri-information-line" aria-hidden="true"></i>
+                        </span>
+                        <button type="button" id="clearPersonnelSelection" class="sppm-selection-clear"
+                            title="Hapus semua pilihan" aria-label="Hapus semua pilihan" disabled>
+                            <i class="ri-close-line" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
                 <div class="sppm-table-wrap">
                     <table class="sppm-table">
                         <thead>
                             <tr>
                                 <th style="width:48px;text-align:center;">
-                                    <input type="checkbox" id="checkAllUnassigned" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                                    <input type="checkbox" id="checkAllUnassigned"
+                                        class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                        title="Pilih semua personel" aria-label="Pilih semua personel">
                                 </th>
                                 <th style="width:30%;">Personel</th>
                                 <th style="width:19%;">Jabatan</th>
@@ -763,7 +858,11 @@
                             @foreach($unassignedRows as $row)
                                 <tr>
                                     <td style="text-align:center;">
-                                        <input type="checkbox" name="personnel_ids[]" value="{{ $row['personnel_id'] }}" class="row-check w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                                        <input type="checkbox" name="personnel_ids[]" value="{{ $row['personnel_id'] }}"
+                                            class="row-check w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                            data-range-select
+                                            title="Tahan Shift saat memilih untuk memilih satu rentang personel"
+                                            aria-label="Pilih {{ $row['full_name'] }}">
                                     </td>
                                     <td>
                                         <span class="sppm-person-name">{{ $row['full_name'] }}</span>
@@ -1106,13 +1205,73 @@
             });
         });
 
-        // Checkbox All
+        // Checkbox selection, including Shift-click range selection.
         const checkAll = document.getElementById('checkAllUnassigned');
+        const rowChecks = Array.from(document.querySelectorAll('.row-check'));
+        const selectedCount = document.getElementById('selectedPersonnelCount');
+        const clearSelection = document.getElementById('clearPersonnelSelection');
+        let lastChecked = null;
+
+        function updatePersonnelSelection() {
+            const checkedCount = rowChecks.filter((checkbox) => checkbox.checked).length;
+
+            rowChecks.forEach((checkbox) => {
+                checkbox.closest('tr')?.classList.toggle('is-selected', checkbox.checked);
+            });
+
+            if (selectedCount) {
+                selectedCount.textContent = checkedCount.toLocaleString('id-ID');
+            }
+
+            if (clearSelection) {
+                clearSelection.disabled = checkedCount === 0;
+            }
+
+            if (checkAll) {
+                checkAll.checked = rowChecks.length > 0 && checkedCount === rowChecks.length;
+                checkAll.indeterminate = checkedCount > 0 && checkedCount < rowChecks.length;
+            }
+        }
+
+        rowChecks.forEach((checkbox) => {
+            checkbox.addEventListener('click', (event) => {
+                if (event.shiftKey && lastChecked && lastChecked !== checkbox) {
+                    const currentIndex = rowChecks.indexOf(checkbox);
+                    const previousIndex = rowChecks.indexOf(lastChecked);
+                    const start = Math.min(currentIndex, previousIndex);
+                    const end = Math.max(currentIndex, previousIndex);
+
+                    rowChecks.slice(start, end + 1).forEach((rangeCheckbox) => {
+                        rangeCheckbox.checked = checkbox.checked;
+                    });
+                }
+
+                lastChecked = checkbox;
+                updatePersonnelSelection();
+            });
+        });
+
         if (checkAll) {
             checkAll.addEventListener('change', () => {
-                document.querySelectorAll('.row-check').forEach(cb => cb.checked = checkAll.checked);
+                rowChecks.forEach((checkbox) => {
+                    checkbox.checked = checkAll.checked;
+                });
+                lastChecked = null;
+                updatePersonnelSelection();
             });
         }
+
+        if (clearSelection) {
+            clearSelection.addEventListener('click', () => {
+                rowChecks.forEach((checkbox) => {
+                    checkbox.checked = false;
+                });
+                lastChecked = null;
+                updatePersonnelSelection();
+            });
+        }
+
+        updatePersonnelSelection();
 
         // Search clear and debounce
         const filterForm = document.getElementById('sppmFilterForm');

@@ -83,6 +83,16 @@ class BudgetPackageSppmAssignmentTest extends TestCase
         $studentA = $this->createPersonnel($sourceSatker, $rank, '990001', 'SISWA SATU');
         $studentB = $this->createPersonnel($sourceSatker, $rank, '990002', 'SISWA DUA');
 
+        $this->actingAs($superadmin)
+            ->get(route('admin.budget.sppm-assignments.index', [
+                'budgetPackage' => $package,
+                'source_satker_id' => $sourceSatker->id,
+            ]))
+            ->assertOk()
+            ->assertSee('id="selectedPersonnelCount"', false)
+            ->assertSee('data-range-select', false)
+            ->assertSee('event.shiftKey', false);
+
         $response = $this->actingAs($superadmin)->post(route('admin.budget.sppm-assignments.store', $package), [
             'source_satker_id' => $sourceSatker->id,
             'sppm_satker_id' => $targetSatker->id,
