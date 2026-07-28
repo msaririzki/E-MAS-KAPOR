@@ -35,7 +35,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 
 // ── Authenticated Routes (Semua Role) ──────────────────────────
 
-Route::middleware(['auth', 'satker.write.lock', 'read.only', 'satker.scope'])->group(function () {
+Route::middleware(['auth', 'read.only', 'satker.scope'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', function () {
@@ -47,7 +47,7 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'satker.scope'])->g
 
 // ── Personil Routes ──────────────────────────────────────────────────
 
-Route::middleware(['auth', 'satker.write.lock', 'role:personil'])->prefix('personil')->name('personil.')->group(function () {
+Route::middleware(['auth', 'role:personil'])->prefix('personil')->name('personil.')->group(function () {
     Route::get('/kapor', fn () => redirect()->route('dashboard'))->name('kapor.index');
     Route::post('/kapor', [PersonilPortalController::class, 'storeKapor'])->middleware('system.lock')->name('kapor.store');
     Route::get('/testimoni', [PersonilPortalController::class, 'showTestimoni'])->name('testimoni.index');

@@ -18,9 +18,9 @@ class PeriodGate
             return [
                 'state' => 'manual_locked',
                 'is_open' => false,
-                'title' => 'Data Satker Dikunci',
-                'message' => 'Superadmin sedang mengunci perubahan data personel dan data satker. Data tetap bisa dilihat, tetapi perubahan baru tidak dapat disimpan.',
-                'period_label' => 'Mode kunci global aktif',
+                'title' => 'Pembaruan oleh Admin Satker Dikunci',
+                'message' => 'Admin satker tidak dapat menambah, mengubah, memindahkan, atau menonaktifkan personel. Personel tetap dapat mengisi data diri dan ukuran sesuai masa pengisian.',
+                'period_label' => 'Kunci admin satker aktif',
                 'tone' => 'error',
             ];
         }
@@ -28,9 +28,9 @@ class PeriodGate
         return [
             'state' => 'open',
             'is_open' => true,
-            'title' => 'Data Satker Terbuka',
-            'message' => 'Perubahan data personel dan data satker dapat disimpan.',
-            'period_label' => 'Mode kunci global nonaktif',
+            'title' => 'Pembaruan oleh Admin Satker Dibuka',
+            'message' => 'Admin satker dapat memperbarui susunan dan data personel pada satkernya.',
+            'period_label' => 'Kunci admin satker nonaktif',
             'tone' => 'success',
         ];
     }

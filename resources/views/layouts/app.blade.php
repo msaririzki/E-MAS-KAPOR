@@ -2403,15 +2403,15 @@
             @yield('styles')
             @php
                 $satkerWriteLocked = auth()->check()
-                    && auth()->user()->hasAnyRole(['admin_satker', 'personil'])
+                    && auth()->user()->hasRole('admin_satker')
                     && \App\Models\Setting::getValue('is_satker_locked', 'false') === 'true';
             @endphp
             @if($satkerWriteLocked)
                 <div style="margin-bottom: 18px; padding: 14px 16px; border-radius: 10px; border: 1px solid #FECACA; background: #FEF2F2; color: #991B1B; display: flex; gap: 10px; align-items: flex-start;">
                     <i class="ri-lock-line" style="font-size: 18px; margin-top: 2px;"></i>
                     <div>
-                        <div style="font-weight: 700; font-size: 14px;">Mode baca saja aktif</div>
-                        <div style="font-size: 13px; line-height: 1.5;">Superadmin sedang mengunci perubahan data satker dan personel. Data tetap bisa dilihat, dicetak, dan diunduh, tetapi penyimpanan perubahan baru ditolak.</div>
+                        <div style="font-weight: 700; font-size: 14px;">Pembaruan data satker dikunci</div>
+                        <div style="font-size: 13px; line-height: 1.5;">Susunan dan data personel satker tidak dapat diubah. Data tetap bisa dilihat, dicetak, dan diunduh. Personel tetap dapat mengisi data diri dan ukuran dari akunnya masing-masing.</div>
                     </div>
                 </div>
             @endif

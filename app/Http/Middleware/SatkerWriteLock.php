@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 class SatkerWriteLock
 {
     /**
-     * Block write actions for admin_satker and personil when the global satker lock is active.
+     * Block data maintenance by admin satker while allowing personnel self-service.
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -18,7 +18,7 @@ class SatkerWriteLock
 
         if (
             $user
-            && $user->hasAnyRole(['admin_satker', 'personil'])
+            && $user->hasRole('admin_satker')
             && ! in_array($request->method(), ['GET', 'HEAD', 'OPTIONS'], true)
         ) {
             $lockMessage = PeriodGate::resolveSatkerLockMessage();

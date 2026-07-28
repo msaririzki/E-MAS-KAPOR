@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Personnel;
+use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\Setting;
 use App\Models\User;
@@ -52,18 +54,53 @@ class SatkerWriteLockTest extends TestCase
             'key' => "export_signatory.satker.{$satker->id}.signatory_name",
             'value' => 'AKBP SATKER A',
         ]);
+
+        $this->actingAs($adminSatker)
+            ->from(route('profile'))
+            ->post(route('profile.updateTheme'), [
+                'theme' => 'theme-ocean',
+            ])
+            ->assertRedirect(route('profile'))
+            ->assertSessionHas('success');
+
+        $this->assertSame('theme-ocean', $adminSatker->fresh()->theme);
     }
 
-    public function test_personil_can_view_dashboard_but_cannot_update_theme_when_satker_lock_is_active(): void
+    public function test_personil_can_update_own_data_when_satker_lock_is_active(): void
     {
         $satker = $this->createSatker('RES-B', 'Polres B', 2);
+        $rank = Rank::create([
+            'name' => 'BRIPDA',
+            'category' => 'BINTARA',
+            'sort_order' => 1,
+        ]);
         $personil = User::factory()->create([
+            'name' => 'PERSONEL UJI',
+            'nrp_nip' => '99112233',
             'satker_id' => $satker->id,
             'theme' => 'theme-default',
         ]);
         $personil->assignRole('personil');
 
+        $personnel = Personnel::create([
+            'user_id' => $personil->id,
+            'nrp' => '99112233',
+            'full_name' => 'PERSONEL UJI',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'golongan' => 'BINTARA',
+            'jabatan' => 'JABATAN LAMA',
+            'bagian' => 'BAGIAN LAMA',
+            'satker_id' => $satker->id,
+            'religion' => 'Islam',
+            'is_active' => true,
+        ]);
+
         Setting::setValue('is_satker_locked', 'true');
+        Setting::setValue('is_system_locked', 'false');
+        Setting::setValue('input_start_date', now()->subDay()->toDateString());
+        Setting::setValue('input_end_date', now()->addDay()->toDateString());
 
         $this->actingAs($personil)
             ->get(route('dashboard'))
@@ -76,9 +113,24 @@ class SatkerWriteLockTest extends TestCase
             ]);
 
         $response->assertRedirect(route('dashboard'));
-        $response->assertSessionHas('error');
+        $response->assertSessionHas('success');
 
-        $this->assertSame('theme-default', $personil->fresh()->theme);
+        $this->assertSame('theme-ocean', $personil->fresh()->theme);
+
+        $response = $this->actingAs($personil)
+            ->post(route('personil.kapor.store'), [
+                'mode' => 'identity',
+                'jabatan' => 'JABATAN BARU',
+                'bagian' => 'BAGIAN BARU',
+                'phone' => '081234567890',
+            ]);
+
+        $response->assertRedirect(route('dashboard').'#ukuran-form');
+        $response->assertSessionHas('success');
+
+        $this->assertSame('JABATAN BARU', $personnel->fresh()->jabatan);
+        $this->assertSame('BAGIAN BARU', $personnel->fresh()->bagian);
+        $this->assertSame('081234567890', $personnel->fresh()->phone);
     }
 
     public function test_superadmin_can_update_global_settings_even_when_satker_lock_is_active(): void

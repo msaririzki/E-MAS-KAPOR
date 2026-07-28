@@ -106,7 +106,7 @@
             <div class="ssb-item">
                 <div class="ssb-icon"><i class="{{ $settings['is_satker_locked'] ? 'ri-lock-line text-danger' : 'ri-shield-user-line' }}"></i></div>
                 <div class="ssb-content">
-                    <span class="ssb-label">Data Satker</span>
+                    <span class="ssb-label">Pembaruan Satker</span>
                     <span class="ssb-status {{ $satkerLockClass }}">{{ $satkerLockLabel }}</span>
                 </div>
             </div>
@@ -193,8 +193,8 @@
 
                 <div class="modern-toggle-group" style="border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px;">
                     <div class="toggle-info">
-                        <strong style="font-size:13px; color:#1e293b;">Kunci Data Satker</strong>
-                        <span style="font-size:11px;">Cegah perubahan data personel dan data satker</span>
+                        <strong style="font-size:13px; color:#1e293b;">Kunci Pembaruan Admin Satker</strong>
+                        <span style="font-size:11px;">Admin satker menjadi baca saja; pengisian mandiri oleh personel tetap dibuka sesuai jadwal</span>
                     </div>
                     <label class="modern-toggle">
                         <input type="checkbox" name="is_satker_locked" value="1" {{ $settings['is_satker_locked'] ? 'checked' : '' }}>
