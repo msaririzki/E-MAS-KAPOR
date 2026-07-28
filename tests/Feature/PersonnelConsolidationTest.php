@@ -460,7 +460,11 @@ class PersonnelConsolidationTest extends TestCase
             ->assertSessionHas('personnel_consolidation_preview.stats.update', 2);
 
         $this->post(route('admin.personnel.consolidation.confirm'))
-            ->assertRedirect(route('admin.personnel.index'));
+            ->assertRedirect(route('admin.personnel.index'))
+            ->assertSessionHas(
+                'personnel_auto_download_url',
+                route('admin.personnel.consolidation.download', ['satker_id' => $this->satker->id]),
+            );
 
         $this->assertSame('SAT LANTAS BARU', $first->fresh()->bagian);
         $this->assertSame('SAT RESKRIM BARU', $second->fresh()->bagian);
@@ -479,7 +483,8 @@ class PersonnelConsolidationTest extends TestCase
             ->assertSessionHas('personnel_consolidation_preview.stats.duplicate_ignored', 1)
             ->assertSessionHas('personnel_consolidation_preview.stats.error', 0);
 
-        $this->post(route('admin.personnel.consolidation.confirm'));
+        $this->post(route('admin.personnel.consolidation.confirm'))
+            ->assertSessionMissing('personnel_auto_download_url');
 
         $this->assertSame(1, Personnel::where('nrp', '90010001')->count());
     }

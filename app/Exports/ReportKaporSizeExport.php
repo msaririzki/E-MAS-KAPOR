@@ -15,6 +15,7 @@ class ReportKaporSizeExport implements FromCollection, WithHeadings, WithStyles,
     {
         // Ambil semua personil yang punya kapor_sizes
         $personnels = Personnel::with(['satker', 'rank'])
+            ->active()
             ->whereNotNull('kapor_sizes')
             ->get();
 

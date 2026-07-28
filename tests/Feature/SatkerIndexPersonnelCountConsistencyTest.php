@@ -54,6 +54,7 @@ class SatkerIndexPersonnelCountConsistencyTest extends TestCase
         $this->createPersonnel($rank, $ditlantas, '3001', 'Polri');
         $this->createPersonnel($rank, $ditlantas, '3002', 'Polri');
         $this->createPersonnel($rank, $ditlantas, '4001', 'PNS');
+        $this->createPersonnel($rank, $ditlantas, '9999', 'Polri', false);
 
         $response = $this->actingAs($superadmin)->get(route('superadmin.satkers.index'));
 
@@ -74,11 +75,17 @@ class SatkerIndexPersonnelCountConsistencyTest extends TestCase
         ]);
     }
 
-    private function createPersonnel(Rank $rank, Satker $satker, string $nrp, string $personnelType): void
-    {
+    private function createPersonnel(
+        Rank $rank,
+        Satker $satker,
+        string $nrp,
+        string $personnelType,
+        bool $isActive = true,
+    ): void {
         $user = User::factory()->create([
             'nrp_nip' => $nrp,
             'satker_id' => $satker->id,
+            'is_active' => $isActive,
         ]);
 
         Personnel::create([
@@ -89,7 +96,7 @@ class SatkerIndexPersonnelCountConsistencyTest extends TestCase
             'personnel_type' => $personnelType,
             'rank_id' => $rank->id,
             'satker_id' => $satker->id,
-            'is_active' => true,
+            'is_active' => $isActive,
         ]);
     }
 }

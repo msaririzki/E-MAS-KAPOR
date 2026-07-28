@@ -115,6 +115,15 @@ class PersonnelBagianFilterTest extends TestCase
         $this->createPersonnel($satker, $rank, '76100165', 'LANTAS BELUM LENGKAP', 'SAT LANTAS', [
             'topi' => '56',
         ]);
+        $this->createPersonnel(
+            $satker,
+            $rank,
+            '76100999',
+            'RESKRIM SUDAH NONAKTIF',
+            'SAT RESKRIM',
+            ['topi' => '56'],
+            false,
+        );
 
         $response = $this->actingAs($adminSatker)->get(route('admin-satker.reports', [
             'bagian' => 'SAT RESKRIM',
@@ -124,6 +133,7 @@ class PersonnelBagianFilterTest extends TestCase
         $response->assertOk();
         $response->assertSeeText('RESKRIM BELUM LENGKAP');
         $response->assertDontSeeText('RESKRIM LENGKAP');
+        $response->assertDontSeeText('RESKRIM SUDAH NONAKTIF');
         $response->assertDontSeeText('LANTAS BELUM LENGKAP');
         $response->assertSeeText('Belum Lengkap');
     }
@@ -250,11 +260,13 @@ class PersonnelBagianFilterTest extends TestCase
         string $name,
         string $bagian,
         ?array $kaporSizes = null,
+        bool $isActive = true,
     ): Personnel {
         $user = User::factory()->create([
             'name' => $name,
             'nrp_nip' => $nrp,
             'satker_id' => $satker->id,
+            'is_active' => $isActive,
         ]);
         $user->assignRole('personil');
 
@@ -270,7 +282,7 @@ class PersonnelBagianFilterTest extends TestCase
             'bagian' => $bagian,
             'satker_id' => $satker->id,
             'religion' => 'Islam',
-            'is_active' => true,
+            'is_active' => $isActive,
             'verification_status' => 'approved',
             'kapor_sizes' => $kaporSizes,
         ]);

@@ -219,7 +219,7 @@ class StudentPersonnelImportController extends Controller
             ),
         );
 
-        return redirect()->route('admin.personnel.index', ['satker_id' => $payload['satker_id']])
+        $response = redirect()->route('admin.personnel.index', ['satker_id' => $payload['satker_id']])
             ->with(
                 'success',
                 sprintf(
@@ -228,11 +228,16 @@ class StudentPersonnelImportController extends Controller
                     $result['updated'],
                     $result['unchanged'],
                 ),
-            )
-            ->with(
+            );
+
+        if (($result['created'] + $result['updated']) > 0) {
+            $response->with(
                 'personnel_auto_download_url',
                 route('admin.personnel.consolidation.download', ['satker_id' => $payload['satker_id']]),
             );
+        }
+
+        return $response;
     }
 
     public function cancel(Request $request)

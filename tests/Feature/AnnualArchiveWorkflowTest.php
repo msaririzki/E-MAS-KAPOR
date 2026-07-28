@@ -73,6 +73,27 @@ class AnnualArchiveWorkflowTest extends TestCase
             'kapor_sizes' => ['topi' => '57'],
         ]);
 
+        $inactiveUser = User::factory()->create([
+            'name' => 'PERSONEL SUDAH KELUAR',
+            'nrp_nip' => '99999999',
+            'satker_id' => $satker->id,
+            'is_active' => false,
+        ]);
+        $inactiveUser->assignRole('personil');
+        $inactiveUser->personnel()->create([
+            'nrp' => '99999999',
+            'full_name' => 'PERSONEL SUDAH KELUAR',
+            'gender' => 'L',
+            'personnel_type' => 'Polri',
+            'rank_id' => $rank->id,
+            'golongan' => 'BINTARA',
+            'satker_id' => $satker->id,
+            'religion' => 'Islam',
+            'is_active' => false,
+            'verification_status' => 'approved',
+            'kapor_sizes' => ['topi' => '57'],
+        ]);
+
         $this->actingAs($superadmin)->post(route('superadmin.settings.next-year'))->assertRedirect();
 
         $this->assertDatabaseHas('annual_archives', [

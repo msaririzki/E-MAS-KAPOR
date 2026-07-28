@@ -15,10 +15,13 @@ class ReportPersonnelSummaryExport implements FromCollection, WithHeadings, With
     {
         $poldaId = Satker::where('code', 'POLDA-NTB')->value('id');
 
-        $satkers = Satker::withCount(['personnels as total_personnel'])
+        $satkers = Satker::withCount([
+            'personnels as total_personnel' => fn ($query) => $query->active(),
+        ])
             ->withCount([
                 'personnels as submitted_count' => function ($q) {
-                    $q->whereNotNull('kapor_sizes')
+                    $q->active()
+                        ->whereNotNull('kapor_sizes')
                         ->whereNotNull('rank_id')
                         ->whereNotNull('nrp');
                 },

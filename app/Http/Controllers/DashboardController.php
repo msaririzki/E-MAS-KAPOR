@@ -88,10 +88,12 @@ class DashboardController extends Controller
         $poldaId = Satker::where('code', 'POLDA-NTB')->value('id');
         $satkerStats = Satker::query()
             ->selectRaw('satkers.*')
-            ->withCount(['personnels as total_personnel'])
+            ->withCount([
+                'personnels as total_personnel' => fn ($query) => $query->active(),
+            ])
             ->withCount([
                 'personnels as submitted_count' => function ($q) {
-                    $q->whereNotNull('kapor_sizes');
+                    $q->active()->whereNotNull('kapor_sizes');
                 },
             ])
             ->where(function ($query) use ($poldaId) {
@@ -108,6 +110,7 @@ class DashboardController extends Controller
 
         // Needs Attention: Incomplete Personnel Limit 5
         $incompletePersonnel = Personnel::with(['satker'])
+            ->active()
             ->select(['id', 'full_name', 'nrp', 'satker_id', 'gender', 'kapor_sizes', 'keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'])
             ->inRandomOrder()
             ->get()
@@ -184,6 +187,7 @@ class DashboardController extends Controller
         ];
 
         $pendingPersonnel = Personnel::with(['user', 'rank'])
+            ->active()
             ->where('satker_id', $satkerId)
             ->select(['id', 'user_id', 'rank_id', 'satker_id', 'full_name', 'nrp', 'gender', 'kapor_sizes', 'keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4'])
             ->get()
@@ -345,6 +349,7 @@ class DashboardController extends Controller
     private function countPersonnelWithCompleteSizes(?int $satkerId = null): int
     {
         $query = Personnel::query()
+            ->active()
             ->select(['id', 'gender', 'kapor_sizes', 'keterangan', 'keterangan_2', 'keterangan_3', 'keterangan_4']);
 
         if ($satkerId !== null) {

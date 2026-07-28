@@ -33,8 +33,9 @@ class AdminSatkerController extends Controller
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
 
         // Stats
-        $totalPersonnel = Personnel::where('satker_id', $satkerId)->count();
+        $totalPersonnel = Personnel::active()->where('satker_id', $satkerId)->count();
         $submittedCount = Personnel::where('satker_id', $satkerId)
+            ->active()
             ->whereNotNull('kapor_sizes')
             ->whereNotNull('rank_id')
             ->whereNotNull('nrp')
@@ -53,6 +54,7 @@ class AdminSatkerController extends Controller
 
         // All personnel with status
         $query = Personnel::with(['rank', 'satker'])
+            ->active()
             ->where('satker_id', $satkerId);
 
         // Search filter
@@ -95,6 +97,7 @@ class AdminSatkerController extends Controller
         $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
 
         $personnelsQuery = Personnel::with(['rank'])
+            ->active()
             ->where('satker_id', $satkerId);
 
         if ($request->filled('search')) {
@@ -322,6 +325,7 @@ class AdminSatkerController extends Controller
             ->pluck('name')
             ->merge(
                 Personnel::query()
+                    ->active()
                     ->where('satker_id', $satkerId)
                     ->whereNotNull('bagian')
                     ->where('bagian', '!=', '')

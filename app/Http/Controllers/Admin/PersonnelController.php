@@ -305,6 +305,7 @@ class PersonnelController extends Controller
             ->pluck('name');
 
         $personnelBagiansQuery = Personnel::query()
+            ->active()
             ->forCurrentSatker()
             ->whereNotNull('bagian')
             ->where('bagian', '!=', '');
@@ -369,7 +370,7 @@ class PersonnelController extends Controller
             return null;
         }
 
-        $query = Personnel::query()->with('rank');
+        $query = Personnel::query()->active()->with('rank');
 
         if ($satkerIds !== null) {
             $query->whereIn('satker_id', $satkerIds);

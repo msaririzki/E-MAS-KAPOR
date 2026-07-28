@@ -266,14 +266,26 @@ class PersonnelConsolidationController extends Controller
             $results['deactivated'],
         );
 
-        return redirect()
+        $response = redirect()
             ->route('admin.personnel.index')
             ->with($results['errors'] === [] ? 'success' : 'warning', $message)
-            ->with('consolidation_errors', $results['errors'])
-            ->with(
+            ->with('consolidation_errors', $results['errors']);
+
+        $hasChanges = collect([
+            $results['updated'],
+            $results['created'],
+            $results['transfer_pending'],
+            $results['deactivated'],
+        ])->sum() > 0;
+
+        if ($hasChanges) {
+            $response->with(
                 'personnel_auto_download_url',
                 route('admin.personnel.consolidation.download', ['satker_id' => $preview['satker_id']]),
             );
+        }
+
+        return $response;
     }
 
     public function cancel(Request $request)

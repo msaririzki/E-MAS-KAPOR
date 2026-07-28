@@ -65,6 +65,7 @@ class DashboardPersonnelCountConsistencyTest extends TestCase
         $this->createPersonnel($rank, $ditlantas, '1002', 'Polri');
         $this->createPersonnel($rank, $ditlantas, '2001', 'PNS');
         $this->createPersonnel($rank, $ditbinmas, '1003', 'Polri');
+        $this->createPersonnel($rank, $ditlantas, '9999', 'Polri', false);
 
         $response = $this->actingAs($superadmin)->get(route('dashboard'));
 
@@ -109,11 +110,17 @@ class DashboardPersonnelCountConsistencyTest extends TestCase
         $response->assertDontSeeText('Bripda Rizky');
     }
 
-    private function createPersonnel(Rank $rank, Satker $satker, string $nrp, string $personnelType): void
-    {
+    private function createPersonnel(
+        Rank $rank,
+        Satker $satker,
+        string $nrp,
+        string $personnelType,
+        bool $isActive = true,
+    ): void {
         $user = User::factory()->create([
             'nrp_nip' => $nrp,
             'satker_id' => $satker->id,
+            'is_active' => $isActive,
         ]);
 
         Personnel::create([
@@ -124,7 +131,7 @@ class DashboardPersonnelCountConsistencyTest extends TestCase
             'personnel_type' => $personnelType,
             'rank_id' => $rank->id,
             'satker_id' => $satker->id,
-            'is_active' => true,
+            'is_active' => $isActive,
         ]);
     }
 }

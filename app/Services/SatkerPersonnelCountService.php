@@ -11,6 +11,7 @@ class SatkerPersonnelCountService
     public function getGlobalCounts(): array
     {
         $counts = Personnel::query()
+            ->active()
             ->selectRaw("
                 COALESCE(SUM(CASE WHEN personnel_type = 'Polri' THEN 1 ELSE 0 END), 0) as polri_count,
                 COALESCE(SUM(CASE WHEN personnel_type = 'PNS' THEN 1 ELSE 0 END), 0) as pns_count,
@@ -28,6 +29,7 @@ class SatkerPersonnelCountService
     public function getCountsBySatker(): Collection
     {
         return Personnel::query()
+            ->active()
             ->selectRaw("
                 satker_id,
                 COALESCE(SUM(CASE WHEN personnel_type = 'Polri' THEN 1 ELSE 0 END), 0) as polri_count,

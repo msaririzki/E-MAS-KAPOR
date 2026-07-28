@@ -14,6 +14,7 @@ class ReportIncompletePersonnelExport implements FromCollection, WithHeadings, W
     public function collection()
     {
         $personnels = Personnel::with(['satker', 'rank'])
+            ->active()
             ->where(function ($q) {
                 $q->whereNull('kapor_sizes')
                     ->orWhereNull('rank_id')

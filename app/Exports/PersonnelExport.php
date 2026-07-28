@@ -52,6 +52,7 @@ class PersonnelExport implements WithMultipleSheets
     public function sheets(): array
     {
         $query = Personnel::with(['rank', 'satker', 'user:id,phone'])
+            ->active()
             ->leftJoin('satkers', 'personnels.satker_id', '=', 'satkers.id')
             ->select('personnels.*')
             ->orderByRaw("CASE WHEN satkers.code = 'POLDA-NTB' THEN 1 ELSE 0 END ASC")

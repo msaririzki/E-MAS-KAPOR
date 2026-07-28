@@ -52,13 +52,15 @@ class AnnualArchiveService
      */
     public function buildSnapshot(int $fiscalYear): array
     {
-        $satkerSummaries = Satker::withCount(['personnels as total_personnel'])
+        $satkerSummaries = Satker::withCount([
+            'personnels as total_personnel' => fn ($query) => $query->active(),
+        ])
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get()
             ->map(function (Satker $satker) {
                 $submittedCount = $this->submittedPersonnelCount(
-                    Personnel::query()->where('satker_id', $satker->id)
+                    Personnel::query()->active()->where('satker_id', $satker->id)
                 );
 
                 return [
@@ -84,8 +86,8 @@ class AnnualArchiveService
             ->all();
 
         return [
-            'total_personnel' => Personnel::count(),
-            'submitted_personnel' => $this->submittedPersonnelCount(Personnel::query()),
+            'total_personnel' => Personnel::active()->count(),
+            'submitted_personnel' => $this->submittedPersonnelCount(Personnel::query()->active()),
             'satker_summaries' => $satkerSummaries,
             'budget_packages' => $budgetPackages,
         ];
