@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\Personnel;
 use App\Models\Rank;
 use App\Models\Satker;
@@ -18,7 +19,7 @@ class PersonnelBulkDeleteAllTest extends TestCase
     {
         parent::setUp();
 
-        foreach (['superadmin', 'personil'] as $roleName) {
+        foreach (['superadmin', 'admin_satker', 'personil'] as $roleName) {
             Role::findOrCreate($roleName);
         }
     }
@@ -74,6 +75,15 @@ class PersonnelBulkDeleteAllTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => $user2->id]);
         // Superadmin should still exist
         $this->assertDatabaseHas('users', ['id' => $superadmin->id]);
+
+        $secondResponse = $this->actingAs($superadmin)->delete(route('admin.personnel.bulk-delete-all'), [
+            'confirm_text' => 'KOSONGKAN',
+        ]);
+
+        $secondResponse->assertRedirect();
+        $secondResponse->assertSessionHas('info', 'Database personel sudah kosong. Tidak ada data yang dihapus.');
+
+        $this->assertSame(1, AuditLog::where('action', 'Kosongkan Semua Personil')->count());
     }
 
     public function test_it_fails_when_confirmation_text_is_incorrect()
@@ -107,5 +117,43 @@ class PersonnelBulkDeleteAllTest extends TestCase
         $response->assertSessionHas('error');
 
         $this->assertEquals(1, Personnel::count());
+    }
+
+    public function test_bulk_delete_routes_reject_admin_satker_direct_requests(): void
+    {
+        $satker = Satker::create(['name' => 'Satker Test', 'code' => 'SATKER-TEST', 'sort_order' => 1]);
+        $adminSatker = User::factory()->create(['satker_id' => $satker->id]);
+        $adminSatker->assignRole('admin_satker');
+
+        $this->actingAs($adminSatker)
+            ->delete(route('admin.personnel.bulk-delete'), [
+                'satker_id' => $satker->id,
+                'confirm_text' => 'HAPUS',
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($adminSatker)
+            ->delete(route('admin.personnel.bulk-delete-all'), [
+                'confirm_text' => 'KOSONGKAN',
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_bulk_delete_by_satker_does_not_repeat_when_satker_is_already_empty(): void
+    {
+        $superadmin = User::factory()->create();
+        $superadmin->assignRole('superadmin');
+
+        $satker = Satker::create(['name' => 'Satker Kosong', 'code' => 'SATKER-KOSONG', 'sort_order' => 1]);
+
+        $response = $this->actingAs($superadmin)->delete(route('admin.personnel.bulk-delete'), [
+            'satker_id' => $satker->id,
+            'confirm_text' => 'HAPUS',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('info', 'Data personel Satker Satker Kosong sudah kosong. Tidak ada data yang dihapus.');
+
+        $this->assertSame(0, AuditLog::where('action', 'Hapus Bulk Personil')->count());
     }
 }

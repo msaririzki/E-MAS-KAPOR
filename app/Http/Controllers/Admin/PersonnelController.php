@@ -1992,6 +1992,8 @@ class PersonnelController extends Controller
      */
     public function bulkDeleteBySatker(Request $request)
     {
+        $this->ensureSuperadmin();
+
         $request->validate([
             'satker_id' => 'required|exists:satkers,id',
             'confirm_text' => 'required|string',
@@ -2002,6 +2004,10 @@ class PersonnelController extends Controller
         }
 
         $satker = Satker::findOrFail($request->satker_id);
+
+        if (! Personnel::where('satker_id', $satker->id)->exists()) {
+            return redirect()->back()->with('info', "Data personel Satker {$satker->name} sudah kosong. Tidak ada data yang dihapus.");
+        }
 
         try {
             DB::transaction(function () use ($satker) {
@@ -2038,12 +2044,18 @@ class PersonnelController extends Controller
      */
     public function bulkDeleteAll(Request $request)
     {
+        $this->ensureSuperadmin();
+
         $request->validate([
             'confirm_text' => 'required|string',
         ]);
 
         if (strtoupper($request->confirm_text) !== 'KOSONGKAN') {
             return redirect()->back()->with('error', 'Konfirmasi kata kunci salah. Silakan ketik KOSONGKAN untuk melanjutkan.');
+        }
+
+        if (! Personnel::exists()) {
+            return redirect()->back()->with('info', 'Database personel sudah kosong. Tidak ada data yang dihapus.');
         }
 
         try {

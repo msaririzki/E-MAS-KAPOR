@@ -692,7 +692,7 @@
                 <i class="ri-close-line"></i>
             </button>
         </div>
-        <form action="{{ route('admin.personnel.bulk-delete') }}" method="POST">
+        <form action="{{ route('admin.personnel.bulk-delete') }}" method="POST" onsubmit="return submitDestructivePersonnelForm(this, 'Menghapus data satker...')">
             @csrf
             @method('DELETE')
             <div class="modal-body" style="padding: 24px;">
@@ -737,9 +737,13 @@
             </div>
             <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">
                 <button type="button" class="btn btn-outline" onclick="closeModal('bulkDeleteModal')">Batal</button>
-                <button type="submit" class="btn" style="background: #DC2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer;">
-                    <i class="ri-delete-bin-line"></i> Hapus Semua Data
+                <button type="submit" class="btn" data-destructive-submit style="background: #DC2626; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; min-width: 174px;">
+                    <i class="ri-delete-bin-line" data-submit-icon></i>
+                    <span data-submit-label>Hapus Semua Data</span>
                 </button>
+            </div>
+            <div data-processing-message style="display: none; padding: 0 24px 18px; color: #991B1B; font-size: 12px; font-weight: 600; text-align: right;">
+                Permintaan sedang diproses. Jangan tekan tombol lagi atau menutup halaman.
             </div>
         </form>
     </div>
@@ -950,7 +954,7 @@
                 <i class="ri-close-line"></i>
             </button>
         </div>
-        <form action="{{ route('admin.personnel.bulk-delete-all') }}" method="POST">
+        <form action="{{ route('admin.personnel.bulk-delete-all') }}" method="POST" onsubmit="return submitDestructivePersonnelForm(this, 'Mengosongkan database...')">
             @csrf
             @method('DELETE')
             <div class="modal-body" style="padding: 24px;">
@@ -972,9 +976,13 @@
             </div>
             <div class="modal-footer" style="padding: 16px 24px; background: #F9FAFB; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; display: flex; justify-content: flex-end; gap: 12px;">
                 <button type="button" class="btn btn-outline" onclick="closeModal('bulkDeleteAllModal')">Batal</button>
-                <button type="submit" class="btn" style="background: #991B1B; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer;">
-                    <i class="ri-delete-bin-2-fill"></i> Kosongkan Database
+                <button type="submit" class="btn" data-destructive-submit style="background: #991B1B; color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; min-width: 190px;">
+                    <i class="ri-delete-bin-2-fill" data-submit-icon></i>
+                    <span data-submit-label>Kosongkan Database</span>
                 </button>
+            </div>
+            <div data-processing-message style="display: none; padding: 0 24px 18px; color: #7F1D1D; font-size: 12px; font-weight: 600; text-align: right;">
+                Permintaan sedang diproses. Jangan tekan tombol lagi atau menutup halaman.
             </div>
         </form>
     </div>
@@ -4693,6 +4701,43 @@ function showGlobalLoader(msg) {
             button.querySelector('i').className = 'ri-loader-4-line spin';
             button.querySelector('i').style.animation = 'spin .8s linear infinite';
             button.querySelector('span').textContent = 'Membaca Excel...';
+        }
+
+        return true;
+    }
+
+    function submitDestructivePersonnelForm(form, loadingText) {
+        if (form.dataset.submitting === 'true') {
+            return false;
+        }
+
+        form.dataset.submitting = 'true';
+
+        form.querySelectorAll('button').forEach(function (button) {
+            button.disabled = true;
+            button.style.cursor = 'not-allowed';
+        });
+
+        const submitButton = form.querySelector('[data-destructive-submit]');
+        const icon = submitButton?.querySelector('[data-submit-icon]');
+        const label = submitButton?.querySelector('[data-submit-label]');
+        const processingMessage = form.querySelector('[data-processing-message]');
+
+        if (submitButton) {
+            submitButton.style.opacity = '0.82';
+        }
+
+        if (icon) {
+            icon.className = 'ri-loader-4-line';
+            icon.style.animation = 'spin .8s linear infinite';
+        }
+
+        if (label) {
+            label.textContent = loadingText;
+        }
+
+        if (processingMessage) {
+            processingMessage.style.display = 'block';
         }
 
         return true;
