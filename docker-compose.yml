@@ -87,8 +87,6 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
     volumes:
       - db-data:/var/lib/mysql
-    ports:
-      - "${DB_PORT_EXTERNAL:-3307}:3306"
     restart: unless-stopped
 
   redis:
