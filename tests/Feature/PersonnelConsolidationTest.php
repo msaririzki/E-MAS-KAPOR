@@ -737,6 +737,31 @@ class PersonnelConsolidationTest extends TestCase
         $this->assertSame(0, PersonnelTransferRequest::where('status', 'pending')->count());
     }
 
+    public function test_large_satker_file_can_be_previewed_without_repeated_cell_scans(): void
+    {
+        $rows = [];
+        for ($index = 1; $index <= 2000; $index++) {
+            $rows[] = $this->newFullRow(
+                '94'.str_pad((string) $index, 6, '0', STR_PAD_LEFT),
+                'PERSONEL SKALA BESAR '.str_pad((string) $index, 4, '0', STR_PAD_LEFT),
+            );
+        }
+
+        $file = $this->makeWorkbook($rows, true);
+        $startedAt = microtime(true);
+
+        $preview = app(PersonnelConsolidationService::class)->buildPreview(
+            $file->getRealPath(),
+            $this->satker,
+            $file->getClientOriginalName(),
+        );
+
+        $this->assertSame(2000, $preview['stats']['total']);
+        $this->assertSame(2000, $preview['stats']['new']);
+        $this->assertSame(0, $preview['stats']['error']);
+        $this->assertLessThan(15, microtime(true) - $startedAt);
+    }
+
     private function createPersonnel(Satker $satker, string $nrp, string $name): Personnel
     {
         $user = User::factory()->create([

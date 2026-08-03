@@ -45,36 +45,46 @@ class PersonnelConsolidationService
 
     public function buildPreview(string $path, Satker $targetSatker, string $sourceFile): array
     {
-        $spreadsheet = IOFactory::load($path);
+        $reader = IOFactory::createReaderForFile($path);
+        $reader->setReadDataOnly(true);
+        $reader->setReadEmptyCells(false);
+        $spreadsheet = $reader->load($path);
         $parsedRows = [];
         $fileWarnings = [];
         $unreadableSheets = [];
         $ranks = Rank::all()->keyBy(fn (Rank $rank) => Str::upper($rank->name));
 
-        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
-            if (Str::lower($sheet->getTitle()) === 'petunjuk') {
-                continue;
-            }
-
-            $header = $this->detectHeader($sheet);
-            if ($header === null) {
-                if ($this->isExpectedPersonnelSheet($sheet)) {
-                    $unreadableSheets[] = $sheet->getTitle();
+        try {
+            foreach ($spreadsheet->getWorksheetIterator() as $sheetIndex => $sheet) {
+                if (Str::lower($sheet->getTitle()) === 'petunjuk') {
+                    continue;
                 }
 
-                continue;
-            }
-            foreach ($header['warnings'] as $warning) {
-                $fileWarnings[] = "Sheet {$sheet->getTitle()}: {$warning}";
-            }
+                // getHighestDataRow() scans the complete cell index, so calculate it once per sheet.
+                $highestDataRow = $sheet->getHighestDataRow();
+                $header = $this->detectHeader($sheet, $highestDataRow);
+                if ($header === null) {
+                    if ($this->isExpectedPersonnelSheet($sheet, $highestDataRow)) {
+                        $unreadableSheets[] = $sheet->getTitle();
+                    }
 
-            for ($rowNumber = $header['row'] + 1; $rowNumber <= $sheet->getHighestDataRow(); $rowNumber++) {
-                $row = $this->parseRow($sheet, $rowNumber, $header, $targetSatker, $ranks);
+                    continue;
+                }
+                foreach ($header['warnings'] as $warning) {
+                    $fileWarnings[] = "Sheet {$sheet->getTitle()}: {$warning}";
+                }
 
-                if ($row !== null) {
-                    $parsedRows[] = $row;
+                for ($rowNumber = $header['row'] + 1; $rowNumber <= $highestDataRow; $rowNumber++) {
+                    $row = $this->parseRow($sheet, $sheetIndex, $rowNumber, $header, $targetSatker, $ranks);
+
+                    if ($row !== null) {
+                        $parsedRows[] = $row;
+                    }
                 }
             }
+        } finally {
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
         }
 
         if ($unreadableSheets !== []) {
@@ -679,14 +689,14 @@ class PersonnelConsolidationService
         return $diff;
     }
 
-    private function detectHeader($sheet): ?array
+    private function detectHeader($sheet, int $highestDataRow): ?array
     {
         $highestColumnIndex = min(
             30,
             \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($sheet->getHighestColumn())
         );
 
-        for ($row = 1; $row <= min(15, $sheet->getHighestDataRow()); $row++) {
+        for ($row = 1; $row <= min(15, $highestDataRow); $row++) {
             $values = [];
             for ($column = 1; $column <= $highestColumnIndex; $column++) {
                 $values[$column] = Str::upper(trim($this->cellValue($sheet->getCell([$column, $row]))));
@@ -721,16 +731,17 @@ class PersonnelConsolidationService
         return null;
     }
 
-    private function isExpectedPersonnelSheet($sheet): bool
+    private function isExpectedPersonnelSheet($sheet, int $highestDataRow): bool
     {
         $title = Str::lower($sheet->getTitle());
 
-        return $sheet->getHighestDataRow() >= 8
+        return $highestDataRow >= 8
             && Str::contains($title, ['polri', 'pns', 'personel']);
     }
 
     private function parseRow(
         $sheet,
+        int $sheetIndex,
         int $rowNumber,
         array $header,
         Satker $targetSatker,
@@ -813,7 +824,7 @@ class PersonnelConsolidationService
         }
 
         return [
-            '_index' => $sheet->getParent()->getIndex($sheet).'_'.$rowNumber,
+            '_index' => $sheetIndex.'_'.$rowNumber,
             'sheet' => $sheet->getTitle(),
             'row_number' => $rowNumber,
             'full_name' => $name,
@@ -841,10 +852,10 @@ class PersonnelConsolidationService
 
     private function cellValue(Cell $cell): string
     {
-        try {
-            $value = $cell->getCalculatedValue();
-        } catch (\Throwable) {
-            $value = $cell->getValue();
+        $value = $cell->getValue();
+        if ($cell->isFormula()) {
+            $cachedValue = $cell->getOldCalculatedValue();
+            $value = $cachedValue ?? $value;
         }
 
         if (is_float($value)) {
