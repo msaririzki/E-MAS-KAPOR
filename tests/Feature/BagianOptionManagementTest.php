@@ -106,6 +106,8 @@ class BagianOptionManagementTest extends TestCase
         $response->assertOk();
         $response->assertSee('SAT RESKRIM');
         $response->assertDontSee('OPS NONAKTIF');
+        $response->assertSeeText('36 = 97 cm');
+        $response->assertSeeText('60 = 157 cm');
     }
 
     public function test_personnel_index_honors_supported_page_size_and_renders_working_options(): void

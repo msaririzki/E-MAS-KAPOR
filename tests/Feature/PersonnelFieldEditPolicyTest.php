@@ -1255,6 +1255,7 @@ class PersonnelFieldEditPolicyTest extends TestCase
             'name' => 'BAYU SAPUTRA',
             'nrp_nip' => '76100171',
             'satker_id' => $satker->id,
+            'phone' => '081234567890',
         ]);
         $user->assignRole('personil');
 
@@ -1281,6 +1282,8 @@ class PersonnelFieldEditPolicyTest extends TestCase
         $response->assertSeeText('Data Personel');
         $response->assertSeeText('No. HP (WhatsApp)');
         $response->assertSeeText('Ukuran Kaporlap');
+        $response->assertSeeText('36 = 97 cm');
+        $response->assertSeeText('60 = 157 cm');
     }
 
     private function createItemAllocation(User $user, Satker $satker, string $itemName, ?Personnel $personnel = null, ?int $fiscalYear = null): PersonnelItemAllocation

@@ -1447,7 +1447,8 @@
                             $s_wom = ['K', 'SD', 'B', 'EB', 'EEB', 'EEEB', 'EEEEB'];
                             $s_pants_m = range(27, 50);
                             $s_shoes = range(36, 48);
-                            $s_belt = range(36, 60, 2);
+                            $beltSizeLabels = config('kapor_sizes.sabuk', []);
+                            $s_belt = array_keys($beltSizeLabels);
                             $s_jilbab = ['K', 'SD', 'B'];
                             
                             $items = [
@@ -1602,7 +1603,7 @@
                                         <div class="custom-options">
                                             <div class="options-scroll">
                                                 @foreach($s_belt as $s)
-                                                    <div class="option" onclick="selectOptionManual(this, 'kapor_sizes[sabuk]', '{{ $s }}', '{{ $s }}', 'add_size_label_sabuk')">{{ $s }}</div>
+                                                    <div class="option" onclick="selectOptionManual(this, 'kapor_sizes[sabuk]', '{{ $s }}', '{{ $beltSizeLabels[$s] }}', 'add_size_label_sabuk')">{{ $beltSizeLabels[$s] }}</div>
                                                 @endforeach
                                             </div>
                                         </div>
@@ -2124,7 +2125,7 @@
                                         <div class="custom-options">
                                             <div class="options-scroll">
                                                 @foreach($s_belt as $s)
-                                                    <div class="option" onclick="selectOptionManual(this, 'kapor_sizes[sabuk]', '{{ $s }}', '{{ $s }}', 'edit_size_label_sabuk')">{{ $s }}</div>
+                                                    <div class="option" onclick="selectOptionManual(this, 'kapor_sizes[sabuk]', '{{ $s }}', '{{ $beltSizeLabels[$s] }}', 'edit_size_label_sabuk')">{{ $beltSizeLabels[$s] }}</div>
                                                 @endforeach
                                             </div>
                                         </div>
@@ -3349,6 +3350,16 @@
 
 @section('scripts')
 <script>
+    const sabukSizeLabels = @json(config('kapor_sizes.sabuk', []));
+
+    function formatKaporSizeLabel(key, value) {
+        if (key === 'sabuk') {
+            return sabukSizeLabels[String(value)] || String(value);
+        }
+
+        return value;
+    }
+
     // Global click listener to close dropdowns
     document.addEventListener('click', (e) => {
         // If click is not inside a custom-select, close all
@@ -3725,13 +3736,14 @@
 
         displayItems.forEach(item => {
             const val = sizes[item.key] || '—';
+            const displayValue = val === '—' ? val : formatKaporSizeLabel(item.key, val);
             if (val !== '—') hasData = true;
 
             const div = document.createElement('div');
             div.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #F9FAFB; border-radius: 8px; border: 1px solid #F3F4F6; margin-bottom: 8px;">
                     <span style="font-size: 13px; font-weight: 500; color: #6B7280;">${item.label}</span>
-                    <span style="font-size: 14px; font-weight: 700; color: #111827;">${val}</span>
+                    <span style="font-size: 14px; font-weight: 700; color: #111827;">${displayValue}</span>
                 </div>
             `;
             mContainer.appendChild(div);
@@ -3963,7 +3975,7 @@
                         input.value = sizes[key];
                         // Try to find the matching option label (especially for Pria/Wanita prefixed options)
                         // If not found, just use the value logic
-                         label.innerText = sizes[key];
+                         label.innerText = formatKaporSizeLabel(key, sizes[key]);
                          // Highlight selected
                          const wrapper = input.closest('.custom-select-wrapper');
                          if(wrapper) {

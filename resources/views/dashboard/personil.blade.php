@@ -11,7 +11,8 @@
         $sWomen = ['K', 'SD', 'B', 'EB', 'EEB', 'EEEB', 'EEEEB'];
         $sPantsMale = range(27, 50);
         $sShoes = range(36, 48);
-        $sBelt = range(36, 60, 2);
+        $beltSizeLabels = config('kapor_sizes.sabuk', []);
+        $sBelt = array_keys($beltSizeLabels);
         $sJilbab = ['K', 'SD', 'B'];
         $gender = $personnel?->gender ?? 'L';
         $religion = strtoupper(trim((string) ($personnel?->religion ?? '')));
@@ -468,7 +469,7 @@
                                         <select id="sabuk" name="sabuk" class="form-control" required>
                                             <option value="">Pilih</option>
                                             @foreach ($sBelt as $size)
-                                                <option value="{{ $size }}" {{ old('sabuk', $kaporSizes['sabuk'] ?? '') == $size ? 'selected' : '' }}>{{ $size }}</option>
+                                                <option value="{{ $size }}" {{ old('sabuk', $kaporSizes['sabuk'] ?? '') == $size ? 'selected' : '' }}>{{ $beltSizeLabels[$size] }}</option>
                                             @endforeach
                                         </select>
                                         @error('sabuk')<span class="form-error">{{ $message }}</span>@enderror
