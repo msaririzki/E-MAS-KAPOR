@@ -127,7 +127,9 @@
                 <th style="width: 80px; text-align: center;">TOTAL QTY</th>
                 <th style="width: 80px; text-align: center;">DETAIL</th>
                 <th style="width: 110px; text-align: center;">STATUS SPPM</th>
+                @unless(auth()->user()->hasRole('admin_gudang'))
                 <th style="width: 100px; text-align: center;">AKSI</th>
+                @endunless
             </tr>
         </thead>
         <tbody>
@@ -164,12 +166,19 @@
                             $isSppmAda = ($groupStatus === 'Sudah Ada' || $groupStatus === 'Ada');
                         @endphp
                         <div style="display: flex; align-items: center; justify-content: center;">
-                            <select onchange="updateSppm('{{ $group->group_ids }}', this.value)" class="form-input" style="width: 105px; padding: 2px 4px; font-size: 12px; font-weight: 700; border-radius: 6px; {{ $isSppmAda ? 'color: #059669; border-color: #059669; background: #ECFDF5;' : 'color: #DC2626; border-color: #DC2626; background: #FEF2F2;' }}" {{ auth()->user()->hasRole('admin_gudang') ? 'disabled' : '' }}>
-                                <option value="Belum Ada" {{ ! $isSppmAda ? 'selected' : '' }}>Belum</option>
-                                <option value="Sudah Ada" {{ $isSppmAda ? 'selected' : '' }}>Sudah</option>
-                            </select>
+                            @if(auth()->user()->hasRole('admin_gudang'))
+                                <span style="padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 6px; white-space: nowrap; {{ $isSppmAda ? 'color: #059669; background: #ECFDF5;' : 'color: #DC2626; background: #FEF2F2;' }}">
+                                    {{ $isSppmAda ? 'Sudah Ada' : 'Belum Ada' }}
+                                </span>
+                            @else
+                                <select onchange="updateSppm('{{ $group->group_ids }}', this.value)" class="form-input" style="width: 115px; padding: 2px 4px; font-size: 12px; font-weight: 700; border-radius: 6px; {{ $isSppmAda ? 'color: #059669; border-color: #059669; background: #ECFDF5;' : 'color: #DC2626; border-color: #DC2626; background: #FEF2F2;' }}">
+                                    <option value="Belum Ada" {{ ! $isSppmAda ? 'selected' : '' }}>Belum Ada</option>
+                                    <option value="Sudah Ada" {{ $isSppmAda ? 'selected' : '' }}>Sudah Ada</option>
+                                </select>
+                            @endif
                         </div>
                     </td>
+                    @unless(auth()->user()->hasRole('admin_gudang'))
                     <td style="display:flex; gap:6px; align-items:center; justify-content: center;">
                         @if(! $isSppmAda && auth()->user()->hasRole('superadmin'))
                         @php
@@ -203,10 +212,11 @@
                             </button>
                         </form>
                     </td>
+                    @endunless
                 </tr>
             @empty
                 <tr>
-                    <td colspan="9" style="text-align: center; color: #9CA3AF; padding: 32px;">Belum ada riwayat pengeluaran barang.</td>
+                    <td colspan="{{ auth()->user()->hasRole('admin_gudang') ? 8 : 9 }}" style="text-align: center; color: #9CA3AF; padding: 32px;">Belum ada riwayat pengeluaran barang.</td>
                 </tr>
             @endforelse
         </tbody>

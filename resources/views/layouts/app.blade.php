@@ -2275,10 +2275,23 @@
                 </div>
             @endif
 
-            @if(auth()->user()->hasAnyRole(['superadmin', 'kabak_bekum', 'admin_gudang']))
+            @if(auth()->user()->hasAnyRole(['superadmin', 'kabak_bekum', 'admin_gudang', 'kepala_gudang']))
+                @php
+                    $pendingDataGudang = 0;
+                    if(auth()->user()->hasAnyRole(['superadmin', 'kepala_gudang'])) {
+                        $pendingDataGudang = \App\Models\SizeEditRequest::where('status', 'pending')->count() + \App\Models\DispenseRequest::where('status', 'pending')->count();
+                    }
+                @endphp
+                <style>
+                    .nav-group.open .parent-badge { display: none !important; }
+                </style>
                 <div class="nav-group {{ request()->routeIs('admin.warehouse-items.*') ? 'open' : '' }}">
-                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)">
-                        <i class="ri-archive-line group-icon"></i> Data Gudang
+                    <button class="nav-group-toggle" onclick="toggleNavGroup(this)" style="display: flex; align-items: center; width: 100%;">
+                        <i class="ri-archive-line group-icon" style="margin-right: 8px;"></i> 
+                        <span style="flex-grow: 1; text-align: left;">Data Gudang</span>
+                        @if($pendingDataGudang > 0)
+                            <span class="badge parent-badge" style="background: #EF4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; min-width: 18px; text-align: center; margin-right: 8px;">{{ $pendingDataGudang }}</span>
+                        @endif
                         <i class="ri-arrow-down-s-line group-chevron"></i>
                     </button>
                     <div class="nav-group-children">
@@ -2286,7 +2299,7 @@
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.index') ? 'active' : '' }}">
                             Data Barang
                         </a>
-                        @if(auth()->user()->hasRole('superadmin'))
+                        @if(auth()->user()->hasAnyRole(['superadmin', 'admin_gudang', 'kepala_gudang']))
                             <a href="{{ route('admin.warehouse-items.dispense-form') }}"
                                 class="nav-link {{ request()->routeIs('admin.warehouse-items.dispense-form') ? 'active' : '' }}">
                                 Pengeluaran Barang
@@ -2296,7 +2309,7 @@
                             class="nav-link {{ request()->routeIs('admin.warehouse-items.reports') ? 'active' : '' }}">
                             Laporan Detail
                         </a>
-                        @if(auth()->user()->hasSuperadminReadAccess())
+                        @if(auth()->user()->hasSuperadminReadAccess() || auth()->user()->hasRole('kepala_gudang'))
                             <a href="{{ route('admin.warehouse-items.sppm') }}"
                                 class="nav-link {{ request()->routeIs('admin.warehouse-items.sppm') ? 'active' : '' }}">
                                 SPPM
@@ -2304,6 +2317,24 @@
                             <a href="{{ route('admin.warehouse-items.signatories') }}"
                                 class="nav-link {{ request()->routeIs('admin.warehouse-items.signatories') ? 'active' : '' }}">
                                 Penanda Tangan
+                            </a>
+                        @endif
+                        @if(auth()->user()->hasAnyRole(['superadmin', 'kepala_gudang']))
+                            @php
+                                $pendingRequestsCount = \App\Models\SizeEditRequest::where('status', 'pending')->count() + \App\Models\DispenseRequest::where('status', 'pending')->count();
+                            @endphp
+                            <a href="{{ route('admin.warehouse-items.edit-requests.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.warehouse-items.edit-requests.*') ? 'active' : '' }}" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Pengajuan</span>
+                                @if($pendingRequestsCount > 0)
+                                    <span class="badge" style="background: #EF4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; min-width: 18px; text-align: center;">{{ $pendingRequestsCount }}</span>
+                                @endif
+                            </a>
+                        @endif
+                        @if(auth()->user()->hasAnyRole(['admin_gudang', 'kepala_gudang']))
+                            <a href="{{ route('admin.warehouse-items.monitor-requests') }}"
+                                class="nav-link {{ request()->routeIs('admin.warehouse-items.monitor-requests') ? 'active' : '' }}">
+                                Monitor Pengajuan
                             </a>
                         @endif
                         <a href="{{ route('admin.warehouse-items.deletion-history') }}"

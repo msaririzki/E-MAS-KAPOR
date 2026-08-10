@@ -69,6 +69,9 @@
                         <th style="width: 12%;">STOK AKHIR</th>
                         <th style="width: 18%;">WAKTU DIHAPUS</th>
                         <th>ALASAN PENGHAPUSAN</th>
+                        @role('superadmin')
+                        <th style="width: 10%; text-align: center;">AKSI</th>
+                        @endrole
                     </tr>
                 </thead>
                 <tbody>
@@ -97,10 +100,21 @@
                                     {{ $item->deletion_reason ?? '-' }}
                                 </p>
                             </td>
+                            @role('superadmin')
+                            <td style="text-align: center;">
+                                <form action="{{ route('admin.warehouse-items.force-delete', $item->id) }}" method="POST" style="display:inline-block;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button" class="btn-icon red" title="Hapus Permanen" onclick="confirmForceDelete(this.closest('form'), 'barang ini beserta seluruh ukuran dan stoknya')">
+                                        <i class="ri-delete-bin-7-line"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            @endrole
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" style="text-align: center; color: #9CA3AF; padding: 40px;">
+                            <td colspan="7" style="text-align: center; color: #9CA3AF; padding: 40px;">
                                 <i class="ri-inbox-line" style="font-size: 48px; color: #D1D5DB; display: block; margin-bottom: 12px;"></i>
                                 Tidak ada riwayat penghapusan barang.
                             </td>
@@ -133,6 +147,9 @@
                         <th style="width: 15%;">PENERIMA</th>
                         <th style="width: 18%;">WAKTU DIHAPUS</th>
                         <th>ALASAN PENGHAPUSAN</th>
+                        @role('superadmin')
+                        <th style="width: 10%; text-align: center;">AKSI</th>
+                        @endrole
                     </tr>
                 </thead>
                 <tbody>
@@ -165,10 +182,21 @@
                                     {{ $outflow->deletion_reason ?? '-' }}
                                 </p>
                             </td>
+                            @role('superadmin')
+                            <td style="text-align: center;">
+                                <form action="{{ route('admin.warehouse-items.reports.force-delete', $outflow->id) }}" method="POST" style="display:inline-block;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button" class="btn-icon red" title="Hapus Permanen" onclick="confirmForceDelete(this.closest('form'), 'laporan pengeluaran ini')">
+                                        <i class="ri-delete-bin-7-line"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            @endrole
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" style="text-align: center; color: #9CA3AF; padding: 40px;">
+                            <td colspan="7" style="text-align: center; color: #9CA3AF; padding: 40px;">
                                 <i class="ri-inbox-line" style="font-size: 48px; color: #D1D5DB; display: block; margin-bottom: 12px;"></i>
                                 Tidak ada riwayat penghapusan laporan pengeluaran.
                             </td>
@@ -209,6 +237,12 @@
         padding: 14px 20px;
         border-bottom: 1px solid var(--slate-100);
     }
+    
+    /* Button Styles */
+    .btn-icon { width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #E5E7EB; cursor: pointer; background: #fff; transition: all 0.2s; }
+    .btn-icon:hover { background: #F9FAFB; }
+    .btn-icon.red { color: #EF4444; }
+    .btn-icon.red:hover { background: #EF4444; color: #fff; border-color: #EF4444; }
     
     /* Pagination Styling */
     .pagination-footer {
@@ -269,6 +303,7 @@
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -276,6 +311,23 @@
         
         document.getElementById(tabId).classList.add('active');
         document.querySelector(`[onclick="switchTab('${tabId}')"]`).classList.add('active');
+    }
+
+    function confirmForceDelete(form, itemNameText) {
+        Swal.fire({
+            title: 'Hapus Permanen?',
+            html: `Apakah Anda yakin ingin menghapus permanen <strong>${itemNameText}</strong>?<br><small style="color:#EF4444; display:block; margin-top:8px;">Tindakan ini tidak dapat dibatalkan dan data tidak dapat dipulihkan.</small>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Ya, Hapus Permanen',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
     }
 </script>
 @endsection

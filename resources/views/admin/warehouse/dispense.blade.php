@@ -17,8 +17,8 @@
 
     <div class="dispense-card">
         <div class="dispense-card-header">
-            <h2><i class="ri-send-plane-line"></i> Pengeluaran Barang</h2>
-            <p>Form pengeluaran barang gudang — data tersimpan di Laporan Pengeluaran</p>
+            <h2><i class="ri-send-plane-line"></i> {{ auth()->user()->hasRole('admin_gudang') ? 'Pengajuan Pengeluaran Barang' : 'Pengeluaran Barang' }}</h2>
+            <p>{{ auth()->user()->hasRole('admin_gudang') ? 'Form pengajuan pengeluaran barang — pengajuan akan diproses oleh Super Admin' : 'Form pengeluaran barang gudang — data tersimpan di Laporan Pengeluaran' }}</p>
         </div>
 
         <form action="{{ route('admin.warehouse-items.dispense') }}" method="POST" id="dispenseForm">
@@ -162,7 +162,7 @@
                     <i class="ri-arrow-left-line"></i> Kembali ke Data Gudang
                 </a>
                 <button type="submit" class="btn-submit" id="submitBtn">
-                    <i class="ri-save-line"></i> Simpan Pengeluaran
+                    <i class="{{ auth()->user()->hasRole('admin_gudang') ? 'ri-send-plane-fill' : 'ri-save-line' }}"></i> {{ auth()->user()->hasRole('admin_gudang') ? 'Ajukan Pengeluaran' : 'Simpan Pengeluaran' }}
                 </button>
             </div>
         </form>

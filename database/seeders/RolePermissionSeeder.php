@@ -68,6 +68,13 @@ class RolePermissionSeeder extends Seeder
             'view-own-profile',
         ]);
 
+        // Kepala Gudang: fokus pada pemantauan dan persetujuan pengelolaan gudang
+        $kepalaGudang = Role::findOrCreate('kepala_gudang', 'web');
+        $kepalaGudang->syncPermissions([
+            'manage-warehouse',
+            'view-own-profile',
+        ]);
+
         // Admin Satker: Scope terbatas ke satker sendiri
         $adminSatker = Role::findOrCreate('admin_satker', 'web');
         $adminSatker->syncPermissions([

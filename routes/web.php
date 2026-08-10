@@ -83,7 +83,7 @@ Route::middleware(['auth', 'satker.write.lock', 'role:admin_satker', \App\Http\M
 
 // ── Admin Central Routes ──────────────────────────────────────────────
 
-Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superadmin|kabak_bekum|admin_gudang|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superadmin|kabak_bekum|admin_gudang|kepala_gudang|admin_satker', 'satker.scope'])->prefix('admin')->name('admin.')->group(function () {
 
     // User Management
     Route::get('/users/template', [\App\Http\Controllers\UserController::class, 'downloadTemplate'])->name('users.template');
@@ -176,7 +176,7 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
     Route::post('/identifikasi-kebutuhan/{kebutuhan}/reject', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'reject'])->name('identifikasi-kebutuhan.reject');
     Route::delete('/identifikasi-kebutuhan/{kebutuhan}', [\App\Http\Controllers\Admin\IdentifikasiKebutuhanController::class, 'destroy'])->name('identifikasi-kebutuhan.destroy');
 
-    Route::middleware('role:superadmin|kabak_bekum|admin_gudang')->group(function () {
+    Route::middleware('role:superadmin|kabak_bekum|admin_gudang|kepala_gudang')->group(function () {
         // Warehouse Data Gudang (Unified)
         Route::post('/warehouse-items/import', [WarehouseController::class, 'import'])->name('warehouse-items.import');
         Route::get('/warehouse-items/template', [WarehouseController::class, 'downloadTemplate'])->name('warehouse-items.download-template');
@@ -185,10 +185,18 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
         Route::get('/warehouse-items/reports/export-pdf', [\App\Http\Controllers\Admin\WarehouseController::class, 'exportReportsPdf'])->name('warehouse-items.reports.export-pdf');
 
         // Pengeluaran Barang (Halaman Terpisah)
-        Route::middleware('role:superadmin')->group(function () {
+        Route::middleware('role:superadmin|admin_gudang|kepala_gudang')->group(function () {
             Route::get('/warehouse-items/dispense', [\App\Http\Controllers\Admin\WarehouseController::class, 'dispenseForm'])->name('warehouse-items.dispense-form');
             Route::post('/warehouse-items/dispense', [\App\Http\Controllers\Admin\WarehouseController::class, 'dispense'])->name('warehouse-items.dispense');
             Route::get('/warehouse-items/api/item-sizes/{id}', [\App\Http\Controllers\Admin\WarehouseController::class, 'getItemSizes'])->name('warehouse-items.api.item-sizes');
+            
+            Route::get('/warehouse-items/monitor-requests', [\App\Http\Controllers\Admin\SizeEditRequestController::class, 'monitor'])->name('warehouse-items.monitor-requests');
+        });
+
+        // Permohonan Pengeluaran Barang (Super Admin only)
+        Route::middleware('role:superadmin|kepala_gudang')->group(function () {
+            Route::post('/warehouse-items/dispense-requests/{id}/approve', [\App\Http\Controllers\Admin\DispenseRequestController::class, 'approve'])->name('warehouse-items.dispense-requests.approve');
+            Route::post('/warehouse-items/dispense-requests/{id}/reject', [\App\Http\Controllers\Admin\DispenseRequestController::class, 'reject'])->name('warehouse-items.dispense-requests.reject');
         });
 
         // Penanda Tangan
@@ -204,6 +212,8 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
         Route::post('/warehouse-items/download-sppm-grouped', [\App\Http\Controllers\Admin\WarehouseController::class, 'downloadSppmGrouped'])->name('warehouse-items.download-sppm-grouped');
         Route::post('/warehouse-items/save-sppm-grouped', [\App\Http\Controllers\Admin\WarehouseController::class, 'saveSppmGrouped'])->name('warehouse-items.save-sppm-grouped');
         Route::get('/warehouse-items/deletion-history', [\App\Http\Controllers\Admin\WarehouseController::class, 'deletionHistory'])->name('warehouse-items.deletion-history');
+        Route::delete('/warehouse-items/deletion-history/item/{id}', [\App\Http\Controllers\Admin\WarehouseController::class, 'forceDeleteItem'])->name('warehouse-items.force-delete')->middleware('role:superadmin');
+        Route::delete('/warehouse-items/deletion-history/outflow/{id}', [\App\Http\Controllers\Admin\WarehouseController::class, 'forceDeleteOutflow'])->name('warehouse-items.reports.force-delete')->middleware('role:superadmin');
         Route::delete('/warehouse-items/reports/{outflow}', [\App\Http\Controllers\Admin\WarehouseController::class, 'destroyOutflow'])->name('warehouse-items.reports.destroy');
         Route::delete('/warehouse-items/reports/{outflow}/cancel', [\App\Http\Controllers\Admin\WarehouseController::class, 'cancelOutflow'])->name('warehouse-items.reports.cancel');
         Route::patch('/warehouse-items/reports/{outflow}/sppm', [\App\Http\Controllers\Admin\WarehouseController::class, 'updateSppm'])->name('warehouse-items.reports.update-sppm');
@@ -212,6 +222,12 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
         Route::post('/warehouse-items/{warehouse_item}/sizes', [\App\Http\Controllers\Admin\WarehouseController::class, 'addSize'])->name('warehouse-items.sizes.store');
         Route::put('/warehouse-items/{warehouse_item}/sizes/{size}', [\App\Http\Controllers\Admin\WarehouseController::class, 'updateSize'])->name('warehouse-items.sizes.update');
         Route::delete('/warehouse-items/{warehouse_item}/sizes/{size}', [\App\Http\Controllers\Admin\WarehouseController::class, 'deleteSize'])->name('warehouse-items.sizes.destroy');
+        
+        // Permohonan Edit Stok
+        Route::post('/warehouse-items/sizes/{size}/request-edit', [\App\Http\Controllers\Admin\SizeEditRequestController::class, 'store'])->name('warehouse-items.sizes.request-edit');
+        Route::get('/warehouse-items/edit-requests', [\App\Http\Controllers\Admin\SizeEditRequestController::class, 'index'])->name('warehouse-items.edit-requests.index')->middleware('role:superadmin|kepala_gudang');
+        Route::post('/warehouse-items/edit-requests/{id}/approve', [\App\Http\Controllers\Admin\SizeEditRequestController::class, 'approve'])->name('warehouse-items.edit-requests.approve')->middleware('role:superadmin|kepala_gudang');
+        Route::post('/warehouse-items/edit-requests/{id}/reject', [\App\Http\Controllers\Admin\SizeEditRequestController::class, 'reject'])->name('warehouse-items.edit-requests.reject')->middleware('role:superadmin|kepala_gudang');
     });
 
     // Laporan & Audit

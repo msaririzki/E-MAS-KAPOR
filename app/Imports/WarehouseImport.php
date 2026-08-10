@@ -23,7 +23,7 @@ class WarehouseImport implements ToCollection, WithHeadingRow
                 }
 
                 $itemName = trim($rowArray['nama_barang']);
-                $unit = 'PCS';
+                $unit = isset($rowArray['satuan']) && !empty(trim($rowArray['satuan'])) ? trim($rowArray['satuan']) : 'PCS';
                 $price = isset($rowArray['harga_satuan']) ? floatval($rowArray['harga_satuan']) : 0;
 
                 // Set ukuran default ke "-" dan ambil kuantitas
@@ -32,11 +32,13 @@ class WarehouseImport implements ToCollection, WithHeadingRow
 
                 $sumberPengadaan = isset($rowArray['sumber_pengadaan']) ? trim($rowArray['sumber_pengadaan']) : 'Mabes Polri';
                 $kategoriStok = isset($rowArray['kategori_stok']) ? trim($rowArray['kategori_stok']) : 'Stok';
+                $tahun = isset($rowArray['tahun']) ? intval($rowArray['tahun']) : null;
 
                 // Update or create WarehouseItem
                 $item = WarehouseItem::updateOrCreate(
                     ['name' => $itemName],
                     [
+                        'tahun' => $tahun,
                         'unit' => $unit,
                         'price' => $price,
                         'sumber_pengadaan' => $sumberPengadaan,

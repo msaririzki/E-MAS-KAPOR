@@ -38,8 +38,8 @@ class DashboardController extends Controller
             return $this->superadminDashboard($request);
         }
 
-        if ($user->hasRole('admin_gudang')) {
-            return $this->adminDashboard();
+        if ($user->hasAnyRole(['admin_gudang', 'kepala_gudang'])) {
+            return $this->adminGudangDashboard();
         }
 
         if ($user->hasRole('admin_satker')) {
@@ -161,6 +161,34 @@ class DashboardController extends Controller
         ];
 
         return view('dashboard.admin', compact('stats'));
+    }
+
+    private function adminGudangDashboard()
+    {
+        $fiscalYear = Setting::getValue('fiscal_year', date('Y'));
+
+        $totalItemTypes = \App\Models\WarehouseItem::count();
+        $totalStock = \App\Models\WarehouseItemSize::sum('stock');
+        $totalOutflow = \App\Models\WarehouseOutflow::sum('quantity');
+
+        $pendingRequests = \App\Models\DispenseRequest::where('status', 'pending')->get();
+        $totalPending = 0;
+        foreach ($pendingRequests as $req) {
+            foreach ($req->parsed_items as $item) {
+                $totalPending += $item['jumlah'];
+            }
+        }
+
+        $topItems = \App\Models\WarehouseItem::withSum('sizes', 'stock')->orderByDesc('sizes_sum_stock')->take(5)->get();
+
+        return view('dashboard.admin-gudang', compact(
+            'fiscalYear',
+            'totalItemTypes',
+            'totalStock',
+            'totalOutflow',
+            'totalPending',
+            'topItems'
+        ));
     }
 
     private function adminSatkerDashboard(User $user)

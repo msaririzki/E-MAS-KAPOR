@@ -64,6 +64,7 @@ class WarehouseController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'tahun' => 'nullable|integer',
             'price' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
             'sizes' => 'nullable|array',
@@ -79,6 +80,7 @@ class WarehouseController extends Controller
 
         $item = WarehouseItem::create([
             'name' => $validated['name'],
+            'tahun' => $validated['tahun'] ?? null,
             'unit' => $validated['unit'],
             'price' => $validated['price'],
             'sumber_pengadaan' => $validated['sumber_pengadaan'],
@@ -108,6 +110,7 @@ class WarehouseController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'tahun' => 'nullable|integer',
             'price' => 'nullable|numeric|min:0',
             'unit' => 'nullable|string|max:50',
             'sumber_pengadaan' => 'required|string|in:Mabes Polri,Polda NTB',
@@ -116,6 +119,7 @@ class WarehouseController extends Controller
 
         $warehouse_item->update([
             'name' => $validated['name'],
+            'tahun' => $validated['tahun'] ?? null,
             'price' => $validated['price'] ?? 0,
             'unit' => $validated['unit'] ?? 'PCS',
             'sumber_pengadaan' => $validated['sumber_pengadaan'],
@@ -169,6 +173,18 @@ class WarehouseController extends Controller
             return response()->json(['error' => 'Ukuran ini sudah ada. Silakan update stoknya.'], 422);
         }
 
+        // Kurangi dari stok kosong ('-') jika ada
+        $noSize = $warehouseItem->sizes()->whereIn('size_label', ['-', ''])->first();
+
+        if ($noSize && !in_array($validated['size_label'], ['-', ''])) {
+            if ($validated['stock'] > $noSize->stock) {
+                return response()->json(['error' => 'Jumlah yang dimasukkan tidak boleh lebih dari jumlah stok (' . $noSize->stock . ').'], 422);
+            }
+            
+            $noSize->stock -= $validated['stock'];
+            $noSize->save();
+        }
+
         $size = $warehouseItem->sizes()->create([
             'size_label' => $validated['size_label'],
             'stock' => $validated['stock'],
@@ -187,7 +203,21 @@ class WarehouseController extends Controller
             'stock' => 'required|integer|min:0',
         ]);
 
-        $size->update(['stock' => $validated['stock']]);
+        $oldStock = $size->stock;
+        $newStock = $validated['stock'];
+        $diff = $oldStock - $newStock;
+
+        // Update stok belum dialokasi (ukuran '-') jika ada
+        $noSize = $warehouseItem->sizes()->whereIn('size_label', ['-', ''])->first();
+        if ($noSize && $noSize->id !== $size->id) {
+            if ($diff < 0 && $noSize->stock < abs($diff)) {
+                return response()->json(['error' => 'Stok belum dialokasi tidak mencukupi.'], 422);
+            }
+            $noSize->stock += $diff;
+            $noSize->save();
+        }
+
+        $size->update(['stock' => $newStock]);
 
         return response()->json(['message' => 'Stok ukuran berhasil diupdate.']);
     }
@@ -207,7 +237,13 @@ class WarehouseController extends Controller
     {
         $items = WarehouseItem::with(['sizes' => function ($q) {
             $q->where('stock', '>', 0)->orderByRaw('CAST(size_label AS UNSIGNED) ASC, size_label ASC');
-        }])->withSum('sizes', 'stock')->having('sizes_sum_stock', '>', 0)->orderBy('name')->get();
+        }])
+        ->withSum('sizes', 'stock')
+        ->whereHas('sizes', function($q) {
+            $q->where('stock', '>', 0);
+        })
+        ->orderBy('name')
+        ->get();
 
         $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
 
@@ -251,6 +287,17 @@ class WarehouseController extends Controller
                 'selected_items.*' => 'exists:warehouse_items,id',
                 'm2_mode' => 'nullable|in:acak,ukuran',
             ]);
+        }
+
+        if (auth()->user()->hasRole('admin_gudang')) {
+            \App\Models\DispenseRequest::create([
+                'user_id' => auth()->id(),
+                'status' => 'pending',
+                'payload' => $request->except(['_token']),
+            ]);
+
+            return redirect()->route('admin.warehouse-items.index')
+                ->with('success', 'Permohonan pengeluaran berhasil diajukan dan menunggu persetujuan Super Admin.');
         }
 
         DB::beginTransaction();
@@ -474,7 +521,8 @@ class WarehouseController extends Controller
                 DB::raw('SUM(quantity) as total_quantity'),
                 DB::raw('MAX(id) as last_id'), // To identify the group
                 DB::raw('GROUP_CONCAT(id) as group_ids') // Added for downloading
-            );
+            )
+            ->whereIn('reference_note', ['Sudah Ada', 'Ada']);
 
         if ($request->filled('start_date')) {
             $query->whereDate('outflow_date', '>=', $request->start_date);
@@ -766,6 +814,38 @@ class WarehouseController extends Controller
         $outflows = $outflowQuery->latest('deleted_at')->paginate(15, ['*'], 'outflows_page')->withQueryString();
 
         return view('admin.warehouse.deletion_history', compact('items', 'outflows'));
+    }
+
+    public function forceDeleteItem($id)
+    {
+        if (!auth()->user()->hasRole('superadmin')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $item = WarehouseItem::onlyTrashed()->findOrFail($id);
+        
+        \App\Services\AuditLogger::log('HAPUS_PERMANEN_BARANG', "Barang {$item->name} dihapus permanen dari riwayat.");
+        
+        $item->sizes()->forceDelete();
+        $item->forceDelete();
+
+        return redirect()->back()->with('success', 'Data Master Barang berhasil dihapus secara permanen.');
+    }
+
+    public function forceDeleteOutflow($id)
+    {
+        if (!auth()->user()->hasRole('superadmin')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $outflow = WarehouseOutflow::onlyTrashed()->findOrFail($id);
+        $satkerName = $outflow->satker ? $outflow->satker->name : 'Unknown';
+        
+        \App\Services\AuditLogger::log('HAPUS_PERMANEN_PENGELUARAN', "Laporan pengeluaran dari {$satkerName} sejumlah {$outflow->quantity} dihapus permanen.");
+        
+        $outflow->forceDelete();
+
+        return redirect()->back()->with('success', 'Data Laporan Pengeluaran berhasil dihapus secara permanen.');
     }
 
     // ── Import / Export ──────────────────────────────────────

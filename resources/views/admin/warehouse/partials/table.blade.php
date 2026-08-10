@@ -4,7 +4,7 @@
             <tr>
                 <th style="width: 50px;">NO</th>
                 <th>NAMA BARANG</th>
-                <th>SATUAN</th>
+                <th>TAHUN</th>
                 <th>SUMBER</th>
                 <th>KATEGORI</th>
                 <th>KUANTITAS</th>
@@ -18,7 +18,7 @@
                 <tr>
                     <td>{{ $items->firstItem() + $index }}</td>
                     <td><span class="cell-name">{{ $item->name }}</span></td>
-                    <td>{{ $item->unit }}</td>
+                    <td>{{ $item->tahun ?? '-' }}</td>
                     <td>
                         @php
                             $sumber = $item->sumber_pengadaan ?? 'Mabes Polri';
@@ -32,7 +32,7 @@
                     </td>
                     <td><span class="badge" style="background:{{ $katBg }}; color:{{ $katColor }}; font-weight:600;">{{ $kategori }}</span></td>
                     <td>
-                        <span class="badge {{ $item->sizes_sum_stock > 0 ? 'badge-success' : 'badge-danger' }}">
+                        <span class="badge {{ $item->sizes_sum_stock > 0 ? 'badge-success' : 'badge-danger' }}" style="font-size: 12.5px; padding: 4px 10px; font-variant-numeric: normal; font-family: 'Inter', system-ui, sans-serif;">
                             {{ number_format($item->sizes_sum_stock ?? 0, 0, ',', '.') }} {{ $item->unit }}
                         </span>
                     </td>

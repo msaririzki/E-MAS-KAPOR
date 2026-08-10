@@ -48,81 +48,64 @@
     </div>
 </div>
 
-{{-- Stats --}}
-<div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
-    <div class="stat-card">
-        <div class="stat-icon icon-blue">
-            <i class="ri-archive-line"></i>
+<div style="display: flex; flex-wrap: nowrap; gap: 16px; align-items: stretch; margin-bottom: 24px; width: 100%;">
+    {{-- Stats --}}
+    <div style="display: flex; gap: 16px; flex-shrink: 0;">
+        <div class="stat-card" style="margin-bottom: 0; min-width: auto; padding: 12px 16px; white-space: nowrap;">
+            <div class="stat-icon icon-blue">
+                <i class="ri-archive-line"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label">TOTAL BARANG</span>
+                <span class="stat-number">{{ number_format($stats['total_items'], 0, ',', '.') }}</span>
+            </div>
         </div>
-        <div class="stat-content">
-            <span class="stat-label">TOTAL BARANG</span>
-            <span class="stat-number">{{ number_format($stats['total_items'], 0, ',', '.') }}</span>
+        <div class="stat-card" style="margin-bottom: 0; min-width: auto; padding: 12px 16px; white-space: nowrap;">
+            <div class="stat-icon icon-green">
+                <i class="ri-stack-line"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label">TOTAL STOK GUDANG</span>
+                <span class="stat-number">{{ number_format($stats['total_stock'], 0, ',', '.') }}</span>
+            </div>
         </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon icon-green">
-            <i class="ri-stack-line"></i>
-        </div>
-        <div class="stat-content">
-            <span class="stat-label">TOTAL STOK GUDANG</span>
-            <span class="stat-number">{{ number_format($stats['total_stock'], 0, ',', '.') }}</span>
-        </div>
-    </div>
-</div>
 
-{{-- Filter --}}
-<div class="filter-bar" style="background: transparent; border: none; box-shadow: none; padding: 0; margin-bottom: 24px;">
-    <form id="filterForm" method="GET" action="{{ route('admin.warehouse-items.index') }}" class="filter-form" style="display:flex; flex-wrap:wrap; gap: 16px; justify-content:space-between; align-items:flex-end; background: #fff; padding: 16px 20px; border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+    {{-- Filter --}}
+    <div class="filter-bar" style="display: flex; flex: 1; min-width: 0; background: transparent; border: none; box-shadow: none; padding: 0; margin-bottom: 0;">
+        <form id="filterForm" method="GET" action="{{ route('admin.warehouse-items.index') }}" class="filter-form" style="flex: 1; display:flex; flex-wrap:nowrap; gap: 16px; align-items:center; background: #fff; padding: 12px 20px; border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
         
-        <div class="search-input-wrapper" style="flex: 1; min-width: 250px; max-width: none;">
-            <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px;">PENCARIAN</div>
-            <div style="position: relative;">
-                <i class="ri-search-line search-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9CA3AF;"></i>
-                <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari nama barang atau satuan..." autocomplete="off" style="width: 100%; border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0; padding-left: 40px; font-size: 14px; outline: none; transition: all 0.2s;">
-            </div>
+        <!-- Search -->
+        <div style="position: relative; flex: 1; min-width: 250px;">
+            <i class="ri-search-line search-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9CA3AF;"></i>
+            <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari nama barang atau satuan..." autocomplete="off" style="width: 100%; border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0; padding-left: 40px; font-size: 14px; outline: none; transition: all 0.2s;">
         </div>
         
-        <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
-            <!-- Filter Sumber Pengadaan -->
-            <div class="custom-select-wrapper" style="width: 180px;">
-                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px;">SUMBER PENGADAAN</div>
-                <input type="hidden" name="sumber_pengadaan" id="filter_sumber" value="{{ request('sumber_pengadaan') }}">
-                <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
-                    <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px;">
-                        <span>{{ request('sumber_pengadaan') ?: 'Semua Sumber' }}</span>
-                        <i class="ri-arrow-down-s-line"></i>
+        <!-- Filter Sumber Pengadaan -->
+        <div class="custom-select-wrapper" style="width: 180px; flex-shrink: 0;">
+            <input type="hidden" name="sumber_pengadaan" id="filter_sumber" value="{{ request('sumber_pengadaan') }}">
+            <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
+                <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px;">
+                    <span>{{ request('sumber_pengadaan') ?: 'Semua Sumber' }}</span>
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+                <div class="custom-options">
+                    <div class="custom-option {{ !request('sumber_pengadaan') ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '', 'Semua Sumber', 'filter_sumber');">
+                        Semua Sumber
                     </div>
-                    <div class="custom-options">
-                        <div class="custom-option {{ !request('sumber_pengadaan') ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '', 'Semua Sumber', 'filter_sumber');">
-                            Semua Sumber
-                        </div>
-                        <div class="custom-option {{ request('sumber_pengadaan') == 'Mabes Polri' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Mabes Polri', 'Mabes Polri', 'filter_sumber');">Mabes Polri</div>
-                        <div class="custom-option {{ request('sumber_pengadaan') == 'Polda NTB' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Polda NTB', 'Polda NTB', 'filter_sumber');">Polda NTB</div>
-                    </div>
+                    <div class="custom-option {{ request('sumber_pengadaan') == 'Mabes Polri' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Mabes Polri', 'Mabes Polri', 'filter_sumber');">Mabes Polri</div>
+                    <div class="custom-option {{ request('sumber_pengadaan') == 'Polda NTB' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Polda NTB', 'Polda NTB', 'filter_sumber');">Polda NTB</div>
                 </div>
             </div>
+        </div>
 
-            <!-- Filter Kategori Stok -->
-            <div class="custom-select-wrapper" style="width: 160px;">
-                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px;">KATEGORI STOK</div>
-                <input type="hidden" name="kategori_stok" id="filter_kategori" value="{{ request('kategori_stok') }}">
-                <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
-                    <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px;">
-                        <span>{{ request('kategori_stok') ?: 'Semua Stok' }}</span>
-                        <i class="ri-arrow-down-s-line"></i>
-                    </div>
-                    <div class="custom-options">
-                        <div class="custom-option {{ !request('kategori_stok') ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '', 'Semua Stok', 'filter_kategori');">
-                            Semua Stok
-                        </div>
-                        <div class="custom-option {{ request('kategori_stok') == 'Stok' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Stok', 'Stok', 'filter_kategori');">Stok</div>
-                        <div class="custom-option {{ request('kategori_stok') == 'Luar Stok' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Luar Stok', 'Luar Stok', 'filter_kategori');">Luar Stok</div>
-                    </div>
-                </div>
-            </div>
+        <!-- Filter Kategori Stok dipindah ke Tab -->
+        <input type="hidden" name="kategori_stok" value="{{ request('kategori_stok') }}">
 
-            <div class="custom-select-wrapper" style="width: 80px;">
-                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; letter-spacing: 0.5px;">BARIS</div>
+        <!-- Filter Baris -->
+        <div class="custom-select-wrapper" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+            <div style="font-size: 12px; font-weight: 600; color: #64748b;">Baris</div>
+            <div style="width: 80px;">
                 <input type="hidden" name="per_page" id="filter_per_page" value="{{ request('per_page', 10) }}">
                 <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
                     <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px; color: #374151;">
@@ -141,11 +124,21 @@
         </div>
     </form>
 </div>
+</div>
 
 
+
+{{-- Tabs Kategori --}}
+<div class="custom-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #E5E7EB; padding-bottom: 10px; background: #fff; padding-top: 15px; padding-left: 20px; border-radius: 12px 12px 0 0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+    <a href="{{ request()->fullUrlWithQuery(['kategori_stok' => '']) }}" class="tab-btn {{ !request('kategori_stok') ? 'active' : '' }}" style="padding: 10px 20px; background: transparent; border: none; font-weight: 600; cursor: pointer; text-decoration: none; color: {{ !request('kategori_stok') ? '#D97706' : '#6B7280' }}; border-bottom: 2px solid {{ !request('kategori_stok') ? '#D97706' : 'transparent' }};">Semua Barang</a>
+    
+    <a href="{{ request()->fullUrlWithQuery(['kategori_stok' => 'Stok']) }}" class="tab-btn {{ request('kategori_stok') == 'Stok' ? 'active' : '' }}" style="padding: 10px 20px; background: transparent; border: none; font-weight: 600; cursor: pointer; text-decoration: none; color: {{ request('kategori_stok') == 'Stok' ? '#D97706' : '#6B7280' }}; border-bottom: 2px solid {{ request('kategori_stok') == 'Stok' ? '#D97706' : 'transparent' }};">Stok</a>
+    
+    <a href="{{ request()->fullUrlWithQuery(['kategori_stok' => 'Luar Stok']) }}" class="tab-btn {{ request('kategori_stok') == 'Luar Stok' ? 'active' : '' }}" style="padding: 10px 20px; background: transparent; border: none; font-weight: 600; cursor: pointer; text-decoration: none; color: {{ request('kategori_stok') == 'Luar Stok' ? '#D97706' : '#6B7280' }}; border-bottom: 2px solid {{ request('kategori_stok') == 'Luar Stok' ? '#D97706' : 'transparent' }};">Luar Stok</a>
+</div>
 
 {{-- Table --}}
-<div class="table-container" id="tableContainer">
+<div class="table-container" id="tableContainer" style="border-radius: 0 0 12px 12px;">
     @include('admin.warehouse.partials.table')
 </div>
 
@@ -159,9 +152,15 @@
         <form action="{{ route('admin.warehouse-items.store') }}" method="POST">
             @csrf
             <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                <div class="form-group">
-                    <label>NAMA BARANG</label>
-                    <input type="text" name="name" required class="form-input" placeholder="Contoh: PAKAIAN PDL II PRIA">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>NAMA BARANG</label>
+                        <input type="text" name="name" required class="form-input" placeholder="Contoh: PAKAIAN PDL II PRIA">
+                    </div>
+                    <div class="form-group">
+                        <label>TAHUN PENGADAAN</label>
+                        <input type="number" name="tahun" class="form-input" placeholder="Contoh: 2024">
+                    </div>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
@@ -243,9 +242,15 @@
             @csrf
             @method('PUT')
             <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                <div class="form-group">
-                    <label>NAMA BARANG</label>
-                    <input type="text" name="name" id="edit_name" required class="form-input">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>NAMA BARANG</label>
+                        <input type="text" name="name" id="edit_name" required class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>TAHUN PENGADAAN</label>
+                        <input type="number" name="tahun" id="edit_tahun" class="form-input" placeholder="Contoh: 2024">
+                    </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
@@ -380,7 +385,10 @@
 
             {{-- Form Tambah Ukuran --}}
             <div style="background:#F0F9FF; border:1px solid #BAE6FD; border-radius:10px; padding:16px; margin-bottom:20px;">
-                <p style="font-size:12px; font-weight:700; color:#0369A1; margin:0 0 12px;">TAMBOK STOK / UKURAN BARU</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 12px;">
+                    <p style="font-size:12px; font-weight:700; color:#0369A1; margin:0;">TAMBAH STOK / UKURAN BARU</p>
+                    <span id="topTotalStock" style="font-size:12px; font-weight:700; color:#0369A1; background:#E0F2FE; padding:4px 10px; border-radius:6px; display:none;"></span>
+                </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end;">
                     <div class="form-group" style="margin:0;">
                         <label>UKURAN</label>
@@ -829,6 +837,7 @@
 
     function openEditModal(item) {
         document.getElementById('edit_name').value = item.name;
+        document.getElementById('edit_tahun').value = item.tahun || '';
         document.getElementById('edit_sumber_pengadaan').value = item.sumber_pengadaan || 'Mabes Polri';
         document.getElementById('edit_kategori_stok').value = item.kategori_stok || 'Stok';
         document.getElementById('edit_unit').value = item.unit || 'PCS';
@@ -899,25 +908,53 @@
         })
         .then(r => r.json())
         .then(sizes => {
-            if(!sizes.length) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#6B7280;">Stok kosong. Silakan tambahkan ukuran.</td></tr>';
+            const topStockSpan = document.getElementById('topTotalStock');
+            if (topStockSpan) topStockSpan.style.display = 'none';
+
+            // Find the unallocated stock ('-' or empty label)
+            let noSizeItem = sizes.find(s => s.size_label.trim() === '-' || s.size_label.trim() === '');
+            let otherSizes = sizes.filter(s => s.size_label.trim() !== '-' && s.size_label.trim() !== '');
+
+            if (noSizeItem) {
+                if (topStockSpan) {
+                    topStockSpan.textContent = 'Stok Belum Dialokasi: ' + noSizeItem.stock;
+                    topStockSpan.style.display = 'inline-block';
+                }
+            }
+
+            if(!otherSizes.length) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#6B7280; padding:20px 10px;">Belum ada rincian ukuran.</td></tr>';
                 return;
             }
+
             let html = '';
-            sizes.forEach(s => {
+            otherSizes.forEach(s => {
+                let actionButtons = '';
+                if (isAdminGudang) {
+                    actionButtons = `
+                        <button onclick="requestEditSize(${s.id}, ${s.stock})" class="btn-icon" style="display:inline-flex; width:34px; height:34px; background:#F59E0B; color:white; border:none;" title="Ajukan Edit">
+                            <i class="ri-edit-box-line"></i>
+                        </button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <button onclick="updateSize(${s.id})" class="btn-icon blue d-inline-block" style="display:inline-flex; width:34px; height:34px;" title="Simpan Update">
+                            <i class="ri-save-line"></i>
+                        </button>
+                        <button onclick="deleteSize(${s.id})" class="btn-icon red d-inline-block" style="display:inline-flex; width:34px; height:34px;" title="Hapus">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    `;
+                }
+
                 html += `
                     <tr>
                         <td style="padding: 10px 16px; font-weight: 600;">${s.size_label}</td>
                         <td style="padding: 10px 16px;">
-                            <input type="number" id="stock_${s.id}" value="${s.stock}" class="form-input" style="width: 100px; padding: 6px 12px;">
+                            <input type="number" id="stock_${s.id}" value="${s.stock}" class="form-input" style="width: 100px; padding: 6px 12px;" ${isAdminGudang ? '' : ''}>
                         </td>
                         <td style="padding: 10px 16px; text-align: right;">
-                            <button onclick="updateSize(${s.id})" class="btn-icon blue d-inline-block" style="display:inline-flex; width:34px; height:34px;" title="Simpan Update">
-                                <i class="ri-save-line"></i>
-                            </button>
-                            <button onclick="deleteSize(${s.id})" class="btn-icon red d-inline-block" style="display:inline-flex; width:34px; height:34px;" title="Hapus">
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
+                            ${actionButtons}
                         </td>
                     </tr>
                 `;
@@ -983,6 +1020,76 @@
                 });
             } else { 
                 Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal update stok.' });
+            }
+        }).catch(() => {
+            Swal.fire('Error', 'Gagal memproses pengajuan.', 'error');
+        });
+    }
+
+    function requestEditSize(sizeId, oldStock) {
+        const newStock = document.getElementById(`stock_${sizeId}`).value;
+        if (newStock == oldStock) {
+            Swal.fire('Info', 'Nilai stok belum diubah.', 'info');
+            return;
+        }
+
+        Swal.fire({
+            title: 'Ajukan Edit Stok',
+            html: `
+                <p style="margin-bottom:15px; font-size:14px; color:#4B5563;">Anda akan mengajukan perubahan stok dari <b>${oldStock}</b> menjadi <b>${newStock}</b>. Silakan masukkan alasan perubahan:</p>
+                <textarea id="editReason" class="swal2-textarea" style="margin: 0; width: 100%; box-sizing: border-box; resize: none; height: 80px;" placeholder="Tuliskan alasan..."></textarea>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ajukan',
+            cancelButtonText: 'Batal',
+            preConfirm: () => {
+                const reason = document.getElementById('editReason').value.trim();
+                if (!reason) {
+                    Swal.showValidationMessage('Alasan wajib diisi!');
+                }
+                return reason;
+            },
+            customClass: {
+                popup: 'modern-swal-popup',
+                title: 'modern-swal-title',
+                confirmButton: 'modern-swal-btn btn-primary',
+                cancelButton: 'modern-swal-btn btn-secondary',
+                actions: 'modern-swal-actions'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/admin/warehouse-items/sizes/${sizeId}/request-edit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        requested_stock: newStock,
+                        reason: result.value
+                    })
+                }).then(async r => {
+                    const data = await r.json();
+                    if(r.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Terkirim!',
+                            text: data.message,
+                            customClass: {
+                                popup: 'modern-swal-popup',
+                                title: 'modern-swal-title',
+                                confirmButton: 'modern-swal-btn btn-primary'
+                            }
+                        });
+                        loadSizes();
+                    } else {
+                        Swal.fire('Error', data.error || 'Gagal mengirim pengajuan', 'error');
+                    }
+                }).catch(() => {
+                    Swal.fire('Error', 'Terjadi kesalahan server.', 'error');
+                });
             }
         });
     }
@@ -1102,6 +1209,13 @@
         } 
         event.stopPropagation();
     }
+
+    // Variables for roles
+    @role('admin_gudang')
+        const isAdminGudang = true;
+    @else
+        const isAdminGudang = false;
+    @endrole
 
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.custom-select')) {

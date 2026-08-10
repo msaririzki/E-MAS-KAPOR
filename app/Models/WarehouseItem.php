@@ -12,6 +12,7 @@ class WarehouseItem extends Model
 
     protected $fillable = [
         'name',
+        'tahun',
         'unit',
         'price',
         'sumber_pengadaan',

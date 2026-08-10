@@ -37,6 +37,7 @@ class User extends Authenticatable
         'superadmin',
         self::READ_ONLY_ADMIN_ROLE,
         'admin_gudang',
+        'kepala_gudang',
         'admin_satker',
     ];
 
