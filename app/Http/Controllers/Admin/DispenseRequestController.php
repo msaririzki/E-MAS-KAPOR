@@ -194,4 +194,14 @@ class DispenseRequestController extends Controller
 
         return back()->with('success', 'Permohonan pengeluaran berhasil ditolak.');
     }
+
+    public function destroy($id)
+    {
+        $dispenseRequest = DispenseRequest::findOrFail($id);
+        $dispenseRequest->delete();
+
+        AuditLogger::log('Delete Dispense Request', "Menghapus data permohonan pengeluaran barang.");
+
+        return back()->with('success', 'Data pengajuan pengeluaran barang berhasil dihapus.');
+    }
 }

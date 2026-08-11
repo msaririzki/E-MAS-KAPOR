@@ -177,7 +177,7 @@
         background: var(--bg-card, #fff);
         border-radius: 16px;
         border: 1px solid var(--border-color, #E5E7EB);
-        overflow: hidden;
+        overflow: visible;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     .dispense-card-header {
@@ -243,12 +243,12 @@
         color: var(--text-main, #1F2937); font-family: inherit; box-sizing: border-box;
     }
     .ss-search input:focus { border-color: #D97706; background: var(--bg-card, #fff); }
-    .ss-list { max-height: 220px; overflow-y: auto; padding: 4px; }
+    .ss-list { max-height: 220px; overflow-y: auto; padding: 4px; -webkit-overflow-scrolling: touch; }
     .ss-list::-webkit-scrollbar { width: 4px; }
     .ss-list::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 10px; }
     .ss-opt {
-        padding: 9px 12px; cursor: pointer; font-size: 13px; color: #4B5563;
-        border-radius: 6px; margin-bottom: 2px; transition: background 0.1s;
+        padding: 5px 12px; cursor: pointer; font-size: 13px; color: #4B5563;
+        border-radius: 6px; margin-bottom: 1px; transition: background 0.1s;
         display: flex; align-items: center; justify-content: space-between;
     }
     .ss-opt:hover { background: #FEF3C7; color: #92400E; }
@@ -415,6 +415,23 @@
     }
     .f-input-mini:focus { border-color: #D97706; }
 
+    /* Category badge in item dropdown */
+    .ss-kategori-badge {
+        font-size: 8px; font-weight: 700; text-transform: uppercase;
+        padding: 2px 5px; border-radius: 4px; white-space: nowrap; letter-spacing: 0.2px;
+    }
+    .ss-kategori-badge.stok { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
+    .ss-kategori-badge.luar-stok { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+    .m2-kategori-badge {
+        font-size: 8.5px; font-weight: 700; padding: 2px 6px; border-radius: 6px; white-space: nowrap; text-transform: uppercase;
+    }
+    .m2-kategori-badge.stok { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
+    .m2-kategori-badge.luar-stok { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+
+    /* Fix card header border radius since overflow is visible */
+    .dispense-card-header { border-radius: 16px 16px 0 0; }
+    .submit-section { border-radius: 0 0 16px 16px; }
+
     @media (max-width: 768px) {
         .form-row { grid-template-columns: 1fr; }
         .item-row-fields { grid-template-columns: 1fr; }
@@ -428,7 +445,7 @@
 @section('scripts')
 <script>
     // Data setup
-    const itemsData = {!! $items->map(fn($i) => ['id' => $i->id, 'name' => $i->name, 'stock' => $i->sizes_sum_stock ?? 0, 'sizes' => $i->sizes->map(fn($s) => ['id' => $s->id, 'size_label' => $s->size_label, 'stock' => $s->stock])])->toJson() !!};
+    const itemsData = {!! $items->map(fn($i) => ['id' => $i->id, 'name' => $i->name, 'kategori_stok' => $i->kategori_stok ?? 'Stok', 'stock' => $i->sizes_sum_stock ?? 0, 'sizes' => $i->sizes->map(fn($s) => ['id' => $s->id, 'size_label' => $s->size_label, 'stock' => $s->stock])])->toJson() !!};
     const satkersData = @json(collect($satkers)->map(fn($s) => ['id' => $s->id, 'name' => $s->name]));
     
     // Core Methods Tracking
@@ -454,9 +471,12 @@
         itemsData.forEach(item => {
             const div = document.createElement('div');
             div.className = 'm2-checkbox-item';
+            const kat = item.kategori_stok || 'Stok';
+            const katClass = kat === 'Luar Stok' ? 'luar-stok' : 'stok';
             div.innerHTML = `
                 <input type="checkbox" name="selected_items[]" value="${item.id}" class="m2-item-check" data-name="${item.name}" onchange="handleM2CheckboxChange(this)">
                 <span class="m2-checkbox-label">${item.name}</span>
+                <span class="m2-kategori-badge ${katClass}">${kat}</span>
                 <span class="m2-checkbox-stock">Stok: ${item.stock}</span>
             `;
             div.onclick = function(e) {
@@ -621,7 +641,15 @@
 
         let itemOptsHTML = '';
         itemsData.forEach(i => {
-            itemOptsHTML += `<div class="ss-opt" data-val="${i.id}" data-label="${i.name}" onclick="ssSelect('itemSelect_m1_${idx}', '${i.id}', '${i.name}')">${i.name}</div>`;
+            const kat = i.kategori_stok || 'Stok';
+            const katClass = kat === 'Luar Stok' ? 'luar-stok' : 'stok';
+            itemOptsHTML += `<div class="ss-opt" data-val="${i.id}" data-label="${i.name}" onclick="ssSelect('itemSelect_m1_${idx}', '${i.id}', '${i.name}')">
+                <div style="display:flex; flex-direction:column; line-height: 1.2;">
+                    <span style="font-weight: 500;">${i.name}</span>
+                    <span style="font-size:10px; color:#6B7280;">Stok: ${i.stock}</span>
+                </div>
+                <span class="ss-kategori-badge ${katClass}">${kat}</span>
+            </div>`;
         });
 
         div.innerHTML = `

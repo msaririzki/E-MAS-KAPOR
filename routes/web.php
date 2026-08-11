@@ -197,6 +197,7 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
         Route::middleware('role:superadmin|kepala_gudang')->group(function () {
             Route::post('/warehouse-items/dispense-requests/{id}/approve', [\App\Http\Controllers\Admin\DispenseRequestController::class, 'approve'])->name('warehouse-items.dispense-requests.approve');
             Route::post('/warehouse-items/dispense-requests/{id}/reject', [\App\Http\Controllers\Admin\DispenseRequestController::class, 'reject'])->name('warehouse-items.dispense-requests.reject');
+            Route::delete('/warehouse-items/dispense-requests/{id}', [\App\Http\Controllers\Admin\DispenseRequestController::class, 'destroy'])->name('warehouse-items.dispense-requests.destroy');
         });
 
         // Penanda Tangan
@@ -212,8 +213,8 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
         Route::post('/warehouse-items/download-sppm-grouped', [\App\Http\Controllers\Admin\WarehouseController::class, 'downloadSppmGrouped'])->name('warehouse-items.download-sppm-grouped');
         Route::post('/warehouse-items/save-sppm-grouped', [\App\Http\Controllers\Admin\WarehouseController::class, 'saveSppmGrouped'])->name('warehouse-items.save-sppm-grouped');
         Route::get('/warehouse-items/deletion-history', [\App\Http\Controllers\Admin\WarehouseController::class, 'deletionHistory'])->name('warehouse-items.deletion-history');
-        Route::delete('/warehouse-items/deletion-history/item/{id}', [\App\Http\Controllers\Admin\WarehouseController::class, 'forceDeleteItem'])->name('warehouse-items.force-delete')->middleware('role:superadmin');
-        Route::delete('/warehouse-items/deletion-history/outflow/{id}', [\App\Http\Controllers\Admin\WarehouseController::class, 'forceDeleteOutflow'])->name('warehouse-items.reports.force-delete')->middleware('role:superadmin');
+        Route::delete('/warehouse-items/deletion-history/item/{id}', [\App\Http\Controllers\Admin\WarehouseController::class, 'forceDeleteItem'])->name('warehouse-items.force-delete')->middleware('role:superadmin|kepala_gudang');
+        Route::delete('/warehouse-items/deletion-history/outflow/{id}', [\App\Http\Controllers\Admin\WarehouseController::class, 'forceDeleteOutflow'])->name('warehouse-items.reports.force-delete')->middleware('role:superadmin|kepala_gudang');
         Route::delete('/warehouse-items/reports/{outflow}', [\App\Http\Controllers\Admin\WarehouseController::class, 'destroyOutflow'])->name('warehouse-items.reports.destroy');
         Route::delete('/warehouse-items/reports/{outflow}/cancel', [\App\Http\Controllers\Admin\WarehouseController::class, 'cancelOutflow'])->name('warehouse-items.reports.cancel');
         Route::patch('/warehouse-items/reports/{outflow}/sppm', [\App\Http\Controllers\Admin\WarehouseController::class, 'updateSppm'])->name('warehouse-items.reports.update-sppm');
@@ -228,6 +229,7 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
         Route::get('/warehouse-items/edit-requests', [\App\Http\Controllers\Admin\SizeEditRequestController::class, 'index'])->name('warehouse-items.edit-requests.index')->middleware('role:superadmin|kepala_gudang');
         Route::post('/warehouse-items/edit-requests/{id}/approve', [\App\Http\Controllers\Admin\SizeEditRequestController::class, 'approve'])->name('warehouse-items.edit-requests.approve')->middleware('role:superadmin|kepala_gudang');
         Route::post('/warehouse-items/edit-requests/{id}/reject', [\App\Http\Controllers\Admin\SizeEditRequestController::class, 'reject'])->name('warehouse-items.edit-requests.reject')->middleware('role:superadmin|kepala_gudang');
+        Route::delete('/warehouse-items/edit-requests/{id}', [\App\Http\Controllers\Admin\SizeEditRequestController::class, 'destroy'])->name('warehouse-items.edit-requests.destroy')->middleware('role:superadmin|kepala_gudang');
     });
 
     // Laporan & Audit

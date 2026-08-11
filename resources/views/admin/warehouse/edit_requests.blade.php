@@ -38,8 +38,9 @@
                             <th style="width: 10%;">UKURAN</th>
                             <th style="width: 15%;">STOK (LAMA &rarr; BARU)</th>
                             <th style="width: 15%;">DIAJUKAN OLEH</th>
-                            <th>ALASAN</th>
-                            <th style="width: 12%;">AKSI</th>
+                            <th style="white-space: nowrap;">ALASAN</th>
+                            <th style="width: 10%;">STATUS</th>
+                            <th style="width: 10%;">AKSI</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -54,7 +55,19 @@
                                     <span style="font-weight: bold; color: #10B981;">{{ $req->requested_stock }}</span>
                                 </td>
                                 <td>{{ $req->requestedBy->name ?? 'Unknown' }}</td>
-                                <td>{{ $req->reason }}</td>
+                                <td style="white-space: nowrap;">{{ $req->reason }}</td>
+                                <td>
+                                    @if($req->status === 'pending')
+                                        <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; background:#FEF3C7; color:#D97706;">
+                                            PROSES
+                                        </span>
+                                    @else
+                                        <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; 
+                                            {{ $req->status === 'approved' ? 'background: #D1FAE5; color: #065F46;' : 'background: #FEE2E2; color: #991B1B;' }}">
+                                            {{ $req->status === 'approved' ? 'DISETUJUI' : 'DITOLAK' }}
+                                        </span>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($req->status === 'pending')
                                         <div style="display:flex; gap:8px;">
@@ -70,18 +83,36 @@
                                                     <i class="ri-close-line"></i>
                                                 </button>
                                             </form>
+                                            @role('superadmin|kepala_gudang')
+                                            <form action="{{ route('admin.warehouse-items.edit-requests.destroy', $req->id) }}" method="POST" onsubmit="confirmAction(event, 'MENGHAPUS', 'delete')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn-icon" style="background:#6B7280; color:white; border:none; width:34px; height:34px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Hapus">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </button>
+                                            </form>
+                                            @endrole
                                         </div>
                                     @else
-                                        <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; 
-                                            {{ $req->status === 'approved' ? 'background: #D1FAE5; color: #065F46;' : 'background: #FEE2E2; color: #991B1B;' }}">
-                                            {{ $req->status === 'approved' ? 'DISETUJUI' : 'DITOLAK' }}
-                                        </span>
+                                        @role('superadmin|kepala_gudang')
+                                        <div style="display:flex; gap:8px; align-items:center;">
+                                            <form action="{{ route('admin.warehouse-items.edit-requests.destroy', $req->id) }}" method="POST" onsubmit="confirmAction(event, 'MENGHAPUS', 'delete')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn-icon" style="background:#6B7280; color:white; border:none; width:30px; height:30px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Hapus">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        @else
+                                        -
+                                        @endrole
                                     @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" style="text-align: center; padding: 30px; color: #6B7280;">
+                                <td colspan="8" style="text-align: center; padding: 30px; color: #6B7280;">
                                     Belum ada pengajuan edit stok.
                                 </td>
                             </tr>
@@ -106,7 +137,7 @@
                             <th style="width: 10%;">JUMLAH</th>
                             <th style="width: 15%;">DIAJUKAN OLEH</th>
                             <th style="width: 15%;">STATUS</th>
-                            <th style="width: 20%;">ALASAN PENOLAKAN</th>
+                            <th style="width: 20%; white-space: nowrap;">ALASAN PENOLAKAN</th>
                             <th style="width: 10%;">AKSI</th>
                         </tr>
                     </thead>
@@ -144,7 +175,7 @@
                                         <span class="badge badge-danger">DITOLAK</span>
                                     @endif
                                 </td>
-                                <td>{{ $dReq->reason ?? '-' }}</td>
+                                <td style="white-space: nowrap;">{{ $dReq->reason ?? '-' }}</td>
                                 <td>
                                     @if($dReq->status === 'pending')
                                         <div style="display:flex; gap:8px;">
@@ -161,7 +192,30 @@
                                                     <i class="ri-close-line"></i>
                                                 </button>
                                             </form>
+                                            @role('superadmin|kepala_gudang')
+                                            <form action="{{ route('admin.warehouse-items.dispense-requests.destroy', $dReq->id) }}" method="POST" onsubmit="confirmAction(event, 'MENGHAPUS', 'delete')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn-icon" style="background:#6B7280; color:white; border:none; width:34px; height:34px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Hapus">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </button>
+                                            </form>
+                                            @endrole
                                         </div>
+                                    @else
+                                        @role('superadmin|kepala_gudang')
+                                        <div style="display:flex; gap:8px; align-items:center;">
+                                            <form action="{{ route('admin.warehouse-items.dispense-requests.destroy', $dReq->id) }}" method="POST" onsubmit="confirmAction(event, 'MENGHAPUS', 'delete')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn-icon" style="background:#6B7280; color:white; border:none; width:30px; height:30px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Hapus">
+                                                    <i class="ri-delete-bin-line"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        @else
+                                        -
+                                        @endrole
                                     @endif
                                 </td>
                             </tr>

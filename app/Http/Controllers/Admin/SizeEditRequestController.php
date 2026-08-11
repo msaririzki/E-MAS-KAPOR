@@ -111,4 +111,14 @@ class SizeEditRequestController extends Controller
 
         return redirect()->back()->with('success', 'Permohonan telah ditolak.');
     }
+
+    public function destroy($id)
+    {
+        $editRequest = SizeEditRequest::findOrFail($id);
+        $editRequest->delete();
+
+        \App\Services\AuditLogger::log('DELETE_EDIT_STOK_REQUEST', "Menghapus data permohonan edit stok.");
+
+        return redirect()->back()->with('success', 'Data pengajuan edit stok berhasil dihapus.');
+    }
 }

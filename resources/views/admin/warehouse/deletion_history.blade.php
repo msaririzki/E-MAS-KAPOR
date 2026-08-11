@@ -69,7 +69,7 @@
                         <th style="width: 12%;">STOK AKHIR</th>
                         <th style="width: 18%;">WAKTU DIHAPUS</th>
                         <th>ALASAN PENGHAPUSAN</th>
-                        @role('superadmin')
+                        @role('superadmin|kepala_gudang')
                         <th style="width: 10%; text-align: center;">AKSI</th>
                         @endrole
                     </tr>
@@ -100,13 +100,13 @@
                                     {{ $item->deletion_reason ?? '-' }}
                                 </p>
                             </td>
-                            @role('superadmin')
+                            @role('superadmin|kepala_gudang')
                             <td style="text-align: center;">
-                                <form action="{{ route('admin.warehouse-items.force-delete', $item->id) }}" method="POST" style="display:inline-block;">
+                                <form action="{{ route('admin.warehouse-items.force-delete', $item->id) }}" method="POST">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="button" class="btn-icon red" title="Hapus Permanen" onclick="confirmForceDelete(this.closest('form'), 'barang ini beserta seluruh ukuran dan stoknya')">
-                                        <i class="ri-delete-bin-7-line"></i>
+                                    <button type="button" onclick="confirmForceDelete(this.closest('form'), 'barang ini beserta seluruh ukuran dan stoknya')" class="btn-icon" style="background:#EF4444; color:white; border:none; width:34px; height:34px; border-radius:6px; cursor:pointer;" title="Hapus Permanen">
+                                        <i class="ri-delete-bin-line"></i>
                                     </button>
                                 </form>
                             </td>
@@ -147,7 +147,7 @@
                         <th style="width: 15%;">PENERIMA</th>
                         <th style="width: 18%;">WAKTU DIHAPUS</th>
                         <th>ALASAN PENGHAPUSAN</th>
-                        @role('superadmin')
+                        @role('superadmin|kepala_gudang')
                         <th style="width: 10%; text-align: center;">AKSI</th>
                         @endrole
                     </tr>
@@ -182,13 +182,13 @@
                                     {{ $outflow->deletion_reason ?? '-' }}
                                 </p>
                             </td>
-                            @role('superadmin')
+                            @role('superadmin|kepala_gudang')
                             <td style="text-align: center;">
-                                <form action="{{ route('admin.warehouse-items.reports.force-delete', $outflow->id) }}" method="POST" style="display:inline-block;">
+                                <form action="{{ route('admin.warehouse-items.reports.force-delete', $outflow->id) }}" method="POST">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="button" class="btn-icon red" title="Hapus Permanen" onclick="confirmForceDelete(this.closest('form'), 'laporan pengeluaran ini')">
-                                        <i class="ri-delete-bin-7-line"></i>
+                                    <button type="button" onclick="confirmForceDelete(this.closest('form'), 'laporan pengeluaran ini')" class="btn-icon" style="background:#EF4444; color:white; border:none; width:34px; height:34px; border-radius:6px; cursor:pointer;" title="Hapus Permanen">
+                                        <i class="ri-delete-bin-line"></i>
                                     </button>
                                 </form>
                             </td>

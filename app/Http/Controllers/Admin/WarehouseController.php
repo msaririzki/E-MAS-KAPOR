@@ -818,7 +818,7 @@ class WarehouseController extends Controller
 
     public function forceDeleteItem($id)
     {
-        if (!auth()->user()->hasRole('superadmin')) {
+        if (!auth()->user()->hasAnyRole(['superadmin', 'kepala_gudang'])) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -834,7 +834,7 @@ class WarehouseController extends Controller
 
     public function forceDeleteOutflow($id)
     {
-        if (!auth()->user()->hasRole('superadmin')) {
+        if (!auth()->user()->hasAnyRole(['superadmin', 'kepala_gudang'])) {
             abort(403, 'Unauthorized action.');
         }
 
