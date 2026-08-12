@@ -180,7 +180,7 @@
                     </td>
                     @unless(auth()->user()->hasRole('admin_gudang'))
                     <td style="display:flex; gap:6px; align-items:center; justify-content: center;">
-                        @if(! $isSppmAda && auth()->user()->hasRole('superadmin'))
+                        @if(! $isSppmAda && auth()->user()->hasAnyRole(['superadmin', 'kepala_gudang']))
                         @php
                             $sppmLetterDate = $group->letter_date 
                                 ? \Carbon\Carbon::parse($group->letter_date)->format('Y-m-d') 

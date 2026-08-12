@@ -2331,7 +2331,7 @@
                                 @endif
                             </a>
                         @endif
-                        @if(auth()->user()->hasAnyRole(['admin_gudang', 'kepala_gudang']))
+                        @if(auth()->user()->hasAnyRole(['admin_gudang']))
                             <a href="{{ route('admin.warehouse-items.monitor-requests') }}"
                                 class="nav-link {{ request()->routeIs('admin.warehouse-items.monitor-requests') ? 'active' : '' }}">
                                 Monitor Pengajuan
