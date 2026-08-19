@@ -1366,6 +1366,8 @@
                     </div>
                     @php
                         $addKetFields = ['keterangan' => 'KETERANGAN 1'];
+                        $addKeteranganOneOptions = ['STAF', 'PNS', 'SAMAPTA', 'LANTAS', 'PROVOS', 'RESKRIM', 'INTEL', 'PAMINAL', 'SIKUM', 'HUMAS', 'TIK'];
+                        $addOtherKeteranganOptions = ['STAF', 'SAMAPTA', 'LANTAS', 'PROVOS', 'RESKRIM', 'INTEL', 'PAMINAL', 'SIKUM', 'HUMAS', 'TIK'];
                         if(auth()->user()->hasRole('superadmin')) {
                             $addKetFields['keterangan_2'] = 'KETERANGAN 2';
                             $addKetFields['keterangan_3'] = 'KETERANGAN 3';
@@ -1381,7 +1383,7 @@
                                 <div class="custom-options">
                                     <div class="options-scroll">
                                         <div class="option" onclick="selectOptionManual(this, '{{ $ketField }}', '', '— Kosong —', 'add_{{ $ketField }}_label')">— Kosong —</div>
-                                        @foreach(['STAF', 'SAMAPTA', 'LANTAS', 'PROVOS', 'RESKRIM', 'INTEL', 'PAMINAL', 'SIKUM', 'HUMAS', 'TIK'] as $opt)
+                                        @foreach($ketField === 'keterangan' ? $addKeteranganOneOptions : $addOtherKeteranganOptions as $opt)
                                             <div class="option" onclick="selectOptionManual(this, '{{ $ketField }}', '{{ $opt }}', '{{ $opt }}', 'add_{{ $ketField }}_label')">{{ $opt }}</div>
                                         @endforeach
                                     </div>
@@ -1908,6 +1910,8 @@
                     </div>
                     @php
                         $editKetFields = ['keterangan' => 'KETERANGAN 1'];
+                        $editKeteranganOneOptions = ['STAF', 'PNS', 'SAMAPTA', 'LANTAS', 'PROVOS', 'RESKRIM', 'INTEL', 'PAMINAL', 'SIKUM', 'HUMAS', 'TIK'];
+                        $editOtherKeteranganOptions = ['STAF', 'SAMAPTA', 'LANTAS', 'PROVOS', 'RESKRIM', 'INTEL', 'PAMINAL', 'SIKUM', 'HUMAS', 'TIK'];
                         if(auth()->user()->hasRole('superadmin')) {
                             $editKetFields['keterangan_2'] = 'KETERANGAN 2';
                             $editKetFields['keterangan_3'] = 'KETERANGAN 3';
@@ -1923,7 +1927,7 @@
                                 <div class="custom-options">
                                     <div class="options-scroll">
                                         <div class="option" onclick="selectOptionManual(this, '{{ $ketField }}', '', '— Kosong —', 'edit_{{ $ketField }}_label')">— Kosong —</div>
-                                        @foreach(['STAF', 'SAMAPTA', 'LANTAS', 'PROVOS', 'RESKRIM', 'INTEL', 'PAMINAL', 'SIKUM', 'HUMAS', 'TIK'] as $opt)
+                                        @foreach($ketField === 'keterangan' ? $editKeteranganOneOptions : $editOtherKeteranganOptions as $opt)
                                             <div class="option" onclick="selectOptionManual(this, '{{ $ketField }}', '{{ $opt }}', '{{ $opt }}', 'edit_{{ $ketField }}_label')">{{ $opt }}</div>
                                         @endforeach
                                     </div>
