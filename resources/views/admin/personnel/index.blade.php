@@ -138,7 +138,7 @@
                 <div class="dropdown-menu personnel-dropdown-menu">
                     <a href="{{ route('admin.personnel.transfer-requests.index') }}" class="dropdown-item personnel-dropdown-item">
                         <i class="ri-arrow-left-right-line" style="color: #7C3AED; font-size: 16px;"></i>
-                        <div style="font-weight: 600; color:#111827; font-size:13px;">Pemeriksaan Mutasi</div>
+                        <div style="font-weight: 600; color:#111827; font-size:13px;">Riwayat Mutasi</div>
                     </a>
                     <div class="dropdown-divider"></div>
                     <button class="dropdown-item personnel-dropdown-item" onclick="openModal('printSatkerModal')">

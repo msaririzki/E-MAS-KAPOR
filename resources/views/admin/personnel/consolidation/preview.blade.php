@@ -98,7 +98,7 @@
         <i class="ri-information-fill"></i>
         <div>
             <strong>Pencocokan selesai dengan data mutasi.</strong>
-            <span>{{ $stats['transfer'] }} data satker lain akan masuk antrean pemeriksaan superadmin setelah disimpan.</span>
+            <span>{{ $stats['transfer'] }} data satker lain akan langsung dipindahkan setelah disimpan. Riwayatnya tetap tercatat pada menu mutasi.</span>
         </div>
     </div>
 @else

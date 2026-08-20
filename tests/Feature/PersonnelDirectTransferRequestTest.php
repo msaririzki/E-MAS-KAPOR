@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Personnel;
-use App\Models\PersonnelTransferRequest;
 use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\User;
@@ -53,7 +52,7 @@ class PersonnelDirectTransferRequestTest extends TestCase
         $this->adminSatker->assignRole('admin_satker');
     }
 
-    public function test_admin_satker_can_request_transfer_directly_without_creating_duplicate_personnel(): void
+    public function test_admin_satker_transfer_is_approved_automatically_without_creating_duplicate_personnel(): void
     {
         $personnel = $this->createInactiveSourcePersonnel('95050400');
 
@@ -63,20 +62,20 @@ class PersonnelDirectTransferRequestTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertSame(1, Personnel::where('nrp', '95050400')->count());
-        $this->assertSame($this->sourceSatker->id, $personnel->fresh()->satker_id);
-        $this->assertFalse($personnel->fresh()->is_active);
-        $this->assertFalse($personnel->user->fresh()->is_active);
+        $this->assertSame($this->targetSatker->id, $personnel->fresh()->satker_id);
+        $this->assertTrue($personnel->fresh()->is_active);
+        $this->assertTrue($personnel->fresh()->user->is_active);
         $this->assertDatabaseHas('personnel_transfer_requests', [
             'personnel_id' => $personnel->id,
             'from_satker_id' => $this->sourceSatker->id,
             'to_satker_id' => $this->targetSatker->id,
             'requested_by' => $this->adminSatker->id,
             'source_file' => 'Form Tambah Personel',
-            'status' => 'pending',
+            'status' => 'approved',
         ]);
     }
 
-    public function test_direct_transfer_request_cannot_be_submitted_twice(): void
+    public function test_second_direct_transfer_request_is_stopped_after_personnel_has_moved(): void
     {
         $this->createInactiveSourcePersonnel('95050401');
 
@@ -84,7 +83,7 @@ class PersonnelDirectTransferRequestTest extends TestCase
             ->post(route('admin.personnel.request-transfer'), ['nrp' => '95050401']);
 
         $this->post(route('admin.personnel.request-transfer'), ['nrp' => '95050401'])
-            ->assertSessionHas('info', 'Pengajuan mutasi personel ini sudah menunggu pemeriksaan superadmin.');
+            ->assertSessionHas('info', 'Personel tersebut sudah tercatat pada satker Anda.');
 
         $this->assertDatabaseCount('personnel_transfer_requests', 1);
     }
@@ -112,31 +111,6 @@ class PersonnelDirectTransferRequestTest extends TestCase
                 'name' => 'SHINTA KARTIKA DEWI, S.H.',
                 'from_satker_name' => 'POLRES SUMBAWA BARAT',
             ]);
-    }
-
-    public function test_superadmin_can_approve_all_pending_transfer_requests_at_once(): void
-    {
-        $first = $this->createInactiveSourcePersonnel('95050404');
-        $second = $this->createInactiveSourcePersonnel('95050405');
-
-        $this->actingAs($this->adminSatker)
-            ->post(route('admin.personnel.request-transfer'), ['nrp' => $first->nrp]);
-        $this->post(route('admin.personnel.request-transfer'), ['nrp' => $second->nrp]);
-
-        $superadmin = User::factory()->create(['is_active' => true]);
-        $superadmin->assignRole('superadmin');
-
-        $this->actingAs($superadmin)
-            ->post(route('admin.personnel.transfer-requests.approve-all'))
-            ->assertSessionHas('success', '2 pengajuan mutasi berhasil disetujui.');
-
-        $this->assertSame($this->targetSatker->id, $first->fresh()->satker_id);
-        $this->assertSame($this->targetSatker->id, $first->fresh()->user->satker_id);
-        $this->assertTrue($first->fresh()->is_active);
-        $this->assertSame($this->targetSatker->id, $second->fresh()->satker_id);
-        $this->assertTrue($second->fresh()->is_active);
-        $this->assertSame(2, PersonnelTransferRequest::count());
-        $this->assertSame(2, PersonnelTransferRequest::where('status', 'approved')->count());
     }
 
     public function test_only_admin_satker_can_request_direct_transfer(): void

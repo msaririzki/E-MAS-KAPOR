@@ -271,7 +271,7 @@ class PersonnelConsolidationService
             'updated' => 0,
             'created' => 0,
             'unchanged' => 0,
-            'transfer_pending' => 0,
+            'transfer_approved' => 0,
             'deactivated' => 0,
             'skipped' => 0,
             'errors' => [],
@@ -301,11 +301,13 @@ class PersonnelConsolidationService
 
                         PersonnelTransferRequest::query()
                             ->where('personnel_id', $personnel->id)
-                            ->where('to_satker_id', $satkerId)
                             ->where('status', 'pending')
-                            ->update(['status' => 'superseded', 'reviewed_at' => now()]);
-
-                        PersonnelTransferRequest::create([
+                            ->update([
+                                'status' => 'superseded',
+                                'review_note' => 'Ditutup otomatis karena mutasi baru telah diproses.',
+                                'reviewed_at' => now(),
+                            ]);
+                        $transfer = PersonnelTransferRequest::create([
                             'personnel_id' => $personnel->id,
                             'from_satker_id' => $personnel->satker_id,
                             'to_satker_id' => $satkerId,
@@ -314,9 +316,14 @@ class PersonnelConsolidationService
                             'source_sheet' => $row['sheet'],
                             'source_row' => $row['row_number'],
                             'payload' => $row['data'],
-                            'status' => 'pending',
+                            'status' => 'approved',
+                            'review_note' => 'Disetujui otomatis berdasarkan pembaruan data admin satker.',
+                            'reviewed_at' => now(),
                         ]);
-                        $results['transfer_pending']++;
+                        $this->applyPayload($personnel, $row['data'], $satkerId);
+                        PersonnelImport::recalculateSatkerCount($transfer->from_satker_id);
+                        PersonnelImport::recalculateSatkerCount($satkerId);
+                        $results['transfer_approved']++;
                     }),
                     'no_change' => $results['unchanged']++,
                     default => $results['skipped']++,
