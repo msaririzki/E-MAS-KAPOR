@@ -259,10 +259,10 @@ class PersonnelConsolidationController extends Controller
         );
 
         $message = sprintf(
-            '%d diperbarui, %d ditambahkan, %d permintaan mutasi dibuat, dan %d dinonaktifkan.',
+            '%d diperbarui, %d ditambahkan, %d mutasi disetujui otomatis, dan %d dinonaktifkan.',
             $results['updated'],
             $results['created'],
-            $results['transfer_pending'],
+            $results['transfer_approved'],
             $results['deactivated'],
         );
 

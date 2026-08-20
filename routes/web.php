@@ -127,7 +127,6 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
     Route::middleware('role:superadmin')->group(function () {
         Route::get('/personnel/transfer-requests', [\App\Http\Controllers\Admin\PersonnelTransferRequestController::class, 'index'])->name('personnel.transfer-requests.index');
         Route::post('/personnel/transfer-requests/review', [\App\Http\Controllers\Admin\PersonnelTransferRequestController::class, 'review'])->name('personnel.transfer-requests.review');
-        Route::post('/personnel/transfer-requests/approve-all', [\App\Http\Controllers\Admin\PersonnelTransferRequestController::class, 'approveAllPending'])->name('personnel.transfer-requests.approve-all');
     });
     Route::post('/personnel/import-keterangan', [\App\Http\Controllers\Admin\PersonnelController::class, 'importKeterangan'])->name('personnel.import-keterangan');
     Route::get('/personnel/import-keterangan-preview', [\App\Http\Controllers\Admin\PersonnelController::class, 'importKeteranganPreview'])->name('personnel.import-keterangan-preview');

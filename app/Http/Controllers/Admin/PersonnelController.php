@@ -25,6 +25,7 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ExportSignatorySettingService;
 use App\Services\KaporRequirementService;
+use App\Services\PersonnelConsolidationService;
 use App\Services\SdmImportRunService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -40,6 +41,7 @@ class PersonnelController extends Controller
 {
     public function __construct(
         private readonly KaporRequirementService $kaporRequirementService,
+        private readonly PersonnelConsolidationService $personnelConsolidationService,
         private readonly SdmImportRunService $sdmImportRunService,
     ) {}
 
@@ -498,16 +500,30 @@ class PersonnelController extends Controller
                     return ['status' => 'same_satker'];
                 }
 
-                $existingRequest = PersonnelTransferRequest::query()
+                $payload = [
+                    'full_name' => $personnel->full_name,
+                    'nrp' => $personnel->nrp,
+                    'rank_id' => $personnel->rank_id,
+                    'rank_name' => $personnel->rank?->name,
+                    'golongan' => $personnel->golongan,
+                    'jabatan' => $personnel->jabatan,
+                    'bagian' => $personnel->bagian,
+                    'gender' => $personnel->gender,
+                    'religion' => $personnel->religion,
+                    'keterangan' => $personnel->keterangan,
+                    'personnel_type' => $personnel->personnel_type,
+                    'sizes' => $personnel->kapor_sizes ?? [],
+                    'has_sizes' => true,
+                    'system_code' => $personnel->sync_token,
+                ];
+                PersonnelTransferRequest::query()
                     ->where('personnel_id', $personnel->id)
-                    ->where('to_satker_id', $targetSatkerId)
                     ->where('status', 'pending')
-                    ->first();
-
-                if ($existingRequest !== null) {
-                    return ['status' => 'already_requested'];
-                }
-
+                    ->update([
+                        'status' => 'superseded',
+                        'review_note' => 'Ditutup otomatis karena mutasi baru telah diproses.',
+                        'reviewed_at' => now(),
+                    ]);
                 $transfer = PersonnelTransferRequest::create([
                     'personnel_id' => $personnel->id,
                     'from_satker_id' => $personnel->satker_id,
@@ -516,24 +532,14 @@ class PersonnelController extends Controller
                     'source_file' => 'Form Tambah Personel',
                     'source_sheet' => 'Pengajuan Langsung',
                     'source_row' => 0,
-                    'payload' => [
-                        'full_name' => $personnel->full_name,
-                        'nrp' => $personnel->nrp,
-                        'rank_id' => $personnel->rank_id,
-                        'rank_name' => $personnel->rank?->name,
-                        'golongan' => $personnel->golongan,
-                        'jabatan' => $personnel->jabatan,
-                        'bagian' => $personnel->bagian,
-                        'gender' => $personnel->gender,
-                        'religion' => $personnel->religion,
-                        'keterangan' => $personnel->keterangan,
-                        'personnel_type' => $personnel->personnel_type,
-                        'sizes' => $personnel->kapor_sizes ?? [],
-                        'has_sizes' => true,
-                        'system_code' => $personnel->sync_token,
-                    ],
-                    'status' => 'pending',
+                    'payload' => $payload,
+                    'status' => 'approved',
+                    'review_note' => 'Disetujui otomatis berdasarkan pengajuan admin satker.',
+                    'reviewed_at' => now(),
                 ]);
+                $this->personnelConsolidationService->applyPayload($personnel, $payload, $targetSatkerId);
+                PersonnelImport::recalculateSatkerCount($transfer->from_satker_id);
+                PersonnelImport::recalculateSatkerCount($targetSatkerId);
 
                 return [
                     'status' => 'created',
@@ -553,21 +559,17 @@ class PersonnelController extends Controller
             return redirect()->back()->with('info', 'Personel tersebut sudah tercatat pada satker Anda.');
         }
 
-        if ($result['status'] === 'already_requested') {
-            return redirect()->back()->with('info', 'Pengajuan mutasi personel ini sudah menunggu pemeriksaan superadmin.');
-        }
-
         AuditLogger::log(
-            'Ajukan Mutasi Personel',
+            'Mutasi Personel Disetujui Otomatis',
             'Manajemen Personil',
             $result['personnel'],
             ['satker_id' => $result['personnel']->satker_id],
             ['to_satker_id' => $targetSatkerId, 'transfer_request_id' => $result['transfer']->id],
-            'info',
-            'Pengajuan mutasi dibuat langsung dari formulir tambah personel.',
+            'success',
+            'Mutasi dari admin satker diproses dan disetujui otomatis.',
         );
 
-        return redirect()->route('admin.personnel.index')->with('success', 'Pengajuan mutasi berhasil dikirim. Personel akan masuk ke satker Anda setelah disetujui superadmin.');
+        return redirect()->route('admin.personnel.index')->with('success', 'Mutasi berhasil disetujui otomatis. Personel sudah masuk ke satker Anda dan dapat login kembali.');
     }
 
     public function storeMeasurements(Request $request, Personnel $personnel)

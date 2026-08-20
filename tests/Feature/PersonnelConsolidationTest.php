@@ -456,7 +456,7 @@ class PersonnelConsolidationTest extends TestCase
         $this->assertSame(1, Personnel::where('nrp', '90010001')->count());
     }
 
-    public function test_cross_satker_nrp_becomes_pending_transfer_without_duplicate_account(): void
+    public function test_cross_satker_nrp_is_transferred_automatically_without_duplicate_account(): void
     {
         $personnel = $this->createPersonnel($this->otherSatker, '90010009', 'PERSONEL MUTASI');
         $row = $this->fullRow($personnel);
@@ -469,13 +469,15 @@ class PersonnelConsolidationTest extends TestCase
 
         $this->post(route('admin.personnel.consolidation.confirm'));
 
-        $this->assertSame($this->otherSatker->id, $personnel->fresh()->satker_id);
+        $this->assertSame($this->satker->id, $personnel->fresh()->satker_id);
+        $this->assertSame($this->satker->id, $personnel->fresh()->user->satker_id);
+        $this->assertTrue($personnel->fresh()->is_active);
         $this->assertSame(1, Personnel::where('nrp', '90010009')->count());
         $this->assertDatabaseHas('personnel_transfer_requests', [
             'personnel_id' => $personnel->id,
             'from_satker_id' => $this->otherSatker->id,
             'to_satker_id' => $this->satker->id,
-            'status' => 'pending',
+            'status' => 'approved',
         ]);
     }
 
