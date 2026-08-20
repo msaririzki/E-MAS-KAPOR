@@ -16,6 +16,7 @@ use App\Jobs\ProcessSdmImportPreview;
 use App\Models\BagianOption;
 use App\Models\KaporItem;
 use App\Models\Personnel;
+use App\Models\PersonnelTransferRequest;
 use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\SdmImportRun;
@@ -404,11 +405,21 @@ class PersonnelController extends Controller
         $duplicateIdentity = $this->findDuplicatePersonnelIdentity($nrp);
 
         if ($duplicateIdentity !== null) {
-            return redirect()->back()
+            $response = redirect()->back()
                 ->withInput()
                 ->withErrors([
                     'nrp' => $this->buildDuplicatePersonnelIdentityMessage($nrp, $duplicateIdentity, (int) $validated['satker_id']),
                 ]);
+
+            if ($isAdminSatker && (int) $duplicateIdentity['satker_id'] !== (int) $validated['satker_id']) {
+                $response->with('personnel_transfer_candidate', [
+                    'nrp' => $nrp,
+                    'name' => $duplicateIdentity['name'],
+                    'from_satker_name' => $duplicateIdentity['satker_name'],
+                ]);
+            }
+
+            return $response;
         }
 
         $requestMode = Setting::getValue('personnel_request_mode', 'auto');
@@ -457,6 +468,106 @@ class PersonnelController extends Controller
 
             return redirect()->back()->with('error', 'Gagal menambahkan personil: '.$e->getMessage());
         }
+    }
+
+    public function requestTransfer(Request $request)
+    {
+        abort_unless($request->user()?->hasRole('admin_satker'), 403, 'Hanya Admin Satker yang dapat mengajukan mutasi personel.');
+
+        $this->abortIfAdminSatkerWriteLocked($request);
+
+        $validated = $request->validate([
+            'nrp' => ['required', 'string'],
+        ]);
+        $nrp = User::normalizeLoginIdentifier($validated['nrp']);
+        $targetSatkerId = (int) $request->user()->satker_id;
+
+        try {
+            $result = DB::transaction(function () use ($nrp, $targetSatkerId, $request): array {
+                $personnel = Personnel::query()
+                    ->with(['rank', 'satker', 'user'])
+                    ->where('nrp', $nrp)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($personnel === null) {
+                    return ['status' => 'missing'];
+                }
+
+                if ((int) $personnel->satker_id === $targetSatkerId) {
+                    return ['status' => 'same_satker'];
+                }
+
+                $existingRequest = PersonnelTransferRequest::query()
+                    ->where('personnel_id', $personnel->id)
+                    ->where('to_satker_id', $targetSatkerId)
+                    ->where('status', 'pending')
+                    ->first();
+
+                if ($existingRequest !== null) {
+                    return ['status' => 'already_requested'];
+                }
+
+                $transfer = PersonnelTransferRequest::create([
+                    'personnel_id' => $personnel->id,
+                    'from_satker_id' => $personnel->satker_id,
+                    'to_satker_id' => $targetSatkerId,
+                    'requested_by' => $request->user()->id,
+                    'source_file' => 'Form Tambah Personel',
+                    'source_sheet' => 'Pengajuan Langsung',
+                    'source_row' => 0,
+                    'payload' => [
+                        'full_name' => $personnel->full_name,
+                        'nrp' => $personnel->nrp,
+                        'rank_id' => $personnel->rank_id,
+                        'rank_name' => $personnel->rank?->name,
+                        'golongan' => $personnel->golongan,
+                        'jabatan' => $personnel->jabatan,
+                        'bagian' => $personnel->bagian,
+                        'gender' => $personnel->gender,
+                        'religion' => $personnel->religion,
+                        'keterangan' => $personnel->keterangan,
+                        'personnel_type' => $personnel->personnel_type,
+                        'sizes' => $personnel->kapor_sizes ?? [],
+                        'has_sizes' => true,
+                        'system_code' => $personnel->sync_token,
+                    ],
+                    'status' => 'pending',
+                ]);
+
+                return [
+                    'status' => 'created',
+                    'personnel' => $personnel,
+                    'transfer' => $transfer,
+                ];
+            });
+        } catch (\Throwable $exception) {
+            return redirect()->back()->with('error', 'Pengajuan mutasi belum dapat dibuat: '.$exception->getMessage());
+        }
+
+        if ($result['status'] === 'missing') {
+            return redirect()->back()->with('error', 'Data personel untuk NRP/NIP tersebut tidak ditemukan. Silakan tambahkan sebagai personel baru.');
+        }
+
+        if ($result['status'] === 'same_satker') {
+            return redirect()->back()->with('info', 'Personel tersebut sudah tercatat pada satker Anda.');
+        }
+
+        if ($result['status'] === 'already_requested') {
+            return redirect()->back()->with('info', 'Pengajuan mutasi personel ini sudah menunggu pemeriksaan superadmin.');
+        }
+
+        AuditLogger::log(
+            'Ajukan Mutasi Personel',
+            'Manajemen Personil',
+            $result['personnel'],
+            ['satker_id' => $result['personnel']->satker_id],
+            ['to_satker_id' => $targetSatkerId, 'transfer_request_id' => $result['transfer']->id],
+            'info',
+            'Pengajuan mutasi dibuat langsung dari formulir tambah personel.',
+        );
+
+        return redirect()->route('admin.personnel.index')->with('success', 'Pengajuan mutasi berhasil dikirim. Personel akan masuk ke satker Anda setelah disetujui superadmin.');
     }
 
     public function storeMeasurements(Request $request, Personnel $personnel)

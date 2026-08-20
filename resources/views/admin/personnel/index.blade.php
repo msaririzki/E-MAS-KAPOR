@@ -1147,6 +1147,15 @@
                 <i class="ri-close-line"></i>
             </button>
         </div>
+        @php
+            $transferCandidate = session('personnel_transfer_candidate');
+        @endphp
+        @if(auth()->user()->hasRole('admin_satker') && is_array($transferCandidate))
+        <form id="requestTransferForm" action="{{ route('admin.personnel.request-transfer') }}" method="POST">
+            @csrf
+            <input type="hidden" name="nrp" value="{{ $transferCandidate['nrp'] }}">
+        </form>
+        @endif
         <form action="{{ route('admin.personnel.store') }}" method="POST">
             @csrf
             <input type="hidden" name="modal_type" value="add">
@@ -1161,6 +1170,15 @@
                     <strong style="display:block; margin-bottom: 4px;">NRP/NIP tidak bisa digunakan</strong>
                     {{ $errors->first('nrp') }}
                 </div>
+                @if(auth()->user()->hasRole('admin_satker') && is_array($transferCandidate))
+                <div style="margin: -6px 0 18px; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 12px; padding: 14px 16px; color: #9A3412; font-size: 13px; line-height: 1.55;">
+                    <strong style="display:block; color:#9A3412; margin-bottom: 3px;">Personel pindahan?</strong>
+                    <span>{{ $transferCandidate['name'] }} masih tercatat pada {{ $transferCandidate['from_satker_name'] }}. Ajukan mutasi tanpa mengisi Excel.</span>
+                    <button type="submit" form="requestTransferForm" class="btn" style="margin-top:11px; background:#C2410C; border-color:#C2410C; color:#fff; font-size:13px; font-weight:700; border-radius:8px; padding:9px 13px;">
+                        <i class="ri-send-plane-2-line"></i> Ajukan Mutasi ke Satker Saya
+                    </button>
+                </div>
+                @endif
                 @endif
                 <div class="form-grid">
                     <!-- Row 1 -->
