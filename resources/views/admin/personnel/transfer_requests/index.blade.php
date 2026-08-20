@@ -38,7 +38,7 @@
     <div class="transfer-table-shell">
         <div class="transfer-scroll">
             <table>
-                <thead><tr>@if($status === 'pending')<th></th>@endif<th>PERSONEL</th><th>SATKER SAAT INI</th><th>SATKER TUJUAN</th><th>DATA DARI FILE</th><th>PENGAJUAN</th><th>STATUS</th></tr></thead>
+                <thead><tr>@if($status === 'pending')<th></th>@endif<th>PERSONEL</th><th>SATKER SAAT INI</th><th>SATKER TUJUAN</th><th>DATA DIAJUKAN</th><th>PENGAJUAN</th><th>STATUS</th></tr></thead>
                 <tbody>
                     @forelse($requests as $transfer)
                         <tr>
@@ -47,7 +47,7 @@
                             <td><span class="satker-label from">{{ $transfer->fromSatker?->name }}</span></td>
                             <td><span class="satker-label to">{{ $transfer->toSatker?->name }}</span></td>
                             <td><div class="payload-cell"><strong>{{ $transfer->payload['jabatan'] ?: '-' }}</strong><span>{{ $transfer->payload['bagian'] ?: 'Bag/Fungsi kosong' }}</span></div></td>
-                            <td><div class="payload-cell"><strong>{{ $transfer->requester?->name }}</strong><span>{{ $transfer->created_at?->format('d M Y H:i') }}</span><small>{{ $transfer->source_file }} &middot; baris {{ $transfer->source_row }}</small></div></td>
+                            <td><div class="payload-cell"><strong>{{ $transfer->requester?->name }}</strong><span>{{ $transfer->created_at?->format('d M Y H:i') }}</span><small>{{ $transfer->source_file === 'Form Tambah Personel' ? 'Diajukan langsung dari formulir tambah personel' : $transfer->source_file.' · baris '.$transfer->source_row }}</small></div></td>
                             <td><span class="transfer-status {{ $transfer->status }}">{{ match($transfer->status){'pending'=>'Menunggu','approved'=>'Disetujui','rejected'=>'Ditolak',default=>$transfer->status} }}</span></td>
                         </tr>
                     @empty

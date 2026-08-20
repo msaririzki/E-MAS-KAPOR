@@ -123,6 +123,7 @@ Route::middleware(['auth', 'satker.write.lock', 'read.only', 'role:admin|superad
     Route::post('/personnel/consolidation/fix-row', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'fixRow'])->name('personnel.consolidation.fix-row');
     Route::post('/personnel/consolidation/confirm', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'confirm'])->name('personnel.consolidation.confirm');
     Route::post('/personnel/consolidation/cancel', [\App\Http\Controllers\Admin\PersonnelConsolidationController::class, 'cancel'])->name('personnel.consolidation.cancel');
+    Route::post('/personnel/request-transfer', [\App\Http\Controllers\Admin\PersonnelController::class, 'requestTransfer'])->name('personnel.request-transfer');
     Route::middleware('role:superadmin')->group(function () {
         Route::get('/personnel/transfer-requests', [\App\Http\Controllers\Admin\PersonnelTransferRequestController::class, 'index'])->name('personnel.transfer-requests.index');
         Route::post('/personnel/transfer-requests/review', [\App\Http\Controllers\Admin\PersonnelTransferRequestController::class, 'review'])->name('personnel.transfer-requests.review');
