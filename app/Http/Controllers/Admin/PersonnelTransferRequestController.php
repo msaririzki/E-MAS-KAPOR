@@ -43,13 +43,77 @@ class PersonnelTransferRequestController extends Controller
             'review_note' => ['nullable', 'string', 'max:1000'],
         ]);
 
+        $results = $this->processReviews(
+            $validated['request_ids'],
+            $validated['action'],
+            $request->user()->id,
+            $validated['review_note'] ?? null,
+        );
+
+        AuditLogger::log(
+            'Pemeriksaan Mutasi Personel',
+            'Manajemen Personil',
+            null,
+            null,
+            $results,
+            $results['errors'] === [] ? 'success' : 'warning',
+        );
+
+        $message = "{$results['approved']} mutasi disetujui dan {$results['rejected']} ditolak.";
+
+        return back()
+            ->with($results['errors'] === [] ? 'success' : 'warning', $message)
+            ->with('transfer_review_errors', $results['errors']);
+    }
+
+    public function approveAllPending(Request $request)
+    {
+        $validated = $request->validate([
+            'review_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+        $requestIds = PersonnelTransferRequest::query()
+            ->where('status', 'pending')
+            ->orderBy('id')
+            ->pluck('id')
+            ->all();
+
+        if ($requestIds === []) {
+            return back()->with('info', 'Tidak ada pengajuan mutasi yang menunggu persetujuan.');
+        }
+
+        $results = $this->processReviews(
+            $requestIds,
+            'approve',
+            $request->user()->id,
+            $validated['review_note'] ?? null,
+        );
+
+        AuditLogger::log(
+            'Setujui Semua Mutasi Personel',
+            'Manajemen Personil',
+            null,
+            null,
+            array_merge($results, ['requested_total' => count($requestIds)]),
+            $results['errors'] === [] ? 'success' : 'warning',
+            'Persetujuan massal seluruh pengajuan mutasi yang sedang menunggu.',
+        );
+
+        $message = "{$results['approved']} pengajuan mutasi berhasil disetujui.";
+
+        return back()
+            ->with($results['errors'] === [] ? 'success' : 'warning', $message)
+            ->with('transfer_review_errors', $results['errors']);
+    }
+
+    private function processReviews(array $requestIds, string $action, int $reviewerId, ?string $reviewNote): array
+    {
         $approved = 0;
         $rejected = 0;
         $errors = [];
 
-        foreach (array_unique($validated['request_ids']) as $requestId) {
+        foreach (array_unique($requestIds) as $requestId) {
             try {
-                DB::transaction(function () use ($requestId, $validated, $request, &$approved, &$rejected): void {
+                DB::transaction(function () use ($requestId, $action, $reviewerId, $reviewNote, &$approved, &$rejected): void {
                     $transfer = PersonnelTransferRequest::query()
                         ->whereKey($requestId)
                         ->where('status', 'pending')
@@ -59,13 +123,13 @@ class PersonnelTransferRequestController extends Controller
                         return;
                     }
 
-                    if ($validated['action'] === 'approve') {
+                    if ($action === 'approve') {
                         $personnel = $transfer->personnel()->lockForUpdate()->firstOrFail();
                         $this->service->applyPayload($personnel, $transfer->payload, $transfer->to_satker_id);
                         $transfer->update([
                             'status' => 'approved',
-                            'reviewed_by' => $request->user()->id,
-                            'review_note' => $validated['review_note'] ?? null,
+                            'reviewed_by' => $reviewerId,
+                            'review_note' => $reviewNote,
                             'reviewed_at' => now(),
                         ]);
                         PersonnelTransferRequest::query()
@@ -74,7 +138,7 @@ class PersonnelTransferRequestController extends Controller
                             ->where('status', 'pending')
                             ->update([
                                 'status' => 'superseded',
-                                'reviewed_by' => $request->user()->id,
+                                'reviewed_by' => $reviewerId,
                                 'review_note' => 'Ditutup otomatis karena mutasi lain telah disetujui.',
                                 'reviewed_at' => now(),
                             ]);
@@ -87,8 +151,8 @@ class PersonnelTransferRequestController extends Controller
 
                     $transfer->update([
                         'status' => 'rejected',
-                        'reviewed_by' => $request->user()->id,
-                        'review_note' => $validated['review_note'] ?? null,
+                        'reviewed_by' => $reviewerId,
+                        'review_note' => $reviewNote,
                         'reviewed_at' => now(),
                     ]);
                     $rejected++;
@@ -98,19 +162,6 @@ class PersonnelTransferRequestController extends Controller
             }
         }
 
-        AuditLogger::log(
-            'Pemeriksaan Mutasi Personel',
-            'Manajemen Personil',
-            null,
-            null,
-            ['approved' => $approved, 'rejected' => $rejected, 'errors' => $errors],
-            $errors === [] ? 'success' : 'warning',
-        );
-
-        $message = "{$approved} mutasi disetujui dan {$rejected} ditolak.";
-
-        return back()
-            ->with($errors === [] ? 'success' : 'warning', $message)
-            ->with('transfer_review_errors', $errors);
+        return compact('approved', 'rejected', 'errors');
     }
 }

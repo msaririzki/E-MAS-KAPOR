@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Personnel;
+use App\Models\PersonnelTransferRequest;
 use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\User;
@@ -111,6 +112,31 @@ class PersonnelDirectTransferRequestTest extends TestCase
                 'name' => 'SHINTA KARTIKA DEWI, S.H.',
                 'from_satker_name' => 'POLRES SUMBAWA BARAT',
             ]);
+    }
+
+    public function test_superadmin_can_approve_all_pending_transfer_requests_at_once(): void
+    {
+        $first = $this->createInactiveSourcePersonnel('95050404');
+        $second = $this->createInactiveSourcePersonnel('95050405');
+
+        $this->actingAs($this->adminSatker)
+            ->post(route('admin.personnel.request-transfer'), ['nrp' => $first->nrp]);
+        $this->post(route('admin.personnel.request-transfer'), ['nrp' => $second->nrp]);
+
+        $superadmin = User::factory()->create(['is_active' => true]);
+        $superadmin->assignRole('superadmin');
+
+        $this->actingAs($superadmin)
+            ->post(route('admin.personnel.transfer-requests.approve-all'))
+            ->assertSessionHas('success', '2 pengajuan mutasi berhasil disetujui.');
+
+        $this->assertSame($this->targetSatker->id, $first->fresh()->satker_id);
+        $this->assertSame($this->targetSatker->id, $first->fresh()->user->satker_id);
+        $this->assertTrue($first->fresh()->is_active);
+        $this->assertSame($this->targetSatker->id, $second->fresh()->satker_id);
+        $this->assertTrue($second->fresh()->is_active);
+        $this->assertSame(2, PersonnelTransferRequest::count());
+        $this->assertSame(2, PersonnelTransferRequest::where('status', 'approved')->count());
     }
 
     public function test_only_admin_satker_can_request_direct_transfer(): void
