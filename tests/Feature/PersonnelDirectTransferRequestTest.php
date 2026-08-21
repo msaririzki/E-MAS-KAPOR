@@ -126,6 +126,48 @@ class PersonnelDirectTransferRequestTest extends TestCase
         $this->assertDatabaseCount('personnel_transfer_requests', 0);
     }
 
+    public function test_superadmin_can_toggle_approval_mode(): void
+    {
+        $superadmin = User::factory()->create(['is_active' => true]);
+        $superadmin->assignRole('superadmin');
+
+        $this->actingAs($superadmin)
+            ->post(route('admin.personnel.transfer-requests.set-mode'), ['mode' => 'manual'])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame('manual', \App\Models\Setting::getValue('personnel_transfer_mode'));
+
+        $this->post(route('admin.personnel.transfer-requests.set-mode'), ['mode' => 'auto'])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame('auto', \App\Models\Setting::getValue('personnel_transfer_mode'));
+    }
+
+    public function test_admin_satker_transfer_becomes_pending_in_manual_mode(): void
+    {
+        \App\Models\Setting::setValue('personnel_transfer_mode', 'manual');
+        $personnel = $this->createInactiveSourcePersonnel('95050409');
+
+        $this->actingAs($this->adminSatker)
+            ->post(route('admin.personnel.request-transfer'), ['nrp' => '95050409'])
+            ->assertRedirect(route('admin.personnel.index'))
+            ->assertSessionHas('success', 'Pengajuan mutasi berhasil dikirim dan menunggu persetujuan Superadmin.');
+
+        $this->assertSame(1, Personnel::where('nrp', '95050409')->count());
+        $this->assertSame($this->sourceSatker->id, $personnel->fresh()->satker_id);
+        $this->assertFalse($personnel->fresh()->is_active);
+        $this->assertDatabaseHas('personnel_transfer_requests', [
+            'personnel_id' => $personnel->id,
+            'from_satker_id' => $this->sourceSatker->id,
+            'to_satker_id' => $this->targetSatker->id,
+            'requested_by' => $this->adminSatker->id,
+            'source_file' => 'Form Tambah Personel',
+            'status' => 'pending',
+        ]);
+    }
+
     public function test_superadmin_can_approve_all_pending_transfer_requests_at_once(): void
     {
         $first = $this->createInactiveSourcePersonnel('95050404');

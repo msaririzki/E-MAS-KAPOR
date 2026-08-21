@@ -5,9 +5,31 @@
 
 @section('content')
 <div class="transfer-header">
-    <div class="transfer-title">
-        <a href="{{ route('admin.personnel.index') }}" class="transfer-back" title="Kembali"><i class="ri-arrow-left-line"></i></a>
-        <div><span>RIWAYAT PERPINDAHAN SATKER</span><h1>Mutasi Personel</h1><p>Kelola dan setujui mutasi personel antar-satker.</p></div>
+    <div class="transfer-title-wrap">
+        <div class="transfer-title">
+            <a href="{{ route('admin.personnel.index') }}" class="transfer-back" title="Kembali"><i class="ri-arrow-left-line"></i></a>
+            <div>
+                <span>RIWAYAT PERPINDAHAN SATKER</span>
+                <h1>Mutasi Personel</h1>
+                <p>Kelola dan atur mode persetujuan mutasi personel antar-satker.</p>
+            </div>
+        </div>
+
+        <div class="transfer-mode-box">
+            <div class="mode-box-header">
+                <span class="mode-box-title"><i class="ri-settings-3-line"></i> Mode Persetujuan Mutasi:</span>
+                <span class="mode-active-pill {{ $approvalMode }}">{{ $approvalMode === 'auto' ? 'Otomatis' : 'Manual' }}</span>
+            </div>
+            <form action="{{ route('admin.personnel.transfer-requests.set-mode') }}" method="POST" class="mode-switcher-form">
+                @csrf
+                <button type="submit" name="mode" value="auto" class="mode-btn auto {{ $approvalMode === 'auto' ? 'active' : '' }}" onclick="return confirm('Ubah mode persetujuan mutasi ke OTOMATIS? Pengajuan mutasi dari admin satker akan langsung disetujui realtime.');">
+                    <i class="ri-flashlight-fill"></i> Mode Otomatis
+                </button>
+                <button type="submit" name="mode" value="manual" class="mode-btn manual {{ $approvalMode === 'manual' ? 'active' : '' }}" onclick="return confirm('Ubah mode persetujuan mutasi ke MANUAL? Pengajuan mutasi dari admin satker akan menunggu persetujuan Superadmin.');">
+                    <i class="ri-shield-user-fill"></i> Mode Manual
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -15,7 +37,17 @@
 @if(session('warning'))<div class="transfer-alert warning"><i class="ri-alert-fill"></i>{{ session('warning') }}</div>@endif
 @if(session('info'))<div class="transfer-alert info"><i class="ri-information-fill"></i>{{ session('info') }}</div>@endif
 
-<div class="transfer-alert success"><i class="ri-flashlight-fill"></i><span><strong>Persetujuan otomatis aktif untuk mutasi baru.</strong> Untuk pengajuan mutasi lama yang masih pending, Anda dapat menyetujuinya menggunakan tombol aksi di bawah.</span></div>
+@if($approvalMode === 'auto')
+    <div class="transfer-alert success">
+        <i class="ri-flashlight-fill"></i>
+        <span><strong>Mode Otomatis Aktif:</strong> Setiap pengajuan mutasi baru oleh Admin Satker langsung disetujui secara <em>real-time</em> oleh sistem, personel langsung berpindah satker, dan akun langsung aktif.</span>
+    </div>
+@else
+    <div class="transfer-alert warning">
+        <i class="ri-shield-user-fill"></i>
+        <span><strong>Mode Manual Aktif:</strong> Pengajuan mutasi dari Admin Satker akan masuk ke tab <strong>Menunggu Persetujuan</strong> dan memerlukan persetujuan Superadmin (bisa disetujui satu per satu, terpilih, atau semua).</span>
+    </div>
+@endif
 
 <div class="transfer-tabs">
     @foreach(['pending' => 'Menunggu Persetujuan', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'] as $key => $label)
@@ -89,11 +121,23 @@
 @section('styles')
 <style>
 .transfer-header{padding:18px 0 22px;border-bottom:1px solid #E5E7EB;margin-bottom:16px}
+.transfer-title-wrap{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .transfer-title{display:flex;align-items:center;gap:14px}
 .transfer-title span{font-size:10px;font-weight:800;color:#B91C1C;letter-spacing:.08em}
 .transfer-title h1{font-size:24px;margin:2px 0 4px;color:#111827;font-weight:800;letter-spacing:0}
 .transfer-title p{font-size:13px;margin:0;color:#64748B}
 .transfer-back{width:38px;height:38px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;color:#374151;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.transfer-mode-box{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;gap:6px}
+.mode-box-header{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;font-weight:700;color:#475569}
+.mode-active-pill{font-size:9px;padding:2px 6px;border-radius:999px;font-weight:800;text-transform:uppercase}
+.mode-active-pill.auto{background:#ECFDF5;color:#047857;border:1px solid #A7F3D0}
+.mode-active-pill.manual{background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE}
+.mode-switcher-form{display:inline-flex;align-items:center;gap:6px;background:#E2E8F0;padding:3px;border-radius:8px}
+.mode-btn{border:0;background:transparent;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;color:#475569;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s ease}
+.mode-btn.auto.active{background:#047857;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.mode-btn.manual.active{background:#1E3A8A;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.mode-btn:hover:not(.active){background:rgba(255,255,255,.6);color:#1E293B}
+
 .transfer-alert{border:1px solid;border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-size:12px}
 .transfer-alert.success{background:#F0FDF4;border-color:#BBF7D0;color:#166534}
 .transfer-alert.warning{background:#FFF7ED;border-color:#FED7AA;color:#9A3412}
@@ -131,6 +175,10 @@
 .transfer-empty i{font-size:27px}
 .transfer-pagination{padding:12px 14px;border-top:1px solid #E5E7EB}
 @media(max-width:760px){
+    .transfer-title-wrap{flex-direction:column;align-items:stretch}
+    .transfer-mode-box{width:100%}
+    .mode-switcher-form{width:100%;display:grid;grid-template-columns:1fr 1fr}
+    .mode-btn{justify-content:center}
     .transfer-tabs{overflow:auto}
     .transfer-tabs a{padding:0 12px}
     .transfer-toolbar{flex-direction:column;align-items:stretch}
@@ -156,3 +204,4 @@ document.getElementById('transferReviewForm')?.addEventListener('submit', functi
 });
 </script>
 @endsection
+

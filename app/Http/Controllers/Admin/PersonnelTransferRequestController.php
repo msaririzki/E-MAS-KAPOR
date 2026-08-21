@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Imports\PersonnelImport;
 use App\Models\PersonnelTransferRequest;
+use App\Models\Setting;
 use App\Services\AuditLogger;
 use App\Services\PersonnelConsolidationService;
 use Illuminate\Http\Request;
@@ -16,9 +17,10 @@ class PersonnelTransferRequestController extends Controller
 
     public function index(Request $request)
     {
+        $approvalMode = Setting::getValue('personnel_transfer_mode', 'auto');
         $status = in_array($request->query('status'), ['pending', 'approved', 'rejected'], true)
             ? $request->query('status')
-            : 'approved';
+            : ($approvalMode === 'manual' ? 'pending' : 'approved');
         $requests = PersonnelTransferRequest::query()
             ->with(['personnel.rank', 'fromSatker', 'toSatker', 'requester', 'reviewer'])
             ->where('status', $status)
@@ -31,7 +33,31 @@ class PersonnelTransferRequestController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status');
 
-        return view('admin.personnel.transfer_requests.index', compact('requests', 'counts', 'status'));
+        return view('admin.personnel.transfer_requests.index', compact('requests', 'counts', 'status', 'approvalMode'));
+    }
+
+    public function setApprovalMode(Request $request)
+    {
+        $validated = $request->validate([
+            'mode' => ['required', 'in:auto,manual'],
+        ]);
+
+        $oldMode = Setting::getValue('personnel_transfer_mode', 'auto');
+        Setting::setValue('personnel_transfer_mode', $validated['mode']);
+
+        AuditLogger::log(
+            'Ubah Mode Persetujuan Mutasi Personel',
+            'Manajemen Personil',
+            ['mode' => $oldMode],
+            ['mode' => $validated['mode']],
+            ['mode' => $validated['mode']],
+            'success',
+            'Mengubah mode persetujuan mutasi personel menjadi '.($validated['mode'] === 'auto' ? 'Otomatis' : 'Manual Superadmin').'.',
+        );
+
+        $label = $validated['mode'] === 'auto' ? 'Mode Otomatis (Realtime)' : 'Mode Manual (Persetujuan Superadmin)';
+
+        return back()->with('success', "Mode persetujuan mutasi personel berhasil diubah ke: {$label}.");
     }
 
     public function review(Request $request)

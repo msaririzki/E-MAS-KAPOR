@@ -7,6 +7,7 @@ use App\Models\Personnel;
 use App\Models\PersonnelTransferRequest;
 use App\Models\Rank;
 use App\Models\Satker;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -272,10 +273,14 @@ class PersonnelConsolidationService
             'created' => 0,
             'unchanged' => 0,
             'transfer_approved' => 0,
+            'transfer_pending' => 0,
             'deactivated' => 0,
             'skipped' => 0,
             'errors' => [],
         ];
+
+        $transferMode = Setting::getValue('personnel_transfer_mode', 'auto');
+        $isAutoTransfer = $transferMode === 'auto';
 
         foreach ($preview['rows'] as $row) {
             try {
@@ -293,7 +298,7 @@ class PersonnelConsolidationService
                         $this->createPersonnel($row['data'], $satkerId);
                         $results['created']++;
                     }),
-                    'transfer' => DB::transaction(function () use ($row, $satkerId, $actor, $preview, &$results): void {
+                    'transfer' => DB::transaction(function () use ($row, $satkerId, $actor, $preview, $isAutoTransfer, &$results): void {
                         $personnel = Personnel::query()
                             ->whereKey($row['matched_personnel_id'])
                             ->lockForUpdate()
@@ -307,6 +312,7 @@ class PersonnelConsolidationService
                                 'review_note' => 'Ditutup otomatis karena mutasi baru telah diproses.',
                                 'reviewed_at' => now(),
                             ]);
+
                         $transfer = PersonnelTransferRequest::create([
                             'personnel_id' => $personnel->id,
                             'from_satker_id' => $personnel->satker_id,
@@ -316,14 +322,19 @@ class PersonnelConsolidationService
                             'source_sheet' => $row['sheet'],
                             'source_row' => $row['row_number'],
                             'payload' => $row['data'],
-                            'status' => 'approved',
-                            'review_note' => 'Disetujui otomatis berdasarkan pembaruan data admin satker.',
-                            'reviewed_at' => now(),
+                            'status' => $isAutoTransfer ? 'approved' : 'pending',
+                            'review_note' => $isAutoTransfer ? 'Disetujui otomatis berdasarkan pembaruan data admin satker.' : null,
+                            'reviewed_at' => $isAutoTransfer ? now() : null,
                         ]);
-                        $this->applyPayload($personnel, $row['data'], $satkerId);
-                        PersonnelImport::recalculateSatkerCount($transfer->from_satker_id);
-                        PersonnelImport::recalculateSatkerCount($satkerId);
-                        $results['transfer_approved']++;
+
+                        if ($isAutoTransfer) {
+                            $this->applyPayload($personnel, $row['data'], $satkerId);
+                            PersonnelImport::recalculateSatkerCount($transfer->from_satker_id);
+                            PersonnelImport::recalculateSatkerCount($satkerId);
+                            $results['transfer_approved']++;
+                        } else {
+                            $results['transfer_pending']++;
+                        }
                     }),
                     'no_change' => $results['unchanged']++,
                     default => $results['skipped']++,

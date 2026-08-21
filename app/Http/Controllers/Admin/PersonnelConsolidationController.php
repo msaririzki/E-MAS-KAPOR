@@ -258,11 +258,18 @@ class PersonnelConsolidationController extends Controller
             "Satker: {$preview['satker_name']}"
         );
 
+        $transferMessage = '';
+        if (($results['transfer_approved'] ?? 0) > 0) {
+            $transferMessage = "{$results['transfer_approved']} mutasi disetujui otomatis, ";
+        } elseif (($results['transfer_pending'] ?? 0) > 0) {
+            $transferMessage = "{$results['transfer_pending']} pengajuan mutasi menunggu persetujuan, ";
+        }
+
         $message = sprintf(
-            '%d diperbarui, %d ditambahkan, %d mutasi disetujui otomatis, dan %d dinonaktifkan.',
+            '%d diperbarui, %d ditambahkan, %sdan %d dinonaktifkan.',
             $results['updated'],
             $results['created'],
-            $results['transfer_approved'],
+            $transferMessage,
             $results['deactivated'],
         );
 

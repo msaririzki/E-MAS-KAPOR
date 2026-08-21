@@ -503,8 +503,10 @@ class PersonnelController extends Controller
         $nrp = User::normalizeLoginIdentifier($validated['nrp']);
         $targetSatkerId = (int) $request->user()->satker_id;
 
+        $mode = Setting::getValue('personnel_transfer_mode', 'auto');
+
         try {
-            $result = DB::transaction(function () use ($nrp, $targetSatkerId, $request): array {
+            $result = DB::transaction(function () use ($nrp, $targetSatkerId, $request, $mode): array {
                 $personnel = Personnel::query()
                     ->with(['rank', 'satker', 'user'])
                     ->where('nrp', $nrp)
@@ -517,6 +519,17 @@ class PersonnelController extends Controller
 
                 if ((int) $personnel->satker_id === $targetSatkerId) {
                     return ['status' => 'same_satker'];
+                }
+
+                if ($mode === 'manual') {
+                    $existingPending = PersonnelTransferRequest::query()
+                        ->where('personnel_id', $personnel->id)
+                        ->where('to_satker_id', $targetSatkerId)
+                        ->where('status', 'pending')
+                        ->first();
+                    if ($existingPending !== null) {
+                        return ['status' => 'already_pending'];
+                    }
                 }
 
                 $payload = [
@@ -543,6 +556,8 @@ class PersonnelController extends Controller
                         'review_note' => 'Ditutup otomatis karena mutasi baru telah diproses.',
                         'reviewed_at' => now(),
                     ]);
+
+                $isAuto = $mode === 'auto';
                 $transfer = PersonnelTransferRequest::create([
                     'personnel_id' => $personnel->id,
                     'from_satker_id' => $personnel->satker_id,
@@ -552,16 +567,20 @@ class PersonnelController extends Controller
                     'source_sheet' => 'Pengajuan Langsung',
                     'source_row' => 0,
                     'payload' => $payload,
-                    'status' => 'approved',
-                    'review_note' => 'Disetujui otomatis berdasarkan pengajuan admin satker.',
-                    'reviewed_at' => now(),
+                    'status' => $isAuto ? 'approved' : 'pending',
+                    'review_note' => $isAuto ? 'Disetujui otomatis berdasarkan pengajuan admin satker.' : null,
+                    'reviewed_at' => $isAuto ? now() : null,
                 ]);
-                $this->personnelConsolidationService->applyPayload($personnel, $payload, $targetSatkerId);
-                PersonnelImport::recalculateSatkerCount($transfer->from_satker_id);
-                PersonnelImport::recalculateSatkerCount($targetSatkerId);
+
+                if ($isAuto) {
+                    $this->personnelConsolidationService->applyPayload($personnel, $payload, $targetSatkerId);
+                    PersonnelImport::recalculateSatkerCount($transfer->from_satker_id);
+                    PersonnelImport::recalculateSatkerCount($targetSatkerId);
+                }
 
                 return [
                     'status' => 'created',
+                    'mode' => $mode,
                     'personnel' => $personnel,
                     'transfer' => $transfer,
                 ];
@@ -578,17 +597,35 @@ class PersonnelController extends Controller
             return redirect()->back()->with('info', 'Personel tersebut sudah tercatat pada satker Anda.');
         }
 
+        if ($result['status'] === 'already_pending') {
+            return redirect()->back()->with('info', 'Pengajuan mutasi personel ini sudah menunggu pemeriksaan superadmin.');
+        }
+
+        if ($result['mode'] === 'auto') {
+            AuditLogger::log(
+                'Mutasi Personel Disetujui Otomatis',
+                'Manajemen Personil',
+                $result['personnel'],
+                ['satker_id' => $result['personnel']->satker_id],
+                ['to_satker_id' => $targetSatkerId, 'transfer_request_id' => $result['transfer']->id],
+                'success',
+                'Mutasi dari admin satker diproses dan disetujui otomatis.',
+            );
+
+            return redirect()->route('admin.personnel.index')->with('success', 'Mutasi berhasil disetujui otomatis. Personel sudah masuk ke satker Anda dan akun telah aktif.');
+        }
+
         AuditLogger::log(
-            'Mutasi Personel Disetujui Otomatis',
+            'Pengajuan Mutasi Personel',
             'Manajemen Personil',
             $result['personnel'],
             ['satker_id' => $result['personnel']->satker_id],
             ['to_satker_id' => $targetSatkerId, 'transfer_request_id' => $result['transfer']->id],
-            'success',
-            'Mutasi dari admin satker diproses dan disetujui otomatis.',
+            'info',
+            'Pengajuan mutasi personel langsung dari form tambah personel.',
         );
 
-        return redirect()->route('admin.personnel.index')->with('success', 'Mutasi berhasil disetujui otomatis. Personel sudah masuk ke satker Anda dan dapat login kembali.');
+        return redirect()->route('admin.personnel.index')->with('success', 'Pengajuan mutasi berhasil dikirim dan menunggu persetujuan Superadmin.');
     }
 
     public function storeMeasurements(Request $request, Personnel $personnel)
