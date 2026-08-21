@@ -66,6 +66,45 @@ class PersonnelTransferRequestController extends Controller
             ->with('transfer_review_errors', $results['errors']);
     }
 
+    public function approveAllPending(Request $request)
+    {
+        $validated = $request->validate([
+            'review_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+        $requestIds = PersonnelTransferRequest::query()
+            ->where('status', 'pending')
+            ->orderBy('id')
+            ->pluck('id')
+            ->all();
+
+        if ($requestIds === []) {
+            return back()->with('info', 'Tidak ada pengajuan mutasi yang menunggu persetujuan.');
+        }
+
+        $results = $this->processReviews(
+            $requestIds,
+            'approve',
+            $request->user()->id,
+            $validated['review_note'] ?? null,
+        );
+
+        AuditLogger::log(
+            'Setujui Semua Mutasi Personel',
+            'Manajemen Personil',
+            null,
+            null,
+            array_merge($results, ['requested_total' => count($requestIds)]),
+            $results['errors'] === [] ? 'success' : 'warning',
+            'Persetujuan massal seluruh pengajuan mutasi yang sedang menunggu.',
+        );
+
+        $message = "{$results['approved']} pengajuan mutasi berhasil disetujui.";
+
+        return back()
+            ->with($results['errors'] === [] ? 'success' : 'warning', $message)
+            ->with('transfer_review_errors', $results['errors']);
+    }
+
     private function processReviews(array $requestIds, string $action, int $reviewerId, ?string $reviewNote): array
     {
         $approved = 0;
