@@ -48,8 +48,8 @@ class PersonnelTransferRequestController extends Controller
         AuditLogger::log(
             'Ubah Mode Persetujuan Mutasi Personel',
             'Manajemen Personil',
+            null,
             ['mode' => $oldMode],
-            ['mode' => $validated['mode']],
             ['mode' => $validated['mode']],
             'success',
             'Mengubah mode persetujuan mutasi personel menjadi '.($validated['mode'] === 'auto' ? 'Otomatis' : 'Manual Superadmin').'.',
