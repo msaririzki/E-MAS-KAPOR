@@ -126,6 +126,47 @@ class PersonnelDirectTransferRequestTest extends TestCase
         $this->assertDatabaseCount('personnel_transfer_requests', 0);
     }
 
+    public function test_superadmin_can_approve_all_pending_transfer_requests_at_once(): void
+    {
+        $first = $this->createInactiveSourcePersonnel('95050404');
+        $second = $this->createInactiveSourcePersonnel('95050405');
+
+        \App\Models\PersonnelTransferRequest::create([
+            'personnel_id' => $first->id,
+            'from_satker_id' => $this->sourceSatker->id,
+            'to_satker_id' => $this->targetSatker->id,
+            'requested_by' => $this->adminSatker->id,
+            'source_file' => 'Data Lama',
+            'source_row' => 1,
+            'payload' => ['jabatan' => 'BA', 'bagian' => 'SAMAPTA'],
+            'status' => 'pending',
+        ]);
+        \App\Models\PersonnelTransferRequest::create([
+            'personnel_id' => $second->id,
+            'from_satker_id' => $this->sourceSatker->id,
+            'to_satker_id' => $this->targetSatker->id,
+            'requested_by' => $this->adminSatker->id,
+            'source_file' => 'Data Lama',
+            'source_row' => 2,
+            'payload' => ['jabatan' => 'BA', 'bagian' => 'LANTAS'],
+            'status' => 'pending',
+        ]);
+
+        $superadmin = User::factory()->create(['is_active' => true]);
+        $superadmin->assignRole('superadmin');
+
+        $this->actingAs($superadmin)
+            ->post(route('admin.personnel.transfer-requests.approve-all'))
+            ->assertSessionHas('success', '2 pengajuan mutasi berhasil disetujui.');
+
+        $this->assertSame($this->targetSatker->id, $first->fresh()->satker_id);
+        $this->assertSame($this->targetSatker->id, $first->fresh()->user->satker_id);
+        $this->assertTrue($first->fresh()->is_active);
+        $this->assertSame($this->targetSatker->id, $second->fresh()->satker_id);
+        $this->assertTrue($second->fresh()->is_active);
+        $this->assertSame(2, \App\Models\PersonnelTransferRequest::where('status', 'approved')->count());
+    }
+
     private function createInactiveSourcePersonnel(string $nrp): Personnel
     {
         $user = User::factory()->create([
