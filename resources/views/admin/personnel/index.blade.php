@@ -68,11 +68,11 @@
                     @endif
 
                     @if(auth()->user()->hasRole('superadmin'))
-                    <a href="{{ route('admin.personnel.export-keterangan') }}" class="dropdown-item personnel-dropdown-item">
-                        <i class="ri-file-list-3-line" style="color: #7C3AED; font-size: 16px;"></i>
+                    <a href="{{ route('admin.personnel.export-keterangan') }}" class="dropdown-item personnel-dropdown-item" data-keterangan-download>
+                        <i class="ri-file-list-3-line" style="color: #7C3AED; font-size: 16px;" data-download-icon></i>
                         <div>
-                            <div style="font-weight: 600; color: #111827; font-size: 13px;">Unduh Referensi Keterangan</div>
-                            <div style="font-size: 11px; color: #6B7280;">Download file acuan update keterangan</div>
+                            <div style="font-weight: 600; color: #111827; font-size: 13px;" data-download-title>Unduh Referensi Keterangan</div>
+                            <div style="font-size: 11px; color: #6B7280;" data-download-subtitle>File acuan update keterangan</div>
                         </div>
                     </a>
                     @endif
@@ -3261,6 +3261,20 @@
     box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
 }
 
+.personnel-dropdown-item.is-downloading {
+    pointer-events: none;
+    opacity: 0.78;
+    cursor: wait;
+}
+
+.personnel-dropdown-item.is-downloading [data-download-icon] {
+    animation: personnelDownloadSpin 0.8s linear infinite;
+}
+
+@keyframes personnelDownloadSpin {
+    to { transform: rotate(360deg); }
+}
+
 @media (max-width: 1024px) {
     .compact-actions-container {
         justify-content: flex-start;
@@ -4050,6 +4064,71 @@
         container.appendChild(toast);
         setTimeout(() => { toast.remove(); }, 3000);
     }
+
+    function getDownloadFilename(contentDisposition) {
+        if (!contentDisposition) {
+            return 'Referensi_Keterangan_Personel.xlsx';
+        }
+
+        const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+        if (utf8Match) {
+            return decodeURIComponent(utf8Match[1]);
+        }
+
+        const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+
+        return filenameMatch ? filenameMatch[1] : 'Referensi_Keterangan_Personel.xlsx';
+    }
+
+    function setKeteranganDownloadState(link, isDownloading) {
+        const icon = link.querySelector('[data-download-icon]');
+        const title = link.querySelector('[data-download-title]');
+        const subtitle = link.querySelector('[data-download-subtitle]');
+
+        link.classList.toggle('is-downloading', isDownloading);
+        icon?.classList.toggle('ri-file-list-3-line', !isDownloading);
+        icon?.classList.toggle('ri-loader-4-line', isDownloading);
+        title.textContent = isDownloading ? 'Menyiapkan file...' : 'Unduh Referensi Keterangan';
+        subtitle.textContent = isDownloading ? 'Mohon tunggu, data sedang dikumpulkan.' : 'File acuan update keterangan';
+    }
+
+    document.addEventListener('click', async function (event) {
+        const link = event.target.closest('[data-keterangan-download]');
+
+        if (!link || link.classList.contains('is-downloading')) {
+            return;
+        }
+
+        event.preventDefault();
+        setKeteranganDownloadState(link, true);
+
+        try {
+            const response = await fetch(link.href, {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+
+            if (!response.ok) {
+                throw new Error('File referensi belum dapat disiapkan.');
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = downloadUrl;
+            downloadLink.download = getDownloadFilename(response.headers.get('content-disposition'));
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+            URL.revokeObjectURL(downloadUrl);
+
+            showToast('File siap. Unduhan Excel telah dimulai.', 'success');
+        } catch (error) {
+            showToast(error.message || 'Unduhan gagal diproses. Silakan coba lagi.', 'error');
+        } finally {
+            window.setTimeout(() => setKeteranganDownloadState(link, false), 450);
+        }
+    });
 
     @if(session('success')) showToast("{{ session('success') }}"); @endif
     @if(session('info')) showToast("{{ session('info') }}", 'info'); @endif

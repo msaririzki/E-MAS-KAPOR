@@ -115,31 +115,9 @@ class PersonnelKeteranganSheetExport implements FromCollection, ShouldAutoSize, 
                     ],
                 ]);
 
-                // Kelompok warna memudahkan membaca referensi tanpa mengubah nama kolom impor.
-                $headerColors = [
-                    'A' => 'FF475569', // Kode data
-                    'B' => 'FF64748B', // Nomor
-                    'C' => 'FF1D4ED8', // Nama
-                    'D' => 'FF7C3AED', // NRP/NIP
-                    'E' => 'FF0F766E', // Satker
-                    'F' => 'FF0369A1', // Tipe personel
-                    'G' => 'FFC2410C', // Pangkat
-                    'H' => 'FFC2410C', // Golongan
-                    'I' => 'FF475569', // Jenis kelamin
-                    'J' => 'FF475569', // Agama
-                    'K' => 'FFB91C1C', // Jabatan
-                    'L' => 'FFB91C1C', // Bag/fungsi
-                    'M' => 'FF475569', // Keterangan 1 (referensi)
-                    'N' => 'FF15803D', // Keterangan 2 (dapat diubah)
-                    'O' => 'FF15803D', // Keterangan 3 (dapat diubah)
-                    'P' => 'FF15803D', // Keterangan 4 (dapat diubah)
-                ];
-
-                foreach ($headerColors as $column => $color) {
-                    $sheet->getStyle($column.'1')->getFill()
-                        ->setFillType(Fill::FILL_SOLID)
-                        ->getStartColor()->setARGB($color);
-                }
+                $sheet->getStyle('A1:P1')->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setARGB('FF1E3A5F');
 
                 for ($row = 2; $row <= $lastDataRow; $row++) {
                     $sheet->getCell('A'.$row)->setValueExplicit((string) $sheet->getCell('A'.$row)->getValue(), DataType::TYPE_STRING);

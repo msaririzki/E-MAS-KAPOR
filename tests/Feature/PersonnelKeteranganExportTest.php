@@ -115,8 +115,8 @@ class PersonnelKeteranganExportTest extends TestCase
 
             $this->assertSame('A1:P2', $worksheet->getAutoFilter()->getRange());
             $this->assertNull($worksheet->getProtection()->getSheet());
-            $this->assertSame('FF1D4ED8', $worksheet->getStyle('C1')->getFill()->getStartColor()->getARGB());
-            $this->assertSame('FF15803D', $worksheet->getStyle('N1')->getFill()->getStartColor()->getARGB());
+            $this->assertSame('FF1E3A5F', $worksheet->getStyle('C1')->getFill()->getStartColor()->getARGB());
+            $this->assertSame('FF1E3A5F', $worksheet->getStyle('N1')->getFill()->getStartColor()->getARGB());
         } finally {
             @unlink($temporaryPath);
         }
