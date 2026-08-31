@@ -16,7 +16,6 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-use PhpOffice\PhpSpreadsheet\Style\Protection;
 
 class PersonnelKeteranganSheetExport implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithEvents, WithHeadings, WithTitle
 {
@@ -150,10 +149,6 @@ class PersonnelKeteranganSheetExport implements FromCollection, ShouldAutoSize, 
                 }
 
                 if ($lastDataRow >= 2) {
-                    $sheet->getStyle('A2:P'.$lastDataRow)
-                        ->getProtection()
-                        ->setLocked(Protection::PROTECTION_PROTECTED);
-
                     $sheet->getStyle('A2:M'.$lastDataRow)->getFill()
                         ->setFillType(Fill::FILL_SOLID)
                         ->getStartColor()->setARGB('FFF8FAFC');
@@ -162,19 +157,7 @@ class PersonnelKeteranganSheetExport implements FromCollection, ShouldAutoSize, 
                         ->setFillType(Fill::FILL_SOLID)
                         ->getStartColor()->setARGB('FFF0FDF4');
 
-                    foreach (['N', 'O', 'P'] as $editableColumn) {
-                        $sheet->getStyle($editableColumn.'2:'.$editableColumn.$lastDataRow)
-                            ->getProtection()
-                            ->setLocked(Protection::PROTECTION_UNPROTECTED);
-                    }
                 }
-
-                $sheet->getProtection()->setSheet(true);
-                $sheet->getProtection()->setSort(true);
-                $sheet->getProtection()->setAutoFilter(true);
-                $sheet->getProtection()->setInsertRows(false);
-                $sheet->getProtection()->setFormatCells(false);
-                $sheet->getProtection()->setPassword('EMAS-KAPOR');
             },
         ];
     }
