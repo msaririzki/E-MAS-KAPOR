@@ -9,6 +9,9 @@ use App\Models\Rank;
 use App\Models\Satker;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Maatwebsite\Excel\Excel as ExcelWriter;
+use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class PersonnelKeteranganExportTest extends TestCase
@@ -103,5 +106,20 @@ class PersonnelKeteranganExportTest extends TestCase
         $this->assertSame('PNS', $secondSheetRows[0]['tipe_personel']);
         $this->assertSame('Biro Logistik', $firstSheetRows[0]['satker']);
         $this->assertSame('Polres Bima', $secondSheetRows[0]['satker']);
+
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'personnel-keterangan-');
+        file_put_contents($temporaryPath, Excel::raw($export, ExcelWriter::XLSX));
+
+        try {
+            $worksheet = IOFactory::load($temporaryPath)->getSheet(0);
+
+            $this->assertSame('A1:P2', $worksheet->getAutoFilter()->getRange());
+            $this->assertTrue($worksheet->getProtection()->getSort());
+            $this->assertTrue($worksheet->getProtection()->getAutoFilter());
+            $this->assertSame('FF1D4ED8', $worksheet->getStyle('C1')->getFill()->getStartColor()->getARGB());
+            $this->assertSame('FF15803D', $worksheet->getStyle('N1')->getFill()->getStartColor()->getARGB());
+        } finally {
+            @unlink($temporaryPath);
+        }
     }
 }
