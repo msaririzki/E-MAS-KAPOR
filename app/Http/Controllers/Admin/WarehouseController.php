@@ -23,13 +23,22 @@ class WarehouseController extends Controller
         }])->withSum('sizes', 'stock');
 
         if ($request->filled('search')) {
-            $viewQuery->where(function ($q) use ($request) {
-                $q->where('name', 'like', "%{$request->search}%")
-                    ->orWhere('unit', 'like', "%{$request->search}%");
+            $searchTerm = $request->search;
+            $viewQuery->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                    ->orWhere('unit', 'like', "%{$searchTerm}%")
+                    ->orWhere('tahun', 'like', "%{$searchTerm}%")
+                    ->orWhere('sumber_pengadaan', 'like', "%{$searchTerm}%")
+                    ->orWhere('kategori_stok', 'like', "%{$searchTerm}%")
+                    ->orWhere('price', 'like', "%{$searchTerm}%")
+                    ->orWhereRaw('(SELECT COALESCE(SUM(stock), 0) FROM warehouse_item_sizes WHERE warehouse_item_sizes.warehouse_item_id = warehouse_items.id) LIKE ?', ["%{$searchTerm}%"]);
             });
         }
         if ($request->filled('sumber_pengadaan')) {
             $viewQuery->where('sumber_pengadaan', $request->sumber_pengadaan);
+        }
+        if ($request->filled('tahun')) {
+            $viewQuery->where('tahun', $request->tahun);
         }
         if ($request->filled('kategori_stok')) {
             $viewQuery->where('kategori_stok', $request->kategori_stok);
@@ -46,12 +55,13 @@ class WarehouseController extends Controller
 
         $unitOptions = ['PCS' => 'PCS', 'STEL' => 'STEL', 'PASANG' => 'PASANG', 'SET' => 'SET', 'BUAH' => 'BUAH'];
         $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
+        $years = WarehouseItem::whereNotNull('tahun')->distinct()->pluck('tahun')->sortDesc();
 
         if ($request->ajax()) {
             return view('admin.warehouse.partials.table', compact('items'))->render();
         }
 
-        return view('admin.warehouse.index', compact('items', 'stats', 'unitOptions', 'satkers'));
+        return view('admin.warehouse.index', compact('items', 'stats', 'unitOptions', 'satkers', 'years'));
     }
 
     public function store(Request $request)

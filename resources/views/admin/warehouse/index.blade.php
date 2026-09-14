@@ -48,9 +48,9 @@
     </div>
 </div>
 
-<div style="display: flex; flex-wrap: nowrap; gap: 16px; align-items: stretch; margin-bottom: 24px; width: 100%;">
+<div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; margin-bottom: 24px; width: 100%;">
     {{-- Stats --}}
-    <div style="display: flex; gap: 16px; flex-shrink: 0;">
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; flex-shrink: 0;">
         <div class="stat-card" style="margin-bottom: 0; min-width: auto; padding: 12px 16px; white-space: nowrap;">
             <div class="stat-icon icon-blue">
                 <i class="ri-archive-line"></i>
@@ -72,52 +72,73 @@
     </div>
 
     {{-- Filter --}}
-    <div class="filter-bar" style="display: flex; flex: 1; min-width: 0; background: transparent; border: none; box-shadow: none; padding: 0; margin-bottom: 0;">
-        <form id="filterForm" method="GET" action="{{ route('admin.warehouse-items.index') }}" class="filter-form" style="flex: 1; display:flex; flex-wrap:nowrap; gap: 16px; align-items:center; background: #fff; padding: 12px 20px; border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+    <div class="filter-bar" style="display: flex; flex: 1; min-width: 100%; background: transparent; border: none; box-shadow: none; padding: 0; margin-bottom: 0;">
+        <form id="filterForm" method="GET" action="{{ route('admin.warehouse-items.index') }}" class="filter-form" style="flex: 1; display:flex; flex-wrap:wrap; gap: 16px; align-items:center; background: #fff; padding: 12px 20px; border-radius: 12px; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
         
         <!-- Search -->
-        <div style="position: relative; flex: 1; min-width: 250px;">
+        <div class="search-container" style="position: relative; height: 42px;">
             <i class="ri-search-line search-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9CA3AF;"></i>
             <input type="text" name="search" id="searchInput" value="{{ request('search') }}" placeholder="Cari nama barang atau satuan..." autocomplete="off" style="width: 100%; border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0; padding-left: 40px; font-size: 14px; outline: none; transition: all 0.2s;">
         </div>
         
-        <!-- Filter Sumber Pengadaan -->
-        <div class="custom-select-wrapper" style="width: 180px; flex-shrink: 0;">
-            <input type="hidden" name="sumber_pengadaan" id="filter_sumber" value="{{ request('sumber_pengadaan') }}">
-            <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
-                <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px;">
-                    <span>{{ request('sumber_pengadaan') ?: 'Semua Sumber' }}</span>
-                    <i class="ri-arrow-down-s-line"></i>
-                </div>
-                <div class="custom-options">
-                    <div class="custom-option {{ !request('sumber_pengadaan') ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '', 'Semua Sumber', 'filter_sumber');">
-                        Semua Sumber
-                    </div>
-                    <div class="custom-option {{ request('sumber_pengadaan') == 'Mabes Polri' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Mabes Polri', 'Mabes Polri', 'filter_sumber');">Mabes Polri</div>
-                    <div class="custom-option {{ request('sumber_pengadaan') == 'Polda NTB' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Polda NTB', 'Polda NTB', 'filter_sumber');">Polda NTB</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Filter Kategori Stok dipindah ke Tab -->
-        <input type="hidden" name="kategori_stok" value="{{ request('kategori_stok') }}">
-
-        <!-- Filter Baris -->
-        <div class="custom-select-wrapper" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-            <div style="font-size: 12px; font-weight: 600; color: #64748b;">Baris</div>
-            <div style="width: 80px;">
-                <input type="hidden" name="per_page" id="filter_per_page" value="{{ request('per_page', 10) }}">
+        <div class="filter-group" style="display: flex; gap: 12px; align-items: center;">
+            <!-- Filter Sumber Pengadaan -->
+            <div class="custom-select-wrapper" style="flex: 1; min-width: 120px;">
+                <input type="hidden" name="sumber_pengadaan" id="filter_sumber" value="{{ request('sumber_pengadaan') }}">
                 <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
-                    <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px; color: #374151;">
-                        <span>{{ request('per_page', 10) }}</span>
+                    <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px;">
+                        <span>{{ request('sumber_pengadaan') ?: 'Sumber' }}</span>
                         <i class="ri-arrow-down-s-line"></i>
                     </div>
-                    <div class="custom-options" style="min-width: 80px; text-align: center;">
-                        <div class="custom-option {{ request('per_page', 10) == 10 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '10', '10', 'filter_per_page');">10</div>
-                        <div class="custom-option {{ request('per_page') == 15 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '15', '15', 'filter_per_page');">15</div>
-                        <div class="custom-option {{ request('per_page') == 25 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '25', '25', 'filter_per_page');">25</div>
-                        <div class="custom-option {{ request('per_page') == 50 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '50', '50', 'filter_per_page');">50</div>
-                        <div class="custom-option {{ request('per_page') == 100 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '100', '100', 'filter_per_page');">100</div>
+                    <div class="custom-options">
+                        <div class="custom-option {{ !request('sumber_pengadaan') ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '', 'Sumber', 'filter_sumber');">
+                            Sumber
+                        </div>
+                        <div class="custom-option {{ request('sumber_pengadaan') == 'Mabes Polri' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Mabes Polri', 'Mabes Polri', 'filter_sumber');">Mabes Polri</div>
+                        <div class="custom-option {{ request('sumber_pengadaan') == 'Polda NTB' ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, 'Polda NTB', 'Polda NTB', 'filter_sumber');">Polda NTB</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Tahun -->
+            <div class="custom-select-wrapper" style="flex: 1; min-width: 120px;">
+                <input type="hidden" name="tahun" id="filter_tahun" value="{{ request('tahun') }}">
+                <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
+                    <div class="select-trigger" style="height: 100%; padding: 0 14px; font-size: 14px;">
+                        <span>{{ request('tahun') ?: 'Tahun' }}</span>
+                        <i class="ri-arrow-down-s-line"></i>
+                    </div>
+                    <div class="custom-options">
+                        <div class="custom-option {{ !request('tahun') ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '', 'Tahun', 'filter_tahun');">
+                            Tahun
+                        </div>
+                        @foreach($years as $year)
+                            <div class="custom-option {{ request('tahun') == $year ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '{{ $year }}', '{{ $year }}', 'filter_tahun');">{{ $year }}</div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Kategori Stok dipindah ke Tab -->
+            <input type="hidden" name="kategori_stok" id="filter_kategori" value="{{ request('kategori_stok') }}">
+
+            <!-- Filter Baris -->
+            <div class="custom-select-wrapper" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; width: auto;">
+                <div style="font-size: 12px; font-weight: 600; color: #64748b;">Baris</div>
+                <div style="width: 70px;">
+                    <input type="hidden" name="per_page" id="filter_per_page" value="{{ request('per_page', 10) }}">
+                    <div class="custom-select" onclick="toggleDropdown(this)" style="border-radius: 8px; height: 42px; background: #fff; border: 1px solid #E2E8F0;">
+                        <div class="select-trigger" style="height: 100%; padding: 0 12px; font-size: 14px; color: #374151;">
+                            <span>{{ request('per_page', 10) }}</span>
+                            <i class="ri-arrow-down-s-line" style="margin-left: 4px;"></i>
+                        </div>
+                        <div class="custom-options" style="min-width: 70px; text-align: center;">
+                            <div class="custom-option {{ request('per_page', 10) == 10 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '10', '10', 'filter_per_page');">10</div>
+                            <div class="custom-option {{ request('per_page') == 15 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '15', '15', 'filter_per_page');">15</div>
+                            <div class="custom-option {{ request('per_page') == 25 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '25', '25', 'filter_per_page');">25</div>
+                            <div class="custom-option {{ request('per_page') == 50 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '50', '50', 'filter_per_page');">50</div>
+                            <div class="custom-option {{ request('per_page') == 100 ? 'selected' : '' }}" onclick="event.stopPropagation(); selectOption(this, '100', '100', 'filter_per_page');">100</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -727,6 +748,81 @@
     @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
     .dropdown-container.d-inline-block { display: inline-block; position: relative; }
+
+    .search-container {
+        flex: 1;
+        min-width: 250px;
+    }
+    .filter-group {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+        .page-header-actions {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            justify-content: space-between;
+            margin-top: 12px;
+        }
+        .page-header-actions > * {
+            flex: 1;
+        }
+        .page-header-actions .btn-content span {
+            display: none;
+        }
+        .page-header-actions .btn {
+            padding: 0 !important;
+            width: 100% !important;
+            height: 42px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .page-header-actions .btn-content .arrow-icon {
+            display: none;
+        }
+        .search-icon {
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+        }
+        .filter-form {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            padding: 12px !important;
+            gap: 12px !important;
+        }
+        .search-container {
+            width: 100% !important;
+            flex: none !important;
+        }
+        .filter-group {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 8px;
+            width: 100% !important;
+            flex: none !important;
+        }
+        .filter-group .custom-select-wrapper {
+            width: 100% !important;
+            min-width: 0 !important;
+            flex: none !important;
+        }
+        .filter-group > div:last-child {
+            grid-column: span 1;
+            justify-content: flex-end !important;
+        }
+        .filter-group > div:last-child .custom-select {
+            width: 60px;
+        }
+        .filter-group > div:last-child .select-trigger {
+            padding: 0 8px !important;
+        }
+    }
 </style>
 
 <style>
@@ -779,7 +875,7 @@
 
     // Search Filter with Debounce
     document.addEventListener('input', function(e) {
-        if(e.target.classList.contains('search-field')) {
+        if(e.target.id === 'searchInput') {
             clearTimeout(typingTimer);
             typingTimer = setTimeout(() => {
                 triggerFilterChange();
@@ -790,11 +886,13 @@
     function triggerFilterChange() {
         let url = new URL(window.location.href);
         let sumber = document.getElementById('filter_sumber').value;
+        let tahun = document.getElementById('filter_tahun').value;
         let kategori = document.getElementById('filter_kategori').value;
         let perPage = document.getElementById('filter_per_page').value;
         let search = document.getElementById('searchInput').value;
 
         if(sumber) { url.searchParams.set('sumber_pengadaan', sumber); } else { url.searchParams.delete('sumber_pengadaan'); }
+        if(tahun) { url.searchParams.set('tahun', tahun); } else { url.searchParams.delete('tahun'); }
         if(kategori) { url.searchParams.set('kategori_stok', kategori); } else { url.searchParams.delete('kategori_stok'); }
         if(perPage) { url.searchParams.set('per_page', perPage); }
         if(search) { url.searchParams.set('search', search); } else { url.searchParams.delete('search'); }
