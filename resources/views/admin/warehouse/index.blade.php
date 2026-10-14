@@ -20,7 +20,7 @@
                 </div>
             </button>
             <div class="dropdown-container d-inline-block" id="exportDropdown">
-                <button class="btn btn-export" onclick="document.getElementById('exportDropdown').classList.toggle('open')">
+                <button class="btn btn-export" onclick="updateExportLinks(); document.getElementById('exportDropdown').classList.toggle('open')">
                     <div class="btn-content">
                         <i class="ri-download-line"></i>
                         <span>Unduh</span>
@@ -28,11 +28,11 @@
                     </div>
                 </button>
                 <div class="dropdown-menu">
-                    <a href="{{ route('admin.warehouse-items.export-excel') }}" class="dropdown-item">
+                    <a href="{{ route('admin.warehouse-items.export-excel', request()->query()) }}" id="exportExcelBtn" class="dropdown-item">
                         <i class="ri-file-excel-2-line excel-icon"></i>
                         <span>Excel (Sheet 1)</span>
                     </a>
-                    <a href="{{ route('admin.warehouse-items.export-pdf') }}" class="dropdown-item">
+                    <a href="{{ route('admin.warehouse-items.export-pdf', request()->query()) }}" id="exportPdfBtn" class="dropdown-item">
                         <i class="ri-file-pdf-line pdf-icon"></i>
                         <span>Dokumen PDF</span>
                     </a>
@@ -854,6 +854,7 @@
             container.innerHTML = html;
             container.style.opacity = '1';
             window.history.pushState({}, '', url);
+            updateExportLinks();
         })
         .catch(error => {
             console.error('Error:', error);
@@ -899,7 +900,48 @@
 
         url.searchParams.set('page', 1);
         fetchTable(url.toString());
+        updateExportLinks();
     }
+
+    function updateExportLinks() {
+        let excelBtn = document.getElementById('exportExcelBtn');
+        let pdfBtn = document.getElementById('exportPdfBtn');
+        if (!excelBtn || !pdfBtn) return;
+
+        let sumber = document.getElementById('filter_sumber')?.value;
+        let tahun = document.getElementById('filter_tahun')?.value;
+        let kategori = document.getElementById('filter_kategori')?.value;
+        let search = document.getElementById('searchInput')?.value;
+
+        let urlParams = new URLSearchParams(window.location.search);
+        if (!kategori && urlParams.has('kategori_stok')) {
+            kategori = urlParams.get('kategori_stok');
+        }
+        if (!sumber && urlParams.has('sumber_pengadaan')) {
+            sumber = urlParams.get('sumber_pengadaan');
+        }
+        if (!tahun && urlParams.has('tahun')) {
+            tahun = urlParams.get('tahun');
+        }
+        if (!search && urlParams.has('search')) {
+            search = urlParams.get('search');
+        }
+
+        let params = new URLSearchParams();
+        if (sumber) params.set('sumber_pengadaan', sumber);
+        if (tahun) params.set('tahun', tahun);
+        if (kategori) params.set('kategori_stok', kategori);
+        if (search) params.set('search', search);
+
+        let queryString = params.toString() ? '?' + params.toString() : '';
+        let excelBase = "{{ route('admin.warehouse-items.export-excel') }}";
+        let pdfBase = "{{ route('admin.warehouse-items.export-pdf') }}";
+
+        excelBtn.href = excelBase + queryString;
+        pdfBtn.href = pdfBase + queryString;
+    }
+
+    document.addEventListener('DOMContentLoaded', updateExportLinks);
 
     // Close Dropdown on outside click
     window.addEventListener('click', function(e) {

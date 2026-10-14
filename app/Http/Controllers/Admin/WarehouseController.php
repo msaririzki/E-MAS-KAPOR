@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\WarehouseExport;
 use App\Exports\WarehouseTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Imports\WarehouseImport;
+use App\Models\DispenseRequest;
+use App\Models\Satker;
 use App\Models\WarehouseItem;
 use App\Models\WarehouseItemSize;
 use App\Models\WarehouseOutflow;
 use App\Models\WarehouseSignatory;
+use App\Services\AuditLogger;
 use App\Services\WarehouseSppmExportService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -54,7 +60,7 @@ class WarehouseController extends Controller
         ];
 
         $unitOptions = ['PCS' => 'PCS', 'STEL' => 'STEL', 'PASANG' => 'PASANG', 'SET' => 'SET', 'BUAH' => 'BUAH'];
-        $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
+        $satkers = Satker::orderBy('name', 'asc')->get();
         $years = WarehouseItem::whereNotNull('tahun')->distinct()->pluck('tahun')->sortDesc();
 
         if ($request->ajax()) {
@@ -186,11 +192,11 @@ class WarehouseController extends Controller
         // Kurangi dari stok kosong ('-') jika ada
         $noSize = $warehouseItem->sizes()->whereIn('size_label', ['-', ''])->first();
 
-        if ($noSize && !in_array($validated['size_label'], ['-', ''])) {
+        if ($noSize && ! in_array($validated['size_label'], ['-', ''])) {
             if ($validated['stock'] > $noSize->stock) {
-                return response()->json(['error' => 'Jumlah yang dimasukkan tidak boleh lebih dari jumlah stok (' . $noSize->stock . ').'], 422);
+                return response()->json(['error' => 'Jumlah yang dimasukkan tidak boleh lebih dari jumlah stok ('.$noSize->stock.').'], 422);
             }
-            
+
             $noSize->stock -= $validated['stock'];
             $noSize->save();
         }
@@ -248,14 +254,14 @@ class WarehouseController extends Controller
         $items = WarehouseItem::with(['sizes' => function ($q) {
             $q->where('stock', '>', 0)->orderByRaw('CAST(size_label AS UNSIGNED) ASC, size_label ASC');
         }])
-        ->withSum('sizes', 'stock')
-        ->whereHas('sizes', function($q) {
-            $q->where('stock', '>', 0);
-        })
-        ->orderBy('name')
-        ->get();
+            ->withSum('sizes', 'stock')
+            ->whereHas('sizes', function ($q) {
+                $q->where('stock', '>', 0);
+            })
+            ->orderBy('name')
+            ->get();
 
-        $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
+        $satkers = Satker::orderBy('name', 'asc')->get();
 
         return view('admin.warehouse.dispense', compact('items', 'satkers'));
     }
@@ -300,7 +306,7 @@ class WarehouseController extends Controller
         }
 
         if (auth()->user()->hasRole('admin_gudang')) {
-            \App\Models\DispenseRequest::create([
+            DispenseRequest::create([
                 'user_id' => auth()->id(),
                 'status' => 'pending',
                 'payload' => $request->except(['_token']),
@@ -388,7 +394,7 @@ class WarehouseController extends Controller
                 if ($mode === 'ukuran') {
                     // Validasi per size
                     foreach ($totalsNeededSize as $itemId => $sizes) {
-                        $item = \App\Models\WarehouseItem::findOrFail($itemId);
+                        $item = WarehouseItem::findOrFail($itemId);
                         foreach ($sizes as $sizeId => $totalQty) {
                             $sizeObj = WarehouseItemSize::findOrFail($sizeId);
                             if ($sizeObj->stock < $totalQty) {
@@ -403,7 +409,7 @@ class WarehouseController extends Controller
                     foreach ($totalsNeeded as $itemId => $totalQty) {
                         $totalStock = WarehouseItemSize::where('warehouse_item_id', $itemId)->sum('stock');
                         if ($totalStock < $totalQty) {
-                            $item = \App\Models\WarehouseItem::findOrFail($itemId);
+                            $item = WarehouseItem::findOrFail($itemId);
                             DB::rollBack();
 
                             return back()->withInput()->with('error', 'Total stok '.$item->name.' tidak mencukupi untuk total pembagian. (Dibutuhkan: '.$totalQty.', Stok tersisa: '.$totalStock.')');
@@ -545,7 +551,7 @@ class WarehouseController extends Controller
         }
         if ($request->filled('search')) {
             $searchTerm = $request->search;
-            $query->where(function (\Illuminate\Database\Eloquent\Builder $q) use ($searchTerm) {
+            $query->where(function (Builder $q) use ($searchTerm) {
                 $q->where('recipient_name', 'like', "%{$searchTerm}%")
                     ->orWhere('letter_number', 'like', "%{$searchTerm}%");
             });
@@ -558,7 +564,7 @@ class WarehouseController extends Controller
             ->paginate($perPage)
             ->appends($request->query());
 
-        $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
+        $satkers = Satker::orderBy('name', 'asc')->get();
 
         return view('admin.warehouse.sppm', compact('groupedOutflows', 'satkers'));
     }
@@ -715,7 +721,7 @@ class WarehouseController extends Controller
         $totalQuantity = $outflows->sum('quantity');
         $itemCount = $outflows->count();
 
-        \App\Services\AuditLogger::log('HAPUS_PENGELUARAN', "Riwayat pengeluaran dari {$satkerName} sejumlah {$itemCount} item (Total Qty: {$totalQuantity}) dihapus. Alasan: {$request->deletion_reason}");
+        AuditLogger::log('HAPUS_PENGELUARAN', "Riwayat pengeluaran dari {$satkerName} sejumlah {$itemCount} item (Total Qty: {$totalQuantity}) dihapus. Alasan: {$request->deletion_reason}");
 
         foreach ($outflows as $outflow) {
             $outflow->update(['deletion_reason' => $request->deletion_reason]);
@@ -798,7 +804,7 @@ class WarehouseController extends Controller
             ->when($request->filled('satker_id'), fn ($q) => $q->where('satker_id', $request->satker_id))
             ->sum('quantity');
 
-        $satkers = \App\Models\Satker::orderBy('name', 'asc')->get();
+        $satkers = Satker::orderBy('name', 'asc')->get();
 
         return view('admin.warehouse.reports', compact('outflows', 'satkers', 'totalItemsOut'));
     }
@@ -828,14 +834,14 @@ class WarehouseController extends Controller
 
     public function forceDeleteItem($id)
     {
-        if (!auth()->user()->hasAnyRole(['superadmin', 'kepala_gudang'])) {
+        if (! auth()->user()->hasAnyRole(['superadmin', 'kepala_gudang'])) {
             abort(403, 'Unauthorized action.');
         }
 
         $item = WarehouseItem::onlyTrashed()->findOrFail($id);
-        
-        \App\Services\AuditLogger::log('HAPUS_PERMANEN_BARANG', "Barang {$item->name} dihapus permanen dari riwayat.");
-        
+
+        AuditLogger::log('HAPUS_PERMANEN_BARANG', "Barang {$item->name} dihapus permanen dari riwayat.");
+
         $item->sizes()->forceDelete();
         $item->forceDelete();
 
@@ -844,15 +850,15 @@ class WarehouseController extends Controller
 
     public function forceDeleteOutflow($id)
     {
-        if (!auth()->user()->hasAnyRole(['superadmin', 'kepala_gudang'])) {
+        if (! auth()->user()->hasAnyRole(['superadmin', 'kepala_gudang'])) {
             abort(403, 'Unauthorized action.');
         }
 
         $outflow = WarehouseOutflow::onlyTrashed()->findOrFail($id);
         $satkerName = $outflow->satker ? $outflow->satker->name : 'Unknown';
-        
-        \App\Services\AuditLogger::log('HAPUS_PERMANEN_PENGELUARAN', "Laporan pengeluaran dari {$satkerName} sejumlah {$outflow->quantity} dihapus permanen.");
-        
+
+        AuditLogger::log('HAPUS_PERMANEN_PENGELUARAN', "Laporan pengeluaran dari {$satkerName} sejumlah {$outflow->quantity} dihapus permanen.");
+
         $outflow->forceDelete();
 
         return redirect()->back()->with('success', 'Data Laporan Pengeluaran berhasil dihapus secara permanen.');
@@ -867,7 +873,7 @@ class WarehouseController extends Controller
         ]);
 
         try {
-            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\WarehouseImport, $request->file('file'));
+            Excel::import(new WarehouseImport, $request->file('file'));
 
             return redirect()->back()->with('success', 'Data Gudang berhasil diunggah');
         } catch (\Exception $e) {
@@ -875,18 +881,55 @@ class WarehouseController extends Controller
         }
     }
 
-    public function exportExcel()
+    public function exportExcel(Request $request)
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\WarehouseExport, 'Data_Gudang.xlsx');
+        $filename = 'Data_Gudang';
+        if ($request->filled('kategori_stok')) {
+            $filename .= '_'.str_replace(' ', '_', $request->kategori_stok);
+        }
+        $filename .= '.xlsx';
+
+        return Excel::download(new WarehouseExport($request->all()), $filename);
     }
 
-    public function exportPdf()
+    public function exportPdf(Request $request)
     {
-        $items = \App\Models\WarehouseItem::withSum('sizes', 'stock')->orderBy('name')->get();
-        // Uses carlos-meneses/laravel-mpdf
-        $pdf = \PDF::loadView('admin.warehouse.export_excel', compact('items'));
+        $query = WarehouseItem::withSum('sizes', 'stock');
 
-        return $pdf->download('Data_Gudang.pdf');
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                    ->orWhere('unit', 'like', "%{$searchTerm}%")
+                    ->orWhere('tahun', 'like', "%{$searchTerm}%")
+                    ->orWhere('sumber_pengadaan', 'like', "%{$searchTerm}%")
+                    ->orWhere('kategori_stok', 'like', "%{$searchTerm}%")
+                    ->orWhere('price', 'like', "%{$searchTerm}%");
+            });
+        }
+        if ($request->filled('sumber_pengadaan')) {
+            $query->where('sumber_pengadaan', $request->sumber_pengadaan);
+        }
+        if ($request->filled('tahun')) {
+            $query->where('tahun', $request->tahun);
+        }
+        if ($request->filled('kategori_stok')) {
+            $query->where('kategori_stok', $request->kategori_stok);
+        }
+
+        $items = $query->orderBy('name', 'asc')->get();
+        $kategori_stok = $request->kategori_stok;
+
+        // Uses carlos-meneses/laravel-mpdf
+        $pdf = \PDF::loadView('admin.warehouse.export_excel', compact('items', 'kategori_stok'));
+
+        $filename = 'Data_Gudang';
+        if ($request->filled('kategori_stok')) {
+            $filename .= '_'.str_replace(' ', '_', $request->kategori_stok);
+        }
+        $filename .= '.pdf';
+
+        return $pdf->download($filename);
     }
 
     public function exportReportsPdf(Request $request)

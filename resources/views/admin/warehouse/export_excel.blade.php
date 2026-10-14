@@ -26,7 +26,8 @@
             white-space: nowrap;
         }
         .kop-logo {
-            width: 45px;
+            width: 60px;
+            height: auto;
             margin-bottom: 5px;
         }
 
@@ -57,19 +58,22 @@
     </table>
 
     <div class="title-section">
-        <h2>DATA STOK BARANG GUDANG</h2>
+        <h2>DATA STOK BARANG GUDANG{{ (!empty($kategori_stok) || request('kategori_stok')) ? ' - ' . strtoupper($kategori_stok ?? request('kategori_stok')) : '' }}</h2>
         <p>Tanggal Cetak: {{ date('d/m/Y') }}</p>
     </div>
 
     <table style="border-collapse: collapse; width: 100%; border: 1px solid #000;">
         <thead>
             <tr>
-                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="5%">NO</th>
-                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="30%">NAMA BARANG</th>
-                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="10%">SATUAN</th>
-                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="15%">KUANTITAS (STOK)</th>
-                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="20%">HARGA SATUAN (Rp)</th>
-                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="20%">JUMLAH HARGA (Rp)</th>
+                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="4%">NO</th>
+                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="22%">NAMA BARANG</th>
+                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="8%">TAHUN</th>
+                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="12%">SUMBER</th>
+                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="10%">KATEGORI</th>
+                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="10%">KUANTITAS</th>
+                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="8%">SATUAN</th>
+                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="13%">HARGA SATUAN</th>
+                <th style="background-color: #d1d5db; font-weight: bold; text-align: center; border: 1px solid #000;" width="13%">JUMLAH HARGA</th>
             </tr>
         </thead>
         <tbody>
@@ -87,22 +91,26 @@
                 <tr>
                     <td style="text-align: center; border: 1px solid #000; vertical-align: middle;">{{ $index + 1 }}</td>
                     <td style="border: 1px solid #000; vertical-align: middle;">{{ $item->name }}</td>
-                    <td style="text-align: center; border: 1px solid #000; vertical-align: middle;">{{ $item->unit }}</td>
+                    <td style="text-align: center; border: 1px solid #000; vertical-align: middle;">{{ $item->tahun ?? '-' }}</td>
+                    <td style="text-align: center; border: 1px solid #000; vertical-align: middle;">{{ $item->sumber_pengadaan ?? '-' }}</td>
+                    <td style="text-align: center; border: 1px solid #000; vertical-align: middle;">{{ $item->kategori_stok ?? '-' }}</td>
                     <td style="text-align: center; border: 1px solid #000; vertical-align: middle; color: {{ $qty <= 0 ? '#dc2626' : '#000' }};">{{ number_format($qty, 0, ',', '.') }}</td>
+                    <td style="text-align: center; border: 1px solid #000; vertical-align: middle;">{{ $item->unit }}</td>
                     <td style="text-align: right; border: 1px solid #000; vertical-align: middle;">{{ number_format($item->price, 0, ',', '.') }}</td>
                     <td style="text-align: right; border: 1px solid #000; vertical-align: middle;">{{ number_format($subtotal, 0, ',', '.') }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" style="text-align: center; border: 1px solid #000; padding: 15px;">Belum ada data barang.</td>
+                    <td colspan="9" style="text-align: center; border: 1px solid #000; padding: 15px;">Belum ada data barang.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr>
-                <th colspan="3" style="text-align: right; font-weight: bold; border: 1px solid #000; background-color: #f3f4f6; padding-right: 15px;">TOTAL KESELURUHAN:</th>
+                <th colspan="5" style="text-align: right; font-weight: bold; border: 1px solid #000; background-color: #f3f4f6; padding-right: 15px;">TOTAL KESELURUHAN:</th>
                 <th style="text-align: center; font-weight: bold; border: 1px solid #000; background-color: #f3f4f6;">{{ number_format($totalStock, 0, ',', '.') }}</th>
-                <th style="text-align: right; border: 1px solid #000; background-color: #f3f4f6;">-</th>
+                <th style="text-align: center; border: 1px solid #000; background-color: #f3f4f6;">-</th>
+                <th style="text-align: center; border: 1px solid #000; background-color: #f3f4f6;">-</th>
                 <th style="text-align: right; font-weight: bold; border: 1px solid #000; background-color: #f3f4f6;">{{ number_format($totalValue, 0, ',', '.') }}</th>
             </tr>
         </tfoot>
@@ -112,21 +120,24 @@
 @else
 <table>
     <tr>
-        <th colspan="6" style="text-align: center; font-size: 14pt; font-weight: bold;">DATA STOK BARANG GUDANG</th>
+        <th colspan="9" style="text-align: center; font-size: 14pt; font-weight: bold;">DATA STOK BARANG GUDANG{{ (!empty($kategori_stok) || request('kategori_stok')) ? ' - ' . strtoupper($kategori_stok ?? request('kategori_stok')) : '' }}</th>
     </tr>
     <tr>
-        <th colspan="6" style="text-align: center;">Tanggal Cetak: {{ date('d/m/Y') }}</th>
+        <th colspan="9" style="text-align: center;">Tanggal Cetak: {{ date('d/m/Y') }}</th>
     </tr>
     <tr>
-        <th colspan="6"></th>
+        <th colspan="9"></th>
     </tr>
     <tr>
         <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">NO</th>
         <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">NAMA BARANG</th>
+        <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">TAHUN</th>
+        <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">SUMBER</th>
+        <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">KATEGORI</th>
+        <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">KUANTITAS</th>
         <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">SATUAN</th>
-        <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">KUANTITAS (STOK)</th>
-        <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">HARGA SATUAN (Rp)</th>
-        <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">JUMLAH HARGA (Rp)</th>
+        <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">HARGA SATUAN</th>
+        <th style="font-weight: bold; background-color: #d1d5db; border: 1px solid #000000; text-align: center;">JUMLAH HARGA</th>
     </tr>
     @php 
         $totalStock = 0;
@@ -142,17 +153,21 @@
         <tr>
             <td style="border: 1px solid #000000; text-align: center;">{{ $index + 1 }}</td>
             <td style="border: 1px solid #000000;">{{ $item->name }}</td>
+            <td style="border: 1px solid #000000; text-align: center;">{{ $item->tahun ?? '-' }}</td>
+            <td style="border: 1px solid #000000; text-align: center;">{{ $item->sumber_pengadaan ?? '-' }}</td>
+            <td style="border: 1px solid #000000; text-align: center;">{{ $item->kategori_stok ?? '-' }}</td>
+            <td style="border: 1px solid #000000; text-align: center; color: {{ $qty <= 0 ? '#ff0000' : '#000000' }}; mso-number-format:'\@';">{{ number_format($qty, 0, ',', '.') }}</td>
             <td style="border: 1px solid #000000; text-align: center;">{{ $item->unit }}</td>
-            <td style="border: 1px solid #000000; text-align: center; color: {{ $qty <= 0 ? '#ff0000' : '#000000' }};">{{ $qty }}</td>
-            <td style="border: 1px solid #000000; text-align: right;">{{ $item->price }}</td>
-            <td style="border: 1px solid #000000; text-align: right;">{{ $subtotal }}</td>
+            <td style="border: 1px solid #000000; text-align: right; mso-number-format:'\@';">{{ number_format($item->price, 0, ',', '.') }}</td>
+            <td style="border: 1px solid #000000; text-align: right; mso-number-format:'\@';">{{ number_format($subtotal, 0, ',', '.') }}</td>
         </tr>
     @endforeach
     <tr>
-        <th colspan="3" style="text-align: right; font-weight: bold; border: 1px solid #000000;">TOTAL KESELURUHAN:</th>
-        <th style="text-align: center; font-weight: bold; border: 1px solid #000000;">{{ $totalStock }}</th>
+        <th colspan="5" style="text-align: right; font-weight: bold; border: 1px solid #000000;">TOTAL KESELURUHAN:</th>
+        <th style="text-align: center; font-weight: bold; border: 1px solid #000000; mso-number-format:'\@';">{{ number_format($totalStock, 0, ',', '.') }}</th>
         <th style="text-align: center; border: 1px solid #000000;">-</th>
-        <th style="text-align: right; font-weight: bold; border: 1px solid #000000;">{{ $totalValue }}</th>
+        <th style="text-align: center; border: 1px solid #000000;">-</th>
+        <th style="text-align: right; font-weight: bold; border: 1px solid #000000; mso-number-format:'\@';">{{ number_format($totalValue, 0, ',', '.') }}</th>
     </tr>
 </table>
 @endif

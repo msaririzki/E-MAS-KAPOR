@@ -25,7 +25,8 @@
             white-space: nowrap;
         }
         .kop-logo {
-            width: 45px;
+            width: 60px;
+            height: auto;
             margin-bottom: 5px;
         }
 
